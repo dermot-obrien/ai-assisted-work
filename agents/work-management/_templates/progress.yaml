@@ -1,0 +1,76 @@
+# Progress Tracking for {WORK_ITEM_ID}
+# Updated by work management agents
+
+version: 1
+last_modified: "{ISO_DATE}"
+last_modified_by: "{ACTOR}"
+
+work_item:
+  id: "{WORK_ITEM_ID}"
+  title: "{TITLE}"
+  status: "in_progress"  # in_progress | completed | on_hold | cancelled
+  started_at: "{ISO_DATE}"
+  # completed_at: null
+
+activities:
+  - id: "A1"
+    title: "{Activity 1 Title}"
+    status: "in_progress"  # pending | in_progress | completed | cancelled
+    tasks:
+      - id: "A1-T1"
+        title: "{Task title}"
+        status: "pending"  # pending | in_progress | completed | blocked | cancelled
+        actor: "agent"     # agent | human
+        effort: "low"      # low | medium | high
+        depends_on: []
+        # started_at: null
+        # completed_at: null
+        # completed_by: null
+        # notes: ""
+        deliverables: []
+      
+      - id: "A1-T2"
+        title: "{Task title}"
+        status: "pending"
+        actor: "human"
+        effort: "medium"
+        depends_on:
+          - "A1-T1"
+        deliverables: []
+
+  - id: "A2"
+    title: "{Activity 2 Title}"
+    status: "pending"
+    depends_on:
+      - "A1"
+    tasks:
+      - id: "A2-T1"
+        title: "{Task title}"
+        status: "pending"
+        actor: "agent"
+        effort: "medium"
+        depends_on: []
+        deliverables: []
+
+artifacts:
+  - id: "D01"
+    title: "{Deliverable title}"
+    path: "./deliverables/{filename}"
+    activity: "A1"
+    status: "pending"  # pending | draft | review | approved
+
+blockers: []
+  # - id: "B1"
+  #   description: "{Description}"
+  #   blocking: ["A1-T2"]
+  #   raised_at: "{ISO_DATE}"
+  #   resolved_at: null
+
+# pivot_log: []
+  # - date: "{ISO_DATE}"
+  #   reason: "{Why pivot happened}"
+  #   added: []
+  #   cancelled: []
+
+notes: |
+  Work item initialized.

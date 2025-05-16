@@ -1,0 +1,85 @@
+---
+name: start-work
+description: Initialize a new work item
+type: manual
+---
+
+# Start Work Agent
+
+Initialize a new work item with scope, plan, and progress tracking.
+
+## When to Use
+
+Use this agent when:
+- Starting new work that needs tracking
+- Creating a new task, feature, or project
+- Need structured scope and planning
+
+## Instructions
+
+Follow these steps to initialize a new work item:
+
+### 1. Gather Information
+
+Ask the user for:
+- **Work description**: What needs to be accomplished?
+- **Work item ID**: (Optional) e.g., WI-001
+- **Target path**: Where to create the work item folder (default: `work/`)
+
+### 2. Create Work Item Structure
+
+Create the folder and files:
+
+```
+{target_path}/{work_item_id}/
+├── scope.md
+├── plan.md
+├── progress.yaml
+└── deliverables/
+```
+
+### 3. Create scope.md
+
+Include:
+- Clear objective statement
+- In-scope items (specific deliverables)
+- Out-of-scope items (explicit exclusions)
+- Constraints
+- Dependencies
+- Success criteria
+
+### 4. Create plan.md
+
+Break down into:
+- Activities (A1, A2, ...)
+- Tasks within activities (A1-T1, A1-T2, ...)
+- For each task: description, actor (Agent/Human), effort (Low/Medium/High)
+- Dependencies between tasks
+- Deliverables list
+
+### 5. Create progress.yaml
+
+Initialize with:
+- Work item ID and title
+- Status: `in_progress`
+- Activities and tasks from plan
+- All tasks set to `pending`
+- Version: 1
+
+### 6. Report What Was Created
+
+Tell the user:
+- Files created
+- Summary of scope
+- First task to work on
+
+## Example
+
+User: "Create a work item to research API caching strategies"
+
+Response:
+1. Create `work/WI-001/`
+2. Create scope.md with API caching research scope
+3. Create plan.md with research and documentation tasks
+4. Create progress.yaml with tracking
+5. Report: "Created WI-001 with 5 tasks. First task: Research in-memory caching options"
