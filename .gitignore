@@ -10,6 +10,8 @@ node_modules/
 # IDE
 .idea/
 .vscode/
+.cursor/
+!.cursor/rules/
 *.swp
 *~
 
@@ -23,3 +25,6 @@ Thumbs.db
 
 # Work in progress
 scratch/
+
+# Private work items (not committed)
+change/work-items-private/
