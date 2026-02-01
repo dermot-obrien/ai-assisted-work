@@ -1,70 +1,48 @@
-# {WORK_ITEM_ID}: {Work Item Title}
+# {WI-NNN} {Title}
 
-## Objective
+## Summary
 
-{Clear statement of what this work item will accomplish}
+{1-2 sentence description of what this work item accomplishes}
 
-## Background
+## Intent
 
-{Context and motivation for this work - why it's being done}
+{A clear statement of what this work item aims to achieve. This should be a concise synthesis of the user's requirements and the approach being taken. Written for stakeholders - focus on outcomes and approach, not the dialogue that led to this understanding.}
 
-## In Scope
+> **AI Agents**: See [`scope-ai.md`](scope-ai.md) for intent formation history, decision rationale, and agent-specific instructions.
 
-- {Specific deliverable or outcome 1}
-- {Specific deliverable or outcome 2}
-- {Specific deliverable or outcome 3}
+## Acceptance Criteria
 
-## Out of Scope
+- [ ] {Measurable outcome 1}
+- [ ] {Measurable outcome 2}
+- [ ] {Measurable outcome 3}
 
-- {What is explicitly NOT included}
-- {Related work deferred to future}
-- {Adjacent concerns not addressed}
+## Scope
 
-## Constraints
+### In Scope
 
-| Type | Constraint |
-|------|------------|
-| Time | {Any time constraints} |
-| Resources | {Resource limitations} |
-| Technical | {Technical constraints} |
-| Other | {Other constraints} |
+- {What this work item includes}
+- {Specific outcomes to achieve or functionality to implement}
 
-## Dependencies
+### Out of Scope
 
-### Inputs Required
+- {What this work item explicitly excludes}
+- {Related work that should be separate work items}
 
-| Dependency | Source | Status |
-|------------|--------|--------|
-| {Input 1} | {Source} | ⬜ Pending / ✅ Available |
+## Context
 
-### Outputs Produced
+### Related Documentation
 
-| Output | Consumer | Format |
-|--------|----------|--------|
-| {Output 1} | {Who uses it} | {Format} |
+- `docs/path/to/doc.md` - {What context it provides}
 
-## Success Criteria
+### Related Work Items
 
-- [ ] {Measurable criterion 1}
-- [ ] {Measurable criterion 2}
-- [ ] {Measurable criterion 3}
+- `WI-XXX` - {Relationship to other work items}
 
-## Assumptions
+### Related Code
 
-- {Assumption 1}
-- {Assumption 2}
+- `path/to/relevant/file.py` - {Why it's relevant}
+- `path/to/another/file.ts` - {Why it's relevant}
 
-## Risks
+## Notes
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-| {Risk} | H/M/L | H/M/L | {Mitigation} |
-
----
-
-**Created**: {DATE}  
-**Author**: {AUTHOR}
-
-## Scope Change Log
-
-{Record any scope changes here with date and reason}
+{Any additional context, constraints, or considerations}

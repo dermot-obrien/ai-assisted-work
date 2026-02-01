@@ -10,7 +10,7 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - Initial repository structure
 - Work management agents (start, progress, status, pivot, complete)
-- ASCII image agents (detect, convert, replace)
+- Image management agents (detect, convert, replace)
 - Cursor rules for agent integration
 - Work item templates (scope, plan, progress)
 - Integration documentation
@@ -21,7 +21,7 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - Initial public release
 - Complete work management agent suite
-- ASCII-to-image conversion agents
+- Image management agents
 - Cursor IDE integration
 - Submodule integration support
 - Documentation and examples
