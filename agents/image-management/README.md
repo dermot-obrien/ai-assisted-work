@@ -199,16 +199,16 @@ The `/replace-ascii-diagrams` command walks through the complete workflow:
 
 ## Draw.io Diagram Standards
 
-All diagrams must follow BNZ Visual Design Standards:
+All diagrams should follow your organization's visual design standards. Below are recommended defaults:
 
 ### Colors
 
 | Purpose | Color | Hex |
 |---------|-------|-----|
-| Primary | BNZ Navy Blue | `#003087` |
-| Accent | BNZ Orange | `#FF6B35` |
-| Highlight | BNZ Light Blue | `#50E6FF` |
-| Success | BNZ Teal | `#00A651` |
+| Primary | Navy Blue | `#003087` |
+| Accent | Orange | `#FF6B35` |
+| Highlight | Light Blue | `#50E6FF` |
+| Success | Teal | `#00A651` |
 
 ### Canvas Size
 
@@ -231,4 +231,3 @@ All diagrams must follow BNZ Visual Design Standards:
 
 - [AGENTS.md](AGENTS.md) - **Critical rules for AI agents** (read first)
 - [replace-ascii-diagrams.md](replace-ascii-diagrams.md) - Full workflow documentation
-- [05-governance/standards/visual-design/visual-design-standard.md](../../05-governance/standards/visual-design/visual-design-standard.md) - BNZ visual standards

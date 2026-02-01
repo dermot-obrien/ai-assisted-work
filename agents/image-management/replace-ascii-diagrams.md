@@ -610,10 +610,10 @@ LAYOUT:
 - 40px margins on all sides
 
 COMPONENTS:
-1. Rectangle labeled "Component A" in BNZ Navy Blue (#003087) with white text
+1. Rectangle labeled "Component A" in Navy Blue (#003087) with white text
    - Position: left side
    - Size: 120x60 pixels
-2. Rectangle labeled "Component B" in BNZ Navy Blue (#003087) with white text
+2. Rectangle labeled "Component B" in Navy Blue (#003087) with white text
    - Position: right of Component A
    - Size: 120x60 pixels
 3. Arrow connecting Component A to Component B
@@ -800,7 +800,7 @@ For each PNG-approved diagram:
 
 2. **Create Draw.io XML**
    - Build structure matching the PNG
-   - Apply BNZ visual standards
+   - Apply organization visual standards
    - Include legend
    - Save as `{source-doc}-{context}.drawio`
 
@@ -898,7 +898,7 @@ This phase is performed by the user outside the agent workflow:
    - Adjust alignment and spacing
    - Refine labels and text
    - Ensure legend is complete
-   - Verify BNZ color standards
+   - Verify organization color standards
 3. **Save changes** to the `.drawio` file
 
 ---
@@ -1096,7 +1096,7 @@ Could not save `{filename}`:
 7. **Follow naming conventions** - Consistent, descriptive filenames
 8. **Include legends** - Every Draw.io diagram needs a legend
 9. **Add alt text** - All image links need descriptive alt text
-10. **Respect BNZ standards** - Use visual design standard colors and styles
+10. **Follow visual standards** - Use your organization's design standard colors and styles
 
 ### Work Management Rules (Batch Operations)
 
@@ -1115,6 +1115,5 @@ Could not save `{filename}`:
 
 - [AGENTS.md](AGENTS.md) - Agent rules and boundaries (including work management integration)
 - [README.md](README.md) - Overview and concepts
-- [05-governance/standards/visual-design/visual-design-standard.md](../../05-governance/standards/visual-design/visual-design-standard.md) - Visual standards
 - [../work-management/AGENTS.md](../work-management/AGENTS.md) - Work management agent rules
 - [../work-management/progress-work.md](../work-management/progress-work.md) - Progress tracking protocol

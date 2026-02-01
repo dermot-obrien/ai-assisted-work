@@ -245,7 +245,7 @@ These rules are absolute and must not be violated:
    - Preserve ambiguity rather than resolve it incorrectly.
 
 8. **NEVER create diagrams that violate Visual Standards**
-   - Follow color scheme from visual-design-standard.md.
+   - Follow your organization's color scheme and visual standards.
    - Include legends on all diagrams.
    - Meet accessibility requirements.
 
@@ -511,6 +511,5 @@ If user rejects a PNG:
 
 - [replace-ascii-diagrams.md](replace-ascii-diagrams.md) - Full workflow documentation
 - [README.md](README.md) - Overview and concepts
-- [05-governance/standards/visual-design/visual-design-standard.md](../../05-governance/standards/visual-design/visual-design-standard.md) - Visual standards
 - [../work-management/AGENTS.md](../work-management/AGENTS.md) - Work management agent rules
 - [../work-management/progress-work.md](../work-management/progress-work.md) - Progress tracking protocol
