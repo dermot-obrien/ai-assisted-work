@@ -199,7 +199,7 @@ The `/replace-ascii-diagrams` command walks through the complete workflow:
 
 ## Draw.io Diagram Standards
 
-All diagrams must follow Visual Design Standards:
+All diagrams should follow your organization's visual design standards. Below are recommended defaults:
 
 ### Colors
 
@@ -231,4 +231,3 @@ All diagrams must follow Visual Design Standards:
 
 - [AGENTS.md](AGENTS.md) - **Critical rules for AI agents** (read first)
 - [replace-ascii-diagrams.md](replace-ascii-diagrams.md) - Full workflow documentation
-- [05-governance/standards/visual-design/visual-design-standard.md](../../05-governance/standards/visual-design/visual-design-standard.md) - visual standards
