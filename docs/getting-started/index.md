@@ -7,7 +7,7 @@ Quick start guide for AI-Assisted Work.
 AI-Assisted Work provides domain-agnostic AI agents for:
 
 - **Work Management**: Track tasks, progress, and deliverables
-- **ASCII Image Conversion**: Convert ASCII diagrams to proper images
+- **Image Management**: Convert ASCII diagrams to proper images
 
 ## Quick Start
 
@@ -15,12 +15,12 @@ AI-Assisted Work provides domain-agnostic AI agents for:
 
 **Option A: Clone**
 ```bash
-git clone https://github.com/dermotcanniffe/ai-assisted-work.git
+git clone https://github.com/dermot-obrien/ai-assisted-work.git
 ```
 
 **Option B: Submodule**
 ```bash
-git submodule add https://github.com/dermotcanniffe/ai-assisted-work.git .ai-work
+git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
 ```
 
 ### 2. Set Up Cursor (Optional)
@@ -28,7 +28,7 @@ git submodule add https://github.com/dermotcanniffe/ai-assisted-work.git .ai-wor
 Copy rules to your project:
 ```bash
 mkdir -p .cursor/rules
-cp .ai-work/agents/cursor-rules/*.mdc .cursor/rules/
+cp .ai-assisted-work/.cursor/rules/aiaw-*.mdc .cursor/rules/
 ```
 
 ### 3. Start Your First Work Item
@@ -36,7 +36,7 @@ cp .ai-work/agents/cursor-rules/*.mdc .cursor/rules/
 In Cursor, type `/start-work` or tell your AI assistant:
 
 ```
-Follow the instructions in .ai-work/agents/work-management/start-work.md 
+Follow the instructions in .ai-assisted-work/agents/work-management/start-work.md 
 to create a work item for: "Research best practices for [topic]"
 ```
 
@@ -75,5 +75,5 @@ Start Work → Progress Work → [Status] → Complete Work
 ## Next Steps
 
 - [Work Management Agents](../agents/work-management/index.md)
-- [ASCII Image Agents](../agents/ascii-image/index.md)
+- [Image Management Agents](../agents/image-management/index.md)
 - [Integration Guide](../integration/index.md)

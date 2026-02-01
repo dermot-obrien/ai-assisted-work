@@ -2,15 +2,38 @@
 
 How to integrate AI-Assisted Work into your projects.
 
+> **New to AI-Assisted Work?** See [Command Discovery](command-discovery.md) to understand how commands work across different AI assistants (Cursor, GitHub Copilot, Claude Code).
+
 ## Integration Options
 
 ### Option 1: Git Submodule (Recommended)
 
-Best for: Projects wanting to stay current with updates.
+Best for: Projects wanting to stay current with updates and contribute back.
 
+**Step 1: Fork the repository** (enables contributions)
+
+1. Go to [https://github.com/dermot-obrien/ai-assisted-work](https://github.com/dermot-obrien/ai-assisted-work)
+2. Click "Fork" to create your own copy
+3. Your fork is at: `https://github.com/YOUR-USERNAME/ai-assisted-work`
+
+**Step 2: Add your fork as a submodule**
+
+Linux/Mac:
 ```bash
-# Add as submodule
-git submodule add https://github.com/dermotcanniffe/ai-assisted-work.git .ai-work
+# Add your fork as submodule
+git submodule add https://github.com/YOUR-USERNAME/ai-assisted-work.git .ai-assisted-work
+
+# Initialize
+git submodule update --init
+
+# Update later
+git submodule update --remote
+```
+
+Windows (PowerShell):
+```powershell
+# Add your fork as submodule
+git submodule add https://github.com/YOUR-USERNAME/ai-assisted-work.git .ai-assisted-work
 
 # Initialize
 git submodule update --init
@@ -22,54 +45,72 @@ git submodule update --remote
 **Structure:**
 ```
 your-project/
-├── .ai-work/              # Submodule
+├── .ai-assisted-work/          # Submodule (your fork)
 │   └── agents/
-├── work/                  # Your work items
-└── .cursor/rules/         # Symlink or copy from .ai-work
+├── work/                       # Your work items
+└── .cursor/rules/              # Copy from .ai-assisted-work
 ```
 
 ### Option 2: Direct Copy
 
 Best for: One-time use, heavy customization.
 
+1. Download or clone the repository
+2. Copy the `agents/` folder to your project
+
+Linux/Mac:
 ```bash
-# Copy agents folder
-cp -r ai-assisted-work/agents/ your-project/.agents/
+cp -r ai-assisted-work/agents/ your-project/.ai-assisted-work/agents/
 ```
 
-### Option 3: Fork
+Windows (PowerShell):
+```powershell
+Copy-Item -Recurse ai-assisted-work\agents\ your-project\.ai-assisted-work\agents\
+```
 
-Best for: Organizations wanting full control.
+### Option 3: Fork Only
+
+Best for: Organizations wanting full control without submodules.
 
 1. Fork the repository on GitHub
-2. Clone your fork
+2. Clone your fork directly into your project structure
 3. Customize as needed
-4. Use as submodule in projects
 
 ---
 
 ## Cursor Integration
 
-### Copy Rules
+### Copy Rules (Won't Overwrite)
 
+The Cursor rule files use an `aiaw-` prefix (`aiaw-start-work.mdc`, `aiaw-progress-work.mdc`, etc.) so they won't overwrite your existing rules.
+
+Linux/Mac:
 ```bash
-# From submodule
-cp .ai-work/agents/cursor-rules/*.mdc .cursor/rules/
+# Create rules directory if needed
+mkdir -p .cursor/rules
 
-# Or symlink (Unix/Mac)
-ln -s ../.ai-work/agents/cursor-rules/*.mdc .cursor/rules/
+# Copy from submodule
+cp .ai-assisted-work/.cursor/rules/aiaw-*.mdc .cursor/rules/
+```
+
+Windows (PowerShell):
+```powershell
+# Create rules directory if needed
+New-Item -ItemType Directory -Force -Path .cursor\rules
+
+# Copy from submodule
+Copy-Item .ai-assisted-work\.cursor\rules\aiaw-*.mdc .cursor\rules\
 ```
 
 ### Available Commands
 
-| Command | Purpose |
-|---------|---------|
-| `/start-work` | Initialize new work item |
-| `/progress-work` | Continue work |
-| `/work-status` | Check status |
-| `/pivot-work` | Rescope |
-| `/complete-work` | Finish work |
-| `/replace-ascii` | Convert ASCII diagrams |
+| Command | Purpose | Agent File |
+|---------|---------|------------|
+| `/aiaw-start-work` | Initialize new work item | `.ai-assisted-work/agents/work-management/start-work.md` |
+| `/aiaw-progress-work` | Continue work on existing item | `.ai-assisted-work/agents/work-management/progress-work.md` |
+| `/aiaw-work-status` | Check status of work items | `.ai-assisted-work/agents/work-management/work-status.md` |
+| `/aiaw-pivot-work` | Rescope and replan | `.ai-assisted-work/agents/work-management/pivot-work.md` |
+| `/aiaw-replace-ascii-diagrams` | Convert ASCII diagrams to images | `.ai-assisted-work/agents/image-management/replace-ascii-diagrams.md` |
 
 ---
 
@@ -78,7 +119,7 @@ ln -s ../.ai-work/agents/cursor-rules/*.mdc .cursor/rules/
 Reference agents in prompts:
 
 ```bash
-claude "Follow the instructions in .ai-work/agents/work-management/start-work.md 
+claude "Follow the instructions in .ai-assisted-work/agents/work-management/start-work.md 
 to create a work item for: {description}"
 ```
 
@@ -86,12 +127,38 @@ to create a work item for: {description}"
 
 ## GitHub Copilot Integration
 
+### Option A: Direct Reference (Quick)
+
 Use `@workspace` with agent files:
 
 ```
-@workspace #file:.ai-work/agents/work-management/start-work.md
+@workspace #file:.ai-assisted-work/agents/work-management/start-work.md
 Initialize a work item for {description}
 ```
+
+### Option B: Custom Instructions (Recommended)
+
+Copy the delta file for reference and manual merge:
+
+Linux/Mac:
+```bash
+# Copy the delta file (unique name - won't overwrite anything)
+mkdir -p .github
+cp .ai-assisted-work/agents/github-copilot/copilot-instructions-ai-assisted-work.md .github/
+
+# Then manually merge content into your .github/copilot-instructions.md
+```
+
+Windows (PowerShell):
+```powershell
+# Copy the delta file (unique name - won't overwrite anything)
+New-Item -ItemType Directory -Force -Path .github
+Copy-Item .ai-assisted-work\agents\github-copilot\copilot-instructions-ai-assisted-work.md .github\
+
+# Then manually merge content into your .github\copilot-instructions.md
+```
+
+**Important:** The delta file has a unique name (`copilot-instructions-ai-assisted-work.md`) so it won't overwrite your existing `.github/copilot-instructions.md`. Open it and merge the command definitions into your file.
 
 ---
 
@@ -122,27 +189,28 @@ Customize the location by telling agents where to create work items.
 
 ```
 architecture-project/
-├── .ai-work/                    # AI-Assisted Work submodule
+├── .ai-assisted-work/           # AI-Assisted Work submodule (your fork)
 │   └── agents/
 ├── methodology/                 # Architecture-specific
 ├── building-blocks/             # Architecture-specific
-├── work/                        # Work items (use .ai-work agents)
+├── work/                        # Work items (use .ai-assisted-work agents)
 │   └── WI-001/
 │       ├── scope.md
 │       ├── plan.md
 │       └── progress.yaml
 └── .cursor/rules/
-    ├── start-work.mdc          # From .ai-work
-    └── architecture.mdc        # Architecture-specific
+    ├── aiaw-start-work.mdc     # From .ai-assisted-work
+    └── architecture.mdc        # Architecture-specific (your own)
 ```
 
 ### With Any Project Type
 
 The agents are domain-agnostic. Just:
 
-1. Add as submodule or copy
-2. Set up Cursor rules (optional)
-3. Start creating work items
+1. Fork the repository (enables contributions)
+2. Add your fork as submodule to `.ai-assisted-work/`
+3. Copy Cursor rules (optional)
+4. Start creating work items
 
 ---
 
@@ -154,7 +222,7 @@ Override templates in your project:
 
 ```
 your-project/
-├── .ai-work/                    # Submodule (don't modify)
+├── .ai-assisted-work/           # Submodule (don't modify)
 ├── templates/                   # Your overrides
 │   ├── scope.md                # Custom scope template
 │   └── plan.md                 # Custom plan template
@@ -169,12 +237,31 @@ Add project-specific agents:
 
 ```
 your-project/
-├── .ai-work/                    # Submodule
+├── .ai-assisted-work/           # Submodule
 ├── .agents/                     # Your custom agents
 │   └── code-review.md          # Project-specific agent
 └── .cursor/rules/
-    ├── start-work.mdc          # From .ai-work
+    ├── aiaw-start-work.mdc     # From .ai-assisted-work
     └── code-review.mdc         # Your custom rule
+```
+
+---
+
+## Contributing Back
+
+If you've forked the repository:
+
+1. Make improvements in your fork
+2. Create a pull request to the upstream repository
+3. Your changes can benefit the community
+
+```bash
+# Add upstream remote (one-time)
+git remote add upstream https://github.com/dermot-obrien/ai-assisted-work.git
+
+# Sync your fork with upstream
+git fetch upstream
+git merge upstream/main
 ```
 
 ---
@@ -183,6 +270,7 @@ your-project/
 
 ### Do
 
+- ✅ Fork first to enable contributions
 - ✅ Keep submodule up to date
 - ✅ Put work items in `work/` folder
 - ✅ Use consistent work item IDs
@@ -190,6 +278,6 @@ your-project/
 
 ### Don't
 
-- ❌ Modify files inside submodule
+- ❌ Modify files inside submodule directly
 - ❌ Scatter work items across project
 - ❌ Skip progress.yaml updates

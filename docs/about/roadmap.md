@@ -14,7 +14,7 @@ Development roadmap for AI-Assisted Work.
 - [x] Repository structure
 - [x] Work management agents (start, progress, status, pivot, complete)
 - [x] Work item templates (scope, plan, progress)
-- [x] ASCII image agents (detect, convert, replace)
+- [x] Image management agents (detect, convert, replace)
 - [x] Cursor rules integration
 - [x] Documentation structure
 - [x] Organization adoption guide
@@ -34,7 +34,7 @@ Development roadmap for AI-Assisted Work.
 | Item | Status |
 |------|--------|
 | Work management agent docs | 📝 In progress |
-| ASCII image agent docs | 📝 In progress |
+| Image management agent docs | 📝 In progress |
 | Integration guide | 📝 In progress |
 | Example work items | ⬜ Planned |
 
