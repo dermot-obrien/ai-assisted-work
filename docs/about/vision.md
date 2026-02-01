@@ -52,7 +52,7 @@ AI-Assisted Work provides a **reusable foundation**:
 │   ┌─────────────────────────────────────────────────────────────────────────┐   │
 │   │  AI-Assisted Work (Submodule)                                            │   │
 │   │  • Work management agents                                                │   │
-│   │  • ASCII image agents                                                    │   │
+│   │  • Image management agents                                               │   │
 │   │  • Common templates                                                      │   │
 │   └─────────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────────┘
@@ -84,7 +84,7 @@ Universal agents for managing any type of work:
 | **Pivot Work** | Rescope and replan | When requirements change |
 | **Complete Work** | Finalize and close | Universal |
 
-### 2. ASCII Image Agents
+### 2. Image Management Agents
 
 Convert ASCII diagrams regardless of domain:
 

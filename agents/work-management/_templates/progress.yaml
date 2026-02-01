@@ -1,0 +1,203 @@
+# Work Item Progress Tracking
+#
+# CONCURRENCY MODEL:
+# This file uses optimistic locking with version control.
+# Multiple workers (2-5 but no more than 10) can work on different activities in parallel.
+#
+# IMPORTANT - Read-Modify-Write Protocol:
+# 1. READ: Read this file, note the `version` number
+# 2. WORK: Do your analysis/work
+# 3. RE-READ: Before writing, read file again
+# 4. CHECK: If version changed, abort and restart from step 1
+# 5. WRITE: Increment version and write atomically
+#
+# If version conflict detected, another worker modified the file.
+# Re-read, merge your changes with theirs, and retry.
+#
+# FILE STRUCTURE:
+# - progress.yaml      : State only (this file) - versioned, conflicts detected
+# - changelog.log      : Append-only log - safe for concurrent appends
+# - locks/             : Lock files per activity - atomic create/delete
+#
+# SUPPORTED WORK TYPES:
+# - development: Software development (code, tests, deployments)
+# - architecture: System/Platform strategy and solution design (diagrams, documents, decisions, specifications)
+# - consultancy: Advisory work (stakeholder engagement, research, analysis, options, recommendations, deliverables)
+# - mixed: Combination of the above
+#
+# ID CONVENTIONS (hierarchical, globally unique):
+#   Activity ID: {work_item_id}-A{N}   e.g., WI-001-A1, WI-001-A2
+#   Task ID: {activity_id}-T{N}        e.g., WI-001-A1-T1, WI-001-A1-T2
+
+# === SCHEMA VERSION ===
+# Schema version tracks format changes for backward compatibility.
+# Agents reading older work items should apply defaults for missing fields.
+# See progress-work.md "Older Work Items (Backward Compatibility)" section.
+schema_version: 2             # v1 = no actor field; v2 = actor model, optional files_changed
+
+# === VERSIONING (for optimistic locking) ===
+version: 1                    # Increment on EVERY write - used for conflict detection
+last_modified: null           # ISO-8601 timestamp of last write
+last_modified_by: null        # Worker ID who last modified
+
+# === WORK ITEM IDENTITY ===
+work_item_id: WI-NNN
+title: "{Work Item Title}"
+type: development             # development | architecture | consultancy | mixed
+status: scoping               # scoping | discovery | planning | in_progress | blocked | review | abandoned | done
+
+# === TIMESTAMPS ===
+created: "{ISO-8601-timestamp}"
+updated: "{ISO-8601-timestamp}"
+
+# === ACTIVITIES ===
+# Each activity tracks its state here.
+# LOCKS are stored in separate lock files (see locks/ directory).
+# This reduces write contention on this file.
+#
+# ACTOR MODEL:
+# Tasks and activities can be assigned to specific actors:
+#   - agent: Can be done by AI agents (documentation, analysis, code)
+#   - human: Must be done by a human (portal configuration, meetings, approvals)
+#   - any: Either can do it (default if not specified)
+#
+# ACTIVITY ACTOR INFERENCE:
+# If all tasks in an activity have actor: human, the activity is human-only.
+# If any task has actor: agent or any, agents can claim the activity.
+# When an agent claims a mixed activity, it works agent/any tasks and
+# marks human tasks as "awaiting_human" for the manual tasks report.
+#
+# Examples by work type:
+#   Development: "Implement API endpoint", "Add unit tests", "Deploy to staging"
+#   Architecture: "Document current state", "Evaluate options", "Create diagrams"
+#   Consultancy: "Stakeholder interviews", "Gap analysis", "Write recommendations"
+activities:
+  - id: WI-NNN-A1              # Format: {work_item_id}-A{N}
+    title: "{Activity name - describes the outcome}"
+    status: pending            # pending | in_progress | awaiting_human | completed | blocked | skipped
+    actor: any                 # agent | human | any (inferred from tasks if not set)
+    depends_on: []             # Activity IDs that must complete first
+    completed_by: null         # Worker that completed all tasks
+    completed_at: null         # When activity was marked complete
+    
+    # Tasks within this activity (sequential, no external dependencies)
+    # Tasks within this activity (sequential, no external dependencies)
+    # Task status includes:
+    #   pending | in_progress | completed | blocked | skipped | awaiting_human
+    # awaiting_human: Agent marked this for Manual Tasks Report (human action required)
+    tasks:
+      - id: WI-NNN-A1-T1       # Format: {activity_id}-T{N}
+        title: "{First task in sequence}"
+        status: pending
+        actor: agent           # agent | human | any - who can perform this task
+        completed_by: null
+        completed_at: null
+        notes: null
+        deliverables: []
+      
+      - id: WI-NNN-A1-T2       # Format: {activity_id}-T{N}
+        title: "{Second task - depends on task 1}"
+        status: pending
+        actor: any             # Default: any worker can do this
+        completed_by: null
+        completed_at: null
+        notes: null
+        deliverables: []
+
+  - id: WI-NNN-A2
+    title: "{Another activity - can run in parallel with A1}"
+    status: pending
+    actor: human               # Explicit: only humans can do this activity
+    depends_on: []
+    completed_by: null
+    completed_at: null
+    tasks:
+      - id: WI-NNN-A2-T1
+        title: "{Human task - e.g., configure cloud console settings}"
+        status: pending
+        actor: human           # Requires human action
+        completed_by: null
+        completed_at: null
+        notes: null
+        deliverables: []
+
+  - id: WI-NNN-A3
+    title: "{Activity that depends on A1 and A2}"
+    status: pending
+    actor: any
+    depends_on: ["WI-NNN-A1", "WI-NNN-A2"]
+    completed_by: null
+    completed_at: null
+    tasks:
+      - id: WI-NNN-A3-T1
+        title: "{Task}"
+        status: pending
+        actor: agent
+        completed_by: null
+        completed_at: null
+        notes: null
+        deliverables: []
+
+# === BLOCKERS ===
+blockers: []
+  # - id: WI-NNN-B1
+  #   activity_id: WI-NNN-A1
+  #   task_id: WI-NNN-A1-T2
+  #   description: "Need clarification on X"
+  #   raised_at: "{ISO-8601-timestamp}"
+  #   raised_by: "{worker-id}"
+  #   resolved_at: null
+  #   resolution: null
+
+# === ARTIFACTS ===
+# Required documents:
+#   scope.md       - Created in Scoping Phase (stakeholder-facing specification)
+#   plan.md        - Created in Planning Phase (activities, tasks, dependencies)
+#   deliverables/  - Concrete outputs from activities
+# Recommended documents:
+#   scope-ai.md    - AI agent addendum (for complex work items)
+# Optional documents:
+#   changes.md     - Can be generated from this file when preparing PR
+#   changelog.log  - Append-only audit log (for multi-agent scenarios)
+#   research.md    - Research findings
+#   decisions.md   - Options and decisions (legacy - prefer deliverables/)
+#   notes.md       - Session logs, findings
+artifacts:
+  # Required
+  scope: "./scope.md"
+  plan: "./plan.md"
+  # Recommended
+  scope_ai: null               # Set to "./scope-ai.md" if created (recommended for complex items)
+  # Optional
+  changes: null                # Set to "./changes.md" if created (can generate from progress.yaml)
+  research: null               # Set to "./research.md" if created
+  decisions: null              # Set to "./decisions.md" if created (legacy)
+  notes: null                  # Set to "./notes.md" if created
+  # External integration
+  jira: null                   # JIRA ticket URL (created manually before work starts)
+  branch: null                 # Git branch: wi/WI-{NNN}-{kebab-name}
+  pr: null                     # Pull request URL (created when work complete)
+  # Work type specific
+  diagrams: []                 # Diagram files (architecture)
+  # Deliverables - concrete outputs from activities
+  # Every completed activity produces a deliverable (file, decision, or both)
+  # ID format: WI-NNN-D{NN} (e.g., WI-001-D01)
+  deliverables: []
+    # - id: "WI-NNN-D01"
+    #   title: "{Deliverable Name}"
+    #   path: "./deliverables/D01-{name}.md"
+    #   activity: "WI-NNN-A1"
+    #   status: "complete"       # complete | draft | pending
+    #   files_changed: []        # List of files created/modified by this deliverable
+    #     # - path: "path/to/file.md"
+    #     #   action: "created"  # created | modified | deleted
+
+# === LOCK DURATIONS (reference) ===
+# Locks are stored in locks/ directory, not in this file.
+# - Agents: 1 hour (activity), 30 min (task)
+# - Humans: 8 hours (activity), 4 hours (task)
+
+# === CHANGELOG (OPTIONAL) ===
+# For multi-agent scenarios, an optional changelog.log file can be created.
+# This file is append-only, which is safe for concurrent writes.
+# For single-agent work, the changelog is not required - progress.yaml is sufficient.

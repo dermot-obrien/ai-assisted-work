@@ -47,7 +47,7 @@ Design for **Git submodule** usage as primary integration method:
 
 ```
 domain-project/
-├── .ai-work/          # Submodule
+├── .ai-assisted-work/          # Submodule
 │   └── agents/
 └── work/              # Domain work items
 ```
@@ -247,20 +247,20 @@ Open contribution model with quality gates:
 
 ---
 
-## DD-09: ASCII Image Separation
+## DD-09: Image Management Separation
 
 ### Context
 
-ASCII-to-image conversion is useful but separate from work management.
+Image management (ASCII-to-image conversion) is useful but separate from work management.
 
 ### Decision
 
-Keep ASCII image agents as **separate module**:
+Keep image management agents as **separate module**:
 
 ```
 agents/
 ├── work-management/    # Work tracking
-└── ascii-image/        # Diagram conversion
+└── image-management/   # Diagram conversion
 ```
 
 ### Rationale
@@ -315,5 +315,5 @@ status: "{STATUS}"
 | DD-06 | YAML for State | 2026-02 | Implemented |
 | DD-07 | Dual License | 2026-02 | Implemented |
 | DD-08 | Contribution Model | 2026-02 | Implemented |
-| DD-09 | ASCII Image Separation | 2026-02 | Implemented |
+| DD-09 | Image Management Separation | 2026-02 | Implemented |
 | DD-10 | Template Extensibility | 2026-02 | Implemented |

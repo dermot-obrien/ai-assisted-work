@@ -15,7 +15,7 @@ Include as a Git submodule in your projects:
 
 ```bash
 # Add submodule
-git submodule add https://github.com/dermotcanniffe/ai-assisted-work.git .ai-work
+git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
 
 # Update when needed
 git submodule update --remote
@@ -78,7 +78,7 @@ organization:
   short_name: "yourorg"
 
 upstream:
-  repository: "https://github.com/dermotcanniffe/ai-assisted-work"
+  repository: "https://github.com/dermot-obrien/ai-assisted-work"
   version_pinned: "1.0.0"
   auto_sync: false
 
@@ -215,11 +215,11 @@ cp overrides/templates/plan.md contrib-plan.md
 
 ```
 architecture-project/
-├── .ai-work/                    # Submodule
+├── .ai-assisted-work/                    # Submodule
 │   └── agents/
 ├── methodology/                 # Domain-specific
 ├── building-blocks/             # Domain-specific
-└── work/                        # Uses .ai-work agents
+└── work/                        # Uses .ai-assisted-work agents
 ```
 
 ### Pattern 2: Fork as Organizational Standard
@@ -232,7 +232,7 @@ org-work-standard/               # Your fork
 
 # All org projects use this fork
 project-a/
-├── .ai-work -> org-work-standard
+├── .ai-assisted-work -> org-work-standard
 └── ...
 ```
 

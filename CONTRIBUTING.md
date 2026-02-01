@@ -43,6 +43,31 @@ This project welcomes contributions from:
 - Tips and best practices
 - Integration patterns
 
+## Development Work Management
+
+When working on AI-Assisted Work itself, use the `/aiaw-self-*` Cursor commands to manage your work:
+
+| Command | Purpose |
+|---------|---------|
+| `/aiaw-self-start-work` | Create a new work item |
+| `/aiaw-self-progress-work` | Continue work on an item |
+| `/aiaw-self-work-status` | Check status of work items |
+| `/aiaw-self-pivot-work` | Rescope when requirements change |
+
+### Why /aiaw-self-* Commands?
+
+The standard `/start-work` commands point to `.ai-assisted-work/agents/...` for deployed usage. The `/aiaw-self-*` commands point to `agents/...` for developing this repository directly.
+
+### Example
+
+```
+/aiaw-self-start-work Create a work item to add validation schemas for progress.yaml
+```
+
+Work items are created in the `change/work-items/` folder.
+
+---
+
 ## Contribution Process
 
 ### For Minor Changes
@@ -149,8 +174,8 @@ Contributors are recognized in:
 
 ## Questions?
 
-- Open a [Discussion](https://github.com/dermotcanniffe/ai-assisted-work/discussions)
-- Create an [Issue](https://github.com/dermotcanniffe/ai-assisted-work/issues)
+- Open a [Discussion](https://github.com/dermot-obrien/ai-assisted-work/discussions)
+- Create an [Issue](https://github.com/dermot-obrien/ai-assisted-work/issues)
 
 ---
 
