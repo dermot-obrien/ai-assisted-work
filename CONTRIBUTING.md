@@ -148,6 +148,31 @@ When contributing templates:
 - Documentation of fields
 - Example filled-in versions
 
+## Attribution
+
+### Acknowledging the Original
+
+AI-Assisted Work was created by **Dermot O'Brien**. When you:
+
+- **Write** about the framework (blog posts, articles)
+- **Present** the framework (talks, demos)
+- **Teach** the framework (workshops, courses)
+- **Fork** or create derivatives
+
+Please consider crediting the original project and linking to this repository. This helps others find the source and supports the community.
+
+### Derivative Works
+
+If you create a derivative or fork:
+
+1. Keep the original LICENSE file
+2. Mention "Based on AI-Assisted Work by Dermot O'Brien" in your README
+3. Link to the original repository
+
+This isn't legally required, but it's appreciated and helps maintain a healthy open-source ecosystem.
+
+---
+
 ## Code of Conduct
 
 ### Standards
