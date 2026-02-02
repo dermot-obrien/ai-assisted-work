@@ -5,6 +5,8 @@
 
 **Domain-agnostic, reusable AI agents for work management and image processing.**
 
+Inspired by the [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) which is very aligned to Agile methods. This AI Assisted Work approach is not opinionated about any specific work management method and uses a simple Work Item -> Activity -> Task activity (which can map to Epic, Story and Task in an Agile workflow). 
+
 AI Assisted Work provides structured agents that help AI assistants (Cursor, GitHub Copilot, Claude Code) manage work items through their lifecycle and convert ASCII diagrams to professional images. It's designed to be included in your projects via Git submodule or copy-paste.
 
 ## Key Features
