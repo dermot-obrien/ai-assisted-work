@@ -133,7 +133,13 @@ If you prefer to skip JIRA integration, we can proceed without it.
 
 Once intent is confirmed, **use write operations** to create files:
 
-1. **Discover work items location** - search in order:
+1. **Determine visibility** - based on user request or clarification:
+   - **Shared** (default): Work item will be committed, visible to others
+   - **Private**: Work item is gitignored, for personal/sensitive work
+
+2. **Discover work items location** based on visibility:
+
+   **For shared work items (WI-NNN)**:
    - `00-change/work-items/` (preferred)
    - `work-items/` (root)
    - `docs/3-work/work-items/` (legacy)
@@ -141,18 +147,33 @@ Once intent is confirmed, **use write operations** to create files:
    
    If none exist, create `00-change/work-items/`
 
-2. **Find next ID** - scan discovered location for `WI-*/` folders, find highest number, increment
-3. Work Item ID format: `WI-{NNN}` (zero-padded: 001, 002, etc.)
-4. Create folder structure:
+   **For private work items (WIP-NNN)**:
+   - `00-change/work-items-private/` (preferred)
+   - `work-items-private/` (root)
+   - Any `**/work-items-private/` subfolder
+   
+   If none exist, create `00-change/work-items-private/`
+
+3. **Find next ID** - scan discovered location for existing folders:
+   - For shared: scan for `WI-*/` folders, find highest number, increment
+   - For private: scan for `WIP-*/` folders, find highest number, increment
+   
+   **Note**: Shared and private numbering are independent (WI-001 and WIP-001 are different work items)
+
+4. **Work Item ID format**:
+   - Shared: `WI-{NNN}` (zero-padded: 001, 002, etc.)
+   - Private: `WIP-{NNN}` (zero-padded: 001, 002, etc.)
+
+5. Create folder structure:
    ```
-   {work-items-location}/WI-{NNN}-{kebab-case-title}/
+   {work-items-location}/{PREFIX}-{NNN}-{kebab-case-title}/
    ├── deliverables/     # Create empty folder for activity outputs
    └── locks/            # Create empty folder for activity locks
    ```
-4. Create **scope document(s)**:
+6. Create **scope document(s)**:
    - `scope.md` using template from `./_templates/scope.md` - stakeholder-facing specification (required)
    - `scope-ai.md` using template from `./_templates/scope-ai.md` - AI agent addendum (recommended for complex work items)
-5. If a JIRA URL was provided, record it for later inclusion in `progress.yaml`
+7. If a JIRA URL was provided, record it for later inclusion in `progress.yaml`
 
 **Document separation guidelines:**
 
