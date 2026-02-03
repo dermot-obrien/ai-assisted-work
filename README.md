@@ -24,7 +24,7 @@ Both deployment methods place AI-Assisted Work in an isolated `.ai-assisted-work
 | Method | Best For | Updates | Customization |
 |--------|----------|---------|---------------|
 | **[Git Submodule](DEPLOYMENT.md#deployment-method-1-git-submodule-recommended)** | Most users | `git pull` | Fork and modify. |
-| **[Copy-Paste](DEPLOYMENT.md#deployment-method-2-copy-paste)** | One-time use | Manual | Edit freely. |
+| **[Copy-Paste](DEPLOYMENT.md#deployment-method-1-git-submodule-recommended)** | One-time use | Manual | Edit freely. |
 
 **See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions.**
 
