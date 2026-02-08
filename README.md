@@ -1,18 +1,21 @@
 # AI Assisted Work
 
+[![Version: v0.0.1](https://img.shields.io/badge/Version-v0.0.1-purple.svg)](https://opensource.org/licenses/MIT)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-**Domain-agnostic, reusable AI agents for work management and image processing.**
+**Domain-agnostic, reusable AI agents for work management.**
 
-AI Assisted Work provides structured agents that help AI assistants (Cursor, GitHub Copilot, Claude Code) manage work items through their lifecycle and convert ASCII diagrams to professional images. It's designed to be included in your projects via Git submodule or copy-paste.
+This AI Assisted Work (AAW) method is not opinionated about any specific work management method and uses a simple `Work Item` → `Activity`→ `Task` hierarchy (which can map to `Epic`, `Story` and `Task` in an Agile workflow). Inspired by the [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) which is better if you want to specifically align to Agile methods. 
+
+AI Assisted Work provides structured agents that help AI assistants (Cursor, GitHub Copilot, Claude Code) manage complex work items through their lifecycle. It also includes utility commands such as converting ASCII diagrams to images. It is designed to be included in your projects via Git submodule or copy-paste.
 
 ## Key Features
 
 | Category | Agents | Purpose |
 |----------|--------|---------|
 | **Work Management** | Start, Progress, Pivot, Status | Manage work items with scope, planning, and progress tracking. Enable multiple agents to work on the same work item without conflict. Support agents continuing to work on a work item after unexpected failures and pick up where the last agent got to. |
-| **Image Management** | Replace ASCII Diagrams | Convert ASCII diagrams to PNG/Draw.io images. Allow agents to reason and iterate on documents with ASCII diagrams and, once the document is stable, convert those ASCII images to PNGs and editable Draw.io diagrams. |
+| **Image Management** | Replace ASCII Diagrams | Convert ASCII diagrams to editable Draw.io diagrams and then to PNG images. Allow agents to reason and iterate on documents with ASCII diagrams and, once the document is stable, convert those ASCII diagrams to editable Draw.io diagrams and PNGs. |
 
 ## Deployment
 
@@ -21,7 +24,7 @@ Both deployment methods place AI-Assisted Work in an isolated `.ai-assisted-work
 | Method | Best For | Updates | Customization |
 |--------|----------|---------|---------------|
 | **[Git Submodule](DEPLOYMENT.md#deployment-method-1-git-submodule-recommended)** | Most users | `git pull` | Fork and modify. |
-| **[Copy-Paste](DEPLOYMENT.md#deployment-method-2-copy-paste)** | One-time use | Manual | Edit freely. |
+| **[Copy-Paste](DEPLOYMENT.md#deployment-method-1-git-submodule-recommended)** | One-time use | Manual | Edit freely. |
 
 **See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions.**
 
