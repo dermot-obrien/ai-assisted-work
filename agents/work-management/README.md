@@ -74,10 +74,16 @@ Work items are created in a designated folder. The location depends on your proj
 
 #### Visibility Options
 
-| Location Pattern | Visibility | Use Case |
-|------------------|------------|----------|
-| `work-items/` or `change/work-items/` | **Shared** (committed) | Work others can see, reference, learn from |
-| `work-items-private/` or `change/work-items-private/` | **Private** (gitignored) | Personal rationale, experiments, sensitive decisions |
+| Location Pattern | Visibility | ID Prefix | Use Case |
+|------------------|------------|-----------|----------|
+| `work-items/` or `change/work-items/` | **Shared** (committed) | `WI-NNN` | Work others can see, reference, learn from |
+| `work-items-private/` or `change/work-items-private/` | **Private** (gitignored) | `WIP-NNN` | Personal rationale, experiments, sensitive decisions |
+
+**ID Prefix Convention**:
+- **WI-NNN** = Work Item (shared, committed)
+- **WIP-NNN** = Work Item Private (gitignored)
+
+This allows independent numbering - `WI-001` and `WIP-001` are different work items in different locations. When you see an ID, you immediately know where to find it.
 
 #### Choosing Visibility
 
@@ -147,11 +153,14 @@ An **activity** is the unit of work assignment. A worker claims and locks an act
 
 | Entity | Format | Example |
 |--------|--------|---------|
-| Work Item | `WI-{NNN}` | `WI-001`, `WI-042` |
-| Activity | `{work_item_id}-A{N}` | `WI-001-A1`, `WI-001-A2` |
-| Task | `{activity_id}-T{N}` | `WI-001-A1-T1`, `WI-001-A1-T2` |
-| Deliverable | `{work_item_id}-D{NN}` | `WI-001-D01`, `WI-001-D02` |
-| Blocker | `{work_item_id}-B{N}` | `WI-001-B1`, `WI-001-B2` |
+| Work Item (shared) | `WI-{NNN}` | `WI-001`, `WI-042` |
+| Work Item (private) | `WIP-{NNN}` | `WIP-001`, `WIP-042` |
+| Activity | `{work_item_id}-A{N}` | `WI-001-A1`, `WIP-001-A2` |
+| Task | `{activity_id}-T{N}` | `WI-001-A1-T1`, `WIP-001-A1-T2` |
+| Deliverable | `{work_item_id}-D{NN}` | `WI-001-D01`, `WIP-001-D02` |
+| Blocker | `{work_item_id}-B{N}` | `WI-001-B1`, `WIP-001-B2` |
+
+**Note**: The `WI-` vs `WIP-` prefix indicates visibility. Numbering is independent per location.
 
 ### Activity Dependencies
 
@@ -619,20 +628,32 @@ If version conflict detected in `progress.yaml`:
 
 ### Work Items Location Discovery
 
-Work items are located using a **discovery approach** rather than a hardcoded path. Search in this order:
+Work items are located using a **discovery approach** rather than a hardcoded path.
 
+**For shared work items** (WI-NNN), search in this order:
 1. `00-change/work-items/` (preferred location)
 2. `work-items/` (legacy location at root)
 3. `docs/3-work/work-items/` (legacy nested location)
 4. Any `**/work-items/` subfolder in the workspace
 
-**When creating new work items**, use the first location that exists. If none exist, create `00-change/work-items/`.
+**For private work items** (WIP-NNN), search in this order:
+1. `00-change/work-items-private/` (preferred location)
+2. `work-items-private/` (legacy location at root)
+3. Any `**/work-items-private/` subfolder in the workspace
 
-**Work Item ID format**: `WI-{NNN}` (zero-padded: 001, 002, etc.)
+**When creating new work items**:
+- **Shared**: Use the first `work-items/` location that exists. If none exist, create `00-change/work-items/`.
+- **Private**: Use the first `work-items-private/` location that exists. If none exist, create `00-change/work-items-private/`.
 
-**Folder naming**: `WI-{NNN}-{kebab-case-title}/`
+**Work Item ID format**:
+- Shared: `WI-{NNN}` (zero-padded: 001, 002, etc.)
+- Private: `WIP-{NNN}` (zero-padded: 001, 002, etc.)
 
-To find the next available ID, scan all discovered work item folders and increment the highest number found.
+**Folder naming**:
+- Shared: `WI-{NNN}-{kebab-case-title}/`
+- Private: `WIP-{NNN}-{kebab-case-title}/`
+
+**Finding the next available ID**: Scan the appropriate location for existing work item folders and increment the highest number found. Shared and private numbering are independent.
 
 ## Decision Trees
 
