@@ -202,24 +202,27 @@ activities:
 
 ---
 
-## DD-07: Dual License (MIT + CC BY 4.0)
+## DD-07: Dual License (AGPL-3.0 + Commercial + CC BY 4.0)
 
 ### Context
 
-Repository contains both code/agents and documentation.
+Repository contains both code/agents and documentation. Need to balance open-source availability with ensuring compensation for commercial use.
 
 ### Decision
 
-Dual license:
+Dual license for code, single license for docs:
 
-- **MIT** for agents, scripts, templates
+- **AGPL-3.0** for agents, scripts, templates (free for open-source use)
+- **Commercial License** required for proprietary/commercial use
 - **CC BY 4.0** for documentation
 
 ### Rationale
 
-- MIT: Maximum code reuse, permissive
+- AGPL-3.0: Ensures commercial users either open-source their code or purchase a license
+- Closes SaaS loophole (network use requires source sharing)
+- Commercial license: Generates revenue from proprietary use cases
 - CC BY 4.0: Attribution for documentation
-- Standard approach for mixed content
+- Common approach for open-core/dual-licensed projects (MySQL, Qt, etc.)
 
 ---
 

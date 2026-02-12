@@ -1,8 +1,9 @@
 # AI Assisted Work
 
 [![Version: v0.0.1](https://img.shields.io/badge/Version-v0.0.1-purple.svg)](https://opensource.org/licenses/MIT)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Commercial License Available](https://img.shields.io/badge/Commercial-License%20Available-green.svg)](LICENSE-COMMERCIAL.txt)
+[![Docs License: CC BY 4.0](https://img.shields.io/badge/Docs-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
 **Domain-agnostic, reusable AI agents for work management.**
 
@@ -59,8 +60,23 @@ Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
+This project is dual-licensed:
+
+### For Open Source Use
+- **Code/Agents**: [AGPL-3.0](LICENSE-AGPL-3.0.txt) - Free for open-source projects
 - **Documentation**: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-- **Code/Agents**: [MIT License](LICENSE)
+
+### For Commercial Use
+If you want to use this software in a proprietary/commercial product or cannot comply with AGPL-3.0 requirements (e.g., you don't want to open-source your application), you must obtain a [Commercial License](LICENSE-COMMERCIAL.txt).
+
+**Commercial use includes:**
+- Proprietary or closed-source applications
+- SaaS or hosted services without open-sourcing your code
+- Any use where AGPL-3.0 compliance is not possible
+
+**Contact for commercial licensing:** [Add your email]
+
+See [LICENSE](LICENSE) for details.
 
 ## Author
 

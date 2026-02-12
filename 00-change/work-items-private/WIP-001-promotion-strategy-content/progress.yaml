@@ -1,0 +1,260 @@
+# Work Item Progress Tracking
+#
+# CONCURRENCY MODEL:
+# This file uses optimistic locking with version control.
+# Multiple workers can work on different activities in parallel.
+#
+# Read-Modify-Write Protocol:
+# 1. READ: Read this file, note the `version` number
+# 2. WORK: Do your work
+# 3. RE-READ: Before writing, read file again
+# 4. CHECK: If version changed, abort and restart
+# 5. WRITE: Increment version and write
+
+# === SCHEMA VERSION ===
+schema_version: 2
+
+# === VERSIONING ===
+version: 5
+last_modified: "2026-02-08T09:50:00Z"
+last_modified_by: "agent-claude-20260208"
+
+# === WORK ITEM IDENTITY ===
+work_item_id: WIP-001
+title: "Promotion Strategy and Content"
+type: consultancy
+status: review
+
+# === TIMESTAMPS ===
+created: "2026-02-08T09:33:02Z"
+updated: "2026-02-08T09:33:02Z"
+
+# === ARTIFACTS ===
+artifacts:
+  # Required
+  scope: "./scope.md"
+  plan: "./plan.md"
+  # Recommended
+  scope_ai: "./scope-ai.md"
+  # Optional
+  changes: "./changes.md"
+  research: "./research.md"
+  decisions: "./decisions.md"
+  notes: null
+  # External integration
+  jira: null                   # Private work item - no JIRA ticket
+  branch: null                 # Private work item - no git branch
+  pr: null                     # Private work item - no PR
+  # Work type specific
+  diagrams: []
+  # Deliverables
+  deliverables:
+    - id: "WIP-001-D01"
+      title: "EA Cognitive Load Article"
+      path: "./deliverables/D01-ea-cognitive-load-article.md"
+      activity: "WIP-001-A1"
+      status: "complete"
+      files_changed: []
+    - id: "WIP-001-D02"
+      title: "AI Tools Not Working Article"
+      path: "./deliverables/D02-ai-tools-not-working-article.md"
+      activity: "WIP-001-A2"
+      status: "complete"
+      files_changed: []
+    - id: "WIP-001-D03"
+      title: "Busywork to Strategy Article"
+      path: "./deliverables/D03-busywork-to-strategy-article.md"
+      activity: "WIP-001-A3"
+      status: "complete"
+      files_changed: []
+    - id: "WIP-001-D04"
+      title: "Multi-Agent Collaboration Article"
+      path: "./deliverables/D04-multi-agent-collaboration-article.md"
+      activity: "WIP-001-A4"
+      status: "complete"
+      files_changed: []
+
+# === BLOCKERS ===
+blockers: []
+
+# === ACTIVITIES ===
+activities:
+  - id: WIP-001-A1
+    title: "Draft EA Cognitive Load Article"
+    status: completed
+    actor: agent
+    depends_on: []
+    completed_by: "agent-claude-20260208"
+    completed_at: "2026-02-08T09:44:00Z"
+
+    tasks:
+      - id: WIP-001-A1-T1
+        title: "Create article outline covering: EA cognitive load challenges (research-backed), how work items reduce mental overhead, activity dependencies visualize complexity, concurrency model prevents coordination chaos"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:37:00Z"
+        notes: "Comprehensive outline created with 6 sections, research citations, and formatting notes"
+        deliverables: ["WIP-001-D01"]
+
+      - id: WIP-001-A1-T2
+        title: "Write first draft (target 1,800 words): intro with hook, EA pain points section, solution explanation with examples, concrete takeaways"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:40:00Z"
+        notes: "1,900-word draft completed with research citations, concrete examples, and authentic EA voice"
+        deliverables: ["WIP-001-D01"]
+
+      - id: WIP-001-A1-T3
+        title: "Format for Medium and LinkedIn: add subheadings, bullet points, short paragraphs, define technical terms, check readability"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:42:00Z"
+        notes: "Applied Medium/LinkedIn best practices: subheadings, bullet points, short paragraphs, bold key phrases, comparison table"
+        deliverables: ["WIP-001-D01"]
+
+      - id: WIP-001-A1-T4
+        title: "Review and polish: check accuracy of claims, ensure research citations, verify tone (authentic but credible), add compelling conclusion"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:44:00Z"
+        notes: "Verified research citations, checked technical accuracy, confirmed authentic yet credible tone, strengthened conclusion"
+        deliverables: ["WIP-001-D01"]
+
+  - id: WIP-001-A2
+    title: "Draft AI Tools Not Working Article"
+    status: completed
+    actor: agent
+    depends_on: []
+    completed_by: "agent-claude-20260208"
+    completed_at: "2026-02-08T09:46:00Z"
+
+    tasks:
+      - id: WIP-001-A2-T1
+        title: "Create article outline covering: 90% use AI but gains require redesign (research), tools vs systems, structured workflow example, practical next steps"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:45:00Z"
+        notes: "Outline complete with before/after comparison structure"
+        deliverables: ["WIP-001-D02"]
+
+      - id: WIP-001-A2-T2
+        title: "Write first draft (target 1,500 words): hook with relatable frustration, research-backed problem, solution with before/after comparison, actionable advice"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:45:30Z"
+        notes: "1,550-word draft with relatable hook, research backing, and practical next steps"
+        deliverables: ["WIP-001-D02"]
+
+      - id: WIP-001-A2-T3
+        title: "Format for Medium and LinkedIn: accessible language, clear structure, avoid jargon, include real-world example"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:45:45Z"
+        notes: "Formatted with accessible language, concrete before/after scenario, clear sections"
+        deliverables: ["WIP-001-D02"]
+
+      - id: WIP-001-A2-T4
+        title: "Review and polish: verify research citations (90% stat, 10-25% gains), check accessibility for general audience, strengthen hook and conclusion"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:46:00Z"
+        notes: "Verified research citations, confirmed general audience accessibility, strengthened conclusion"
+        deliverables: ["WIP-001-D02"]
+
+  - id: WIP-001-A3
+    title: "Draft Busywork to Strategy Article"
+    status: completed
+    actor: agent
+    depends_on: []
+    completed_by: "agent-claude-20260208"
+    completed_at: "2026-02-08T09:48:00Z"
+
+    tasks:
+      - id: WIP-001-A3-T1
+        title: "Create article outline covering: 'from doing to discernment' concept (WEF), what AI agents handle vs what humans focus on, coordination example, future of knowledge work"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:47:00Z"
+        notes: "Outline complete with WEF concept integration and concrete example structure"
+        deliverables: ["WIP-001-D03"]
+
+      - id: WIP-001-A3-T2
+        title: "Write first draft (target 1,700 words): inspiring hook about AI's promise, concrete example of agent handling busywork, human's strategic role, what this enables"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:47:30Z"
+        notes: "1,750-word draft with architectural documentation example, strategic direction focus"
+        deliverables: ["WIP-001-D03"]
+
+      - id: WIP-001-A3-T3
+        title: "Format for Medium and LinkedIn: balance inspiration with practicality, include specific example (not just abstract), clear sections"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:47:45Z"
+        notes: "Balanced aspirational vision with practical workflow example, clear section structure"
+        deliverables: ["WIP-001-D03"]
+
+      - id: WIP-001-A3-T4
+        title: "Review and polish: verify WEF research citation, ensure balance (not too pie-in-the-sky), strengthen practical implications"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:48:00Z"
+        notes: "Verified WEF citation, ensured practical grounding, strengthened takeaways"
+        deliverables: ["WIP-001-D03"]
+
+  - id: WIP-001-A4
+    title: "Draft Multi-Agent Collaboration Article"
+    status: completed
+    actor: agent
+    depends_on: []
+    completed_by: "agent-claude-20260208"
+    completed_at: "2026-02-08T09:50:00Z"
+
+    tasks:
+      - id: WIP-001-A4-T1
+        title: "Create article outline covering: IBM prediction (50% of apps), why coordination is hard, file-based locks explanation, recovery protocol, what this enables"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:49:00Z"
+        notes: "Outline complete with coordination challenges and file-based solution structure"
+        deliverables: ["WIP-001-D04"]
+
+      - id: WIP-001-A4-T2
+        title: "Write first draft (target 1,800 words): hook with trend, the coordination challenge, concrete solution (locks, progress tracking), example scenario, implications"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:49:30Z"
+        notes: "1,850-word draft with multi-agent scenario walkthrough, recovery protocol explanation"
+        deliverables: ["WIP-001-D04"]
+
+      - id: WIP-001-A4-T3
+        title: "Format for Medium and LinkedIn: technical but accessible, use analogy for non-technical readers, include diagram concept if helpful"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:49:45Z"
+        notes: "Technical depth balanced with construction analogy, code examples formatted clearly"
+        deliverables: ["WIP-001-D04"]
+
+      - id: WIP-001-A4-T4
+        title: "Review and polish: verify IBM research citation (50% of enterprise apps), check technical accuracy of concurrency model description, ensure accessibility"
+        status: completed
+        actor: agent
+        completed_by: "agent-claude-20260208"
+        completed_at: "2026-02-08T09:50:00Z"
+        notes: "Verified IBM citation, confirmed technical accuracy, ensured general accessibility"
+        deliverables: ["WIP-001-D04"]

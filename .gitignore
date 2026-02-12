@@ -16,6 +16,7 @@ node_modules/
 # Agents.
 /.cursor/
 /.claude/
+CLAUDE.md
 
 # OS
 .DS_Store
