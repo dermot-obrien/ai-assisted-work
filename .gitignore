@@ -27,3 +27,7 @@ scratch/
 # Private work items (not committed)
 change/work-items-private/
 change/work-items-private
+
+# Private initiatives (not committed)
+change/initiatives-private/
+**/initiatives-private/

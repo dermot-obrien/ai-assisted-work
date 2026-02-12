@@ -1,0 +1,51 @@
+# Initiative Progress Tracking
+#
+# Initiatives are strategic containers that group related Work Items.
+# Unlike Work Items, Initiatives do NOT have activities, tasks, or locks.
+# Progress is tracked by monitoring the status of child Work Items.
+#
+# ID CONVENTIONS:
+#   Initiative (shared):  IN-{NNN}   e.g., IN-001, IN-042
+#   Initiative (private): INP-{NNN}  e.g., INP-001, INP-003
+#
+# STATES:
+#   proposed   - Identified, scope being defined. No Work Items yet.
+#   active     - Work Items being created/progressed.
+#   on_hold    - Paused. Existing Work Items may remain.
+#   completed  - All Work Items done, outcomes achieved.
+#   done       - Verified and closed.
+#   cancelled  - Abandoned. Reason documented.
+
+# === IDENTITY ===
+initiative_id: IN-NNN
+title: "{Initiative Title}"
+status: proposed            # proposed | active | on_hold | completed | done | cancelled
+owner: null                 # Person or agent responsible for strategic direction
+
+# === TIMESTAMPS ===
+created: "{ISO-8601-timestamp}"
+updated: "{ISO-8601-timestamp}"
+
+# === TIME HORIZON ===
+target_start: null          # Target start quarter, e.g., "2026-Q1"
+target_end: null            # Target end quarter, e.g., "2026-Q3"
+
+# === WORK ITEMS ===
+# Reference Work Items by ID. The Work Item's own progress.yaml is the source of truth.
+# Status here is a convenience mirror — update when checking Initiative status.
+work_items:
+  # - id: WI-NNN
+  #   title: "{Work Item title}"
+  #   status: planning         # Mirrors the WI's current status
+  #   path: "change/work-items/WI-NNN-{name}/"
+
+# === ARTIFACTS ===
+artifacts:
+  scope: "./scope.md"
+  notes: null                # Set to "./notes.md" if created
+
+# === NOTES ===
+# Optional structured notes for status tracking
+status_notes: null           # Brief note on current status, e.g., "Waiting on WI-005 API redesign"
+on_hold_reason: null         # Reason if status is on_hold
+cancelled_reason: null       # Reason if status is cancelled

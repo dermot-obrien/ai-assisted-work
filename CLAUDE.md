@@ -47,6 +47,7 @@ Critical rules from `agents/work-management/AGENTS.md`:
 
 | Entity | Format | Example |
 |--------|--------|---------|
+| Initiative | `IN-{NNN}` | `IN-001` |
 | Work Item | `WI-{NNN}` | `WI-001` |
 | Activity | `{work_item}-A{N}` | `WI-001-A1` |
 | Task | `{activity}-T{N}` | `WI-001-A1-T1` |
