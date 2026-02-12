@@ -13,21 +13,14 @@ node_modules/
 *.swp
 *~
 
+# Agents.
+/.cursor/
+/.claude/
+/.github/
+
 # OS
 .DS_Store
 Thumbs.db
 
-# Local
-.env
-*.local
-
-# Work in progress
-scratch/
-
-# Private work items (not committed)
+# Private work items (not committed).
 change/work-items-private/
-change/work-items-private
-
-# Private initiatives (not committed)
-change/initiatives-private/
-**/initiatives-private/
