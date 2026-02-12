@@ -1,6 +1,21 @@
-# Work Items
+# Work Management
 
-A **work item** is a bounded unit of work with a clear outcome or deliverable. It sits above the granularity of a simple task but below the level of a project or initiative. A work item has the following characteristics:
+## Work Hierarchy
+
+Work is organised into four levels, from strategic to operational:
+
+| Level | Term | Agile Equivalent | Time Horizon | Contains |
+|-------|------|-------------------|--------------|----------|
+| 4 (highest) | **Initiative** | Initiative (Jira Plans, Linear) | Quarter to 1 year | Work Items |
+| 3 | **Work Item** | Epic | 2 weeks to 1 quarter | Activities |
+| 2 | **Activity** | Story | 1 day to 2 weeks | Tasks |
+| 1 (lowest) | **Task** | Sub-task | Less than 1 day | — |
+
+**Initiatives** are optional strategic containers that group related Work Items toward a shared goal. Work Items function independently with or without an Initiative parent. See [Initiatives](#initiatives) for details.
+
+## Work Items
+
+A **work item** is a bounded unit of work with a clear outcome or deliverable. A work item has the following characteristics:
 
 > **AI Agents:** Read [AGENTS.md](AGENTS.md) before working with work items. It contains critical rules about concurrency, lock handling, and boundaries that must not be violated.
 
@@ -153,6 +168,8 @@ An **activity** is the unit of work assignment. A worker claims and locks an act
 
 | Entity | Format | Example |
 |--------|--------|---------|
+| Initiative (shared) | `IN-{NNN}` | `IN-001`, `IN-042` |
+| Initiative (private) | `INP-{NNN}` | `INP-001`, `INP-003` |
 | Work Item (shared) | `WI-{NNN}` | `WI-001`, `WI-042` |
 | Work Item (private) | `WIP-{NNN}` | `WIP-001`, `WIP-042` |
 | Activity | `{work_item_id}-A{N}` | `WI-001-A1`, `WIP-001-A2` |
@@ -160,7 +177,7 @@ An **activity** is the unit of work assignment. A worker claims and locks an act
 | Deliverable | `{work_item_id}-D{NN}` | `WI-001-D01`, `WIP-001-D02` |
 | Blocker | `{work_item_id}-B{N}` | `WI-001-B1`, `WIP-001-B2` |
 
-**Note**: The `WI-` vs `WIP-` prefix indicates visibility. Numbering is independent per location.
+**Note**: The prefix indicates type and visibility. Numbering is independent per location.
 
 ### Activity Dependencies
 
@@ -561,17 +578,22 @@ WI-001-A3: Integration      depends_on: [WI-001-A2]
 
 See `./_templates/` ([link](./_templates/)) for starter files:
 
-**Required:**
+**Initiative Templates:**
+
+- `initiative-scope.md` - Initiative scope (goals, success criteria, work item list)
+- `initiative-progress.yaml` - Initiative progress tracking (work item references)
+
+**Work Item Templates (Required):**
 
 - `scope.md` - Stakeholder-facing specification (summary, intent, acceptance criteria, scope, context)
 - `plan.md` - Implementation plan with activities
 - `progress.yaml` - Source of truth for state tracking (versioned for concurrency)
 
-**Recommended:**
+**Work Item Templates (Recommended):**
 
 - `scope-ai.md` - AI agent addendum (intent history, decision rationale) - for complex work items
 
-**Optional:**
+**Work Item Templates (Optional):**
 
 - `changes.md` - Files modified summary - can be generated from progress.yaml when preparing PR
 - `changelog.log` - Append-only event log - for multi-agent scenarios
@@ -654,6 +676,85 @@ Work items are located using a **discovery approach** rather than a hardcoded pa
 - Private: `WIP-{NNN}-{kebab-case-title}/`
 
 **Finding the next available ID**: Scan the appropriate location for existing work item folders and increment the highest number found. Shared and private numbering are independent.
+
+## Initiatives
+
+An **initiative** is a strategic container that groups related Work Items toward a shared goal. Initiatives are optional — Work Items function identically with or without a parent Initiative.
+
+### When to Use Initiatives
+
+- When multiple Work Items share a strategic goal spanning more than a quarter
+- When you need to track progress across related Work Items
+- When coordinating work across multiple agents or team members at a strategic level
+
+### Initiative Lifecycle
+
+| State | Description |
+|-------|-------------|
+| `proposed` | Identified, scope being defined. No Work Items yet. |
+| `active` | Work Items being created and/or progressed. |
+| `on_hold` | Paused. Existing Work Items may remain. |
+| `completed` | All Work Items done, outcomes achieved. |
+| `done` | Verified and closed. |
+| `cancelled` | Abandoned. Reason documented. |
+
+### Initiative Workspace
+
+Initiatives have a lightweight workspace compared to Work Items:
+
+```
+IN-{NNN}-{name}/
+├── scope.md          # [REQUIRED] Goals, success criteria, work item list
+├── progress.yaml     # [REQUIRED] Tracks work items and overall status
+└── notes.md          # [OPTIONAL] Strategic notes, decision log
+```
+
+No `plan.md`, `deliverables/`, or `locks/` — planning, deliverables, and concurrency control happen at the Work Item level.
+
+### Initiative ↔ Work Item Relationship
+
+Initiatives **reference** Work Items by ID. Work Items can optionally reference their parent Initiative via the `initiative_id` field in `progress.yaml`.
+
+```yaml
+# In Work Item progress.yaml (optional field)
+initiative_id: IN-001    # null = standalone work item
+```
+
+```yaml
+# In Initiative progress.yaml
+work_items:
+  - id: WI-005
+    title: "API Redesign"
+    status: in_progress
+    path: "change/work-items/WI-005-api-redesign/"
+```
+
+### Initiative Location Discovery
+
+**For shared Initiatives** (IN-NNN), search in order:
+1. `change/initiatives/` (preferred)
+2. `initiatives/` (root)
+3. Any `**/initiatives/` subfolder
+
+**For private Initiatives** (INP-NNN), search in order:
+1. `change/initiatives-private/` (preferred)
+2. `initiatives-private/` (root)
+3. Any `**/initiatives-private/` subfolder
+
+**When creating new Initiatives**: Use the first matching location. If none exist, create `change/initiatives/` (shared) or `change/initiatives-private/` (private).
+
+### WIP Limits (Recommended)
+
+| Constraint | Recommendation |
+|------------|---------------|
+| Active Initiatives per team | 2-3 maximum |
+| Work Items per Initiative | 2-8 typical, max 12 |
+
+### Initiative Templates
+
+See `./_templates/` for:
+- `initiative-scope.md` - Initiative scope template
+- `initiative-progress.yaml` - Initiative progress tracking template
 
 ## Decision Trees
 

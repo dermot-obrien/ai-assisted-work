@@ -264,6 +264,15 @@ If version changed between your read and write:
 11. **Forgetting to generate Manual Tasks Report** - humans need to know what's waiting for them
 12. **Claiming human-only activities** - check `actor` field before claiming; skip if all tasks are human
 
+## Initiative Awareness
+
+Work Items may optionally belong to an Initiative (a strategic container grouping related Work Items). When working on a Work Item:
+
+- **Check `initiative_id`** in progress.yaml — if set, the Work Item is part of an Initiative
+- **No special rules** — Initiative membership does not change how you work on a Work Item
+- **No Initiative-level locking** — Initiatives have no activities, tasks, or locks
+- **Optional context** — read the Initiative's `scope.md` if you need strategic context for the Work Item
+
 ## See Also
 
 - [progress-work.md](progress-work.md) - Full execution protocol
