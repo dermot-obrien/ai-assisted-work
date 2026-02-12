@@ -14,6 +14,7 @@ node_modules/
 *~
 
 # Agents.
+CLAUDE.md
 /.cursor/
 /.claude/
 /.github/
