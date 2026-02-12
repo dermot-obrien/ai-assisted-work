@@ -45,6 +45,7 @@ work_item_id: WI-NNN
 title: "{Work Item Title}"
 type: development             # development | architecture | consultancy | mixed
 status: scoping               # scoping | discovery | planning | in_progress | blocked | review | abandoned | done
+initiative_id: null            # Optional parent Initiative ID (e.g., IN-001). null = standalone work item.
 
 # === TIMESTAMPS ===
 created: "{ISO-8601-timestamp}"
