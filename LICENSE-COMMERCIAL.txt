@@ -1,10 +1,10 @@
 Commercial License for AI-Assisted Work
 
-Copyright (c) 2026 Dermot Canniffe. All rights reserved.
+Copyright (c) 2026 Dermot O'Brien. All rights reserved.
 
 COMMERCIAL LICENSE AGREEMENT
 
-This Commercial License Agreement ("Agreement") is between Dermot Canniffe
+This Commercial License Agreement ("Agreement") is between Dermot O'Brien
 ("Licensor") and the individual or entity obtaining this license ("Licensee").
 
 1. GRANT OF LICENSE
@@ -38,7 +38,7 @@ License fees are determined on a case-by-case basis depending on:
 - Distribution scope
 - Support requirements
 
-Contact Licensor for pricing: [Add your email]
+Contact Licensor for pricing: dermots.stuff@gmail.com
 
 5. WARRANTY DISCLAIMER
 
@@ -63,5 +63,5 @@ This Agreement is governed by the laws of [Your Jurisdiction].
 ---
 
 For questions or to obtain a commercial license, contact:
-Dermot Canniffe
-Email: [Add your email]
+Dermot O'Brien
+Email: dermots.stuff@gmail.com
