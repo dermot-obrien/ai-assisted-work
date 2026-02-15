@@ -370,11 +370,9 @@ Update work item status from `planning` to `in_progress` in progress.yaml.
 
 ### Step 1: Load Work Item Context
 
-1. **Discover work item location** - search for `WI-{NNN}-*/` in:
-   - `00-change/work-items/` (preferred)
-   - `work-items/` (root)
-   - `docs/3-work/work-items/` (legacy)
-   - Any `**/work-items/` subfolder
+1. **Discover work item location** - search for `WI-{NNN}-*/` or `WIP-{NNN}-*/` in:
+   - Any `work-items/` subfolder at any level
+   - Any `work-items-private/` subfolder or symlink at any level (follow symlinks)
 2. Read `{work-item-path}/progress.yaml` to see current state (source of truth)
 3. Read `{work-item-path}/scope.md` to understand the stakeholder-facing requirements
 4. Read `{work-item-path}/scope-ai.md` to understand intent formation, decision rationale, and agent instructions
@@ -626,7 +624,7 @@ When human tasks are pending, include the Manual Tasks Report (see above).
 
 If run without argument:
 
-1. Discover work items location and scan `{work-items-path}/WI-*/progress.yaml`
+1. Find any `work-items/` subfolder and any `work-items-private/` subfolder or symlink at any level. Scan for `WI-*/progress.yaml` and `WIP-*/progress.yaml`. Follow symlinks.
 2. Filter for `status` not equal to "done"
 3. Display list with activity status:
 
