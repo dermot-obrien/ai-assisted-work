@@ -652,16 +652,9 @@ If version conflict detected in `progress.yaml`:
 
 Work items are located using a **discovery approach** rather than a hardcoded path.
 
-**For shared work items** (WI-NNN), search in this order:
-1. `00-change/work-items/` (preferred location)
-2. `work-items/` (legacy location at root)
-3. `docs/3-work/work-items/` (legacy nested location)
-4. Any `**/work-items/` subfolder in the workspace
+**For shared work items** (WI-NNN): Find any `work-items/` subfolder at any level in the workspace.
 
-**For private work items** (WIP-NNN), search in this order:
-1. `00-change/work-items-private/` (preferred location)
-2. `work-items-private/` (legacy location at root)
-3. Any `**/work-items-private/` subfolder in the workspace
+**For private work items** (WIP-NNN): Find any `work-items-private/` subfolder or symlink at any level in the workspace. Follow symlinks and scan their contents.
 
 **When creating new work items**:
 - **Shared**: Use the first `work-items/` location that exists. If none exist, create `00-change/work-items/`.
@@ -669,7 +662,7 @@ Work items are located using a **discovery approach** rather than a hardcoded pa
 
 **Work Item ID format**:
 - Shared: `WI-{NNN}` (zero-padded: 001, 002, etc.)
-- Private: `WIP-{NNN}` (zero-padded: 001, 002, etc.)
+- Private: **MUST use `WIP-{NNN}`** (zero-padded: 001, 002, etc.) — never use `WI-` prefix for private work items
 
 **Folder naming**:
 - Shared: `WI-{NNN}-{kebab-case-title}/`

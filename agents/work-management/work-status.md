@@ -17,40 +17,18 @@ Check the status of all work items or a specific work item.
 
 ## All Work Items View
 
-Discover work items location and scan `{work-items-path}/WI-*/progress.yaml`. Display:
+Find any `work-items/` subfolder and any `work-items-private/` subfolder or symlink at any level in the workspace. Scan all discovered locations for `WI-*/progress.yaml` and `WIP-*/progress.yaml`. Follow symlinks. Display a simple list with status indicators:
 
 ```
-Work Item Status Overview
-=========================
-
-Active (3):
-  WI-001: User Profile API
-    Status: in_progress
-    Activities: 2/3 complete (A3 in progress)
-    Parallel: A2 available for another agent
-    Last activity: 2h ago
-
-  WI-002: Dashboard Redesign
-    Status: planning
-    Activities: 0/2 complete
-    Parallel: A1, A2 both available (no dependencies)
-    Last activity: 1d ago
-
-  WI-003: Search Performance
-    Status: blocked
-    Blocker: "Need database credentials"
-    Activities: 1/4 complete
-
-Recently Completed (2):
-  WI-000: Initial Setup (done, 3d ago)
-
-Stale (no activity > 7 days):
-  (none)
-
-Commands:
-  /progress-work WI-XXX   - Continue work on a work item
-  /start-work "desc"      - Create new work item
+Work Items
+==========
+  → WI-001: User Profile API (in_progress)
+  → WI-002: Dashboard Redesign (planning)
+  → WI-003: Search Performance (blocked)
+  ✓ WI-000: Initial Setup (done)
 ```
+
+Legend: `→` active, `✓` complete
 
 ## Single Work Item View
 
@@ -88,22 +66,6 @@ Activities:
       ✓ WI-001-A3-T1: Add backend unit tests
       → WI-001-A3-T2: Add E2E tests (in progress)
       ○ WI-001-A3-T3: Update test documentation
-
-Lock Status:
-  WI-001-A3 locked by agent-ghi789 (expires in 45 min)
-
-Recent Changelog:
-  [2026-01-23 14:30] agent-ghi789: Completed WI-001-A3-T1, starting WI-001-A3-T2
-  [2026-01-23 14:00] agent-def456: Completed activity WI-001-A2
-  [2026-01-23 13:30] agent-abc123: Completed activity WI-001-A1
-  [2026-01-23 13:00] agent-abc123: Started implementation
-
-Blockers: None
-
-Files Modified:
-  - src/api/controllers/user_controller.py
-  - src/api/services/user_service.py
-  - src/web/components/UserProfile.tsx
 
 Use /progress-work WI-001 to continue.
 ```
