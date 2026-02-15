@@ -2,11 +2,6 @@
 
 Key design decisions for AI-Assisted Work.
 
-**Author**: Dermot Canniffe  
-**Date**: February 2026
-
----
-
 ## DD-01: Domain-Agnostic Design
 
 ### Context
@@ -48,7 +43,8 @@ Design for **Git submodule** usage as primary integration method:
 ```
 domain-project/
 ├── .ai-assisted-work/          # Submodule
-│   └── agents/
+│   ├── skill-definitions/      # Full instructions
+│   └── skills-for-agents/      # Command wrappers
 └── work/              # Domain work items
 ```
 
@@ -153,13 +149,15 @@ Write agent instructions that work with **any AI tool**:
 ### Implementation
 
 ```
-agents/
-├── work-management/
-│   ├── start-work.md      # Universal instructions
+skill-definitions/
+├── work-management/       # Universal instructions
+│   ├── start-work.md
 │   └── progress-work.md
-└── cursor-rules/
-    ├── start-work.mdc     # Cursor-specific wrapper
-    └── progress-work.mdc
+└── image-management/
+skills-for-agents/
+├── cursor/commands/aaw/   # Cursor wrappers
+├── claude/commands/aaw/   # Claude wrappers
+└── github/skills/aaw/     # GitHub Copilot wrappers
 ```
 
 ---
@@ -206,15 +204,15 @@ activities:
 
 ### Context
 
-Repository contains both code/agents and documentation. Need to balance open-source availability with ensuring compensation for commercial use.
+Repository contains both code / agents and documentation. Need to balance open-source availability with ensuring compensation for commercial use.
 
 ### Decision
 
 Dual license for code, single license for docs:
 
-- **AGPL-3.0** for agents, scripts, templates (free for open-source use)
-- **Commercial License** required for proprietary/commercial use
-- **CC BY 4.0** for documentation
+- **AGPL-3.0** for agents, scripts, templates (free for open-source use).
+- **Commercial License** required for proprietary / commercial use.
+- **CC BY 4.0** for documentation.
 
 ### Rationale
 
@@ -261,7 +259,7 @@ Image management (ASCII-to-image conversion) is useful but separate from work ma
 Keep image management agents as **separate module**:
 
 ```
-agents/
+skill-definitions/
 ├── work-management/    # Work tracking
 └── image-management/   # Diagram conversion
 ```

@@ -2,11 +2,6 @@
 
 How organizations can adopt, customize, and contribute to AI-Assisted Work.
 
-**Author**: Dermot Canniffe  
-**Date**: February 2026
-
----
-
 ## Adoption Options
 
 ### Option 1: Direct Use (Submodule)
@@ -37,11 +32,7 @@ git clone https://github.com/YOUR-ORG/ai-assisted-work.git
 
 ### Option 3: Copy and Own
 
-Copy agents into your project directly:
-
-```bash
-cp -r ai-assisted-work/agents/ your-project/.agents/
-```
+Copy AI-Assisted Work into your project (see [DEPLOYMENT.md](../../DEPLOYMENT.md) for full steps). Typically you copy into `.ai-assisted-work/`; for a custom location, copy `skill-definitions/` and `skills-for-agents/` as needed.
 
 **Best for**: One-off use, no update requirements.
 

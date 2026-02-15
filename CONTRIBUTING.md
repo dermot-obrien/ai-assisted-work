@@ -6,42 +6,42 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 This project welcomes contributions from:
 
-- **Individuals** using the agents for personal projects
-- **Organizations** who have adopted the framework
-- **Developers** building AI-assisted tooling
-- **Anyone** who wants to improve AI-assisted work management
+- **Individuals** using the agents for personal projects.
+- **Organizations** who have adopted the framework.
+- **Developers** building AI-assisted tooling.
+- **Anyone** who wants to improve AI-assisted work management.
 
 ## Ways to Contribute
 
 ### 1. Report Issues
 
-- Bug reports for agents or templates
-- Suggestions for improvements
-- Documentation clarifications
+- Bug reports for agents or templates.
+- Suggestions for improvements.
+- Documentation clarifications.
 
 ### 2. Improve Agents
 
-- Enhanced agent instructions
-- New agent capabilities
-- Bug fixes in existing agents
+- Enhanced agent instructions.
+- New agent capabilities.
+- Bug fixes in existing agents.
 
 ### 3. Add Templates
 
-- Work item templates for specific domains
-- Improved base templates
-- Localized templates
+- Work item templates for specific domains.
+- Improved base templates.
+- Localized templates.
 
 ### 4. Improve Documentation
 
-- Clearer explanations
-- More examples
-- Integration guides
+- Clearer explanations.
+- More examples.
+- Integration guides.
 
 ### 5. Share Experience
 
-- Use cases and examples
-- Tips and best practices
-- Integration patterns
+- Use cases and examples.
+- Tips and best practices.
+- Integration patterns.
 
 ## Development Work Management
 
@@ -56,7 +56,7 @@ When working on AI-Assisted Work itself, use the `/aiaw-self-*` Cursor commands 
 
 ### Why /aiaw-self-* Commands?
 
-The standard `/start-work` commands point to `.ai-assisted-work/agents/...` for deployed usage. The `/aiaw-self-*` commands point to `agents/...` for developing this repository directly.
+The standard `/aiaw-*` commands point to `.ai-assisted-work/skill-definitions/...` for deployed usage. The `/aiaw-self-*` commands point to `skill-definitions/...` for developing this repository directly.
 
 ### Example
 
@@ -72,16 +72,16 @@ Work items are created in the `change/work-items/` folder.
 
 ### For Minor Changes
 
-1. Fork the repository
-2. Make your changes
-3. Submit a pull request
+1. Fork the repository.
+2. Make your changes.
+3. Submit a pull request.
 
 ### For Significant Changes
 
-1. **Open an Issue** describing what you want to contribute
-2. **Discuss** with maintainers
-3. **Fork and develop**
-4. **Submit PR** referencing the issue
+1. **Open an Issue** describing what you want to contribute.
+2. **Discuss** with maintainers.
+3. **Fork and develop**.
+4. **Submit PR** referencing the issue.
 
 ## Pull Request Guidelines
 

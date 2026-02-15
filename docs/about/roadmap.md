@@ -2,11 +2,6 @@
 
 Development roadmap for AI-Assisted Work.
 
-**Author**: Dermot Canniffe  
-**Date**: February 2026
-
----
-
 ## Current State (v1.0)
 
 ### Completed

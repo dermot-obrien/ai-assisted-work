@@ -15,7 +15,7 @@ All AI-Assisted Work commands use the `aiaw-` prefix to avoid conflicts with oth
 | `/aiaw-replace-ascii-diagrams` | `/aiaw-self-replace-ascii-diagrams` | Convert ASCII diagrams to images |
 
 - **`aiaw-*` commands**: Use when AI-Assisted Work is deployed as a submodule (paths start with `.ai-assisted-work/`)
-- **`aiaw-self-*` commands**: Use when working **on** the AI-Assisted Work repository itself (paths start with `agents/`)
+- **`aiaw-self-*` commands**: Use when working **on** the AI-Assisted Work repository itself (paths start with `skill-definitions/`)
 
 ## Command Behavior Summary
 
@@ -85,7 +85,7 @@ This works similarly to Cursor - commands are discoverable through the UI.
 
 ### File location
 
-Commands are defined in `.claude/commands/aiaw-*.md`. Each command file is a thin wrapper that points to the full agent instructions in `.ai-assisted-work/agents/`.
+Commands are defined in `.claude/commands/aiaw-*.md`. Each command file is a thin wrapper that points to the full instructions in `.ai-assisted-work/skill-definitions/`.
 
 ### Additional context
 
@@ -185,4 +185,4 @@ Each AI assistant uses a different configuration mechanism, but all provide the 
 | Claude Code | `.claude/commands/` | `aiaw-*.md` | `CLAUDE.md` |
 | GitHub Copilot | `.github/prompts/` | `aiaw-*.prompt.md` | `copilot-instructions.md` |
 
-All command files are thin wrappers pointing to the full agent instructions in `.ai-assisted-work/agents/`.
+All command files are thin wrappers pointing to the full instructions in `.ai-assisted-work/skill-definitions/`.

@@ -15,7 +15,7 @@ AI Assisted Work provides structured agents that help AI assistants (Cursor, Git
 
 | Category | Agents | Purpose |
 |----------|--------|---------|
-| **Work Management** | Start, Progress, Pivot, Status | Manage work items with scope, planning, and progress tracking. Enable multiple agents to work on the same work item without conflict. Support agents continuing to work on a work item after unexpected failures and pick up where the last agent got to. |
+| **Work Management** | Start, Progress, Status | Manage work items with scope, planning, and progress tracking. Enable multiple agents to work on the same work item without conflict. Support agents continuing to work on a work item after unexpected failures and pick up where the last agent got to. |
 | **Image Management** | Replace ASCII Diagrams | Convert ASCII diagrams to editable Draw.io diagrams and then to PNG images. Allow agents to reason and iterate on documents with ASCII diagrams and, once the document is stable, convert those ASCII diagrams to editable Draw.io diagrams and PNGs. |
 
 ## Deployment
@@ -25,7 +25,7 @@ Both deployment methods place AI-Assisted Work in an isolated `.ai-assisted-work
 | Method | Best For | Updates | Customization |
 |--------|----------|---------|---------------|
 | **[Git Submodule](DEPLOYMENT.md#deployment-method-1-git-submodule-recommended)** | Most users | `git pull` | Fork and modify. |
-| **[Copy-Paste](DEPLOYMENT.md#deployment-method-1-git-submodule-recommended)** | One-time use | Manual | Edit freely. |
+| **[Copy-Paste](DEPLOYMENT.md#deployment-method-2-copy-paste)** | One-time use | Manual | Edit freely. |
 
 **See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions.**
 
@@ -37,7 +37,6 @@ Once integrated, these commands are available in your AI assistant:
 |---------|---------|
 | `/aiaw-start-work` | Initialize new work items. |
 | `/aiaw-progress-work` | Continue work on items. |
-| `/aiaw-pivot-work` | Rescope and replan. |
 | `/aiaw-work-status` | Report work status. |
 | `/aiaw-replace-ascii-diagrams` | Convert ASCII diagrams. |
 

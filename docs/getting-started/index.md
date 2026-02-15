@@ -25,18 +25,19 @@ git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assi
 
 ### 2. Set Up Cursor (Optional)
 
-Copy rules to your project:
+Copy command wrappers to your project:
 ```bash
 mkdir -p .cursor/rules
-cp .ai-assisted-work/.cursor/rules/aiaw-*.mdc .cursor/rules/
+cp .ai-assisted-work/skills-for-agents/cursor/commands/aaw/*.md .cursor/rules/
+# Rename to .mdc if your Cursor version expects that extension
 ```
 
 ### 3. Start Your First Work Item
 
-In Cursor, type `/start-work` or tell your AI assistant:
+In Cursor, type `/aiaw-start-work` or tell your AI assistant:
 
 ```
-Follow the instructions in .ai-assisted-work/agents/work-management/start-work.md 
+Follow the instructions in .ai-assisted-work/skill-definitions/work-management/start-work.md 
 to create a work item for: "Research best practices for [topic]"
 ```
 
@@ -74,6 +75,7 @@ Start Work → Progress Work → [Status] → Complete Work
 
 ## Next Steps
 
-- [Work Management Agents](../agents/work-management/index.md)
-- [Image Management Agents](../agents/image-management/index.md)
-- [Integration Guide](../integration/index.md)
+- [Work Management](../../skill-definitions/work-management/README.md) - Core concepts and lifecycle
+- [Image Management](../../skill-definitions/image-management/README.md) - Replace ASCII diagrams
+- [Integration Guide](../integration/index.md) - Cursor, Copilot, Claude Code setup
+- [DEPLOYMENT.md](../../DEPLOYMENT.md) - Step-by-step deployment

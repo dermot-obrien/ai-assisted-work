@@ -46,9 +46,10 @@ git submodule update --remote
 ```
 your-project/
 ├── .ai-assisted-work/          # Submodule (your fork)
-│   └── agents/
+│   ├── skill-definitions/      # Full instructions
+│   └── skills-for-agents/      # Command wrappers (copy from here)
 ├── work/                       # Your work items
-└── .cursor/rules/              # Copy from .ai-assisted-work
+└── .cursor/rules/              # Copy from .ai-assisted-work/skills-for-agents/cursor/
 ```
 
 ### Option 2: Direct Copy
@@ -56,16 +57,12 @@ your-project/
 Best for: One-time use, heavy customization.
 
 1. Download or clone the repository
-2. Copy the `agents/` folder to your project
+2. Copy the full repo into `.ai-assisted-work/` (see [DEPLOYMENT.md](../../DEPLOYMENT.md) for step-by-step copy-paste)
 
 Linux/Mac:
 ```bash
-cp -r ai-assisted-work/agents/ your-project/.ai-assisted-work/agents/
-```
-
-Windows (PowerShell):
-```powershell
-Copy-Item -Recurse ai-assisted-work\agents\ your-project\.ai-assisted-work\agents\
+mkdir -p .ai-assisted-work
+cp -r ai-assisted-work/. .ai-assisted-work/
 ```
 
 ### Option 3: Fork Only
@@ -89,8 +86,9 @@ Linux/Mac:
 # Create rules directory if needed
 mkdir -p .cursor/rules
 
-# Copy from submodule
-cp .ai-assisted-work/.cursor/rules/aiaw-*.mdc .cursor/rules/
+# Copy from submodule (wrappers point to .ai-assisted-work/skill-definitions/)
+cp .ai-assisted-work/skills-for-agents/cursor/commands/aaw/*.md .cursor/rules/
+# Rename to .mdc if your Cursor version expects that extension
 ```
 
 Windows (PowerShell):
@@ -99,18 +97,17 @@ Windows (PowerShell):
 New-Item -ItemType Directory -Force -Path .cursor\rules
 
 # Copy from submodule
-Copy-Item .ai-assisted-work\.cursor\rules\aiaw-*.mdc .cursor\rules\
+Copy-Item .ai-assisted-work\skills-for-agents\cursor\commands\aaw\*.md .cursor\rules\
 ```
 
 ### Available Commands
 
-| Command | Purpose | Agent File |
-|---------|---------|------------|
-| `/aiaw-start-work` | Initialize new work item | `.ai-assisted-work/agents/work-management/start-work.md` |
-| `/aiaw-progress-work` | Continue work on existing item | `.ai-assisted-work/agents/work-management/progress-work.md` |
-| `/aiaw-work-status` | Check status of work items | `.ai-assisted-work/agents/work-management/work-status.md` |
-| `/aiaw-pivot-work` | Rescope and replan | `.ai-assisted-work/agents/work-management/pivot-work.md` |
-| `/aiaw-replace-ascii-diagrams` | Convert ASCII diagrams to images | `.ai-assisted-work/agents/image-management/replace-ascii-diagrams.md` |
+| Command | Purpose | Instruction File |
+|---------|---------|-------------------|
+| `/aiaw-start-work` | Initialize new work item | `.ai-assisted-work/skill-definitions/work-management/start-work.md` |
+| `/aiaw-progress-work` | Continue work on existing item | `.ai-assisted-work/skill-definitions/work-management/progress-work.md` |
+| `/aiaw-work-status` | Check status of work items | `.ai-assisted-work/skill-definitions/work-management/work-status.md` |
+| `/aiaw-replace-ascii-diagrams` | Convert ASCII diagrams to images | `.ai-assisted-work/skill-definitions/image-management/replace-ascii-diagrams.md` |
 
 ---
 
@@ -119,7 +116,7 @@ Copy-Item .ai-assisted-work\.cursor\rules\aiaw-*.mdc .cursor\rules\
 Reference agents in prompts:
 
 ```bash
-claude "Follow the instructions in .ai-assisted-work/agents/work-management/start-work.md 
+claude "Follow the instructions in .ai-assisted-work/skill-definitions/work-management/start-work.md 
 to create a work item for: {description}"
 ```
 
@@ -132,7 +129,7 @@ to create a work item for: {description}"
 Use `@workspace` with agent files:
 
 ```
-@workspace #file:.ai-assisted-work/agents/work-management/start-work.md
+@workspace #file:.ai-assisted-work/skill-definitions/work-management/start-work.md
 Initialize a work item for {description}
 ```
 
@@ -142,23 +139,21 @@ Copy the delta file for reference and manual merge:
 
 Linux/Mac:
 ```bash
-# Copy the delta file (unique name - won't overwrite anything)
+# Copy command wrappers for reference
 mkdir -p .github
-cp .ai-assisted-work/agents/github-copilot/copilot-instructions-ai-assisted-work.md .github/
+cp .ai-assisted-work/skills-for-agents/github/skills/aaw/*.md .github/
 
 # Then manually merge content into your .github/copilot-instructions.md
 ```
 
 Windows (PowerShell):
 ```powershell
-# Copy the delta file (unique name - won't overwrite anything)
 New-Item -ItemType Directory -Force -Path .github
-Copy-Item .ai-assisted-work\agents\github-copilot\copilot-instructions-ai-assisted-work.md .github\
-
+Copy-Item .ai-assisted-work\skills-for-agents\github\skills\aaw\*.md .github\
 # Then manually merge content into your .github\copilot-instructions.md
 ```
 
-**Important:** The delta file has a unique name (`copilot-instructions-ai-assisted-work.md`) so it won't overwrite your existing `.github/copilot-instructions.md`. Open it and merge the command definitions into your file.
+**Important:** The wrappers point to `.ai-assisted-work/skill-definitions/`. Open them and merge the command definitions into your `.github/copilot-instructions.md`.
 
 ---
 
@@ -190,16 +185,17 @@ Customize the location by telling agents where to create work items.
 ```
 architecture-project/
 ├── .ai-assisted-work/           # AI-Assisted Work submodule (your fork)
-│   └── agents/
+│   ├── skill-definitions/      # Full instructions
+│   └── skills-for-agents/      # Command wrappers
 ├── methodology/                 # Architecture-specific
 ├── building-blocks/             # Architecture-specific
-├── work/                        # Work items (use .ai-assisted-work agents)
+├── work/                        # Work items (use .ai-assisted-work skill-definitions)
 │   └── WI-001/
 │       ├── scope.md
 │       ├── plan.md
 │       └── progress.yaml
 └── .cursor/rules/
-    ├── aiaw-start-work.mdc     # From .ai-assisted-work
+    ├── aiaw-start-work.md      # From .ai-assisted-work/skills-for-agents/cursor/
     └── architecture.mdc        # Architecture-specific (your own)
 ```
 
@@ -238,10 +234,10 @@ Add project-specific agents:
 ```
 your-project/
 ├── .ai-assisted-work/           # Submodule
-├── .agents/                     # Your custom agents
+├── .agents/                     # Your custom agents (optional)
 │   └── code-review.md          # Project-specific agent
 └── .cursor/rules/
-    ├── aiaw-start-work.mdc     # From .ai-assisted-work
+    ├── aiaw-start-work.md      # From .ai-assisted-work/skills-for-agents/cursor/
     └── code-review.mdc         # Your custom rule
 ```
 
