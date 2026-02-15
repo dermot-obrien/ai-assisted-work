@@ -23,9 +23,9 @@ AI-Assisted Work provides domain-agnostic AI agents for work management and prod
 AI-Assisted Work is designed as a **foundation layer**:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                         Domain-Specific Repositories                             │
-│                                                                                  │
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                         Domain-Specific Repositories                           │
+│                                                                                │
 │   ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐              │
 │   │  AI-Assisted    │   │  AI-Assisted    │   │  AI-Assisted    │              │
 │   │  Architecture   │   │  Development    │   │  Research       │              │
@@ -33,22 +33,16 @@ AI-Assisted Work is designed as a **foundation layer**:
 │   │  Domain-specific│   │  Domain-specific│   │  Domain-specific│              │
 │   │  methodology    │   │  methodology    │   │  methodology    │              │
 │   └────────┬────────┘   └────────┬────────┘   └────────┬────────┘              │
-│            │                     │                     │                        │
-│            └─────────────────────┴─────────────────────┘                        │
-│                                  │                                              │
-│                                  ▼                                              │
+│            │                     │                     │                       │
+│            └─────────────────────┴─────────────────────┘                       │
+│                                  │                                             │
+│                                  ▼                                             │
 │   ┌──────────────────────────────────────────────────────────────────────────┐ │
-│   │                        AI-Assisted Work                                   │ │
-│   │                                                                           │ │
+│   │                        AI-Assisted Work                                  │ │
+│   │                                                                          │ │
 │   │   Work Management Agents  │  Image Management    │  Common Templates     │ │
-│   │                                                                           │ │
+│   │                                                                          │ │
 │   │   (Domain-agnostic foundation - included as submodule)                   │ │
 │   └──────────────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────────────────────┘
 ```
-
-## Author
-
-**Dermot Canniffe**
-
-This project emerged from practical experience managing AI-assisted work across multiple domains, recognizing the need for reusable, domain-agnostic tooling.

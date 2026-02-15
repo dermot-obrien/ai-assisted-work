@@ -2,11 +2,6 @@
 
 The strategic vision for AI-Assisted Work.
 
-**Author**: Dermot Canniffe  
-**Date**: February 2026
-
----
-
 ## The Problem
 
 ### Fragmented AI Tooling
@@ -38,22 +33,22 @@ AI-Assisted Work provides a **reusable foundation**:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              Your Domain Project                                 │
-│                                                                                  │
+│                              Your Domain Project                                │
+│                                                                                 │
 │   ┌─────────────────────────────────────────────────────────────────────────┐   │
-│   │  Domain-Specific Content                                                 │   │
-│   │  • Methodology                                                           │   │
-│   │  • Templates                                                             │   │
-│   │  • Building blocks                                                       │   │
+│   │  Domain-Specific Content                                                │   │
+│   │  • Methodology                                                          │   │
+│   │  • Templates                                                            │   │
+│   │  • Building blocks                                                      │   │
 │   └─────────────────────────────────────────────────────────────────────────┘   │
-│                                       │                                          │
-│                                       │ Uses                                     │
-│                                       ▼                                          │
+│                                       │                                         │
+│                                       │ Uses                                    │
+│                                       ▼                                         │
 │   ┌─────────────────────────────────────────────────────────────────────────┐   │
-│   │  AI-Assisted Work (Submodule)                                            │   │
-│   │  • Work management agents                                                │   │
-│   │  • Image management agents                                               │   │
-│   │  • Common templates                                                      │   │
+│   │  AI-Assisted Work (Submodule)                                           │   │
+│   │  • Work management agents                                               │   │
+│   │  • Image management agents                                              │   │
+│   │  • Common templates                                                     │   │
 │   └─────────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
