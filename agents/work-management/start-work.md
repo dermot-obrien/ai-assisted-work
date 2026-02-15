@@ -139,30 +139,19 @@ Once intent is confirmed, **use write operations** to create files:
 
 2. **Discover work items location** based on visibility:
 
-   **For shared work items (WI-NNN)**:
-   - `00-change/work-items/` (preferred)
-   - `work-items/` (root)
-   - `docs/3-work/work-items/` (legacy)
-   - Any `**/work-items/` subfolder
-   
-   If none exist, create `00-change/work-items/`
+   **For shared work items (WI-NNN)**: Find any `work-items/` subfolder at any level. If none exist, create `change/work-items/`.
 
-   **For private work items (WIP-NNN)**:
-   - `00-change/work-items-private/` (preferred)
-   - `work-items-private/` (root)
-   - Any `**/work-items-private/` subfolder
-   
-   If none exist, create `00-change/work-items-private/`
+   **For private work items (WIP-NNN)**: Find any `work-items-private/` subfolder or symlink at any level (follow symlinks). If none exist, create `change/work-items-private/`.
 
 3. **Find next ID** - scan discovered location for existing folders:
    - For shared: scan for `WI-*/` folders, find highest number, increment
    - For private: scan for `WIP-*/` folders, find highest number, increment
-   
+
    **Note**: Shared and private numbering are independent (WI-001 and WIP-001 are different work items)
 
 4. **Work Item ID format**:
    - Shared: `WI-{NNN}` (zero-padded: 001, 002, etc.)
-   - Private: `WIP-{NNN}` (zero-padded: 001, 002, etc.)
+   - Private: **MUST use `WIP-{NNN}`** (zero-padded: 001, 002, etc.) — never use `WI-` prefix for private work items
 
 5. Create folder structure:
    ```
