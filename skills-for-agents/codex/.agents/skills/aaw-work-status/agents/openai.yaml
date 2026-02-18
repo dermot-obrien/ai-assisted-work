@@ -1,0 +1,4 @@
+interface:
+  display_name: "AAW Work Status"
+  short_description: "Show status of AAW work items"
+  default_prompt: "Follow the AAW work-status procedure from the repo-local skill definition file."
