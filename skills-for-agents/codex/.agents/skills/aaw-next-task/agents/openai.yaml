@@ -1,0 +1,4 @@
+interface:
+  display_name: "AAW Next Task"
+  short_description: "Find next actionable task for a work item"
+  default_prompt: "Follow the AAW next-task procedure from the repo-local skill definition file."

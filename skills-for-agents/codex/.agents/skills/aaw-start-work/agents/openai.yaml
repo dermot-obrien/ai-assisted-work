@@ -1,0 +1,4 @@
+interface:
+  display_name: "AAW Start Work"
+  short_description: "Start and scope a new AAW work item"
+  default_prompt: "Follow the AAW start-work workflow using the repo-local skill definition file."

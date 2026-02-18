@@ -1,0 +1,4 @@
+interface:
+  display_name: "AAW Progress Work"
+  short_description: "Progress an existing AAW work item"
+  default_prompt: "Follow the AAW progress-work workflow using the repo-local skill definition file."
