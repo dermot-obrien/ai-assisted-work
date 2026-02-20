@@ -1,4 +1,0 @@
-interface:
-  display_name: "AAW Replace ASCII Diagrams"
-  short_description: "Convert ASCII diagrams via AAW workflow"
-  default_prompt: "Follow the AAW replace-ascii-diagrams workflow from the repo-local skill definition file."
