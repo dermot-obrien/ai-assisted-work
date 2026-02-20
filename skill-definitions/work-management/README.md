@@ -46,8 +46,8 @@ Commands can be invoked using slash notation:
 |---------|---------|
 | `/start-work` | Create new work item (Scoping → Discovery → Planning) |
 | `/progress-work [WI-NNN]` | Execute work item (Implementation phase) |
-| `/pivot-work [WI-NNN]` | Revise scope/plan after work started |
 | `/work-status [WI-NNN]` | Check status of work items |
+| `/next-task [WI-NNN]` | Identify next task to work on |
 
 **Note**: These commands map to skills in the `work-management` namespace. The skill names may differ from the slash commands (e.g., `work-management:start-feature` invokes `/start-work`).
 
@@ -454,8 +454,8 @@ Work items progress through four phases. Each phase has a recommended interactio
 |---------|-------------------|---------|
 | `/start-work` | Read-only → Write | Scoping → Discovery → Planning phases. |
 | `/progress-work [WI-NNN]` | Write | Execution phase (implement the plan). |
-| `/pivot-work` | Read-only → Write | Revise scope and plan after work started. |
 | `/work-status` | Read-only | Check status of all active work items. |
+| `/next-task [WI-NNN]` | Read-only | Identify the next task to work on. |
 
 ### Progress Work Agent
 
@@ -787,21 +787,13 @@ START: Is this a simple, well-understood task?
 - Performance optimization (need to profile first)
 - Integration with unfamiliar external system
 
-### When to Use Pivot vs New Work Item
+### When to Revise vs Create New Work Item
 
-```
-START: How much completed work is affected?
-  |
-  ├─ NONE: → Use /pivot-work (minimal pivot)
-  |
-  ├─ SOME (<50%): → Use /pivot-work (moderate pivot)
-  |
-  └─ MOST (>50%): Is the original intent still valid?
-      |
-      ├─ YES: → Use /pivot-work (major pivot, reset activities)
-      |
-      └─ NO: → Abandon and create new work item
-```
+If scope changes after work has started:
+- **Minor changes** (no completed work affected): Update scope.md and plan.md directly
+- **Moderate changes** (<50% completed work affected): Revise scope and replan remaining activities
+- **Major changes** (>50% affected, original intent still valid): Reset remaining activities
+- **Fundamental changes** (original intent no longer valid): Abandon and create a new work item
 
 ## Reference
 
@@ -809,7 +801,7 @@ START: How much completed work is affected?
 - [limitations.md](limitations.md) - Scaling limits and system constraints
 - [start-work.md](start-work.md) - Creating work items (Scoping → Discovery → Planning)
 - [progress-work.md](progress-work.md) - Executing work items (Implementation phase)
-- [pivot-work.md](pivot-work.md) - Revising scope and plan after work started
 - [work-status.md](work-status.md) - Checking work item status
+- [next-task.md](next-task.md) - Identifying the next task to work on
 - [architecture-work.md](architecture-work.md) - **Architecture work type guidance** (deliverables, diagrams, ADRs)
 - [_templates/](./_templates/) - Template files for all documents

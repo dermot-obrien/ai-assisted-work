@@ -10,8 +10,8 @@ All AI-Assisted Work commands use the `aiaw-` prefix to avoid conflicts with oth
 |------------------|--------------------------|---------|
 | `/aiaw-start-work` | `/aiaw-self-start-work` | Initialize a new work item |
 | `/aiaw-progress-work` | `/aiaw-self-progress-work` | Continue work on an existing item |
-| `/aiaw-pivot-work` | `/aiaw-self-pivot-work` | Revise scope and plan |
 | `/aiaw-work-status` | `/aiaw-self-work-status` | Check status of work items |
+| `/aiaw-next-task` | `/aiaw-self-next-task` | Identify the next task to work on |
 
 - **`aiaw-*` commands**: Use when AI-Assisted Work is deployed as a submodule (paths start with `.ai-assisted-work/`)
 - **`aiaw-self-*` commands**: Use when working **on** the AI-Assisted Work repository itself (paths start with `skill-definitions/`)
@@ -67,8 +67,8 @@ Claude Code has a **native slash command system** via `.claude/commands/`. Each 
 .claude/commands/
 ├── aiaw-start-work.md           → /aiaw-start-work
 ├── aiaw-progress-work.md        → /aiaw-progress-work
-├── aiaw-pivot-work.md           → /aiaw-pivot-work
-└── aiaw-work-status.md          → /aiaw-work-status
+├── aiaw-work-status.md          → /aiaw-work-status
+└── aiaw-next-task.md            → /aiaw-next-task
 ```
 
 The filename (without extension) becomes the command name. Each file contains instructions pointing to the full agent documentation.
@@ -101,8 +101,8 @@ GitHub Copilot supports **discoverable slash commands** via `.github/prompts/` f
 .github/prompts/
 ├── aiaw-start-work.prompt.md           → /aiaw-start-work
 ├── aiaw-progress-work.prompt.md        → /aiaw-progress-work
-├── aiaw-pivot-work.prompt.md           → /aiaw-pivot-work
-└── aiaw-work-status.prompt.md          → /aiaw-work-status
+├── aiaw-work-status.prompt.md          → /aiaw-work-status
+└── aiaw-next-task.prompt.md            → /aiaw-next-task
 ```
 
 The filename (without `.prompt.md` extension) becomes the command name. Each file contains instructions pointing to the full agent documentation.
@@ -139,8 +139,8 @@ All AI assistants support these commands (typed manually or selected from menu):
 |---------|---------|
 | `/aiaw-start-work` | Initialize a new work item with scope, plan, and progress tracking |
 | `/aiaw-progress-work` | Continue work on an existing work item |
-| `/aiaw-pivot-work` | Revise scope and plan when requirements change |
 | `/aiaw-work-status` | Check status of work items |
+| `/aiaw-next-task` | Identify the next task to work on from a work item |
 
 ---
 

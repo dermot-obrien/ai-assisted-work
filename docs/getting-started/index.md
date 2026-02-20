@@ -44,12 +44,12 @@ to create a work item for: "Research best practices for [topic]"
 
 Progress through tasks:
 ```
-/progress-work work/WI-001
+/aiaw-progress-work work/WI-001
 ```
 
 Check status:
 ```
-/work-status work/WI-001
+/aiaw-work-status work/WI-001
 ```
 
 ## Work Item Structure
@@ -67,9 +67,9 @@ work/WI-001/
 ## Agent Workflow
 
 ```
-Start Work → Progress Work → [Status] → Complete Work
+Start Work → Progress Work → [Status] → Done
                   │
-                  └── Pivot Work (if scope changes)
+                  └── Next Task (identify what to do next)
 ```
 
 ## Next Steps

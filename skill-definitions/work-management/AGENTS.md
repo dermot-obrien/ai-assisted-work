@@ -2,7 +2,7 @@
 
 Component-specific rules for AI agents working with the work management system.
 
-**Read this file before using:** `start-work.md`, `progress-work.md`, `pivot-work.md`, or `work-status.md`
+**Read this file before using:** `start-work.md`, `progress-work.md`, or `work-status.md`
 
 ## Activity Ownership Model
 

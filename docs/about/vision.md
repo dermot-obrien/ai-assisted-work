@@ -74,8 +74,7 @@ Universal agents for managing any type of work:
 | **Start Work** | Initialize work items | Architecture decisions, dev tasks, research |
 | **Progress Work** | Execute and track | Any multi-step work |
 | **Work Status** | Report progress | Universal |
-| **Pivot Work** | Rescope and replan | When requirements change |
-| **Complete Work** | Finalize and close | Universal |
+| **Next Task** | Identify next task | Any active work item |
 
 ### 2. Common Templates
 

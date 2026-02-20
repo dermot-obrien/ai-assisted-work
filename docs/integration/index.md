@@ -107,6 +107,7 @@ Copy-Item .ai-assisted-work\skills-for-agents\cursor\commands\aaw\*.md .cursor\r
 | `/aiaw-start-work` | Initialize new work item | `.ai-assisted-work/skill-definitions/work-management/start-work.md` |
 | `/aiaw-progress-work` | Continue work on existing item | `.ai-assisted-work/skill-definitions/work-management/progress-work.md` |
 | `/aiaw-work-status` | Check status of work items | `.ai-assisted-work/skill-definitions/work-management/work-status.md` |
+| `/aiaw-next-task` | Identify next task to work on | `.ai-assisted-work/skill-definitions/work-management/next-task.md` |
 
 ---
 
