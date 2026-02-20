@@ -93,10 +93,21 @@ cp .ai-assisted-work/skills-for-agents/claude/commands/aaw/*.md .claude/commands
 
 **Note:** Claude Code command files point to the full instructions in `.ai-assisted-work/skill-definitions/`.
 
-### Step 5: Commit
+### Step 5: Integrate with Codex (Optional)
+
+If you use OpenAI Codex:
 
 ```bash
-git add .gitmodules .ai-assisted-work .github .cursor
+# Copy the .agents folder to your project root
+cp -r .ai-assisted-work/skills-for-agents/codex/.agents .agents
+```
+
+**Note:** Codex discovers skills from the `.agents/skills/` folder at the workspace root. Each skill points to the full instructions in `.ai-assisted-work/skill-definitions/`. See the [Codex skills documentation](https://developers.openai.com/codex/skills/) for more details.
+
+### Step 6: Commit
+
+```bash
+git add .gitmodules .ai-assisted-work .github .cursor .claude .agents
 git commit -m "Add AI-Assisted Work as submodule."
 ```
 
@@ -164,7 +175,15 @@ mkdir -p .claude/commands
 cp .ai-assisted-work/skills-for-agents/claude/commands/aaw/*.md .claude/commands/
 ```
 
-### Step 6: Clean Up and Commit
+### Step 6: Integrate with Codex (Optional)
+
+If you use OpenAI Codex:
+
+```bash
+cp -r .ai-assisted-work/skills-for-agents/codex/.agents .agents
+```
+
+### Step 7: Clean Up and Commit
 
 ```bash
 # Remove temporary clone
@@ -205,10 +224,13 @@ your-project/
 │   ├── skills-for-agents/               ← Command wrappers (source for copy)
 │   │   ├── cursor/commands/aaw/        ← Cursor wrappers
 │   │   ├── claude/commands/aaw/         ← Claude Code wrappers
+│   │   ├── codex/.agents/skills/        ← Codex skills
 │   │   └── github/skills/aaw/           ← GitHub Copilot wrappers
 │   ├── docs/
 │   ├── examples/
 │   └── schemas/
+├── .agents/
+│   └── skills/                          ← Copied from .ai-assisted-work/skills-for-agents/codex/.agents/
 ├── .claude/
 │   └── commands/                        ← Copied from .ai-assisted-work/skills-for-agents/claude/
 ├── .github/
@@ -226,6 +248,7 @@ your-project/
 |---------|----------|-----|
 | **All AI-Assisted Work content** | `.ai-assisted-work/` | Isolated, no conflicts |
 | **Claude Code commands** | `.claude/commands/*.md` | Required location by Claude Code |
+| **Codex skills** | `.agents/skills/aaw-*` | Required location by Codex |
 | **GitHub Copilot instructions** | `.github/copilot-instructions.md` | Required location by GitHub Copilot |
 | **Cursor rules** | `.cursor/rules/*.md` or `*.mdc` | Required location by Cursor |
 
@@ -236,6 +259,7 @@ your-project/
 | `.github/copilot-instructions.md` | **Merge** (manual) | User likely has existing file; merge from wrappers |
 | `.claude/commands/*.md` | **Direct copy** (safe) | Copy from `skills-for-agents/claude/commands/aaw/` |
 | `.cursor/rules/*.md` | **Direct copy** (safe) | Copy from `skills-for-agents/cursor/commands/aaw/`; rename to `*.mdc` if needed |
+| `.agents/` | **Direct copy** (safe) | Copy from `skills-for-agents/codex/.agents/` |
 
 ---
 
@@ -325,6 +349,12 @@ When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-sta
 2. Type: `/aiaw-start-work test work item`
 3. Verify Cursor loads the agent instructions
 
+### Test Codex Integration
+
+1. Open Codex
+2. Ask it to use the `aaw-start-work` skill
+3. Verify it reads the instructions from `.ai-assisted-work/skill-definitions/work-management/start-work.md`
+
 ---
 
 ## Project Structure After Deployment
@@ -335,10 +365,11 @@ When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-sta
 your-project/
 ├── .ai-assisted-work/                             ← Submodule (isolated)
 │   ├── skill-definitions/               ← Full instructions (work-management)
-│   ├── skills-for-agents/               ← Command wrappers (cursor, claude, github)
+│   ├── skills-for-agents/               ← Command wrappers (cursor, claude, codex, github)
 │   ├── docs/
 │   ├── examples/
 │   └── schemas/
+├── .agents/skills/                      ← Copied from .ai-assisted-work/skills-for-agents/codex/
 ├── .claude/commands/                     ← Copied from .ai-assisted-work/skills-for-agents/claude/
 ├── .github/copilot-instructions.md       ← Your file (manually merged from wrappers)
 ├── .cursor/rules/                        ← Copied from .ai-assisted-work/skills-for-agents/cursor/
@@ -347,7 +378,7 @@ your-project/
 
 ### Copy-Paste Structure
 
-Same as submodule: `.ai-assisted-work/` contains `skill-definitions/`, `skills-for-agents/`, `docs/`, `examples/`, `schemas/`. Integration files are copied from `skills-for-agents/` to `.claude/commands/`, `.cursor/rules/`, and merged into `.github/copilot-instructions.md`.
+Same as submodule: `.ai-assisted-work/` contains `skill-definitions/`, `skills-for-agents/`, `docs/`, `examples/`, `schemas/`. Integration files are copied from `skills-for-agents/` to `.agents/skills/`, `.claude/commands/`, `.cursor/rules/`, and merged into `.github/copilot-instructions.md`.
 
 ---
 
@@ -358,7 +389,7 @@ All AI-Assisted Work files are in these folders:
 | Folder | Contents | Safe to Copy? |
 |--------|----------|---------------|
 | `skill-definitions/` | Full agent instructions (work-management) | ✅ Yes - isolated |
-| `skills-for-agents/` | Command wrappers for Cursor, Claude, GitHub | ✅ Yes - source for copy |
+| `skills-for-agents/` | Command wrappers for Cursor, Claude, Codex, GitHub | ✅ Yes - source for copy |
 | `docs/` | Documentation | ✅ Yes - can go in `docs/ai-assisted-work/` |
 | `examples/` | Example work items | ✅ Yes - isolated |
 | `schemas/` | YAML schemas | ✅ Yes - isolated |
@@ -395,6 +426,7 @@ rm -rf .ai-assisted-work/
 # Manually remove AI-Assisted Work sections from .github/copilot-instructions.md
 # Manually remove aiaw-* files from .cursor/rules/
 # Manually remove aiaw-* files from .claude/commands/
+# Manually remove .agents/ folder if it only contains AAW skills
 
 git add -A
 git commit -m "Remove AI-Assisted Work"
@@ -436,7 +468,7 @@ git commit -m "Remove AI-Assisted Work"
 ## See Also
 
 - [skill-definitions/work-management/](skill-definitions/work-management/README.md) - Work management instructions and README
-- [skills-for-agents/](skills-for-agents/) - Command wrappers for Cursor, Claude, GitHub
+- [skills-for-agents/](skills-for-agents/) - Command wrappers for Cursor, Claude, Codex, GitHub
 - [Command Discovery](docs/integration/command-discovery.md) - How commands work across AI assistants
 - [Getting Started](docs/getting-started/index.md) - First steps and concepts
 
