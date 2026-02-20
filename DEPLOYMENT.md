@@ -63,7 +63,7 @@ mkdir -p .github/prompts
 cp .ai-assisted-work/skills-for-agents/github/prompts/*.md .github/prompts/
 ```
 
-Then manually merge the command sections into your `.github/copilot-instructions.md`. Each wrapper points to `.ai-assisted-work/skill-definitions/work-management/` or `.../image-management/`.
+Then manually merge the command sections into your `.github/copilot-instructions.md`. Each wrapper points to `.ai-assisted-work/skill-definitions/work-management/`.
 
 ### Step 3: Integrate with Cursor (Optional)
 
@@ -201,8 +201,7 @@ Both deployment methods result in the **same structure**:
 your-project/
 ├── .ai-assisted-work/                             ← AI-Assisted Work (isolated)
 │   ├── skill-definitions/               ← Full agent instructions (source)
-│   │   ├── work-management/             ← start-work, progress-work, work-status, etc.
-│   │   └── image-management/            ← replace-ascii-diagrams
+│   │   └── work-management/             ← start-work, progress-work, work-status, etc.
 │   ├── skills-for-agents/               ← Command wrappers (source for copy)
 │   │   ├── cursor/commands/aaw/        ← Cursor wrappers
 │   │   ├── claude/commands/aaw/         ← Claude Code wrappers
@@ -285,21 +284,18 @@ Add this to your existing `.github/copilot-instructions.md`:
 
 ## AI-Assisted Work Integration
 
-This project uses AI-Assisted Work for structured work management and image management.
+This project uses AI-Assisted Work for structured work management.
 
-When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-status`, or `/aiaw-replace-ascii-diagrams`:
+When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, or `/aiaw-work-status`:
 
 1. Read the full instructions from the corresponding file:
    - `/aiaw-start-work` → `.ai-assisted-work/skill-definitions/work-management/start-work.md`
    - `/aiaw-progress-work` → `.ai-assisted-work/skill-definitions/work-management/progress-work.md`
    - `/aiaw-work-status` → `.ai-assisted-work/skill-definitions/work-management/work-status.md`
-   - `/aiaw-replace-ascii-diagrams` → `.ai-assisted-work/skill-definitions/image-management/replace-ascii-diagrams.md`
 
 2. Read supporting documentation:
    - `.ai-assisted-work/skill-definitions/work-management/AGENTS.md` - Agent rules
    - `.ai-assisted-work/skill-definitions/work-management/README.md` - Core concepts
-   - `.ai-assisted-work/skill-definitions/image-management/AGENTS.md` - Image agent rules
-   - `.ai-assisted-work/skill-definitions/image-management/README.md` - Image concepts
 
 3. Follow the instructions exactly as written in those files
 ```
@@ -337,7 +333,7 @@ When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-sta
 ```
 your-project/
 ├── .ai-assisted-work/                             ← Submodule (isolated)
-│   ├── skill-definitions/               ← Full instructions (work-management, image-management)
+│   ├── skill-definitions/               ← Full instructions (work-management)
 │   ├── skills-for-agents/               ← Command wrappers (cursor, claude, github)
 │   ├── docs/
 │   ├── examples/
@@ -360,7 +356,7 @@ All AI-Assisted Work files are in these folders:
 
 | Folder | Contents | Safe to Copy? |
 |--------|----------|---------------|
-| `skill-definitions/` | Full agent instructions (work-management, image-management) | ✅ Yes - isolated |
+| `skill-definitions/` | Full agent instructions (work-management) | ✅ Yes - isolated |
 | `skills-for-agents/` | Command wrappers for Cursor, Claude, GitHub | ✅ Yes - source for copy |
 | `docs/` | Documentation | ✅ Yes - can go in `docs/ai-assisted-work/` |
 | `examples/` | Example work items | ✅ Yes - isolated |
@@ -414,7 +410,6 @@ git commit -m "Remove AI-Assisted Work"
 **Solution:**
 - Ensure paths use `.ai-assisted-work/skill-definitions/` (not `agents/`)
 - Work management: `.ai-assisted-work/skill-definitions/work-management/`
-- Image management: `.ai-assisted-work/skill-definitions/image-management/`
 - Check file permissions and that the submodule or copy is present
 
 ### Issue: Commands Not Working
@@ -440,7 +435,6 @@ git commit -m "Remove AI-Assisted Work"
 ## See Also
 
 - [skill-definitions/work-management/](skill-definitions/work-management/README.md) - Work management instructions and README
-- [skill-definitions/image-management/](skill-definitions/image-management/README.md) - Image management instructions
 - [skills-for-agents/](skills-for-agents/) - Command wrappers for Cursor, Claude, GitHub
 - [Command Discovery](docs/integration/command-discovery.md) - How commands work across AI assistants
 - [Getting Started](docs/getting-started/index.md) - First steps and concepts

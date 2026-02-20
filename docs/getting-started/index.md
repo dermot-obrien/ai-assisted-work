@@ -7,7 +7,6 @@ Quick start guide for AI-Assisted Work.
 AI-Assisted Work provides domain-agnostic AI agents for:
 
 - **Work Management**: Track tasks, progress, and deliverables
-- **Image Management**: Convert ASCII diagrams to proper images
 
 ## Quick Start
 
@@ -76,6 +75,5 @@ Start Work → Progress Work → [Status] → Complete Work
 ## Next Steps
 
 - [Work Management](../../skill-definitions/work-management/README.md) - Core concepts and lifecycle
-- [Image Management](../../skill-definitions/image-management/README.md) - Replace ASCII diagrams
 - [Integration Guide](../integration/index.md) - Cursor, Copilot, Claude Code setup
 - [DEPLOYMENT.md](../../DEPLOYMENT.md) - Step-by-step deployment

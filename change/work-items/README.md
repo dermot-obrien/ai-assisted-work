@@ -14,7 +14,6 @@ Use the `/aiaw-self-*` Cursor commands to manage work items:
 | `/aiaw-self-progress-work` | Continue work on an item |
 | `/aiaw-self-work-status` | Check status of work items |
 | `/aiaw-self-pivot-work` | Rescope when requirements change |
-| `/aiaw-self-replace-ascii-diagrams` | Convert ASCII diagrams |
 
 ## Structure
 

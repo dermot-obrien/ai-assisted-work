@@ -21,7 +21,6 @@ Work management shouldn't be domain-specific:
 
 - Starting work is the same in architecture as in development
 - Progress tracking works the same way everywhere
-- ASCII-to-image conversion is universal
 
 ---
 
@@ -47,7 +46,6 @@ AI-Assisted Work provides a **reusable foundation**:
 │   ┌─────────────────────────────────────────────────────────────────────────┐   │
 │   │  AI-Assisted Work (Submodule)                                           │   │
 │   │  • Work management agents                                               │   │
-│   │  • Image management agents                                              │   │
 │   │  • Common templates                                                     │   │
 │   └─────────────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────────┘
@@ -79,17 +77,7 @@ Universal agents for managing any type of work:
 | **Pivot Work** | Rescope and replan | When requirements change |
 | **Complete Work** | Finalize and close | Universal |
 
-### 2. Image Management Agents
-
-Convert ASCII diagrams regardless of domain:
-
-| Agent | Purpose |
-|-------|---------|
-| **Detect ASCII** | Find diagrams in any markdown |
-| **Convert ASCII** | Generate Draw.io/Mermaid |
-| **Replace ASCII** | Update documents |
-
-### 3. Common Templates
+### 2. Common Templates
 
 Reusable templates for work items:
 
@@ -99,7 +87,7 @@ Reusable templates for work items:
 | **plan.md** | Break down into tasks |
 | **progress.yaml** | Track status |
 
-### 4. Integration Patterns
+### 3. Integration Patterns
 
 How to embed in other projects:
 
