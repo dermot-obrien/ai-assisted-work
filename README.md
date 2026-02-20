@@ -1,6 +1,6 @@
 # AI Assisted Work
 
-[![Version: v1.1.0](https://img.shields.io/badge/Version-v1.1.0-purple.svg)](LICENSE)
+[![Version: v1.2.0](https://img.shields.io/badge/Version-v1.2.0-purple.svg)](LICENSE)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Commercial License Available](https://img.shields.io/badge/Commercial-License%20Available-green.svg)](LICENSE-COMMERCIAL.txt)
 [![Docs License: CC BY 4.0](https://img.shields.io/badge/Docs-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)

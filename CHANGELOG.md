@@ -7,6 +7,26 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-02-21
+
+### Added
+- Codex integration instructions in DEPLOYMENT.md (Step 5 submodule, Step 6 copy-paste)
+- Codex verification section in DEPLOYMENT.md
+- `/aiaw-next-task` command documented across all user-facing docs
+
+### Changed
+- Fixed documentation consistency across all user-facing docs
+- Updated all structure diagrams and tables to include Codex/`.agents/` references
+- Fixed stale `agents/` paths to `skill-definitions/` and `skills-for-agents/` in organization-adoption.md
+- Fixed command naming inconsistency (bare `/progress-work` → `/aiaw-progress-work`)
+- Renamed GitHub Copilot prompt file to `.prompt.md` extension for discovery consistency
+
+### Removed
+- Image management skills (`skill-definitions/image-management/`, all `replace-ascii-diagrams` wrappers)
+- All image management references from documentation
+- Stale `/aiaw-pivot-work` references from documentation (skill was removed in v1.1.0)
+- Image management archive preserved on `archive/image-management-skills` branch
+
 ## [1.1.0] - 2026-02-15
 
 ### Added
