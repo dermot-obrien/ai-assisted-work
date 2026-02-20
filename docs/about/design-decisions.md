@@ -150,10 +150,9 @@ Write agent instructions that work with **any AI tool**:
 
 ```
 skill-definitions/
-├── work-management/       # Universal instructions
-│   ├── start-work.md
-│   └── progress-work.md
-└── image-management/
+└── work-management/       # Universal instructions
+    ├── start-work.md
+    └── progress-work.md
 skills-for-agents/
 ├── cursor/commands/aaw/   # Cursor wrappers
 ├── claude/commands/aaw/   # Claude wrappers
@@ -248,32 +247,7 @@ Open contribution model with quality gates:
 
 ---
 
-## DD-09: Image Management Separation
-
-### Context
-
-Image management (ASCII-to-image conversion) is useful but separate from work management.
-
-### Decision
-
-Keep image management agents as **separate module**:
-
-```
-skill-definitions/
-├── work-management/    # Work tracking
-└── image-management/   # Diagram conversion
-```
-
-### Rationale
-
-- Not everyone needs both
-- Can use independently
-- Clear separation of concerns
-- Different update cycles
-
----
-
-## DD-10: Template Extensibility
+## DD-09: Template Extensibility
 
 ### Context
 
@@ -316,5 +290,4 @@ status: "{STATUS}"
 | DD-06 | YAML for State | 2026-02 | Implemented |
 | DD-07 | Dual License | 2026-02 | Implemented |
 | DD-08 | Contribution Model | 2026-02 | Implemented |
-| DD-09 | Image Management Separation | 2026-02 | Implemented |
-| DD-10 | Template Extensibility | 2026-02 | Implemented |
+| DD-09 | Template Extensibility | 2026-02 | Implemented |

@@ -40,7 +40,7 @@ AI-Assisted Work is designed as a **foundation layer**:
 │   ┌──────────────────────────────────────────────────────────────────────────┐ │
 │   │                        AI-Assisted Work                                  │ │
 │   │                                                                          │ │
-│   │   Work Management Agents  │  Image Management    │  Common Templates     │ │
+│   │   Work Management Agents  │  Common Templates                           │ │
 │   │                                                                          │ │
 │   │   (Domain-agnostic foundation - included as submodule)                   │ │
 │   └──────────────────────────────────────────────────────────────────────────┘ │
