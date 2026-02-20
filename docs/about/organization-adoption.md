@@ -207,18 +207,19 @@ cp overrides/templates/plan.md contrib-plan.md
 ```
 architecture-project/
 ├── .ai-assisted-work/                    # Submodule
-│   └── agents/
+│   ├── skill-definitions/      # Full instructions
+│   └── skills-for-agents/      # Command wrappers
 ├── methodology/                 # Domain-specific
 ├── building-blocks/             # Domain-specific
-└── work/                        # Uses .ai-assisted-work agents
+└── work/                        # Uses .ai-assisted-work skill definitions
 ```
 
 ### Pattern 2: Fork as Organizational Standard
 
 ```
 org-work-standard/               # Your fork
-├── agents/                      # Core + org agents
-├── templates/                   # Core + org templates
+├── skill-definitions/           # Core + org skill definitions
+├── skills-for-agents/           # Command wrappers
 └── docs/                        # Org documentation
 
 # All org projects use this fork

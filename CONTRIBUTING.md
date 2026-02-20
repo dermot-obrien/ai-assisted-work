@@ -52,7 +52,7 @@ When working on AI-Assisted Work itself, use the `/aiaw-self-*` Cursor commands 
 | `/aiaw-self-start-work` | Create a new work item |
 | `/aiaw-self-progress-work` | Continue work on an item |
 | `/aiaw-self-work-status` | Check status of work items |
-| `/aiaw-self-pivot-work` | Rescope when requirements change |
+| `/aiaw-self-next-task` | Identify next task to work on |
 
 ### Why /aiaw-self-* Commands?
 

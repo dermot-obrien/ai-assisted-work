@@ -37,6 +37,7 @@ Once integrated, these commands are available in your AI assistant:
 | `/aiaw-start-work` | Initialize new work items. |
 | `/aiaw-progress-work` | Continue work on items. |
 | `/aiaw-work-status` | Report work status. |
+| `/aiaw-next-task` | Identify the next task to work on. |
 
 ## Documentation
 

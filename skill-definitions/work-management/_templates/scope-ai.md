@@ -86,7 +86,7 @@ When working on this item, reference these existing artifacts:
 
 ## Revised Intent (if applicable)
 
-> {User's revised instructions or pivots after work started - added via /pivot-work}
+> {User's revised instructions or pivots after work started}
 
 **Reason for revision**: {Why the scope changed}
 

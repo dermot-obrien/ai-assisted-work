@@ -114,8 +114,7 @@ Each agent has **one clear purpose**:
 | Start Work | Initialize work item structure |
 | Progress Work | Execute tasks, update progress |
 | Work Status | Report current status |
-| Pivot Work | Rescope and replan |
-| Complete Work | Finalize and close |
+| Next Task | Identify the next task to work on |
 
 ### Rationale
 

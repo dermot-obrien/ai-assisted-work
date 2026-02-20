@@ -114,7 +114,7 @@ git commit -m "Update AI-Assisted Work."
 
 ## Deployment Method 2: Copy-Paste
 
-**Key principle:** Copy everything into `.ai-assisted-work/` folder (same location as submodule), then add delta files externally.
+**Key principle:** Copy everything into `.ai-assisted-work/` folder (same location as submodule), then add command wrappers externally.
 
 ### Step 1: Clone Temporarily
 
@@ -286,12 +286,13 @@ Add this to your existing `.github/copilot-instructions.md`:
 
 This project uses AI-Assisted Work for structured work management.
 
-When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, or `/aiaw-work-status`:
+When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-status`, or `/aiaw-next-task`:
 
 1. Read the full instructions from the corresponding file:
    - `/aiaw-start-work` → `.ai-assisted-work/skill-definitions/work-management/start-work.md`
    - `/aiaw-progress-work` → `.ai-assisted-work/skill-definitions/work-management/progress-work.md`
    - `/aiaw-work-status` → `.ai-assisted-work/skill-definitions/work-management/work-status.md`
+   - `/aiaw-next-task` → `.ai-assisted-work/skill-definitions/work-management/next-task.md`
 
 2. Read supporting documentation:
    - `.ai-assisted-work/skill-definitions/work-management/AGENTS.md` - Agent rules
