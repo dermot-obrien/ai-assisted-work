@@ -33,11 +33,20 @@ target_end: null            # Target end quarter, e.g., "2026-Q3"
 # === WORK ITEMS ===
 # Reference Work Items by ID. The Work Item's own progress.yaml is the source of truth.
 # Status here is a convenience mirror — update when checking Initiative status.
+#
+# The initiative_id field on each Work Item's progress.yaml is the CANONICAL membership
+# indicator (source of truth). This work_items array is a CONVENIENCE CACHE maintained
+# by periodic sync (e.g., Housekeeper scanning for initiative_id back-pointers).
 work_items:
   # - id: WI-NNN
   #   title: "{Work Item title}"
   #   status: planning         # Mirrors the WI's current status
   #   path: "change/work-items/WI-NNN-{name}/"
+
+# === ROOT WORK ITEM (optional) ===
+# Domain-specific integrations may designate one work item as the "root"
+# that holds foundational artifacts (e.g., a research DAG, architecture baseline).
+root_work_item: null            # e.g., WI-032
 
 # === ARTIFACTS ===
 artifacts:

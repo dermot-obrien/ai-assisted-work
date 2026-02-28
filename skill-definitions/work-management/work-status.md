@@ -10,8 +10,9 @@ Check the status of all work items or a specific work item.
 ## Usage
 
 ```
-/work-status              # All active work items
+/work-status              # All active work items (optionally grouped by initiative)
 /work-status WI-NNN       # Specific work item details
+/work-status IN-NNN       # Initiative-level view with all member work items
 ```
 
 ## All Work Items View
@@ -23,7 +24,8 @@ Check the status of all work items or a specific work item.
    - Every `work-items-private/` directory (real directory or symlink target).
 2. **Explicitly follow symlinks:** `work-items` and `work-items-private` are often symlinks (Unix) or junctions (Windows). Normal directory recursion may skip them. You MUST discover and scan symlinked / junctioned paths as well as real directories—e.g. list reparse points (Windows) or resolve symlinks (Unix) when enumerating roots, then scan inside those paths for `WI-*/progress.yaml` and `WIP-*/progress.yaml`.
 3. **Scan** each discovered root for `WI-*/progress.yaml` and `WIP-*/progress.yaml`.
-4. **Display** a simple list with status indicators:
+4. **Group by initiative** (optional): Work items with an `initiative_id` field in their progress.yaml can be shown under their initiative heading. Standalone work items (no `initiative_id`) appear ungrouped.
+5. **Display** a simple list with status indicators:
 
 ```
 Work Items
@@ -156,3 +158,53 @@ Expired locks indicate interruptions requiring recovery.
 | Agent | 1 hour | 30 min | Shorter due to session volatility |
 
 Mixed teams can work the same work item - humans and agents can claim different activities simultaneously.
+
+## Initiative View
+
+For `/work-status IN-001`:
+
+**Discovery:**
+
+1. **Locate initiative roots** at any level in the workspace:
+   - Every `initiatives/` directory (real directory or symlink target).
+   - Every `initiatives-private/` directory (real directory or symlink target).
+2. **Explicitly follow symlinks:** Same rules as work item discovery.
+3. **Scan** each discovered root for `IN-*/progress.yaml` and `INP-*/progress.yaml`.
+
+**Display:**
+
+```
+Initiative: IN-001 - GIFS Research
+====================================
+
+Status: active
+Goal: Group and track all GIFS framework research
+Time Horizon: 2025-Q3 – 2026-Q2
+Root Work Item: WI-032
+
+Work Items:
+  ✓ WI-028: GIFS Blog & ArXiv (done)
+  → WI-030: Python Hazard Benchmarks (in_progress)
+  → WI-031: Transformer Markov Integration (in_progress)
+  → WI-032: Research Root - GIFS (in_progress)
+  ○ WI-033: Research H-200 Forecasting (planning)
+
+Progress: 1/5 work items done (20%)
+```
+
+**All initiatives view** (no argument): When displaying all work items, optionally show a summary of active initiatives at the top:
+
+```
+Initiatives
+===========
+  → IN-001: GIFS Research (active, 5 WIs)
+
+Work Items
+==========
+  IN-001:
+    ✓ WI-028: GIFS Blog & ArXiv (done)
+    → WI-030: Python Hazard Benchmarks (in_progress)
+
+  Standalone:
+    → WI-015: Platform Auth Overhaul (in_progress)
+```
