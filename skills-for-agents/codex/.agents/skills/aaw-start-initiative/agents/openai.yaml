@@ -1,0 +1,4 @@
+interface:
+  display_name: "AAW Start Initiative"
+  short_description: "Create a new strategic initiative to group related work items"
+  default_prompt: "Follow the AAW start-initiative workflow using the repo-local skill definition file."

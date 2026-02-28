@@ -44,9 +44,10 @@ Commands can be invoked using slash notation:
 
 | Command | Purpose |
 |---------|---------|
+| `/start-initiative` | Create new initiative (strategic container for work items) |
 | `/start-work` | Create new work item (Scoping → Discovery → Planning) |
 | `/progress-work [WI-NNN]` | Execute work item (Implementation phase) |
-| `/work-status [WI-NNN]` | Check status of work items |
+| `/work-status [WI-NNN \| IN-NNN]` | Check status of work items or initiatives |
 | `/next-task [WI-NNN]` | Identify next task to work on |
 
 **Note**: These commands map to skills in the `work-management` namespace. The skill names may differ from the slash commands (e.g., `work-management:start-feature` invokes `/start-work`).
@@ -452,9 +453,10 @@ Work items progress through four phases. Each phase has a recommended interactio
 
 | Command | Interaction Style | Purpose |
 |---------|-------------------|---------|
+| `/start-initiative` | Read-only → Write | Create initiative (strategic container for work items). |
 | `/start-work` | Read-only → Write | Scoping → Discovery → Planning phases. |
 | `/progress-work [WI-NNN]` | Write | Execution phase (implement the plan). |
-| `/work-status` | Read-only | Check status of all active work items. |
+| `/work-status [WI-NNN \| IN-NNN]` | Read-only | Check status of work items or initiatives. |
 | `/next-task [WI-NNN]` | Read-only | Identify the next task to work on. |
 
 ### Progress Work Agent
@@ -706,21 +708,30 @@ No `plan.md`, `deliverables/`, or `locks/` — planning, deliverables, and concu
 
 ### Initiative ↔ Work Item Relationship
 
-Initiatives **reference** Work Items by ID. Work Items can optionally reference their parent Initiative via the `initiative_id` field in `progress.yaml`.
+The `initiative_id` field on a Work Item's `progress.yaml` is the **canonical membership indicator** (source of truth). The initiative's `work_items` array is a **convenience cache** maintained by periodic sync.
 
 ```yaml
-# In Work Item progress.yaml (optional field)
+# In Work Item progress.yaml — SOURCE OF TRUTH for membership
 initiative_id: IN-001    # null = standalone work item
 ```
 
 ```yaml
-# In Initiative progress.yaml
+# In Initiative progress.yaml — CONVENIENCE CACHE (synced periodically)
 work_items:
   - id: WI-005
     title: "API Redesign"
     status: in_progress
     path: "change/work-items/WI-005-api-redesign/"
+
+# Optional: designate a root work item for domain-specific artifacts
+root_work_item: WI-032   # null if not applicable
 ```
+
+**Housekeeper sync convention**: Agents performing housekeeping should scan work items for `initiative_id` back-pointers and update the initiative's `work_items` array accordingly. This keeps the cache in sync without requiring real-time updates.
+
+### Root Work Item
+
+An initiative may optionally designate a **root work item** via the `root_work_item` field in its `progress.yaml`. This is useful for domain-specific integrations where one work item holds foundational artifacts (e.g., a research hypothesis DAG, an architecture baseline document). The root work item is a regular work item — it just has a special role within the initiative.
 
 ### Initiative Location Discovery
 
@@ -799,9 +810,10 @@ If scope changes after work has started:
 
 - [AGENTS.md](AGENTS.md) - **Critical rules for AI agents** (read first)
 - [limitations.md](limitations.md) - Scaling limits and system constraints
+- [start-initiative.md](start-initiative.md) - Creating initiatives (strategic containers)
 - [start-work.md](start-work.md) - Creating work items (Scoping → Discovery → Planning)
 - [progress-work.md](progress-work.md) - Executing work items (Implementation phase)
-- [work-status.md](work-status.md) - Checking work item status
+- [work-status.md](work-status.md) - Checking work item and initiative status
 - [next-task.md](next-task.md) - Identifying the next task to work on
 - [architecture-work.md](architecture-work.md) - **Architecture work type guidance** (deliverables, diagrams, ADRs)
 - [_templates/](./_templates/) - Template files for all documents

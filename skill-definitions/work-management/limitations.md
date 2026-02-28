@@ -73,6 +73,29 @@ This system is designed for file-based coordination on a single filesystem. For 
 
 The file-based approach is chosen for simplicity and works well within its design limits.
 
+## Work Item ID Race Condition
+
+When multiple agents create work items concurrently, they may scan for the next available ID at the same time and pick the same number.
+
+### The Race
+
+1. Agent A scans `work-items/` and finds WI-031 is the highest → picks WI-032
+2. Agent B scans `work-items/` simultaneously and also finds WI-031 → picks WI-032
+3. Both agents create `WI-032-{name}/` folders — collision
+
+### Mitigation
+
+After creating the work item folder, verify no other folder with the same `WI-NNN` prefix exists:
+
+1. Create the folder (e.g., `WI-032-my-feature/`)
+2. Scan for all `WI-032-*/` folders
+3. If more than one exists, delete yours and retry with the next available ID
+4. Repeat until no collision
+
+### Practical Impact
+
+This race is rare in practice (single-digit concurrent agents creating work items at the exact same moment). The mitigation is a best-effort check, not a guarantee — true atomic ID generation would require a coordination service, which is out of scope for a file-based system.
+
 ## File-Specific Characteristics
 
 | File | Concurrency Model | Limit |

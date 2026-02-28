@@ -269,9 +269,20 @@ If version changed between your read and write:
 Work Items may optionally belong to an Initiative (a strategic container grouping related Work Items). When working on a Work Item:
 
 - **Check `initiative_id`** in progress.yaml — if set, the Work Item is part of an Initiative
+- **`initiative_id` is the canonical membership indicator** — the `initiative_id` field on a Work Item's progress.yaml is the **source of truth** for initiative membership. The initiative's `work_items` array is a **convenience cache**.
 - **No special rules** — Initiative membership does not change how you work on a Work Item
 - **No Initiative-level locking** — Initiatives have no activities, tasks, or locks
 - **Optional context** — read the Initiative's `scope.md` if you need strategic context for the Work Item
+
+### Housekeeper Sync Convention
+
+Agents performing housekeeping duties should periodically:
+
+1. **Scan work items** for `initiative_id` back-pointers matching a known initiative
+2. **Update the initiative's `work_items` array** to reflect the current set of member work items and their statuses
+3. **Remove stale entries** from the initiative's work_items array if the corresponding work item no longer has a matching `initiative_id`
+
+This keeps the convenience cache in sync without requiring real-time updates during normal work item progression.
 
 ## See Also
 
