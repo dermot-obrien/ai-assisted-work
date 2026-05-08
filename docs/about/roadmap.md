@@ -2,114 +2,76 @@
 
 Development roadmap for AI-Assisted Work.
 
-## Current State (v1.0)
+## Current State (v2.0)
 
-### Completed
+v2.0 is the working baseline: a TypeScript monorepo with `@aaw/protocol`, `@aaw/cli`, and a `local-fs` backend. One install command, cross-platform, no symlinks. See [CHANGELOG.md](../../CHANGELOG.md) for the full v2.0 entry.
 
-- [x] Repository structure
-- [x] Work management agents (start, progress, status, pivot, complete)
-- [x] Work item templates (scope, plan, progress)
-- [x] Cursor rules integration
-- [x] Documentation structure
-- [x] Organization adoption guide
+### Shipped in v2.0
 
-### In Progress
-
-- [ ] Complete agent documentation
-- [ ] Example work items
-- [ ] Integration examples
+- [x] `@aaw/protocol` — schema types and Backend interface
+- [x] `@aaw/cli` — Node CLI with `init`, `status`, `verify`
+- [x] LocalFsBackend — protocol against the filesystem
+- [x] `bin/aaw.js` — self-contained ESM bundle for the submodule install path
+- [x] `.aaw-config.yaml` — single source of truth for workspace config
+- [x] Single `WI-NNN` and `IN-NNN` ID series (public/private split removed)
 
 ---
 
-## Short-Term (v1.x)
+## Short-term (v2.x)
 
-### v1.1 - Documentation Complete
+### v2.1 — npm publish lane
 
-| Item | Status |
-|------|--------|
-| Work management agent docs | 📝 In progress |
-| Integration guide | 📝 In progress |
-| Example work items | ⬜ Planned |
+- [ ] Publish `@aaw/cli`, `@aaw/protocol`, `@aaw/skills` to npm under the `@aaw` org
+- [ ] `npx @aaw/cli init` works as an alternative to the submodule path
+- [ ] Document corporate artifactory proxy patterns in DEPLOYMENT.md
 
-### v1.2 - Additional Agents
+### v2.2 — More CLI commands
 
-| Agent | Purpose | Status |
-|-------|---------|--------|
-| Review Work | Peer review workflow | ⬜ Planned |
-| Archive Work | Archive completed work | ⬜ Planned |
-| Report Work | Generate status reports | ⬜ Planned |
+- [ ] `aaw claim WI-001-A1` — manual activity claim from the shell
+- [ ] `aaw release WI-001-A1` — explicit release after writeback
+- [ ] `aaw next-task [WI-NNN]` — what's the next claimable thing
+- [ ] `aaw runner start --pool default` — long-lived headless agent runner
 
-### v1.3 - Tool Integrations
+### v2.3 — Migration tooling
 
-| Integration | Status |
-|-------------|--------|
-| Cursor rules (complete) | ✅ Done |
-| Claude Projects config | ⬜ Planned |
-| VS Code snippets | ⬜ Planned |
+- [ ] `aaw migrate v1` — move v1's `WI-`/`WIP-` folders into the v2 single-path layout, renumber clashes, update `.gitignore`
 
 ---
 
-## Medium-Term (v2.x)
+## Medium-term (v3.x)
 
-### v2.0 - Enhanced Agents
+### v3.0 — Cloud mode
 
-| Enhancement | Description |
-|-------------|-------------|
-| **Dependency tracking** | Better task dependency handling |
-| **Time tracking** | Optional time tracking in progress |
-| **Metrics** | Work item metrics and reporting |
+- [ ] `aaw-coordinator` repo: Cloud Run + Firestore backend implementing `@aaw/protocol`
+- [ ] CloudBackend in `@aaw/cli` — `mode: cloud` in `.aaw-config.yaml` flips transport
+- [ ] Multi-tenant from day one: tenant IDs, pools, slot budgets
+- [ ] Server-side concurrency enforcement via Firestore transactions
+- [ ] Cloud Scheduler-driven lock sweeper
 
-### v2.1 - More Utilities
+### v3.1 — Web console
 
-| Utility | Purpose |
-|---------|---------|
-| Progress reporter | Generate markdown status reports |
-| Work item validator | Validate structure and schema |
-| Migration tool | Upgrade templates between versions |
+- [ ] Static SPA on Firebase Hosting; reads via Firestore SDK with security rules
+- [ ] Browse state, watch live progress, manage pools and agents
 
----
+### v3.2 — Headless runner
 
-## Long-Term Vision
-
-### Community Growth
-
-| Goal | Target |
-|------|--------|
-| Submodule adoptions | 10+ projects |
-| Contributors | 5+ |
-| Organizational forks | 3+ |
-
-### Capability Expansion
-
-| Capability | Vision |
-|------------|--------|
-| **Plugin system** | Third-party agent plugins |
-| **Web UI** | Optional web dashboard |
-| **Integrations** | Jira, GitHub Issues sync |
+- [ ] Long-lived Node process subscribing to a cloud pool
+- [ ] Containerised image suitable for Cloud Run Jobs, GitHub Actions, homelab
+- [ ] Concurrency / token budget reporting via `appendEvent`
 
 ---
 
-## How to Influence
+## Long-term (v4+)
 
-### Request Features
-
-1. Open a GitHub Issue
-2. Describe the use case
-3. Discuss with maintainers
-
-### Contribute
-
-1. See [CONTRIBUTING.md](../../CONTRIBUTING.md)
-2. Pick an item from roadmap
-3. Submit a PR
+- [ ] GitHubProjectsBackend — protocol against GitHub Issues + Projects
+- [ ] Optional Temporal-backed substrate for organisations that already run Temporal
+- [ ] Protobuf migration of `@aaw/protocol` once a non-Node consumer arrives
+- [ ] First-class budget-aware scheduler (concurrency caps + optional token budgeting)
 
 ---
 
-## Version History
+## How to influence
 
-| Version | Date | Focus |
-|---------|------|-------|
-| 1.0.0 | 2026-02 | Initial release |
-| 1.1.0 | TBD | Documentation |
-| 1.2.0 | TBD | Additional agents |
-| 2.0.0 | TBD | Enhanced agents |
+- File issues at <https://github.com/dermot-obrien/ai-assisted-work/issues>
+- See [CONTRIBUTING.md](../../CONTRIBUTING.md)
+- The `change/work-items/` folder shows live, in-flight items against this roadmap

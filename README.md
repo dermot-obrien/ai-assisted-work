@@ -1,6 +1,6 @@
 # AI Assisted Work
 
-[![Version: v1.2.0](https://img.shields.io/badge/Version-v1.2.2-purple.svg)](LICENSE)
+[![Version: v2.0.0](https://img.shields.io/badge/Version-v2.0.0-purple.svg)](LICENSE)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Commercial License Available](https://img.shields.io/badge/Commercial-License%20Available-green.svg)](LICENSE-COMMERCIAL.txt)
 [![Docs License: CC BY 4.0](https://img.shields.io/badge/Docs-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
@@ -17,27 +17,35 @@ AI Assisted Work provides structured agents that help AI assistants (Cursor, Git
 |----------|--------|---------|
 | **Work Management** | Start, Progress, Status | Manage work items with scope, planning, and progress tracking. Enable multiple agents to work on the same work item without conflict. Support agents continuing to work on a work item after unexpected failures and pick up where the last agent got to. |
 
-## Deployment
+## Install
 
-Both deployment methods place AI-Assisted Work in an isolated `.ai-assisted-work/` folder, ensuring nothing overwrites your existing project files.
+```bash
+git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
+git submodule update --init
+node .ai-assisted-work/bin/aaw.js init
+```
 
-| Method | Best For | Updates | Customization |
-|--------|----------|---------|---------------|
-| **[Git Submodule](DEPLOYMENT.md#deployment-method-1-git-submodule-recommended)** | Most users | `git pull` | Fork and modify. |
-| **[Copy-Paste](DEPLOYMENT.md#deployment-method-2-copy-paste)** | One-time use | Manual | Edit freely. |
-
-**See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions.**
+Requires Node.js (16+). Works in corporate environments where npm registry access is restricted but git+GitHub access is allowed — the bundled CLI ships in the submodule. Cross-platform on Mac, Linux, and Windows. See [DEPLOYMENT.md](DEPLOYMENT.md) for details.
 
 ## Available Commands
 
-Once integrated, these commands are available in your AI assistant:
+Once installed, these commands are available in your AI assistant:
 
 | Command | Purpose |
 |---------|---------|
-| `/aiaw-start-work` | Initialize new work items. |
-| `/aiaw-progress-work` | Continue work on items. |
-| `/aiaw-work-status` | Report work status. |
-| `/aiaw-next-task` | Identify the next task to work on. |
+| `/aaw-start-work` | Initialize new work items. |
+| `/aaw-progress-work` | Continue work on items. |
+| `/aaw-work-status` | Report work status. |
+| `/aaw-next-task` | Identify the next task to work on. |
+| `/aaw-start-initiative` | Create a strategic initiative grouping work items. |
+
+And from the shell:
+
+```bash
+aaw status            # list work items in this workspace
+aaw status WI-001     # show one work item with activity/task tree
+aaw verify            # sanity-check the install
+```
 
 ## Documentation
 
