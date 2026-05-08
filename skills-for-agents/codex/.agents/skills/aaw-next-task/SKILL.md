@@ -1,6 +1,6 @@
 ---
 name: aaw-next-task
-description: Identify the next actionable task for an AI-Assisted Work item in this repository. Use when asked what to do next for WI/WIP execution.
+description: Identify the next actionable task for an AI-Assisted Work item in this repository. Use when asked what to do next for work item execution.
 ---
 
 # AAW Next Task

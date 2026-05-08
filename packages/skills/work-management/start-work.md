@@ -64,22 +64,6 @@ The scoping phase produces scope documentation:
 
 Record the user's exact words verbatim. Do NOT paraphrase.
 
-### Step 1.1a: Determine Work Item Location
-
-Ask the user where to create the work item:
-
-```
-Where should I create this work item?
-
-1. **Shared** (e.g., `change/work-items/`) - Committed to repository, visible to others
-2. **Private** (e.g., `change/work-items-private/`) - Gitignored, stays local
-3. **Custom path** - Specify a different location
-
-Default is shared unless you specify otherwise.
-```
-
-If the user doesn't specify or prefers the default, use the shared location (e.g., `change/work-items/` or the project's standard work items folder).
-
 ### Step 1.2: Ask Clarifying Questions
 
 During the read-only phase, ask questions to understand:
@@ -132,38 +116,27 @@ If you prefer to skip JIRA integration, we can proceed without it.
 
 Once intent is confirmed, **use write operations** to create files:
 
-1. **Determine visibility** - based on user request or clarification:
-   - **Shared** (default): Work item will be committed, visible to others
-   - **Private**: Work item is gitignored, for personal/sensitive work
+1. **Resolve the work items root** from `.aaw-config.yaml` at the workspace root:
+   - Read `work_items_path` from the config (e.g., `~/aaw/{tenant}/{repo}/work-items/`).
+   - If the config is missing, prompt the user for a path or fall back to `./change/work-items/` in the artefact repo.
+   - Create the directory if it does not exist.
 
-2. **Discover work items location** (must include symlinks):
+2. **Find next ID** — scan the resolved root for existing `WI-*/` folders, take the highest number, increment.
 
-   1. **Locate work item roots** at any level in the workspace:
-      - Every `work-items/` directory (real directory or symlink target).
-      - Every `work-items-private/` directory (real directory or symlink target).
-   2. **Explicitly follow symlinks:** `work-items` and `work-items-private` are often symlinks (Unix) or junctions (Windows). Normal directory recursion may skip them. You MUST discover and scan symlinked/junctioned paths as well as real directories—e.g. list reparse points (Windows) or resolve symlinks (Unix) when enumerating roots, then use those paths as the roots to create or scan under.
-   3. **Choose root:** For shared (WI-NNN) use a discovered `work-items/` path; for private (WIP-NNN) use a discovered `work-items-private/` path. If none exist, create `change/work-items/` or `change/work-items-private/` as appropriate.
+3. **Work Item ID format**: `WI-{NNN}` (zero-padded: 001, 002, etc.). One series, no separate prefix for private items.
 
-5. **Find next ID** - scan discovered location for existing folders:
-   - For shared: scan for `WI-*/` folders, find highest number, increment
-   - For private: scan for `WIP-*/` folders, find highest number, increment
-
-   **Note**: Shared and private numbering are independent (WI-001 and WIP-001 are different work items)
-
-6. **Work Item ID format**:
-   - Shared: `WI-{NNN}` (zero-padded: 001, 002, etc.)
-   - Private: **MUST use `WIP-{NNN}`** (zero-padded: 001, 002, etc.) — never use `WI-` prefix for private work items
-
-7. Create folder structure:
+4. Create folder structure:
    ```
-   {work-items-location}/{PREFIX}-{NNN}-{kebab-case-title}/
+   {work_items_path}/WI-{NNN}-{kebab-case-title}/
    ├── deliverables/     # Create empty folder for activity outputs
    └── locks/            # Create empty folder for activity locks
    ```
-8. Create **scope document(s)**:
-   - `scope.md` using template from `./_templates/scope.md` - stakeholder-facing specification (required)
-   - `scope-ai.md` using template from `./_templates/scope-ai.md` - AI agent addendum (recommended for complex work items)
-9. If a JIRA URL was provided, record it for later inclusion in `progress.yaml`
+
+5. Create **scope document(s)**:
+   - `scope.md` using template from `./_templates/scope.md` — stakeholder-facing specification (required)
+   - `scope-ai.md` using template from `./_templates/scope-ai.md` — AI agent addendum (recommended for complex work items)
+
+6. If a JIRA URL was provided, record it for later inclusion in `progress.yaml`
 
 **Document separation guidelines:**
 

@@ -50,20 +50,7 @@ Example questions:
 - "How many work items do you expect this will involve?"
 - "Are there existing work items that should be grouped under this initiative?"
 
-### Step 1.3: Determine Visibility
-
-Ask the user about initiative visibility:
-
-```
-Where should I create this initiative?
-
-1. **Shared** (e.g., `change/initiatives/`) - Committed to repository, visible to others
-2. **Private** (e.g., `change/initiatives-private/`) - Gitignored, stays local
-
-Default is shared unless you specify otherwise.
-```
-
-### Step 1.4: Confirm Understanding
+### Step 1.3: Confirm Understanding
 
 Summarize and get confirmation:
 
@@ -88,36 +75,23 @@ Is this accurate? Anything to add or change?
 
 **Interaction Style**: Write operations (creates folder, scope.md, progress.yaml)
 
-### Step 2.1: Discover Initiatives Location
+### Step 2.1: Resolve Initiatives Location
 
-Locate the initiatives directory (must include symlinks):
-
-1. **Locate initiative roots** at any level in the workspace:
-   - Every `initiatives/` directory (real directory or symlink target).
-   - Every `initiatives-private/` directory (real directory or symlink target).
-2. **Explicitly follow symlinks:** `initiatives` and `initiatives-private` may be symlinks (Unix) or junctions (Windows). Normal directory recursion may skip them. You MUST discover and scan symlinked/junctioned paths as well as real directories.
-3. **Choose root:**
-   - For shared (IN-NNN): use a discovered `initiatives/` path.
-   - For private (INP-NNN): use a discovered `initiatives-private/` path.
-   - If none exist, create `change/initiatives/` (shared) or `change/initiatives-private/` (private).
+1. Read `initiatives_path` from `.aaw-config.yaml` at the workspace root.
+2. If the config is missing, fall back to `./change/initiatives/` in the artefact repo (legacy default).
+3. Create the directory if it does not exist.
 
 ### Step 2.2: Generate Initiative ID
 
-1. **Find next ID** — scan the discovered location for existing initiative folders:
-   - For shared: scan for `IN-*/` folders, find highest number, increment
-   - For private: scan for `INP-*/` folders, find highest number, increment
-2. **ID format**:
-   - Shared: `IN-{NNN}` (zero-padded: 001, 002, etc.)
-   - Private: **MUST use `INP-{NNN}`** (zero-padded: 001, 002, etc.) — never use `IN-` prefix for private initiatives
-
-**Note**: Shared and private numbering are independent (IN-001 and INP-001 are different initiatives).
+1. **Find next ID** — scan the resolved root for `IN-*/` folders, take the highest number, increment.
+2. **ID format**: `IN-{NNN}` (zero-padded: 001, 002, etc.). One series, no separate prefix for private initiatives.
 
 ### Step 2.3: Create Initiative Workspace
 
 Create folder structure:
 
 ```
-{initiatives-location}/{PREFIX}-{NNN}-{kebab-case-title}/
+{initiatives_path}/IN-{NNN}-{kebab-case-title}/
 ├── scope.md          # [REQUIRED] Goals, success criteria, work item list
 └── progress.yaml     # [REQUIRED] Tracks work items and overall status
 ```
