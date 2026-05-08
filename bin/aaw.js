@@ -113,17 +113,17 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node, visitor, path5) {
-      const ctrl = callVisitor(key, node, visitor, path5);
+    function visit_(key, node, visitor, path6) {
+      const ctrl = callVisitor(key, node, visitor, path6);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path5, ctrl);
-        return visit_(key, ctrl, visitor, path5);
+        replaceNode(key, path6, ctrl);
+        return visit_(key, ctrl, visitor, path6);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path5 = Object.freeze(path5.concat(node));
+          path6 = Object.freeze(path6.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = visit_(i, node.items[i], visitor, path5);
+            const ci = visit_(i, node.items[i], visitor, path6);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -134,13 +134,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path5 = Object.freeze(path5.concat(node));
-          const ck = visit_("key", node.key, visitor, path5);
+          path6 = Object.freeze(path6.concat(node));
+          const ck = visit_("key", node.key, visitor, path6);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = visit_("value", node.value, visitor, path5);
+          const cv = visit_("value", node.value, visitor, path6);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -161,17 +161,17 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node, visitor, path5) {
-      const ctrl = await callVisitor(key, node, visitor, path5);
+    async function visitAsync_(key, node, visitor, path6) {
+      const ctrl = await callVisitor(key, node, visitor, path6);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path5, ctrl);
-        return visitAsync_(key, ctrl, visitor, path5);
+        replaceNode(key, path6, ctrl);
+        return visitAsync_(key, ctrl, visitor, path6);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path5 = Object.freeze(path5.concat(node));
+          path6 = Object.freeze(path6.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = await visitAsync_(i, node.items[i], visitor, path5);
+            const ci = await visitAsync_(i, node.items[i], visitor, path6);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -182,13 +182,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path5 = Object.freeze(path5.concat(node));
-          const ck = await visitAsync_("key", node.key, visitor, path5);
+          path6 = Object.freeze(path6.concat(node));
+          const ck = await visitAsync_("key", node.key, visitor, path6);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = await visitAsync_("value", node.value, visitor, path5);
+          const cv = await visitAsync_("value", node.value, visitor, path6);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -215,23 +215,23 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node, visitor, path5) {
+    function callVisitor(key, node, visitor, path6) {
       if (typeof visitor === "function")
-        return visitor(key, node, path5);
+        return visitor(key, node, path6);
       if (identity.isMap(node))
-        return visitor.Map?.(key, node, path5);
+        return visitor.Map?.(key, node, path6);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key, node, path5);
+        return visitor.Seq?.(key, node, path6);
       if (identity.isPair(node))
-        return visitor.Pair?.(key, node, path5);
+        return visitor.Pair?.(key, node, path6);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key, node, path5);
+        return visitor.Scalar?.(key, node, path6);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key, node, path5);
+        return visitor.Alias?.(key, node, path6);
       return void 0;
     }
-    function replaceNode(key, path5, node) {
-      const parent = path5[path5.length - 1];
+    function replaceNode(key, path6, node) {
+      const parent = path6[path6.length - 1];
       if (identity.isCollection(parent)) {
         parent.items[key] = node;
       } else if (identity.isPair(parent)) {
@@ -841,10 +841,10 @@ var require_Collection = __commonJS({
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema, path5, value) {
+    function collectionFromPath(schema, path6, value) {
       let v = value;
-      for (let i = path5.length - 1; i >= 0; --i) {
-        const k = path5[i];
+      for (let i = path6.length - 1; i >= 0; --i) {
+        const k = path6[i];
         if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
           const a = [];
           a[k] = v;
@@ -863,7 +863,7 @@ var require_Collection = __commonJS({
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
-    var isEmptyPath = (path5) => path5 == null || typeof path5 === "object" && !!path5[Symbol.iterator]().next().done;
+    var isEmptyPath = (path6) => path6 == null || typeof path6 === "object" && !!path6[Symbol.iterator]().next().done;
     var Collection = class extends Node.NodeBase {
       constructor(type, schema) {
         super(type);
@@ -893,11 +893,11 @@ var require_Collection = __commonJS({
        * be a Pair instance or a `{ key, value }` object, which may not have a key
        * that already exists in the map.
        */
-      addIn(path5, value) {
-        if (isEmptyPath(path5))
+      addIn(path6, value) {
+        if (isEmptyPath(path6))
           this.add(value);
         else {
-          const [key, ...rest] = path5;
+          const [key, ...rest] = path6;
           const node = this.get(key, true);
           if (identity.isCollection(node))
             node.addIn(rest, value);
@@ -911,8 +911,8 @@ var require_Collection = __commonJS({
        * Removes a value from the collection.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path5) {
-        const [key, ...rest] = path5;
+      deleteIn(path6) {
+        const [key, ...rest] = path6;
         if (rest.length === 0)
           return this.delete(key);
         const node = this.get(key, true);
@@ -926,8 +926,8 @@ var require_Collection = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path5, keepScalar) {
-        const [key, ...rest] = path5;
+      getIn(path6, keepScalar) {
+        const [key, ...rest] = path6;
         const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
@@ -945,8 +945,8 @@ var require_Collection = __commonJS({
       /**
        * Checks if the collection includes a value with the key `key`.
        */
-      hasIn(path5) {
-        const [key, ...rest] = path5;
+      hasIn(path6) {
+        const [key, ...rest] = path6;
         if (rest.length === 0)
           return this.has(key);
         const node = this.get(key, true);
@@ -956,8 +956,8 @@ var require_Collection = __commonJS({
        * Sets a value in this collection. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path5, value) {
-        const [key, ...rest] = path5;
+      setIn(path6, value) {
+        const [key, ...rest] = path6;
         if (rest.length === 0) {
           this.set(key, value);
         } else {
@@ -3472,9 +3472,9 @@ var require_Document = __commonJS({
           this.contents.add(value);
       }
       /** Adds a value to the document. */
-      addIn(path5, value) {
+      addIn(path6, value) {
         if (assertCollection(this.contents))
-          this.contents.addIn(path5, value);
+          this.contents.addIn(path6, value);
       }
       /**
        * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
@@ -3549,14 +3549,14 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path5) {
-        if (Collection.isEmptyPath(path5)) {
+      deleteIn(path6) {
+        if (Collection.isEmptyPath(path6)) {
           if (this.contents == null)
             return false;
           this.contents = null;
           return true;
         }
-        return assertCollection(this.contents) ? this.contents.deleteIn(path5) : false;
+        return assertCollection(this.contents) ? this.contents.deleteIn(path6) : false;
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -3571,10 +3571,10 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path5, keepScalar) {
-        if (Collection.isEmptyPath(path5))
+      getIn(path6, keepScalar) {
+        if (Collection.isEmptyPath(path6))
           return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
-        return identity.isCollection(this.contents) ? this.contents.getIn(path5, keepScalar) : void 0;
+        return identity.isCollection(this.contents) ? this.contents.getIn(path6, keepScalar) : void 0;
       }
       /**
        * Checks if the document includes a value with the key `key`.
@@ -3585,10 +3585,10 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value at `path`.
        */
-      hasIn(path5) {
-        if (Collection.isEmptyPath(path5))
+      hasIn(path6) {
+        if (Collection.isEmptyPath(path6))
           return this.contents !== void 0;
-        return identity.isCollection(this.contents) ? this.contents.hasIn(path5) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path6) : false;
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
@@ -3605,13 +3605,13 @@ var require_Document = __commonJS({
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path5, value) {
-        if (Collection.isEmptyPath(path5)) {
+      setIn(path6, value) {
+        if (Collection.isEmptyPath(path6)) {
           this.contents = value;
         } else if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, Array.from(path5), value);
+          this.contents = Collection.collectionFromPath(this.schema, Array.from(path6), value);
         } else if (assertCollection(this.contents)) {
-          this.contents.setIn(path5, value);
+          this.contents.setIn(path6, value);
         }
       }
       /**
@@ -5565,9 +5565,9 @@ var require_cst_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path5) => {
+    visit.itemAtPath = (cst, path6) => {
       let item = cst;
-      for (const [field, index] of path5) {
+      for (const [field, index] of path6) {
         const tok = item?.[field];
         if (tok && "items" in tok) {
           item = tok.items[index];
@@ -5576,23 +5576,23 @@ var require_cst_visit = __commonJS({
       }
       return item;
     };
-    visit.parentCollection = (cst, path5) => {
-      const parent = visit.itemAtPath(cst, path5.slice(0, -1));
-      const field = path5[path5.length - 1][0];
+    visit.parentCollection = (cst, path6) => {
+      const parent = visit.itemAtPath(cst, path6.slice(0, -1));
+      const field = path6[path6.length - 1][0];
       const coll = parent?.[field];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path5, item, visitor) {
-      let ctrl = visitor(item, path5);
+    function _visit(path6, item, visitor) {
+      let ctrl = visitor(item, path6);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field of ["key", "value"]) {
         const token = item[field];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path5.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path6.concat([[field, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -5603,10 +5603,10 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field === "key")
-            ctrl = ctrl(item, path5);
+            ctrl = ctrl(item, path6);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item, path5) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item, path6) : ctrl;
     }
     exports.visit = visit;
   }
@@ -7334,7 +7334,7 @@ var require_dist = __commonJS({
 });
 
 // src/cli.ts
-import process5 from "node:process";
+import process6 from "node:process";
 
 // src/config.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -7599,8 +7599,10 @@ async function pathExists(p) {
   }
 }
 
-// src/commands/status.ts
+// src/commands/lint.ts
 import process3 from "node:process";
+import { readdir as readdir3 } from "node:fs/promises";
+import path4 from "node:path";
 
 // src/backends/local-fs/index.ts
 import { mkdir as mkdir2, readFile as readFile2, readdir as readdir2, stat as stat2, unlink, writeFile as writeFile2 } from "node:fs/promises";
@@ -8042,7 +8044,238 @@ async function readJson(file) {
   }
 }
 
+// src/backends/local-fs/validate.ts
+var WORK_ITEM_STATUSES = [
+  "scoping",
+  "discovery",
+  "planning",
+  "in_progress",
+  "blocked",
+  "review",
+  "abandoned",
+  "done"
+];
+var ACTIVITY_STATUSES = [
+  "pending",
+  "in_progress",
+  "awaiting_human",
+  "completed",
+  "blocked",
+  "skipped",
+  "abandoned"
+];
+var TASK_STATUSES = [
+  "pending",
+  "in_progress",
+  "completed",
+  "blocked",
+  "skipped",
+  "awaiting_human",
+  "abandoned"
+];
+var INITIATIVE_STATUSES = [
+  "proposed",
+  "active",
+  "on_hold",
+  "completed",
+  "done",
+  "cancelled"
+];
+var ACTORS = ["agent", "human", "any"];
+var WORK_TYPES = [
+  "development",
+  "architecture",
+  "consultancy",
+  "mixed"
+];
+function validateWorkItem(wi) {
+  const issues = [];
+  if (!isOneOf(wi.status, WORK_ITEM_STATUSES)) {
+    issues.push({
+      path: `${wi.id}.status`,
+      message: `invalid WorkItemStatus '${wi.status}' (expected one of: ${WORK_ITEM_STATUSES.join(", ")})`
+    });
+  }
+  if (!isOneOf(wi.type, WORK_TYPES)) {
+    issues.push({
+      path: `${wi.id}.type`,
+      message: `invalid WorkType '${wi.type}' (expected one of: ${WORK_TYPES.join(", ")})`
+    });
+  }
+  for (const a of wi.activities) {
+    issues.push(...validateActivity(wi.id, a));
+  }
+  return issues;
+}
+function validateActivity(workItemId, a) {
+  const issues = [];
+  const prefix = `${workItemId}/${a.id}`;
+  if (!isOneOf(a.status, ACTIVITY_STATUSES)) {
+    issues.push({
+      path: `${prefix}.status`,
+      message: `invalid ActivityStatus '${a.status}' (expected one of: ${ACTIVITY_STATUSES.join(", ")})`
+    });
+  }
+  if (!isOneOf(a.actor, ACTORS)) {
+    issues.push({
+      path: `${prefix}.actor`,
+      message: `invalid Actor '${a.actor}' (expected one of: ${ACTORS.join(", ")})`
+    });
+  }
+  for (const t of a.tasks) {
+    issues.push(...validateTask(prefix, t));
+  }
+  return issues;
+}
+function validateTask(activityPath, t) {
+  const issues = [];
+  const prefix = `${activityPath}/${t.id}`;
+  if (!isOneOf(t.status, TASK_STATUSES)) {
+    issues.push({
+      path: `${prefix}.status`,
+      message: `invalid TaskStatus '${t.status}' (expected one of: ${TASK_STATUSES.join(", ")})`
+    });
+  }
+  if (!isOneOf(t.actor, ACTORS)) {
+    issues.push({
+      path: `${prefix}.actor`,
+      message: `invalid Actor '${t.actor}' (expected one of: ${ACTORS.join(", ")})`
+    });
+  }
+  return issues;
+}
+function validateInitiative(init) {
+  const issues = [];
+  if (!isOneOf(init.status, INITIATIVE_STATUSES)) {
+    issues.push({
+      path: `${init.id}.status`,
+      message: `invalid InitiativeStatus '${init.status}' (expected one of: ${INITIATIVE_STATUSES.join(", ")})`
+    });
+  }
+  return issues;
+}
+function isOneOf(value, allowed) {
+  return allowed.includes(value);
+}
+
+// src/commands/lint.ts
+async function runLint(input) {
+  const issues = [];
+  issues.push(...await detectDuplicateFolders(input.config.workItemsPath, "WI"));
+  issues.push(...await detectDuplicateFolders(input.config.initiativesPath, "IN"));
+  const backend = new LocalFsBackend(input.config);
+  const items = await backend.listPoolWork(input.config.tenant);
+  for (const wi of items) {
+    issues.push(...validateWorkItem(wi));
+  }
+  const stateResult = await backend.getState({ kind: "tenant", tenantId: input.config.tenant });
+  if (stateResult.kind === "tenant") {
+    for (const init of stateResult.data.initiatives) {
+      issues.push(...validateInitiative(init));
+    }
+  }
+  for (const wi of items) {
+    issues.push(...detectActivityIssues(wi));
+  }
+  if (issues.length === 0) {
+    process3.stdout.write("aaw lint: no issues\n");
+    return 0;
+  }
+  process3.stdout.write(`aaw lint: ${issues.length} issue(s)
+
+`);
+  for (const issue of issues) {
+    process3.stdout.write(`  \u2717 ${issue.path}
+      ${issue.message}
+
+`);
+  }
+  return 1;
+}
+async function detectDuplicateFolders(root, prefix) {
+  const issues = [];
+  const re = new RegExp(`^${prefix}-(\\d+)`);
+  let entries;
+  try {
+    const all = await readdir3(root, { withFileTypes: true });
+    entries = all.filter((d) => d.isDirectory()).map((d) => d.name);
+  } catch {
+    return issues;
+  }
+  const byId = /* @__PURE__ */ new Map();
+  for (const entry of entries) {
+    const m = entry.match(re);
+    if (!m)
+      continue;
+    const id = `${prefix}-${m[1].padStart(3, "0")}`;
+    const list = byId.get(id) ?? [];
+    list.push(entry);
+    byId.set(id, list);
+  }
+  for (const [id, folders] of byId) {
+    if (folders.length > 1) {
+      issues.push({
+        path: id,
+        message: `duplicate ID \u2014 ${folders.length} folders share this number:
+` + folders.map((f) => `        ${path4.join(root, f)}`).join("\n")
+      });
+    }
+  }
+  return issues;
+}
+function detectActivityIssues(wi) {
+  const issues = [];
+  const ids = new Set(wi.activities.map((a) => a.id));
+  for (const a of wi.activities) {
+    for (const dep of a.dependsOn) {
+      if (!ids.has(dep)) {
+        issues.push({
+          path: `${wi.id}/${a.id}.depends_on`,
+          message: `references unknown activity '${dep}'`
+        });
+      }
+    }
+  }
+  const colour = /* @__PURE__ */ new Map();
+  const adj = /* @__PURE__ */ new Map();
+  for (const a of wi.activities) {
+    colour.set(a.id, "white");
+    adj.set(
+      a.id,
+      a.dependsOn.filter((d) => ids.has(d))
+    );
+  }
+  const cycles = [];
+  const visit = (node, stack) => {
+    colour.set(node, "grey");
+    for (const next of adj.get(node) ?? []) {
+      const c = colour.get(next);
+      if (c === "grey") {
+        const start = stack.indexOf(next);
+        const cycle = [...stack.slice(start), next].join(" \u2192 ");
+        cycles.push(cycle);
+      } else if (c === "white") {
+        visit(next, [...stack, next]);
+      }
+    }
+    colour.set(node, "black");
+  };
+  for (const a of wi.activities) {
+    if (colour.get(a.id) === "white") {
+      visit(a.id, [a.id]);
+    }
+  }
+  for (const cycle of cycles) {
+    issues.push({
+      path: `${wi.id}.activities`,
+      message: `dependency cycle: ${cycle}`
+    });
+  }
+  return issues;
+}
+
 // src/commands/status.ts
+import process4 from "node:process";
 async function runStatus(input) {
   const backend = new LocalFsBackend(input.config);
   const target = input.args[0];
@@ -8051,22 +8284,22 @@ async function runStatus(input) {
     if (result.kind !== "workItem")
       return 1;
     const wi = result.data;
-    process3.stdout.write(`${wi.id} \u2014 ${wi.title}
+    process4.stdout.write(`${wi.id} \u2014 ${wi.title}
 `);
-    process3.stdout.write(`  type: ${wi.type}, status: ${wi.status}
+    process4.stdout.write(`  type: ${wi.type}, status: ${wi.status}
 `);
-    process3.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
+    process4.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
 `);
-    process3.stdout.write(`  version: ${wi.version}
+    process4.stdout.write(`  version: ${wi.version}
 
 `);
     for (const a of wi.activities) {
       const tick = symbol(a.status);
-      process3.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
+      process4.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
 `);
       for (const t of a.tasks) {
         const ttick = symbol(t.status);
-        process3.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
+        process4.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
 `);
       }
     }
@@ -8074,19 +8307,19 @@ async function runStatus(input) {
   }
   const items = await backend.listPoolWork(input.config.tenant);
   if (items.length === 0) {
-    process3.stdout.write(
+    process4.stdout.write(
       `No work items in ${input.config.workItemsPath}
 (run 'aaw init' if this workspace is not yet configured)
 `
     );
     return 0;
   }
-  process3.stdout.write(`Work items in ${input.config.workItemsPath}:
+  process4.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
   for (const wi of items) {
     const tick = symbol(wi.status);
     const counts = activityCounts(wi);
-    process3.stdout.write(
+    process4.stdout.write(
       `  ${tick} ${wi.id} \u2014 ${wi.title} (${wi.status}, ${counts})
 `
     );
@@ -8116,8 +8349,8 @@ function symbol(status) {
 
 // src/commands/verify.ts
 import { mkdir as mkdir3, readFile as readFile3, unlink as unlink2, writeFile as writeFile3 } from "node:fs/promises";
-import path4 from "node:path";
-import process4 from "node:process";
+import path5 from "node:path";
+import process5 from "node:process";
 async function runVerify(input) {
   const checks = [];
   checks.push({
@@ -8127,7 +8360,7 @@ async function runVerify(input) {
   });
   checks.push({ name: "Mode", ok: true, detail: input.config.mode });
   checks.push({ name: "Tenant", ok: true, detail: input.config.tenant });
-  const sentinel = path4.join(input.config.workItemsPath, ".aaw-sentinel");
+  const sentinel = path5.join(input.config.workItemsPath, ".aaw-sentinel");
   let writeOk = false;
   let writeDetail = "";
   try {
@@ -8157,11 +8390,11 @@ async function runVerify(input) {
     const tick = c.ok ? "\u2713" : "\u2717";
     const line = `  ${tick} ${c.name}${c.detail ? `  \u2014  ${c.detail}` : ""}
 `;
-    process4.stdout.write(line);
+    process5.stdout.write(line);
     if (!c.ok)
       allOk = false;
   }
-  process4.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
+  process5.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
   return allOk ? 0 : 1;
 }
 
@@ -8172,6 +8405,7 @@ Usage:
   aaw init                Bootstrap this workspace (interactive)
   aaw status [WI-NNN]     List work items, or show one
   aaw verify              Sanity-check the local-fs backend
+  aaw lint                Report duplicate IDs, invalid statuses, cycles
   aaw --version           Print CLI version
   aaw --help              Show this help
 
@@ -8181,40 +8415,42 @@ var VERSION = "0.0.0";
 async function main(argv) {
   const [command, ...rest] = argv;
   if (!command || command === "--help" || command === "-h" || command === "help") {
-    process5.stdout.write(HELP);
+    process6.stdout.write(HELP);
     return 0;
   }
   if (command === "--version" || command === "-v") {
-    process5.stdout.write(`${VERSION}
+    process6.stdout.write(`${VERSION}
 `);
     return 0;
   }
   if (command === "init") {
-    return runInit({ cwd: process5.cwd() });
+    return runInit({ cwd: process6.cwd() });
   }
-  const workspaceRoot = await findWorkspaceRoot(process5.cwd());
+  const workspaceRoot = await findWorkspaceRoot(process6.cwd());
   const config = await loadConfig(workspaceRoot);
   switch (command) {
     case "status":
       return runStatus({ config, args: rest });
     case "verify":
       return runVerify({ config });
+    case "lint":
+      return runLint({ config });
     default:
-      process5.stderr.write(`Unknown command: ${command}
+      process6.stderr.write(`Unknown command: ${command}
 
 ${HELP}`);
       return 2;
   }
 }
-main(process5.argv.slice(2)).then(
-  (code) => process5.exit(code),
+main(process6.argv.slice(2)).then(
+  (code) => process6.exit(code),
   (err) => {
-    process5.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
+    process6.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
 `);
-    if (process5.env.AAW_DEBUG) {
-      process5.stderr.write(`${err.stack ?? ""}
+    if (process6.env.AAW_DEBUG) {
+      process6.stderr.write(`${err.stack ?? ""}
 `);
     }
-    process5.exit(1);
+    process6.exit(1);
   }
 );
