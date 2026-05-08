@@ -124,7 +124,11 @@ export async function runInit(input: InitInput): Promise<number> {
 
     process.stdout.write(
       "\nDone. Try this in your AI tool:\n    /aaw-start-work add a new feature\n\n" +
-        "Or from the shell:\n    aaw status\n",
+        "Or from the shell:\n    node .ai-assisted-work/bin/aaw.js status\n\n" +
+        "For shorter commands, set up an alias (one-time):\n" +
+        "  PowerShell ($PROFILE):  function aaw { node \".ai-assisted-work/bin/aaw.js\" @args }\n" +
+        "  Bash/Zsh   (~/.bashrc): alias aaw='node .ai-assisted-work/bin/aaw.js'\n" +
+        "Then: aaw status\n",
     );
     return 0;
   } finally {

@@ -7481,7 +7481,18 @@ Tool shims \u2014 detected: ${detectedNames || "none"}
     process.stdout.write("    \u2713 work_items_path created\n");
     process.stdout.write("    \u2713 shims installed\n");
     process.stdout.write(
-      "\nDone. Try this in your AI tool:\n    /aaw-start-work add a new feature\n\nOr from the shell:\n    aaw status\n"
+      `
+Done. Try this in your AI tool:
+    /aaw-start-work add a new feature
+
+Or from the shell:
+    node .ai-assisted-work/bin/aaw.js status
+
+For shorter commands, set up an alias (one-time):
+  PowerShell ($PROFILE):  function aaw { node ".ai-assisted-work/bin/aaw.js" @args }
+  Bash/Zsh   (~/.bashrc): alias aaw='node .ai-assisted-work/bin/aaw.js'
+Then: aaw status
+`
     );
     return 0;
   } finally {

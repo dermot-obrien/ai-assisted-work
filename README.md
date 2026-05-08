@@ -39,13 +39,15 @@ Once installed, these commands are available in your AI assistant:
 | `/aaw-next-task` | Identify the next task to work on. |
 | `/aaw-start-initiative` | Create a strategic initiative grouping work items. |
 
-And from the shell:
+And from the shell (the v2 submodule install does not put `aaw` on your PATH; either type the bundle path, or set up a shell alias — see [DEPLOYMENT.md](DEPLOYMENT.md#shell-alias)):
 
 ```bash
-aaw status            # list work items in this workspace
-aaw status WI-001     # show one work item with activity/task tree
-aaw verify            # sanity-check the install
+node .ai-assisted-work/bin/aaw.js status            # list work items in this workspace
+node .ai-assisted-work/bin/aaw.js status WI-001     # show one with activity/task tree
+node .ai-assisted-work/bin/aaw.js verify            # sanity-check the install
 ```
+
+Once aliased: `aaw status`, `aaw status WI-001`, `aaw verify`.
 
 ## Documentation
 
