@@ -1,275 +1,165 @@
-# Organization Adoption
+# Organisation Adoption
 
-How organizations can adopt, customize, and contribute to AI-Assisted Work.
+How organisations can adopt, customise, and contribute to AI-Assisted Work.
 
-## Adoption Options
+## The simplest path
 
-### Option 1: Direct Use (Submodule)
-
-Include as a Git submodule in your projects:
+If you're trying AAW for the first time on a single project, the v2 install path is one command:
 
 ```bash
-# Add submodule
 git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
-
-# Update when needed
-git submodule update --remote
+git submodule update --init
+node .ai-assisted-work/bin/aaw.js init
 ```
 
-**Best for**: Teams wanting latest updates, minimal customization.
+Requires Node.js (16+) and git. Works in environments where npm registry access is restricted but git+GitHub access is allowed — the CLI is bundled in the submodule. Cross-platform on Mac, Linux, and Windows.
 
-### Option 2: Fork and Customize
+For details, see [DEPLOYMENT.md](../../DEPLOYMENT.md).
 
-Fork the repository for organizational customization:
+## Adoption options
 
-```bash
-# Fork via GitHub
-# Then clone your fork
-git clone https://github.com/YOUR-ORG/ai-assisted-work.git
+### Option 1: Direct use (submodule)
+
+Each project adds the upstream AAW repo as a Git submodule. Updates via `git submodule update --remote`. Best for teams that want minimal customisation and stay current.
+
+### Option 2: Fork and customise
+
+Fork the AAW repo. Each project uses the fork as its submodule URL. Customisations live on a long-lived branch in the fork; sync from upstream when you want updates.
+
+Best for organisations that need:
+- Custom tool shims (e.g. a non-Anthropic AI assistant)
+- Org-specific skill content (procurement workflow, compliance steps)
+- Branded variants of the standard templates
+
+### Option 3: Permissive copy
+
+Permitted by the licence. Copy the relevant pieces into your own repo and own them. Loses the upgrade path but maximises control. Best for one-off use.
+
+## Customisation pattern: the org overlay
+
+Don't fork by editing files in place. Use the **overlay pattern**:
+
+```
+your-org-aaw-fork/
+├── packages/skills/work-management/   # Upstream — sync with main, don't edit
+├── packages/skills/your-org/          # Your additions, pure markdown
+│   ├── compliance-review.md
+│   ├── procurement-workflow.md
+│   └── _templates/
+└── overlay/                           # Your overrides
+    └── tool-shims/                    # Custom shims for org-internal tools
 ```
 
-**Best for**: Organizations needing custom templates, branding, agents.
+When you `aaw init` from this fork, the init script copies both the upstream skills AND your overlays, so your additions ship to every adopting project.
 
-### Option 3: Copy and Own
+## Templates and conventions
 
-Copy AI-Assisted Work into your project (see [DEPLOYMENT.md](../../DEPLOYMENT.md) for full steps). Typically you copy into `.ai-assisted-work/`; for a custom location, copy `packages/skills/` and `skills-for-agents/` as needed.
+### Extending the base templates
 
-**Best for**: One-off use, no update requirements.
-
----
-
-## Fork and Customize Model
-
-### Repository Structure
-
-```
-your-org-ai-assisted-work/
-├── upstream/                    # Original content (don't modify)
-│   └── (git subtree or reference)
-│
-├── overrides/                   # Your customizations
-│   ├── templates/               # Custom templates
-│   │   ├── scope.md            # Extended scope template
-│   │   └── plan.md             # Extended plan template
-│   ├── agents/                  # Agent customizations
-│   └── branding/                # Org branding
-│
-├── org-agents/                  # Org-specific agents
-│   └── your-custom-agent.md
-│
-└── ORG-CONFIG.yaml             # Configuration
-```
-
-### Configuration
+Add organisation-specific fields without breaking the core schema. The work item `progress.yaml` template supports an `org_metadata` extension point:
 
 ```yaml
-# ORG-CONFIG.yaml
-organization:
-  name: "Your Organization"
-  short_name: "yourorg"
+# packages/skills/work-management/_templates/progress.yaml (your fork)
+work_item_id: WI-NNN
+title: "{title}"
+type: development
+status: scoping
 
-upstream:
-  repository: "https://github.com/dermot-obrien/ai-assisted-work"
-  version_pinned: "1.0.0"
-  auto_sync: false
-
-overrides:
-  templates:
-    - path: "templates/scope.md"
-      reason: "Added compliance fields"
-    - path: "templates/progress.yaml"
-      reason: "Added cost tracking"
-
-org_agents:
-  - id: "compliance-check"
-    path: "org-agents/compliance-check.md"
-```
-
----
-
-## Template Customization
-
-### Extending Base Templates
-
-Add organization fields without breaking core structure:
-
-```yaml
-# Your extended progress.yaml template
-version: 1
-status: in_progress
-
-# Core fields (keep these)
-activities: []
-
-# Organization extension
+# Extension — your fork adds these
 org_metadata:
   cost_center: ""
-  compliance_status: ""
-  risk_level: ""
+  compliance_level: ""
+  jira_epic: ""
+
+activities: []
 ```
 
-### Custom Templates
+The protocol's TypeScript types in `@aaw/protocol` ignore unknown fields (additive-only schema policy), so org_metadata flows through without breaking anything in the framework.
 
-Create entirely new templates for org needs:
+### Custom skill files
 
-```
-overrides/templates/
-├── scope.md              # Extended scope
-├── plan.md               # Extended plan
-├── progress.yaml         # Extended progress
-└── org-checklist.md      # Org-specific template
-```
+Add new markdown skills under `packages/skills/your-org/`. Reference them from your tool shims (`.github/prompts/yourorg-*.prompt.md`, `.claude/commands/yourorg/*.md`, etc).
 
----
+The shim pattern is identical to the standard ones — a thin wrapper that reads the canonical instruction file from the submodule.
 
-## Syncing Updates
-
-### When to Sync
-
-| Upstream Change | Action |
-|-----------------|--------|
-| Bug fix (patch) | Safe to sync |
-| New agent (minor) | Review, then sync |
-| Breaking change (major) | Careful migration |
-
-### How to Sync
+## Syncing with upstream
 
 ```bash
 # Fetch upstream
+git remote add upstream https://github.com/dermot-obrien/ai-assisted-work.git
 git fetch upstream
 
 # Review changes
 git log HEAD..upstream/main --oneline
 
-# Merge carefully
+# Merge — your overlays should be on a different path so conflicts are rare
 git merge upstream/main
-
-# Resolve conflicts (your overrides take precedence)
 ```
 
-### Version Pinning
-
-For stability, pin to specific versions:
-
-```yaml
-upstream:
-  version_pinned: "1.0.0"
-```
-
-Upgrade deliberately:
+For stability, pin to a release tag rather than tracking `main`:
 
 ```bash
-git fetch upstream
-git checkout v1.1.0
+cd .ai-assisted-work
+git checkout v2.0.0      # or whichever tag
+cd ..
+git add .ai-assisted-work
+git commit -m "Pin AAW to v2.0.0"
 ```
 
----
-
-## Contributing Back
-
-### What to Contribute
+## Contributing back
 
 | Contribution | Accepted |
 |--------------|----------|
 | Bug fixes | ✅ Yes |
-| Agent improvements | ✅ If generic |
-| Template enhancements | ✅ If generic |
+| Skill clarifications and additions to the standard set | ✅ if generic |
+| Tool shims for new AI tools | ✅ if the tool is publicly available |
+| New backends (e.g. GitHub Projects, Temporal) | ✅ Strongly desired |
 | Org-specific content | ❌ Keep in your fork |
 
-### Contribution Process
+### Contribution process
 
-1. **Generalize**: Remove org-specific content
-2. **Test**: Verify in generic context
-3. **Document**: Update documentation
-4. **PR**: Submit pull request
+1. Fork or branch from `main`.
+2. Make changes; add a Changeset entry (`npx changeset`).
+3. Open a PR. CI runs typecheck, bundle freshness, REUSE compliance.
+4. On merge, Changesets opens a release PR.
 
-### Example: Contributing a Template Improvement
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
 
-```bash
-# Create contribution branch
-git checkout -b contrib/improved-plan-template
+## Multi-project deployments
 
-# Copy your improved template
-cp overrides/templates/plan.md contrib-plan.md
+Three patterns scale across an organisation:
 
-# Remove org-specific fields
-# Edit to be generic
+### Pattern 1: One submodule per project
 
-# Submit PR to upstream
-```
+Each project adds AAW (or your fork) as its own submodule. Simple but each project needs to be updated independently.
 
----
+### Pattern 2: Shared private intent repo
 
-## Integration Patterns
+A single private repo (e.g. `your-org-intent`) holds work items for all projects in `change/work-items/`. Each project's `.aaw-config.yaml` points at this shared path. One sync point for all your private work-state.
 
-### Pattern 1: Submodule in Domain Project
+### Pattern 3: Cloud mode (when v3.0 lands)
 
-```
-architecture-project/
-├── .ai-assisted-work/                    # Submodule
-│   ├── packages/skills/      # Full instructions
-│   └── skills-for-agents/      # Command wrappers
-├── methodology/                 # Domain-specific
-├── building-blocks/             # Domain-specific
-└── work/                        # Uses .ai-assisted-work skill definitions
-```
+Once the cloud coordinator ships, individual projects flip `mode: cloud` and the work store becomes a hosted multi-tenant service. Per-pool concurrency caps, real-time event subscription, and a web console come along.
 
-### Pattern 2: Fork as Organizational Standard
-
-```
-org-work-standard/               # Your fork
-├── packages/skills/           # Core + org skill definitions
-├── skills-for-agents/           # Command wrappers
-└── docs/                        # Org documentation
-
-# All org projects use this fork
-project-a/
-├── .ai-assisted-work -> org-work-standard
-└── ...
-```
-
-### Pattern 3: Cherry-Pick Agents
-
-```
-your-project/
-├── .agents/
-│   ├── start-work.md           # Copied from ai-assisted-work
-│   ├── progress-work.md        # Copied
-│   └── org-review.md           # Org-specific
-└── ...
-```
-
----
-
-## Best Practices
+## Best practices
 
 ### Do
 
-- ✅ Keep upstream content unmodified (in its folder)
-- ✅ Use overrides for customizations
-- ✅ Document why you override
-- ✅ Contribute generic improvements
-- ✅ Pin versions for stability
+- ✅ Pin to release tags for stability
+- ✅ Keep org overlays in their own folder so upstream merges stay clean
+- ✅ Contribute generic improvements back
+- ✅ Use one shared intent repo across projects to avoid fragmentation
 
 ### Don't
 
-- ❌ Modify upstream files directly
-- ❌ Include org-specific info in contributions
-- ❌ Auto-sync without review
-- ❌ Create divergent forks without reason
+- ❌ Modify upstream files directly in the submodule — your changes get lost on the next pull
+- ❌ Include org-specific content in upstream contributions
+- ❌ Auto-sync without review — there's no replacement for reading the changelog before bumping
 
----
+## Resources
 
-## Support
-
-### For Organizations
-
-- GitHub Issues for bugs/questions
-- GitHub Discussions for community support
-- PR reviews for contributions
-
-### Resources
-
-- [Integration Guide](../integration/index.md)
-- [Contributing Guide](../../CONTRIBUTING.md)
-- [Design Decisions](design-decisions.md)
+- [DEPLOYMENT.md](../../DEPLOYMENT.md) — install, config, troubleshooting
+- [Integration Guide](../integration/index.md) — tool-specific setup
+- [Design Decisions](design-decisions.md) — why the framework is the way it is
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) — contribution guidelines
+- [LICENSE](../../LICENSE) — permissive dual licence (CC BY 4.0 + Apache-2.0)
