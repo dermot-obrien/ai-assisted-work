@@ -5,8 +5,7 @@
 # Progress is tracked by monitoring the status of child Work Items.
 #
 # ID CONVENTIONS:
-#   Initiative (shared):  IN-{NNN}   e.g., IN-001, IN-042
-#   Initiative (private): INP-{NNN}  e.g., INP-001, INP-003
+#   Initiative:  IN-{NNN}   e.g., IN-001, IN-042
 #
 # STATES:
 #   proposed   - Identified, scope being defined. No Work Items yet.

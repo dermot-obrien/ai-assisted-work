@@ -86,46 +86,23 @@ This isolation ensures:
 
 ### Work Item Location
 
-Work items are created in a designated folder. The location depends on your project structure and visibility requirements.
+Work items live at a single configured path. By default, this path is **outside the artefact repo** so work-state never pollutes the artefact repo's history. The path is set in `.aaw-config.yaml` at the workspace root:
 
-#### Visibility Options
-
-| Location Pattern | Visibility | ID Prefix | Use Case |
-|------------------|------------|-----------|----------|
-| `work-items/` or `change/work-items/` | **Shared** (committed) | `WI-NNN` | Work others can see, reference, learn from |
-| `work-items-private/` or `change/work-items-private/` | **Private** (gitignored) | `WIP-NNN` | Personal rationale, experiments, sensitive decisions |
-
-**ID Prefix Convention**:
-- **WI-NNN** = Work Item (shared, committed)
-- **WIP-NNN** = Work Item Private (gitignored)
-
-This allows independent numbering - `WI-001` and `WIP-001` are different work items in different locations. When you see an ID, you immediately know where to find it.
-
-#### Choosing Visibility
-
-**Use shared (committed) when:**
-- The work item demonstrates patterns others can follow
-- You want collaborators to see the full decision history
-- The work item serves as documentation
-
-**Use private (gitignored) when:**
-- The rationale contains sensitive information
-- It's exploratory/experimental work
-- You don't want to clutter the commit history
-
-#### Configuration
-
-To enable private work items, add to your `.gitignore`:
-
-```gitignore
-# Private work items
-change/work-items-private/
-**/work-items-private/
+```yaml
+# .aaw-config.yaml
+tenant: dermot
+mode: local-fs
+work_items_path: ~/aaw/{tenant}/{repo}/work-items/
+initiatives_path: ~/aaw/{tenant}/{repo}/initiatives/
 ```
 
-#### Note
+If a workspace has no config, agents fall back to `./change/work-items/` and `./change/initiatives/` in the artefact repo (legacy default).
 
-The deliverables and outputs from a private work item can still update public files elsewhere in the repository. Only the work item folder itself (scope, plan, progress tracking) remains private.
+There is **one numbering series** for work items (`WI-NNN`) and **one for initiatives** (`IN-NNN`). The deliverables and outputs of a work item can still be committed to the artefact repo as decisions, ADRs, code, or other deliverables — those are produced *by* the work item, not stored *as* it.
+
+#### Publishing a work item as documentation
+
+If you want to ship a specific work item as documentation (e.g. demonstrating a pattern), copy a sanitised snapshot into the artefact repo's `docs/work-items/` directory. This is a deliberate publishing action, not a side effect of where the folder lives.
 
 ---
 
@@ -169,16 +146,12 @@ An **activity** is the unit of work assignment. A worker claims and locks an act
 
 | Entity | Format | Example |
 |--------|--------|---------|
-| Initiative (shared) | `IN-{NNN}` | `IN-001`, `IN-042` |
-| Initiative (private) | `INP-{NNN}` | `INP-001`, `INP-003` |
-| Work Item (shared) | `WI-{NNN}` | `WI-001`, `WI-042` |
-| Work Item (private) | `WIP-{NNN}` | `WIP-001`, `WIP-042` |
-| Activity | `{work_item_id}-A{N}` | `WI-001-A1`, `WIP-001-A2` |
-| Task | `{activity_id}-T{N}` | `WI-001-A1-T1`, `WIP-001-A1-T2` |
-| Deliverable | `{work_item_id}-D{NN}` | `WI-001-D01`, `WIP-001-D02` |
-| Blocker | `{work_item_id}-B{N}` | `WI-001-B1`, `WIP-001-B2` |
-
-**Note**: The prefix indicates type and visibility. Numbering is independent per location.
+| Initiative | `IN-{NNN}` | `IN-001`, `IN-042` |
+| Work Item | `WI-{NNN}` | `WI-001`, `WI-042` |
+| Activity | `{work_item_id}-A{N}` | `WI-001-A1` |
+| Task | `{activity_id}-T{N}` | `WI-001-A1-T1` |
+| Deliverable | `{work_item_id}-D{NN}` | `WI-001-D01` |
+| Blocker | `{work_item_id}-B{N}` | `WI-001-B1` |
 
 ### Activity Dependencies
 
@@ -652,25 +625,19 @@ If version conflict detected in `progress.yaml`:
 
 ### Work Items Location Discovery
 
-Work items are located using a **discovery approach** rather than a hardcoded path.
+Work items live at the path declared in `.aaw-config.yaml` at the workspace root:
 
-**For shared work items** (WI-NNN): Find any `work-items/` subfolder at any level in the workspace.
+```yaml
+work_items_path: ~/aaw/{tenant}/{repo}/work-items/
+```
 
-**For private work items** (WIP-NNN): Find any `work-items-private/` subfolder or symlink at any level in the workspace. Follow symlinks and scan their contents.
+If the config is missing, fall back to `./change/work-items/` in the artefact repo.
 
-**When creating new work items**:
-- **Shared**: Use the first `work-items/` location that exists. If none exist, create `00-change/work-items/`.
-- **Private**: Use the first `work-items-private/` location that exists. If none exist, create `00-change/work-items-private/`.
+**Work Item ID format**: `WI-{NNN}` (zero-padded: 001, 002, etc.). One series.
 
-**Work Item ID format**:
-- Shared: `WI-{NNN}` (zero-padded: 001, 002, etc.)
-- Private: **MUST use `WIP-{NNN}`** (zero-padded: 001, 002, etc.) — never use `WI-` prefix for private work items
+**Folder naming**: `WI-{NNN}-{kebab-case-title}/`.
 
-**Folder naming**:
-- Shared: `WI-{NNN}-{kebab-case-title}/`
-- Private: `WIP-{NNN}-{kebab-case-title}/`
-
-**Finding the next available ID**: Scan the appropriate location for existing work item folders and increment the highest number found. Shared and private numbering are independent.
+**Finding the next available ID**: Scan the resolved root for `WI-*/` folders, take the highest number, increment.
 
 ## Initiatives
 
@@ -735,17 +702,13 @@ An initiative may optionally designate a **root work item** via the `root_work_i
 
 ### Initiative Location Discovery
 
-**For shared Initiatives** (IN-NNN), search in order:
-1. `change/initiatives/` (preferred)
-2. `initiatives/` (root)
-3. Any `**/initiatives/` subfolder
+Initiatives live at the path declared in `.aaw-config.yaml` at the workspace root:
 
-**For private Initiatives** (INP-NNN), search in order:
-1. `change/initiatives-private/` (preferred)
-2. `initiatives-private/` (root)
-3. Any `**/initiatives-private/` subfolder
+```yaml
+initiatives_path: ~/aaw/{tenant}/{repo}/initiatives/
+```
 
-**When creating new Initiatives**: Use the first matching location. If none exist, create `change/initiatives/` (shared) or `change/initiatives-private/` (private).
+If the config is missing, fall back to `./change/initiatives/` in the artefact repo. Initiative ID format is `IN-{NNN}` — one series, no separate prefix.
 
 ### WIP Limits (Recommended)
 

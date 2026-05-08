@@ -1,6 +1,6 @@
 ---
 name: aaw-progress-work
-description: Execute or resume an existing AI-Assisted Work item in this repository. Use when asked to continue implementation, claim activities, or progress a WI/WIP item.
+description: Execute or resume an existing AI-Assisted Work item in this repository. Use when asked to continue implementation, claim activities, or progress a work item.
 ---
 
 # AAW Progress Work

@@ -10,9 +10,10 @@ Identify the next task to work on from the current work item.
 
 ### Step 1: Read Work Item State
 
-Read the work item's `progress.yaml` from `.intent/change/work-items/WI-{NNN}-*/progress.yaml`.
+1. Read `work_items_path` from `.aaw-config.yaml` at the workspace root.
+2. Read the work item's `progress.yaml` from `{work_items_path}/WI-{NNN}-*/progress.yaml`.
+3. If the file doesn't exist on disk, stop and tell the user that the work item doesn't exist; finish at this step.
 
-If the file doesn't exist on disk, stop and tell the use that the work item doesn't exist and finish at this step.
 ### Step 2: Find the Next Task
 
 Walk through activities in order, respecting `depends_on` constraints:
