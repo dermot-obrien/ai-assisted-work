@@ -18,6 +18,7 @@ import { findWorkspaceRoot, loadConfig } from "./config.js";
 import { runClaim } from "./commands/claim.js";
 import { runInit } from "./commands/init.js";
 import { runLint } from "./commands/lint.js";
+import { runMigrate } from "./commands/migrate.js";
 import { runNextTask } from "./commands/next-task.js";
 import { runRelease } from "./commands/release.js";
 import { runRunner } from "./commands/runner.js";
@@ -37,6 +38,7 @@ Usage:
   aaw runner start [--pool POOL] [--interval SECONDS]
                                       Long-lived poller; reports claimable work
   aaw lint                            Report duplicate IDs, invalid statuses, cycles
+  aaw migrate v1 [--dry-run]          Move v1 layout to v2 (renumber WIP→WI etc.)
   aaw verify                          Sanity-check the local-fs backend
   aaw --version                       Print CLI version
   aaw --help                          Show this help
@@ -82,6 +84,8 @@ async function main(argv: string[]): Promise<number> {
       return runNextTask({ config, args: rest });
     case "runner":
       return runRunner({ config, args: rest });
+    case "migrate":
+      return runMigrate({ config, args: rest });
     default:
       process.stderr.write(`Unknown command: ${command}\n\n${HELP}`);
       return 2;
