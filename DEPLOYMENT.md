@@ -1,481 +1,185 @@
 # Deployment Guide
 
-This guide explains how to deploy AI-Assisted Work into your existing project using two methods: **Git Submodule** or **Copy-Paste**.
+This guide explains how to deploy AI-Assisted Work (AAW) into your project.
 
-## Key Design Principle
+## v2 model: a single install path
 
-Both deployment methods place AI-Assisted Work in an isolated `.ai-assisted-work/` folder. This ensures:
+```bash
+git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
+git submodule update --init
+node .ai-assisted-work/bin/aaw.js init
+```
 
-✅ **Safe deployment** - Nothing overwrites your existing project files.  
-✅ **Clean integration** - AI Work Management stays in its own space.  
-✅ **Easy removal** - Delete the `.ai-assisted-work/` folder to remove.  
-✅ **Consistent paths** - Both methods use the same `.ai-assisted-work/` prefix.  
+That's it. The `init` command:
 
-**Skill files** are then added to external folders (like `.github/`) as needed.
+1. Detects git, GitHub Copilot, Cursor, and Claude Code in your workspace
+2. Prompts for tenant name, mode, and the path where work items should live
+3. Writes `.aaw-config.yaml` at your workspace root
+4. Wires up tool shims (`.github/prompts/`, `.cursor/commands/aaw/`, `.claude/commands/aaw/`)
+5. Creates the work-items directory if it doesn't exist
 
-## Quick Decision Guide
+Requires Node.js (16 or newer). For corporate environments where npm registry access is restricted but git+GitHub access is allowed, this single command works without any other registry plumbing — `bin/aaw.js` is a self-contained bundle that ships in the submodule.
 
-| Factor | Git Submodule | Copy-Paste |
-|--------|---------------|------------|
-| **Easy updates** | ✅ `git pull` in submodule | ⚠️ Manual copy |
-| **Contributions** | ✅ Fork + PR workflow | ⚠️ Manual submission |
-| **Customization** | ✅ Edit in your fork | ✅ Edit freely |
-| **Complexity** | ⚠️ Submodule commands | ✅ Simple copy |
-| **File conflicts** | ✅ None | ✅ None |
-| **Recommended for** | Most users | One-time use |
+A future release will also publish `@aaw/cli` to npm for users who prefer `npx @aaw/cli init`. The behaviour is identical; the npm path simply replaces the submodule + bundle steps.
 
 ---
 
-## Deployment Method 1: Git Submodule (Recommended)
+## What gets created
 
-### Step 0: Fork the Repository (Recommended)
+After `aaw init`:
 
-Fork the repository first to enable contributions back to the project:
+```
+your-repo/
+├── .ai-assisted-work/                      # Submodule (the AAW repo)
+│   ├── packages/skills/work-management/    # Skill markdown (read by AI tools)
+│   ├── packages/cli/                       # CLI source
+│   ├── bin/aaw.js                          # Bundled CLI entry
+│   └── skills-for-agents/                  # Tool shim source
+├── .aaw-config.yaml                        # Workspace config (committed)
+├── .github/prompts/                        # GitHub Copilot shims (if detected)
+├── .cursor/commands/aaw/                   # Cursor shims (if detected)
+├── .claude/commands/aaw/                   # Claude Code shims (if detected)
+└── [your existing project files]           # Untouched
 
-1. Go to [github.com/dermot-obrien/ai-assisted-work](https://github.com/dermot-obrien/ai-assisted-work)
-2. Click **Fork** to create your own copy
-3. Use your fork URL in the submodule command below
-
-**Why fork?**
-- Contribute improvements back via pull requests
-- Customize for your organization
-- Stay in sync with upstream updates
-
-### Step 1: Add Submodule
-
-```bash
-# From your project root (use YOUR fork URL)
-git submodule add https://github.com/YOUR-USERNAME/ai-assisted-work.git .ai-assisted-work
-git submodule update --init
+~/aaw/{tenant}/{repo-name}/
+└── work-items/                             # Where work items live (outside the repo)
 ```
 
-This creates `.ai-assisted-work/` folder with all AI-Assisted Work files.
+The work-items directory lives **outside** your project repo by default. This keeps work-state — `progress.yaml`, lock files, scope-ai dialogues — out of your project's git history. Only the committed `.aaw-config.yaml` records that AAW is in use.
 
-### Step 2: Integrate with GitHub Copilot (Optional)
+If you want a particular work item's deliverables in your repo, that's a separate, deliberate publishing step — copy a sanitised snapshot into `docs/work-items/` or write the decision as an ADR.
 
-If you use GitHub Copilot, copy the command wrappers and merge into your Copilot instructions:
+---
 
-```bash
-# Create .github folder if it doesn't exist
-mkdir -p .github/prompts
+## What `.aaw-config.yaml` looks like
 
-# Copy command wrappers (for reference or merge into copilot-instructions.md)
-cp .ai-assisted-work/skills-for-agents/github/prompts/*.md .github/prompts/
+```yaml
+tenant: dermot
+mode: local-fs
+work_items_path: ~/aaw/{tenant}/{repo}/work-items/
+initiatives_path: ~/aaw/{tenant}/{repo}/initiatives/
 ```
 
-Then manually merge the command sections into your `.github/copilot-instructions.md`. Each wrapper points to `.ai-assisted-work/packages/skills/work-management/`.
+| Field | Meaning |
+|---|---|
+| `tenant` | Your namespace — used to scope work items across repos and machines |
+| `mode` | `local-fs` (this machine only) or `cloud` (multi-machine, requires a coordinator) |
+| `work_items_path` | Where `WI-NNN-*/` folders live |
+| `initiatives_path` | Where `IN-NNN-*/` folders live |
 
-### Step 3: Integrate with Cursor (Optional)
+`{tenant}` and `{repo}` are expanded at runtime. `~` expands to the user's home directory. Cross-platform — same on Mac, Linux, Windows.
 
-If you use Cursor:
+---
 
-```bash
-# Create .cursor/rules folder if it doesn't exist
-mkdir -p .cursor/rules
-
-# Copy Cursor command wrappers (aiaw-* prefix avoids conflicts)
-cp .ai-assisted-work/skills-for-agents/cursor/commands/aaw/*.md .cursor/rules/
-```
-
-**Note:** Cursor command files point to the full instructions in `.ai-assisted-work/packages/skills/`. Rename to `aiaw-*.mdc` if your Cursor version expects the `.mdc` extension for rules.
-
-### Step 4: Integrate with Claude Code (Optional)
-
-If you use Claude Code:
-
-```bash
-# Create .claude/commands folder if it doesn't exist
-mkdir -p .claude/commands
-
-# Copy Claude Code command wrappers
-cp .ai-assisted-work/skills-for-agents/claude/commands/aaw/*.md .claude/commands/
-```
-
-**Note:** Claude Code command files point to the full instructions in `.ai-assisted-work/packages/skills/`.
-
-### Step 5: Integrate with Codex (Optional)
-
-If you use OpenAI Codex:
-
-```bash
-# Copy the .agents folder to your project root
-cp -r .ai-assisted-work/skills-for-agents/codex/.agents .agents
-```
-
-**Note:** Codex discovers skills from the `.agents/skills/` folder at the workspace root. Each skill points to the full instructions in `.ai-assisted-work/packages/skills/`. See the [Codex skills documentation](https://developers.openai.com/codex/skills/) for more details.
-
-### Step 6: Commit
-
-```bash
-git add .gitmodules .ai-assisted-work .github .cursor .claude .agents
-git commit -m "Add AI-Assisted Work as submodule."
-```
-
-### Updating Later
+## Updating the submodule
 
 ```bash
 cd .ai-assisted-work
 git pull origin main
 cd ..
 git add .ai-assisted-work
-git commit -m "Update AI-Assisted Work."
+git commit -m "Update AAW"
+node .ai-assisted-work/bin/aaw.js init      # re-run if shim files changed
 ```
+
+The `init` command is idempotent — re-running it on an existing workspace updates shims and config without clobbering custom edits.
 
 ---
 
-## Deployment Method 2: Copy-Paste
-
-**Key principle:** Copy everything into `.ai-assisted-work/` folder (same location as submodule), then add command wrappers externally.
-
-### Step 1: Clone Temporarily
-
-```bash
-# Clone to a temporary location
-git clone https://github.com/dermot-obrien/ai-assisted-work.git /tmp/ai-assisted-work
-```
-
-### Step 2: Copy to .ai-assisted-work/ Folder
-
-```bash
-# Create the .ai-assisted-work folder and copy repo contents into it
-mkdir -p .ai-assisted-work
-cp -r /tmp/ai-assisted-work/. .ai-assisted-work/
-```
-
-**Important:** All AI-Assisted Work content stays inside `.ai-assisted-work/`. This matches the submodule structure and ensures no file conflicts.
-
-### Step 3: Integrate with GitHub Copilot (Optional)
-
-If you use GitHub Copilot:
-
-```bash
-mkdir -p .github/prompts
-cp .ai-assisted-work/skills-for-agents/github/prompts/*.md .github/prompts/
-```
-
-Then merge the command sections into your `.github/copilot-instructions.md`. Wrappers point to `.ai-assisted-work/packages/skills/`.
-
-### Step 4: Integrate with Cursor (Optional)
-
-If you use Cursor:
-
-```bash
-mkdir -p .cursor/rules
-cp .ai-assisted-work/skills-for-agents/cursor/commands/aaw/*.md .cursor/rules/
-```
-
-Rename to `aiaw-*.mdc` if your Cursor version expects that extension.
-
-### Step 5: Integrate with Claude Code (Optional)
-
-If you use Claude Code:
-
-```bash
-mkdir -p .claude/commands
-cp .ai-assisted-work/skills-for-agents/claude/commands/aaw/*.md .claude/commands/
-```
-
-### Step 6: Integrate with Codex (Optional)
-
-If you use OpenAI Codex:
-
-```bash
-cp -r .ai-assisted-work/skills-for-agents/codex/.agents .agents
-```
-
-### Step 7: Clean Up and Commit
-
-```bash
-# Remove temporary clone
-rm -rf /tmp/ai-assisted-work
-
-# Commit to your project
-git add .ai-assisted-work .github .cursor .claude
-git commit -m "Add AI-Assisted Work"
-```
-
-### Updating Later
-
-```bash
-# Clone fresh copy
-git clone https://github.com/dermot-obrien/ai-assisted-work.git /tmp/ai-assisted-work
-
-# Update .ai-assisted-work folder (replace contents, keep .git if submodule)
-cp -r /tmp/ai-assisted-work/. .ai-assisted-work/
-
-# Clean up
-rm -rf /tmp/ai-assisted-work
-
-git add .ai-assisted-work
-git commit -m "Update AI-Assisted Work"
-```
-
----
-
-## Project Structure After Deployment
-
-Both deployment methods result in the **same structure**:
-
-```
-your-project/
-├── .ai-assisted-work/                             ← AI-Assisted Work (isolated)
-│   ├── packages/skills/               ← Full agent instructions (source)
-│   │   └── work-management/             ← start-work, progress-work, work-status, etc.
-│   ├── skills-for-agents/               ← Command wrappers (source for copy)
-│   │   ├── cursor/commands/aaw/        ← Cursor wrappers
-│   │   ├── claude/commands/aaw/         ← Claude Code wrappers
-│   │   ├── codex/.agents/skills/        ← Codex skills
-│   │   └── github/skills/aaw/           ← GitHub Copilot wrappers
-│   ├── docs/
-│   ├── examples/
-│   └── schemas/
-├── .agents/
-│   └── skills/                          ← Copied from .ai-assisted-work/skills-for-agents/codex/.agents/
-├── .claude/
-│   └── commands/                        ← Copied from .ai-assisted-work/skills-for-agents/claude/
-├── .github/
-│   └── copilot-instructions.md          ← Manually merged from wrappers
-├── .cursor/
-│   └── rules/                            ← Copied from .ai-assisted-work/skills-for-agents/cursor/
-└── [your existing project files]        ← Completely untouched
-```
-
----
-
-## What Goes Where
-
-| Content | Location | Why |
-|---------|----------|-----|
-| **All AI-Assisted Work content** | `.ai-assisted-work/` | Isolated, no conflicts |
-| **Claude Code commands** | `.claude/commands/*.md` | Required location by Claude Code |
-| **Codex skills** | `.agents/skills/aaw-*` | Required location by Codex |
-| **GitHub Copilot instructions** | `.github/copilot-instructions.md` | Required location by GitHub Copilot |
-| **Cursor rules** | `.cursor/rules/*.md` or `*.mdc` | Required location by Cursor |
-
-### Wrappers vs Direct Copy
-
-| File Type | Strategy | Reason |
-|-----------|----------|--------|
-| `.github/copilot-instructions.md` | **Merge** (manual) | User likely has existing file; merge from wrappers |
-| `.claude/commands/*.md` | **Direct copy** (safe) | Copy from `skills-for-agents/claude/commands/aaw/` |
-| `.cursor/rules/*.md` | **Direct copy** (safe) | Copy from `skills-for-agents/cursor/commands/aaw/`; rename to `*.mdc` if needed |
-| `.agents/` | **Direct copy** (safe) | Copy from `skills-for-agents/codex/.agents/` |
-
----
-
-## Manual Merge Instructions
-
-If you already have `.github/copilot-instructions.md` in your project, you need to **manually merge** the AI-Assisted Work commands.
-
-### Wrapper File Location
-
-After copying, the command wrappers are in `.github/` (from `.ai-assisted-work/skills-for-agents/github/skills/aaw/`). Open them to see the commands, then copy what you need into your `.github/copilot-instructions.md`. All paths in the wrappers point to `.ai-assisted-work/packages/skills/`.
-
-### Option 1: Append Section
-
-Open your existing `.github/copilot-instructions.md` and append:
-
-```markdown
----
-
-## AI-Assisted Work Commands
-
-When the user invokes one of these commands, read and follow the full agent instructions from the specified file.
-
-### Work Management Agents
-
-#### `/aiaw-start-work` - Initialize New Work Items
-
-**Full instructions:** Read `.ai-assisted-work/packages/skills/work-management/start-work.md`
-
-**Required reading:**
-- `.ai-assisted-work/packages/skills/work-management/AGENTS.md`
-- `.ai-assisted-work/packages/skills/work-management/README.md`
-
-**Purpose:** Create a new work item with scope, plan, and progress tracking.
-
-#### `/aiaw-progress-work` - Continue Work on Items
-
-[... continue with other commands from the wrappers ...]
-```
-
-### Option 2: Reference by Inclusion
-
-Add this to your existing `.github/copilot-instructions.md`:
-
-```markdown
----
-
-## AI-Assisted Work Integration
-
-This project uses AI-Assisted Work for structured work management.
-
-When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-status`, or `/aiaw-next-task`:
-
-1. Read the full instructions from the corresponding file:
-   - `/aiaw-start-work` → `.ai-assisted-work/packages/skills/work-management/start-work.md`
-   - `/aiaw-progress-work` → `.ai-assisted-work/packages/skills/work-management/progress-work.md`
-   - `/aiaw-work-status` → `.ai-assisted-work/packages/skills/work-management/work-status.md`
-   - `/aiaw-next-task` → `.ai-assisted-work/packages/skills/work-management/next-task.md`
-
-2. Read supporting documentation:
-   - `.ai-assisted-work/packages/skills/work-management/AGENTS.md` - Agent rules
-   - `.ai-assisted-work/packages/skills/work-management/README.md` - Core concepts
-
-3. Follow the instructions exactly as written in those files
-```
-
----
-
-## Verification
-
-### Test Claude Code Integration
-
-1. Open Claude Code
-2. Type: `/aiaw-start-work test work item`
-3. Verify Claude reads the command file from `.claude/commands/`
-4. Verify it follows the instructions from `.ai-assisted-work/packages/skills/work-management/start-work.md`
-
-### Test GitHub Copilot Integration
-
-1. Open GitHub Copilot Chat
-2. Type: `/aiaw-start-work test work item`
-3. Verify Copilot reads the instructions from `.ai-assisted-work/packages/skills/work-management/start-work.md`
-4. Verify it follows the workflow
-
-### Test Cursor Integration
-
-1. Open Cursor
-2. Type: `/aiaw-start-work test work item`
-3. Verify Cursor loads the agent instructions
-
-### Test Codex Integration
-
-1. Open Codex
-2. Ask it to use the `aaw-start-work` skill
-3. Verify it reads the instructions from `.ai-assisted-work/packages/skills/work-management/start-work.md`
-
----
-
-## Project Structure After Deployment
-
-### Submodule Structure
-
-```
-your-project/
-├── .ai-assisted-work/                             ← Submodule (isolated)
-│   ├── packages/skills/               ← Full instructions (work-management)
-│   ├── skills-for-agents/               ← Command wrappers (cursor, claude, codex, github)
-│   ├── docs/
-│   ├── examples/
-│   └── schemas/
-├── .agents/skills/                      ← Copied from .ai-assisted-work/skills-for-agents/codex/
-├── .claude/commands/                     ← Copied from .ai-assisted-work/skills-for-agents/claude/
-├── .github/copilot-instructions.md       ← Your file (manually merged from wrappers)
-├── .cursor/rules/                        ← Copied from .ai-assisted-work/skills-for-agents/cursor/
-└── [your project files]                  ← Untouched
-```
-
-### Copy-Paste Structure
-
-Same as submodule: `.ai-assisted-work/` contains `packages/skills/`, `skills-for-agents/`, `docs/`, `examples/`, `schemas/`. Integration files are copied from `skills-for-agents/` to `.agents/skills/`, `.claude/commands/`, `.cursor/rules/`, and merged into `.github/copilot-instructions.md`.
-
----
-
-## What Gets Isolated (Safe for Copy-Paste)
-
-All AI-Assisted Work files are in these folders:
-
-| Folder | Contents | Safe to Copy? |
-|--------|----------|---------------|
-| `packages/skills/` | Full agent instructions (work-management) | ✅ Yes - isolated |
-| `skills-for-agents/` | Command wrappers for Cursor, Claude, Codex, GitHub | ✅ Yes - source for copy |
-| `docs/` | Documentation | ✅ Yes - can go in `docs/ai-assisted-work/` |
-| `examples/` | Example work items | ✅ Yes - isolated |
-| `schemas/` | YAML schemas | ✅ Yes - isolated |
-| `scripts/` | Helper scripts | ✅ Yes - isolated |
-
-**Files NOT copied automatically** (must be manually merged):
-
-| File | Why | How to Handle |
-|------|-----|---------------|
-| `.github/copilot-instructions.md` | Would overwrite yours | Merge content from `skills-for-agents/github/skills/aaw/*.md` |
-| `README.md` | Would overwrite yours | Don't copy (AI-Assisted Work's readme) |
-| `.gitignore` | Would overwrite yours | Don't copy |
-
----
-
-## Removing AI-Assisted Work
-
-### For Submodule
+## Removing AAW
 
 ```bash
 git submodule deinit .ai-assisted-work
 git rm .ai-assisted-work
 rm -rf .git/modules/.ai-assisted-work
-git commit -m "Remove AI-Assisted Work submodule"
+git commit -m "Remove AAW submodule"
 
-# Manually remove from .github/copilot-instructions.md if needed
+# Optional cleanup:
+rm .aaw-config.yaml
+rm -rf .github/prompts/aaw-*.prompt.md
+rm -rf .claude/commands/aaw
+rm -rf .cursor/commands/aaw
 ```
 
-### For Copy-Paste
+Your work items at `~/aaw/{tenant}/{repo}/` are not touched. Delete them manually if you no longer want the data.
+
+---
+
+## Verifying the install
 
 ```bash
-rm -rf .ai-assisted-work/
-
-# Manually remove AI-Assisted Work sections from .github/copilot-instructions.md
-# Manually remove aiaw-* files from .cursor/rules/
-# Manually remove aiaw-* files from .claude/commands/
-# Manually remove .agents/ folder if it only contains AAW skills
-
-git add -A
-git commit -m "Remove AI-Assisted Work"
+node .ai-assisted-work/bin/aaw.js verify
 ```
+
+This runs a sanity check: workspace root resolved, config readable, work-items path read+write, and the local-fs backend can list any existing work items.
+
+```bash
+node .ai-assisted-work/bin/aaw.js status
+```
+
+Lists current work items in the configured path. Empty output means no items yet — try creating one via your AI tool with `/aaw-start-work`.
+
+---
+
+## Tool integration
+
+| Tool | Trigger | Shim location |
+|---|---|---|
+| GitHub Copilot | `/aaw-start-work`, `/aaw-progress-work`, `/aaw-work-status`, `/aaw-next-task`, `/aaw-start-initiative` | `.github/prompts/aaw-*.prompt.md` |
+| Cursor | `/aaw-...` | `.cursor/commands/aaw/*.md` |
+| Claude Code | `/aaw-...` | `.claude/commands/aaw/*.md` |
+| OpenAI Codex | (skill discovery) | `.agents/skills/aaw-*/` (copy from `.ai-assisted-work/skills-for-agents/codex/.agents/`) |
+| Gemini CLI | `/aaw-...` | (copy from `.ai-assisted-work/skills-for-agents/gemini/skills/aaw/`) |
+
+All shims point to the canonical instructions in `.ai-assisted-work/packages/skills/work-management/`. There is one source of truth.
+
+---
+
+## Cloud mode (preview)
+
+`mode: cloud` is reserved for multi-machine coordination via a Cloud Run + Firestore service. The coordinator service ships as a separate repo (`aaw-coordinator`) that consumes `@aaw/protocol`. Cloud mode is not generally available yet; track progress in CHANGELOG.md.
+
+When cloud mode ships, switching is a one-line config change — your skills, your AI tools, and your local CLI all behave identically. Only the transport changes.
 
 ---
 
 ## Troubleshooting
 
-### Issue: Paths Not Found
+**`aaw init` says "no AI tools detected"**
 
-**Symptom:** Copilot or Cursor says it can't find the instruction file
+The init script looks for `.github/`, `.cursor/`, and `.claude/` directories at the workspace root. If your tool keeps configuration elsewhere, create the directory yourself first or pass an explicit list when prompted (e.g. `copilot,claude`).
 
-**Solution:**
-- Ensure paths use `.ai-assisted-work/packages/skills/` (not `agents/`)
-- Work management: `.ai-assisted-work/packages/skills/work-management/`
-- Check file permissions and that the submodule or copy is present
+**Skills not discoverable in my AI tool**
 
-### Issue: Commands Not Working
+The shim files just point at the canonical instructions. If your tool isn't reading them, check:
+- `.github/prompts/aaw-*.prompt.md` — restart Copilot Chat after first install
+- `.claude/commands/aaw/*.md` — Claude Code picks these up on session start
+- `.cursor/commands/aaw/*.md` — Cursor reads on workspace open
 
-**Symptom:** `/aiaw-start-work` not recognized
+**Work items aren't showing up in `aaw status`**
 
-**Solution:**
-1. Verify `.github/copilot-instructions.md` (or Cursor rules / Claude commands) contains the command and points to `.ai-assisted-work/packages/skills/...`
-2. Restart the AI assistant extension
-3. Try referencing the file explicitly: `.ai-assisted-work/packages/skills/work-management/start-work.md`
+Run `aaw verify` first. If it reports the config and path correctly, check that work items exist at the resolved path:
 
-### Issue: File Conflicts During Copy
+```bash
+ls -la $(node .ai-assisted-work/bin/aaw.js status 2>&1 | head -1)
+```
 
-**Symptom:** "File already exists" error
+**Migrating from v1**
 
-**Solution:**
-- This shouldn't happen if following the guide correctly (everything goes under `.ai-assisted-work/`)
-- If `.ai-assisted-work/` already exists, replace its contents or use a different submodule path
-- Ensure all paths in wrappers point to `.ai-assisted-work/packages/skills/`
+v1 used `change/work-items/` (committed) and optional `change/work-items-private/` (gitignored, often a symlink). v2 reads from a single configured path. Migration steps:
 
----
+1. Run `aaw init` — pick a `work_items_path` that points at where you want them to live.
+2. Move existing `change/work-items/WI-*/` and `change/work-items-private/WIP-*/` folders into the new path. Rename `WIP-NNN-*` to `WI-NNN-*` (use the next-available number to avoid clashes).
+3. Delete the old `change/work-items*` directories.
+4. The v1 `.gitignore` lines for `work-items-private/` are kept in this repo's `.gitignore` to protect any pre-migration data on contributor machines; you can remove them once migration is complete.
 
-## See Also
-
-- [packages/skills/work-management/](packages/skills/work-management/README.md) - Work management instructions and README
-- [skills-for-agents/](skills-for-agents/) - Command wrappers for Cursor, Claude, Codex, GitHub
-- [Command Discovery](docs/integration/command-discovery.md) - How commands work across AI assistants
-- [Getting Started](docs/getting-started/index.md) - First steps and concepts
+A migration helper is on the roadmap.
 
 ---
 
-## Support
+## See also
 
-For questions or issues:
-- Open an issue: https://github.com/dermot-obrien/ai-assisted-work/issues
-- See documentation: [docs/](docs/)
+- [packages/skills/work-management/README.md](packages/skills/work-management/README.md) — concepts, lifecycle, ID conventions
+- [packages/protocol/README.md](packages/protocol/README.md) — protocol contract used by all backends
+- [docs/integration/index.md](docs/integration/index.md) — tool-specific notes
+- [CHANGELOG.md](CHANGELOG.md) — version history
