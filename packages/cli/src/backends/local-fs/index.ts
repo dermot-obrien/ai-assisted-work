@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dermot O'Brien
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Local-FS backend: implements @aaw/protocol's Backend interface against
  * the filesystem layout established by AAW v1.

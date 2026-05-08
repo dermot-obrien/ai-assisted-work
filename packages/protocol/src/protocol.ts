@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dermot O'Brien
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * AAW protocol — the six-operation Backend interface that decouples skills
  * (and the CLI) from the storage transport. Implementations:

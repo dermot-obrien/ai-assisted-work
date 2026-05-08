@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dermot O'Brien
+// SPDX-License-Identifier: Apache-2.0
+
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";

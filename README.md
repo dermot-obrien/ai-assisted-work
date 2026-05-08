@@ -1,9 +1,9 @@
 # AI Assisted Work
 
-[![Version: v2.0.0](https://img.shields.io/badge/Version-v2.0.0-purple.svg)](LICENSE)
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Commercial License Available](https://img.shields.io/badge/Commercial-License%20Available-green.svg)](LICENSE-COMMERCIAL.txt)
-[![Docs License: CC BY 4.0](https://img.shields.io/badge/Docs-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+[![Licence: CC BY 4.0](https://img.shields.io/badge/content-CC%20BY%204.0-blue.svg)](LICENSES/CC-BY-4.0.txt)
+[![Licence: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSES/Apache-2.0.txt)
+[![REUSE 3.3](https://img.shields.io/badge/REUSE-3.3-lightgrey.svg)](https://reuse.software/spec-3.3/)
 
 **Domain-agnostic, reusable AI agents for work management.**
 
@@ -64,31 +64,22 @@ Fork this repository to customize for your organization. See [Organization Adopt
 
 Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## License
+## Licence
 
-This project is dual-licensed:
+This framework is permissively licensed to encourage the widest possible adoption — private, public, academic, and commercial. Attribution is the primary expectation.
 
-### For Open Source Use
-- **Code/Agents**: [AGPL-3.0](LICENSE-AGPL-3.0.txt) - Free for open-source projects
-- **Documentation**: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+- **Documentation, skill definitions, agent shims, templates, examples** ([`CC BY 4.0`](LICENSES/CC-BY-4.0.txt)) — use, share, modify, and redistribute, including commercially, with attribution.
+- **Executable code** (`packages/cli/`, `packages/protocol/`, `bin/`, build scripts) ([`Apache-2.0`](LICENSES/Apache-2.0.txt)) — same permissions, with an explicit patent grant.
 
-### For Commercial Use
-If you want to use this software in a proprietary/commercial product or cannot comply with AGPL-3.0 requirements (e.g., you don't want to open-source your application), you must obtain a [Commercial License](LICENSE-COMMERCIAL.txt).
+Per-file licensing is declared via SPDX identifiers and the [`REUSE.toml`](REUSE.toml) manifest, following the [REUSE Specification 3.3](https://reuse.software/spec-3.3/). See [`LICENSE`](LICENSE) for the full overview.
 
-**Commercial use includes:**
-- Proprietary or closed-source applications
-- SaaS or hosted services without open-sourcing your code
-- Any use where AGPL-3.0 compliance is not possible
+### Trademark
 
-**Contact for commercial licensing:** dermots.stuff@gmail.com
-
-See [LICENSE](LICENSE) for details.
-
-## Author
-
-**Dermot O'Brien** - [@dermot-obrien](https://github.com/dermot-obrien)
+"AI-Assisted Work" and any associated logos are trademarks of Dermot O'Brien. The licences above grant rights to the **content and code** only; they do not grant rights to use these marks. Nominative use ("based on AI-Assisted Work") is welcome; please use a different name for forks or derivative offerings.
 
 ## Attribution
+
+Created by **Dermot O'Brien** ([@dermot-obrien](https://github.com/dermot-obrien)).
 
 If you use AI-Assisted Work, attribution is appreciated:
 
