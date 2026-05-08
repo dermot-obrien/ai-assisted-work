@@ -35,6 +35,16 @@ Major redesign. AAW is now a TypeScript monorepo with a defined protocol, a CLI,
 ### Fixed
 - All AI-tool wrappers (Claude, Cursor, GitHub, Codex, Gemini) point at `packages/skills/work-management/` consistently. Old `skill-definitions/` references are kept only in CHANGELOG.md and historical work-item documents where they record what was true at the time.
 
+### Licensing (breaking)
+- Switched from **AGPL-3.0 + Commercial Licence + CC BY 4.0** to **CC BY 4.0 + Apache-2.0** (permissive dual licence) governed by REUSE Specification 3.3.
+- Content (Markdown, YAML, skill definitions, templates, agent shims) is now CC BY 4.0.
+- Code (TypeScript / JavaScript / build scripts) is now Apache-2.0 with an explicit patent grant.
+- New `LICENSES/CC-BY-4.0.txt` and `LICENSES/Apache-2.0.txt`. New `REUSE.toml` at root. New SPDX headers on all source files.
+- Removed `LICENSE-AGPL-3.0.txt` and `LICENSE-COMMERCIAL.txt`.
+- Trademark on the project name is preserved separately in `LICENSE` (nominative use welcome; rebrand forks).
+- Rationale captured in `docs/about/design-decisions.md` DD-07.
+- The change applies forward; existing v1 releases keep their AGPL+Commercial terms.
+
 ### Migration
 Existing repos using v1 layout (`change/work-items/` + `change/work-items-private/`) keep working — when no `.aaw-config.yaml` is present, the local-fs backend falls back to `./change/work-items/` as the legacy default. To migrate cleanly:
 

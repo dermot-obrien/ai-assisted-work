@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dermot O'Brien
+// SPDX-License-Identifier: Apache-2.0
+
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";

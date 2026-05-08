@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dermot O'Brien
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * AAW schema — entity types for tenant, pool, initiative, work item,
  * activity, task, deliverable, claim, blocker, event.

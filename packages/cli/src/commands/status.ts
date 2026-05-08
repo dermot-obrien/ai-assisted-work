@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Dermot O'Brien
+// SPDX-License-Identifier: Apache-2.0
+
 import process from "node:process";
 import { LocalFsBackend } from "../backends/local-fs/index.js";
 import type { AawConfig } from "../config.js";
