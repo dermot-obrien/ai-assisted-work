@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2026 Dermot O'Brien
+# SPDX-License-Identifier: Apache-2.0
+
+# Release workflow.
+#
+# On push to main, runs Changesets:
+#   - If changesets are pending → opens / updates a "Version Packages" PR
+#     that bumps versions and updates CHANGELOG.md.
+#   - If a Version Packages PR was just merged (no pending changesets) →
+#     publishes @aaw/cli, @aaw/protocol, @aaw/skills to npm and creates
+#     a GitHub Release with the changelog.
+#
+# Requires the NPM_TOKEN secret on the repo. To set up:
+#
+#   1. Create an automation token at https://www.npmjs.com/settings/{user}/tokens
+#      - Type: Automation (read+publish, no MFA prompt)
+#      - Scope: @aaw (or restrict if you've narrowed the org)
+#   2. Add as a repo secret: Settings → Secrets and variables → Actions →
+#      New repository secret → name=NPM_TOKEN, value=<token>
+#   3. Ensure GITHUB_TOKEN has contents:write and pull-requests:write
+#      (the `permissions` block below covers this).
+#
+# Until NPM_TOKEN is set, the publish step is a no-op and the workflow
+# just opens the version PR.
+
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    name: Version & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: npm ci
+
+      - name: Build packages
+        run: |
+          (cd packages/protocol && npx tsc -p tsconfig.json)
+          (cd packages/cli && npx tsc -p tsconfig.json)
+          (cd packages/cli && npm run bundle)
+
+      - name: Verify bundle is committed
+        run: |
+          if [ -n "$(git status --porcelain bin/aaw.js)" ]; then
+            echo "::error::bin/aaw.js out of date — re-bundle and commit before tagging."
+            exit 1
+          fi
+
+      - name: Run Changesets
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: npm run release
+          version: npm run version
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
