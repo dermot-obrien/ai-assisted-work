@@ -46,12 +46,12 @@ The agent will:
 /aaw-next-task WI-001         # what's next inside one work item
 ```
 
-From the shell:
+From the shell (the bundled CLI is at `.ai-assisted-work/bin/aaw.js`; see [DEPLOYMENT.md](../../DEPLOYMENT.md#shell-alias) to add an `aaw` alias):
 
 ```bash
-aaw status                    # list work items
-aaw status WI-001             # show one with activity/task tree
-aaw verify                    # sanity-check the install
+node .ai-assisted-work/bin/aaw.js status            # list work items
+node .ai-assisted-work/bin/aaw.js status WI-001     # show one with activity/task tree
+node .ai-assisted-work/bin/aaw.js verify            # sanity-check the install
 ```
 
 ## Work item structure

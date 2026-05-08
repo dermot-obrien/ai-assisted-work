@@ -105,11 +105,44 @@ Your work items at `~/aaw/{tenant}/{repo}/` are not touched. Delete them manuall
 
 ---
 
+## Shell alias
+
+The submodule install does not put `aaw` on your PATH (npm publish ships in v2.1; until then it's a bundle inside the submodule). Either type the full path, or set up a one-line alias.
+
+**PowerShell** — add to `$PROFILE`:
+
+```powershell
+function aaw { node ".ai-assisted-work/bin/aaw.js" @args }
+```
+
+To find your profile path: `$PROFILE`. To create + edit it:
+
+```powershell
+if (!(Test-Path $PROFILE)) { New-Item -Type File -Force $PROFILE }
+notepad $PROFILE
+```
+
+Reload with `. $PROFILE` or open a new shell.
+
+**Bash / zsh** — add to `~/.bashrc` or `~/.zshrc`:
+
+```sh
+alias aaw='node .ai-assisted-work/bin/aaw.js'
+```
+
+Reload with `source ~/.bashrc` (or open a new shell).
+
+The function/alias resolves `.ai-assisted-work/bin/aaw.js` relative to your current directory, so `aaw status` works in any workspace where AAW is installed as a submodule.
+
+---
+
 ## Verifying the install
 
 ```bash
 node .ai-assisted-work/bin/aaw.js verify
 ```
+
+(Or `aaw verify` if you've set up the alias above.)
 
 This runs a sanity check: workspace root resolved, config readable, work-items path read+write, and the local-fs backend can list any existing work items.
 
