@@ -8,5 +8,8 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0"
   }
 }

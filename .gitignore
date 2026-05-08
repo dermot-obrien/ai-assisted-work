@@ -1,9 +1,13 @@
-# Agents.
+# Agent configs that contributors might run against this repo locally —
+# don't pollute the repo with one author's tool setup. The shipped tool
+# shims live in skills-for-agents/ and packages/skills/.
 CLAUDE.md
 /.cursor/
 /.claude/
-/.github/
-CLAUDE.md
+
+# Block .github/ contents EXCEPT the CI workflows that ship with the repo.
+/.github/*
+!/.github/workflows/
 
 # Private work items (legacy — kept to protect data from pre-v2 setups).
 change/work-items-private/
