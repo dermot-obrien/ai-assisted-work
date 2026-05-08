@@ -7334,7 +7334,7 @@ var require_dist = __commonJS({
 });
 
 // src/cli.ts
-import process9 from "node:process";
+import process10 from "node:process";
 
 // src/config.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -8437,8 +8437,106 @@ function parseFlags2(args) {
   return out;
 }
 
-// src/commands/status.ts
+// src/commands/runner.ts
 import process7 from "node:process";
+var DEFAULT_INTERVAL_SECONDS = 30;
+async function runRunner(input) {
+  const sub = input.args[0];
+  if (sub !== "start") {
+    process7.stderr.write(
+      "aaw runner: expected subcommand 'start' (e.g. `aaw runner start --pool default`)\n"
+    );
+    return 2;
+  }
+  const opts = parseFlags3(input.args.slice(1));
+  const pool = opts.pool ?? input.config.tenant;
+  const intervalSeconds = opts.interval ?? DEFAULT_INTERVAL_SECONDS;
+  const backend = new LocalFsBackend(input.config);
+  process7.stdout.write(
+    `aaw runner: polling pool='${pool}' every ${intervalSeconds}s.
+Workspace: ${input.config.workspaceRoot}
+Press Ctrl-C to stop.
+
+`
+  );
+  let stopped = false;
+  const stop = () => {
+    if (stopped)
+      return;
+    stopped = true;
+    process7.stdout.write("\naaw runner: stopping.\n");
+  };
+  process7.on("SIGINT", stop);
+  process7.on("SIGTERM", stop);
+  while (!stopped) {
+    try {
+      const items = await backend.listPoolWork(pool, { claimableOnly: true });
+      const claimable = items.flatMap(findClaimableActivities);
+      const ts = (/* @__PURE__ */ new Date()).toISOString();
+      if (claimable.length === 0) {
+        process7.stdout.write(`[${ts}] no claimable activities
+`);
+      } else {
+        process7.stdout.write(`[${ts}] ${claimable.length} claimable:
+`);
+        for (const c of claimable.slice(0, 10)) {
+          process7.stdout.write(
+            `   ${c.workItemId}/${c.activityId} (${c.actor}) \u2014 ${c.title}
+`
+          );
+        }
+        if (claimable.length > 10) {
+          process7.stdout.write(`   \u2026and ${claimable.length - 10} more
+`);
+        }
+      }
+    } catch (err) {
+      const ts = (/* @__PURE__ */ new Date()).toISOString();
+      process7.stderr.write(`[${ts}] poll error: ${err.message}
+`);
+    }
+    if (stopped)
+      break;
+    await sleep(intervalSeconds * 1e3, () => stopped);
+  }
+  return 0;
+}
+function findClaimableActivities(wi) {
+  return wi.activities.filter(
+    (a) => a.status === "pending" && a.dependsOn.every(
+      (id) => wi.activities.find((x) => x.id === id)?.status === "completed"
+    ) && a.actor !== "human"
+  ).map((a) => ({
+    workItemId: wi.id,
+    activityId: a.id,
+    title: a.title,
+    actor: a.actor
+  }));
+}
+function parseFlags3(args) {
+  const out = {};
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--pool" && i + 1 < args.length) {
+      out.pool = args[++i];
+    } else if (args[i] === "--interval" && i + 1 < args.length) {
+      const n = Number.parseInt(args[++i] ?? "", 10);
+      if (Number.isFinite(n) && n > 0)
+        out.interval = n;
+    }
+  }
+  return out;
+}
+async function sleep(ms, stopped) {
+  const step = 250;
+  for (let elapsed = 0; elapsed < ms; elapsed += step) {
+    if (stopped())
+      return;
+    await new Promise((resolve) => setTimeout(resolve, Math.min(step, ms - elapsed)));
+  }
+}
+
+// src/commands/status.ts
+import process8 from "node:process";
 async function runStatus(input) {
   const backend = new LocalFsBackend(input.config);
   const target = input.args[0];
@@ -8456,7 +8554,7 @@ async function runStatus(input) {
     return 1;
   const { initiatives, workItems } = tenantState.data;
   if (initiatives.length === 0 && workItems.length === 0) {
-    process7.stdout.write(
+    process8.stdout.write(
       `No work items or initiatives in ${input.config.workItemsPath}
 (run 'aaw init' if this workspace is not yet configured)
 `
@@ -8464,17 +8562,17 @@ async function runStatus(input) {
     return 0;
   }
   if (initiatives.length > 0) {
-    process7.stdout.write(`Initiatives in ${input.config.initiativesPath}:
+    process8.stdout.write(`Initiatives in ${input.config.initiativesPath}:
 `);
     for (const init of initiatives) {
       const tick = symbol(init.status);
       const wiCount = workItems.filter((w) => w.initiativeId === init.id).length;
-      process7.stdout.write(
+      process8.stdout.write(
         `  ${tick} ${init.id} \u2014 ${init.title} (${init.status}, ${wiCount} WI${wiCount === 1 ? "" : "s"})
 `
       );
     }
-    process7.stdout.write("\n");
+    process8.stdout.write("\n");
   }
   if (workItems.length === 0)
     return 0;
@@ -8486,13 +8584,13 @@ async function runStatus(input) {
     byInit.set(key, list);
   }
   if (initiatives.length > 0) {
-    process7.stdout.write(`Work items in ${input.config.workItemsPath}:
+    process8.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
     for (const init of initiatives) {
       const list = byInit.get(init.id);
       if (!list || list.length === 0)
         continue;
-      process7.stdout.write(`
+      process8.stdout.write(`
   ${init.id}:
 `);
       for (const wi of list) {
@@ -8501,7 +8599,7 @@ async function runStatus(input) {
     }
     const standalone = byInit.get("__standalone");
     if (standalone && standalone.length > 0) {
-      process7.stdout.write(`
+      process8.stdout.write(`
   Standalone:
 `);
       for (const wi of standalone) {
@@ -8509,7 +8607,7 @@ async function runStatus(input) {
       }
     }
   } else {
-    process7.stdout.write(`Work items in ${input.config.workItemsPath}:
+    process8.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
     for (const wi of workItems) {
       renderWorkItemLine(wi, "  ");
@@ -8522,22 +8620,22 @@ async function showWorkItem(backend, workItemId) {
   if (result.kind !== "workItem")
     return 1;
   const wi = result.data;
-  process7.stdout.write(`${wi.id} \u2014 ${wi.title}
+  process8.stdout.write(`${wi.id} \u2014 ${wi.title}
 `);
-  process7.stdout.write(`  type: ${wi.type}, status: ${wi.status}
+  process8.stdout.write(`  type: ${wi.type}, status: ${wi.status}
 `);
-  process7.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
+  process8.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
 `);
-  process7.stdout.write(`  version: ${wi.version}
+  process8.stdout.write(`  version: ${wi.version}
 
 `);
   for (const a of wi.activities) {
     const tick = symbol(a.status);
-    process7.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
+    process8.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
 `);
     for (const t of a.tasks) {
       const ttick = symbol(t.status);
-      process7.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
+      process8.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
 `);
     }
   }
@@ -8548,33 +8646,33 @@ async function showInitiative(backend, initiativeId) {
   if (result.kind !== "initiative")
     return 1;
   const init = result.data;
-  process7.stdout.write(`${init.id} \u2014 ${init.title}
+  process8.stdout.write(`${init.id} \u2014 ${init.title}
 `);
-  process7.stdout.write(`  status: ${init.status}
+  process8.stdout.write(`  status: ${init.status}
 `);
-  process7.stdout.write(
+  process8.stdout.write(
     `  time horizon: ${init.targetStart ?? "?"} \u2013 ${init.targetEnd ?? "?"}
 `
   );
-  process7.stdout.write(`  owner: ${init.owner ?? "none"}
+  process8.stdout.write(`  owner: ${init.owner ?? "none"}
 `);
   if (init.rootWorkItem) {
-    process7.stdout.write(`  root work item: ${init.rootWorkItem}
+    process8.stdout.write(`  root work item: ${init.rootWorkItem}
 `);
   }
-  process7.stdout.write("\n");
+  process8.stdout.write("\n");
   if (init.workItems.length === 0) {
-    process7.stdout.write(
+    process8.stdout.write(
       `  (No work items registered. They link via 'initiative_id' in their progress.yaml.)
 `
     );
     return 0;
   }
-  process7.stdout.write(`  Work items:
+  process8.stdout.write(`  Work items:
 `);
   for (const ref of init.workItems) {
     const tick = symbol(ref.status);
-    process7.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
+    process8.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
 `);
   }
   return 0;
@@ -8582,7 +8680,7 @@ async function showInitiative(backend, initiativeId) {
 function renderWorkItemLine(wi, indent) {
   const tick = symbol(wi.status);
   const counts = activityCounts(wi);
-  process7.stdout.write(
+  process8.stdout.write(
     `${indent}${tick} ${wi.id} \u2014 ${wi.title} (${wi.status}, ${counts})
 `
   );
@@ -8611,7 +8709,7 @@ function symbol(status) {
 // src/commands/verify.ts
 import { mkdir as mkdir3, readFile as readFile4, unlink as unlink2, writeFile as writeFile3 } from "node:fs/promises";
 import path5 from "node:path";
-import process8 from "node:process";
+import process9 from "node:process";
 async function runVerify(input) {
   const checks = [];
   checks.push({
@@ -8651,11 +8749,11 @@ async function runVerify(input) {
     const tick = c.ok ? "\u2713" : "\u2717";
     const line = `  ${tick} ${c.name}${c.detail ? `  \u2014  ${c.detail}` : ""}
 `;
-    process8.stdout.write(line);
+    process9.stdout.write(line);
     if (!c.ok)
       allOk = false;
   }
-  process8.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
+  process9.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
   return allOk ? 0 : 1;
 }
 
@@ -8670,6 +8768,8 @@ Usage:
                                       Atomically claim an activity
   aaw release ACTIVITY_ID [--reason REASON]
                                       Release an activity (must be terminal first)
+  aaw runner start [--pool POOL] [--interval SECONDS]
+                                      Long-lived poller; reports claimable work
   aaw lint                            Report duplicate IDs, invalid statuses, cycles
   aaw verify                          Sanity-check the local-fs backend
   aaw --version                       Print CLI version
@@ -8681,18 +8781,18 @@ var VERSION = "0.0.0";
 async function main(argv) {
   const [command, ...rest] = argv;
   if (!command || command === "--help" || command === "-h" || command === "help") {
-    process9.stdout.write(HELP);
+    process10.stdout.write(HELP);
     return 0;
   }
   if (command === "--version" || command === "-v") {
-    process9.stdout.write(`${VERSION}
+    process10.stdout.write(`${VERSION}
 `);
     return 0;
   }
   if (command === "init") {
-    return runInit({ cwd: process9.cwd() });
+    return runInit({ cwd: process10.cwd() });
   }
-  const workspaceRoot = await findWorkspaceRoot(process9.cwd());
+  const workspaceRoot = await findWorkspaceRoot(process10.cwd());
   const config = await loadConfig(workspaceRoot);
   switch (command) {
     case "status":
@@ -8707,22 +8807,24 @@ async function main(argv) {
       return runRelease({ config, args: rest });
     case "next-task":
       return runNextTask({ config, args: rest });
+    case "runner":
+      return runRunner({ config, args: rest });
     default:
-      process9.stderr.write(`Unknown command: ${command}
+      process10.stderr.write(`Unknown command: ${command}
 
 ${HELP}`);
       return 2;
   }
 }
-main(process9.argv.slice(2)).then(
-  (code) => process9.exit(code),
+main(process10.argv.slice(2)).then(
+  (code) => process10.exit(code),
   (err) => {
-    process9.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
+    process10.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
 `);
-    if (process9.env.AAW_DEBUG) {
-      process9.stderr.write(`${err.stack ?? ""}
+    if (process10.env.AAW_DEBUG) {
+      process10.stderr.write(`${err.stack ?? ""}
 `);
     }
-    process9.exit(1);
+    process10.exit(1);
   }
 );
