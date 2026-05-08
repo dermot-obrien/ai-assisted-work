@@ -56,7 +56,7 @@ When working on AI-Assisted Work itself, use the `/aiaw-self-*` Cursor commands 
 
 ### Why /aiaw-self-* Commands?
 
-The standard `/aiaw-*` commands point to `.ai-assisted-work/skill-definitions/...` for deployed usage. The `/aiaw-self-*` commands point to `skill-definitions/...` for developing this repository directly.
+The standard `/aiaw-*` commands point to `.ai-assisted-work/packages/skills/...` for deployed usage. The `/aiaw-self-*` commands point to `packages/skills/...` for developing this repository directly.
 
 ### Example
 

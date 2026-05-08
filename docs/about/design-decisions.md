@@ -43,7 +43,7 @@ Design for **Git submodule** usage as primary integration method:
 ```
 domain-project/
 ├── .ai-assisted-work/          # Submodule
-│   ├── skill-definitions/      # Full instructions
+│   ├── packages/skills/      # Full instructions
 │   └── skills-for-agents/      # Command wrappers
 └── work/              # Domain work items
 ```
@@ -148,7 +148,7 @@ Write agent instructions that work with **any AI tool**:
 ### Implementation
 
 ```
-skill-definitions/
+packages/skills/
 └── work-management/       # Universal instructions
     ├── start-work.md
     └── progress-work.md

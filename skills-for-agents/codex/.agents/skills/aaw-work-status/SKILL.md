@@ -5,6 +5,6 @@ description: Report status for one or more AI-Assisted Work items in this reposi
 
 # AAW Work Status
 
-1. Read and follow exactly:       `.ai-assisted-work/skill-definitions/work-management/work-status.md`
+1. Read and follow exactly:       `.ai-assisted-work/packages/skills/work-management/work-status.md`
 2. Treat that file as the source of truth for workflow steps and constraints.
 3. Keep all work scoped to this repository.

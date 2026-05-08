@@ -63,7 +63,7 @@ mkdir -p .github/prompts
 cp .ai-assisted-work/skills-for-agents/github/prompts/*.md .github/prompts/
 ```
 
-Then manually merge the command sections into your `.github/copilot-instructions.md`. Each wrapper points to `.ai-assisted-work/skill-definitions/work-management/`.
+Then manually merge the command sections into your `.github/copilot-instructions.md`. Each wrapper points to `.ai-assisted-work/packages/skills/work-management/`.
 
 ### Step 3: Integrate with Cursor (Optional)
 
@@ -77,7 +77,7 @@ mkdir -p .cursor/rules
 cp .ai-assisted-work/skills-for-agents/cursor/commands/aaw/*.md .cursor/rules/
 ```
 
-**Note:** Cursor command files point to the full instructions in `.ai-assisted-work/skill-definitions/`. Rename to `aiaw-*.mdc` if your Cursor version expects the `.mdc` extension for rules.
+**Note:** Cursor command files point to the full instructions in `.ai-assisted-work/packages/skills/`. Rename to `aiaw-*.mdc` if your Cursor version expects the `.mdc` extension for rules.
 
 ### Step 4: Integrate with Claude Code (Optional)
 
@@ -91,7 +91,7 @@ mkdir -p .claude/commands
 cp .ai-assisted-work/skills-for-agents/claude/commands/aaw/*.md .claude/commands/
 ```
 
-**Note:** Claude Code command files point to the full instructions in `.ai-assisted-work/skill-definitions/`.
+**Note:** Claude Code command files point to the full instructions in `.ai-assisted-work/packages/skills/`.
 
 ### Step 5: Integrate with Codex (Optional)
 
@@ -102,7 +102,7 @@ If you use OpenAI Codex:
 cp -r .ai-assisted-work/skills-for-agents/codex/.agents .agents
 ```
 
-**Note:** Codex discovers skills from the `.agents/skills/` folder at the workspace root. Each skill points to the full instructions in `.ai-assisted-work/skill-definitions/`. See the [Codex skills documentation](https://developers.openai.com/codex/skills/) for more details.
+**Note:** Codex discovers skills from the `.agents/skills/` folder at the workspace root. Each skill points to the full instructions in `.ai-assisted-work/packages/skills/`. See the [Codex skills documentation](https://developers.openai.com/codex/skills/) for more details.
 
 ### Step 6: Commit
 
@@ -153,7 +153,7 @@ mkdir -p .github/prompts
 cp .ai-assisted-work/skills-for-agents/github/prompts/*.md .github/prompts/
 ```
 
-Then merge the command sections into your `.github/copilot-instructions.md`. Wrappers point to `.ai-assisted-work/skill-definitions/`.
+Then merge the command sections into your `.github/copilot-instructions.md`. Wrappers point to `.ai-assisted-work/packages/skills/`.
 
 ### Step 4: Integrate with Cursor (Optional)
 
@@ -219,7 +219,7 @@ Both deployment methods result in the **same structure**:
 ```
 your-project/
 ├── .ai-assisted-work/                             ← AI-Assisted Work (isolated)
-│   ├── skill-definitions/               ← Full agent instructions (source)
+│   ├── packages/skills/               ← Full agent instructions (source)
 │   │   └── work-management/             ← start-work, progress-work, work-status, etc.
 │   ├── skills-for-agents/               ← Command wrappers (source for copy)
 │   │   ├── cursor/commands/aaw/        ← Cursor wrappers
@@ -269,7 +269,7 @@ If you already have `.github/copilot-instructions.md` in your project, you need 
 
 ### Wrapper File Location
 
-After copying, the command wrappers are in `.github/` (from `.ai-assisted-work/skills-for-agents/github/skills/aaw/`). Open them to see the commands, then copy what you need into your `.github/copilot-instructions.md`. All paths in the wrappers point to `.ai-assisted-work/skill-definitions/`.
+After copying, the command wrappers are in `.github/` (from `.ai-assisted-work/skills-for-agents/github/skills/aaw/`). Open them to see the commands, then copy what you need into your `.github/copilot-instructions.md`. All paths in the wrappers point to `.ai-assisted-work/packages/skills/`.
 
 ### Option 1: Append Section
 
@@ -286,11 +286,11 @@ When the user invokes one of these commands, read and follow the full agent inst
 
 #### `/aiaw-start-work` - Initialize New Work Items
 
-**Full instructions:** Read `.ai-assisted-work/skill-definitions/work-management/start-work.md`
+**Full instructions:** Read `.ai-assisted-work/packages/skills/work-management/start-work.md`
 
 **Required reading:**
-- `.ai-assisted-work/skill-definitions/work-management/AGENTS.md`
-- `.ai-assisted-work/skill-definitions/work-management/README.md`
+- `.ai-assisted-work/packages/skills/work-management/AGENTS.md`
+- `.ai-assisted-work/packages/skills/work-management/README.md`
 
 **Purpose:** Create a new work item with scope, plan, and progress tracking.
 
@@ -313,14 +313,14 @@ This project uses AI-Assisted Work for structured work management.
 When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-status`, or `/aiaw-next-task`:
 
 1. Read the full instructions from the corresponding file:
-   - `/aiaw-start-work` → `.ai-assisted-work/skill-definitions/work-management/start-work.md`
-   - `/aiaw-progress-work` → `.ai-assisted-work/skill-definitions/work-management/progress-work.md`
-   - `/aiaw-work-status` → `.ai-assisted-work/skill-definitions/work-management/work-status.md`
-   - `/aiaw-next-task` → `.ai-assisted-work/skill-definitions/work-management/next-task.md`
+   - `/aiaw-start-work` → `.ai-assisted-work/packages/skills/work-management/start-work.md`
+   - `/aiaw-progress-work` → `.ai-assisted-work/packages/skills/work-management/progress-work.md`
+   - `/aiaw-work-status` → `.ai-assisted-work/packages/skills/work-management/work-status.md`
+   - `/aiaw-next-task` → `.ai-assisted-work/packages/skills/work-management/next-task.md`
 
 2. Read supporting documentation:
-   - `.ai-assisted-work/skill-definitions/work-management/AGENTS.md` - Agent rules
-   - `.ai-assisted-work/skill-definitions/work-management/README.md` - Core concepts
+   - `.ai-assisted-work/packages/skills/work-management/AGENTS.md` - Agent rules
+   - `.ai-assisted-work/packages/skills/work-management/README.md` - Core concepts
 
 3. Follow the instructions exactly as written in those files
 ```
@@ -334,13 +334,13 @@ When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-sta
 1. Open Claude Code
 2. Type: `/aiaw-start-work test work item`
 3. Verify Claude reads the command file from `.claude/commands/`
-4. Verify it follows the instructions from `.ai-assisted-work/skill-definitions/work-management/start-work.md`
+4. Verify it follows the instructions from `.ai-assisted-work/packages/skills/work-management/start-work.md`
 
 ### Test GitHub Copilot Integration
 
 1. Open GitHub Copilot Chat
 2. Type: `/aiaw-start-work test work item`
-3. Verify Copilot reads the instructions from `.ai-assisted-work/skill-definitions/work-management/start-work.md`
+3. Verify Copilot reads the instructions from `.ai-assisted-work/packages/skills/work-management/start-work.md`
 4. Verify it follows the workflow
 
 ### Test Cursor Integration
@@ -353,7 +353,7 @@ When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-sta
 
 1. Open Codex
 2. Ask it to use the `aaw-start-work` skill
-3. Verify it reads the instructions from `.ai-assisted-work/skill-definitions/work-management/start-work.md`
+3. Verify it reads the instructions from `.ai-assisted-work/packages/skills/work-management/start-work.md`
 
 ---
 
@@ -364,7 +364,7 @@ When the user invokes `/aiaw-start-work`, `/aiaw-progress-work`, `/aiaw-work-sta
 ```
 your-project/
 ├── .ai-assisted-work/                             ← Submodule (isolated)
-│   ├── skill-definitions/               ← Full instructions (work-management)
+│   ├── packages/skills/               ← Full instructions (work-management)
 │   ├── skills-for-agents/               ← Command wrappers (cursor, claude, codex, github)
 │   ├── docs/
 │   ├── examples/
@@ -378,7 +378,7 @@ your-project/
 
 ### Copy-Paste Structure
 
-Same as submodule: `.ai-assisted-work/` contains `skill-definitions/`, `skills-for-agents/`, `docs/`, `examples/`, `schemas/`. Integration files are copied from `skills-for-agents/` to `.agents/skills/`, `.claude/commands/`, `.cursor/rules/`, and merged into `.github/copilot-instructions.md`.
+Same as submodule: `.ai-assisted-work/` contains `packages/skills/`, `skills-for-agents/`, `docs/`, `examples/`, `schemas/`. Integration files are copied from `skills-for-agents/` to `.agents/skills/`, `.claude/commands/`, `.cursor/rules/`, and merged into `.github/copilot-instructions.md`.
 
 ---
 
@@ -388,7 +388,7 @@ All AI-Assisted Work files are in these folders:
 
 | Folder | Contents | Safe to Copy? |
 |--------|----------|---------------|
-| `skill-definitions/` | Full agent instructions (work-management) | ✅ Yes - isolated |
+| `packages/skills/` | Full agent instructions (work-management) | ✅ Yes - isolated |
 | `skills-for-agents/` | Command wrappers for Cursor, Claude, Codex, GitHub | ✅ Yes - source for copy |
 | `docs/` | Documentation | ✅ Yes - can go in `docs/ai-assisted-work/` |
 | `examples/` | Example work items | ✅ Yes - isolated |
@@ -441,8 +441,8 @@ git commit -m "Remove AI-Assisted Work"
 **Symptom:** Copilot or Cursor says it can't find the instruction file
 
 **Solution:**
-- Ensure paths use `.ai-assisted-work/skill-definitions/` (not `agents/`)
-- Work management: `.ai-assisted-work/skill-definitions/work-management/`
+- Ensure paths use `.ai-assisted-work/packages/skills/` (not `agents/`)
+- Work management: `.ai-assisted-work/packages/skills/work-management/`
 - Check file permissions and that the submodule or copy is present
 
 ### Issue: Commands Not Working
@@ -450,9 +450,9 @@ git commit -m "Remove AI-Assisted Work"
 **Symptom:** `/aiaw-start-work` not recognized
 
 **Solution:**
-1. Verify `.github/copilot-instructions.md` (or Cursor rules / Claude commands) contains the command and points to `.ai-assisted-work/skill-definitions/...`
+1. Verify `.github/copilot-instructions.md` (or Cursor rules / Claude commands) contains the command and points to `.ai-assisted-work/packages/skills/...`
 2. Restart the AI assistant extension
-3. Try referencing the file explicitly: `.ai-assisted-work/skill-definitions/work-management/start-work.md`
+3. Try referencing the file explicitly: `.ai-assisted-work/packages/skills/work-management/start-work.md`
 
 ### Issue: File Conflicts During Copy
 
@@ -461,13 +461,13 @@ git commit -m "Remove AI-Assisted Work"
 **Solution:**
 - This shouldn't happen if following the guide correctly (everything goes under `.ai-assisted-work/`)
 - If `.ai-assisted-work/` already exists, replace its contents or use a different submodule path
-- Ensure all paths in wrappers point to `.ai-assisted-work/skill-definitions/`
+- Ensure all paths in wrappers point to `.ai-assisted-work/packages/skills/`
 
 ---
 
 ## See Also
 
-- [skill-definitions/work-management/](skill-definitions/work-management/README.md) - Work management instructions and README
+- [packages/skills/work-management/](packages/skills/work-management/README.md) - Work management instructions and README
 - [skills-for-agents/](skills-for-agents/) - Command wrappers for Cursor, Claude, Codex, GitHub
 - [Command Discovery](docs/integration/command-discovery.md) - How commands work across AI assistants
 - [Getting Started](docs/getting-started/index.md) - First steps and concepts

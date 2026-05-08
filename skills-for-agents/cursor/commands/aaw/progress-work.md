@@ -6,4 +6,4 @@ Continue work on an existing work item.
 
 **Read and follow exactly the full agent instructions at:**
 
-`.ai-assisted-work/skill-definitions/work-management/progress-work.md`
+`.ai-assisted-work/packages/skills/work-management/progress-work.md`
