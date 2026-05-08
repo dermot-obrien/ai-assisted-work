@@ -27,7 +27,8 @@ export type ActivityStatus =
   | "awaiting_human"
   | "completed"
   | "blocked"
-  | "skipped";
+  | "skipped"
+  | "abandoned";
 
 export type TaskStatus =
   | "pending"
@@ -35,7 +36,8 @@ export type TaskStatus =
   | "completed"
   | "blocked"
   | "skipped"
-  | "awaiting_human";
+  | "awaiting_human"
+  | "abandoned";
 
 export type InitiativeStatus =
   | "proposed"
