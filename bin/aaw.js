@@ -7446,10 +7446,19 @@ async function runInit(input) {
     );
     const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
     const initiativesPath = path2.join(path2.dirname(workItemsPath), "initiatives");
-    const wireTools = (await rl.question(
-      "Wire up tool shims? Comma-separated: copilot,cursor,claude  [auto] : "
-    ) || "auto").trim().toLowerCase();
-    const tools = resolveTools(wireTools, env);
+    const detectedTools = {
+      copilot: env.hasGitHub,
+      cursor: env.hasCursor,
+      claude: env.hasClaude
+    };
+    const detectedNames = describeTools(detectedTools);
+    process.stdout.write(`
+Tool shims \u2014 detected: ${detectedNames || "none"}
+`);
+    const wireAnswer = (await rl.question(
+      "Wire up shims for the detected tools? [Y/n, or list to override e.g. cursor,claude]: "
+    )).trim().toLowerCase();
+    const tools = resolveTools(wireAnswer, detectedTools);
     process.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
     await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
     process.stdout.write(`\u25B8 Creating ${workItemsPath}
@@ -7496,20 +7505,29 @@ async function detect(cwd) {
     aawSourceRoot
   };
 }
-function resolveTools(spec, env) {
-  if (spec === "auto" || spec === "") {
-    return {
-      copilot: env.hasGitHub,
-      cursor: env.hasCursor,
-      claude: env.hasClaude
-    };
+function resolveTools(answer, detected) {
+  if (answer === "" || answer === "y" || answer === "yes" || answer === "auto") {
+    return detected;
   }
-  const parts = spec.split(",").map((s) => s.trim());
+  if (answer === "n" || answer === "no" || answer === "none") {
+    return { copilot: false, cursor: false, claude: false };
+  }
+  const parts = answer.split(",").map((s) => s.trim());
   return {
     copilot: parts.includes("copilot"),
     cursor: parts.includes("cursor"),
     claude: parts.includes("claude")
   };
+}
+function describeTools(t) {
+  const names = [];
+  if (t.copilot)
+    names.push("GitHub Copilot");
+  if (t.cursor)
+    names.push("Cursor");
+  if (t.claude)
+    names.push("Claude Code");
+  return names.join(", ");
 }
 async function writeConfig(root, cfg) {
   const yaml = (0, import_yaml2.stringify)({

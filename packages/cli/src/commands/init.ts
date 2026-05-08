@@ -82,14 +82,21 @@ export async function runInit(input: InitInput): Promise<number> {
       defaultPath;
     const initiativesPath = path.join(path.dirname(workItemsPath), "initiatives");
 
-    const wireTools = (
-      (await rl.question(
-        "Wire up tool shims? Comma-separated: copilot,cursor,claude  [auto] : ",
-      )) || "auto"
+    const detectedTools = {
+      copilot: env.hasGitHub,
+      cursor: env.hasCursor,
+      claude: env.hasClaude,
+    };
+    const detectedNames = describeTools(detectedTools);
+    process.stdout.write(`\nTool shims — detected: ${detectedNames || "none"}\n`);
+    const wireAnswer = (
+      await rl.question(
+        "Wire up shims for the detected tools? [Y/n, or list to override e.g. cursor,claude]: ",
+      )
     )
       .trim()
       .toLowerCase();
-    const tools = resolveTools(wireTools, env);
+    const tools = resolveTools(wireAnswer, detectedTools);
 
     process.stdout.write("\n▸ Writing .aaw-config.yaml\n");
     await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
@@ -147,20 +154,36 @@ async function detect(cwd: string): Promise<DetectedEnvironment> {
   };
 }
 
-function resolveTools(spec: string, env: DetectedEnvironment) {
-  if (spec === "auto" || spec === "") {
-    return {
-      copilot: env.hasGitHub,
-      cursor: env.hasCursor,
-      claude: env.hasClaude,
-    };
+interface ToolSelection {
+  copilot: boolean;
+  cursor: boolean;
+  claude: boolean;
+}
+
+function resolveTools(answer: string, detected: ToolSelection): ToolSelection {
+  // Empty / yes / accept → use the auto-detected set.
+  if (answer === "" || answer === "y" || answer === "yes" || answer === "auto") {
+    return detected;
   }
-  const parts = spec.split(",").map((s) => s.trim());
+  // Decline → wire up nothing.
+  if (answer === "n" || answer === "no" || answer === "none") {
+    return { copilot: false, cursor: false, claude: false };
+  }
+  // Override list (comma-separated tool names).
+  const parts = answer.split(",").map((s) => s.trim());
   return {
     copilot: parts.includes("copilot"),
     cursor: parts.includes("cursor"),
     claude: parts.includes("claude"),
   };
+}
+
+function describeTools(t: ToolSelection): string {
+  const names: string[] = [];
+  if (t.copilot) names.push("GitHub Copilot");
+  if (t.cursor) names.push("Cursor");
+  if (t.claude) names.push("Claude Code");
+  return names.join(", ");
 }
 
 async function writeConfig(
