@@ -20,12 +20,12 @@
  *   - the work_items_path directory (if missing)
  */
 
-import { copyFile, mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { createInterface } from "node:readline/promises";
-import { stringify as stringifyYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
 interface InitInput {
   cwd: string;
@@ -45,8 +45,13 @@ const SUBMODULE_DEFAULT = ".ai-assisted-work";
 
 export async function runInit(input: InitInput): Promise<number> {
   const env = await detect(input.cwd);
+  const existingConfig = await readExistingConfig(env.workspaceRoot);
 
-  process.stdout.write("aaw init — let's set this up.\n\n");
+  if (existingConfig) {
+    process.stdout.write("aaw init — existing workspace detected.\n\n");
+  } else {
+    process.stdout.write("aaw init — let's set this up.\n\n");
+  }
   process.stdout.write(`▸ Workspace: ${env.workspaceRoot}\n`);
   process.stdout.write(`▸ Git repo: ${env.isGitRepo ? "yes" : "no"}\n`);
   process.stdout.write(
@@ -56,31 +61,39 @@ export async function runInit(input: InitInput): Promise<number> {
       env.hasClaude && "Claude Code",
     ]
       .filter(Boolean)
-      .join(", ") || "none"}\n\n`,
+      .join(", ") || "none"}\n`,
   );
+  if (existingConfig) {
+    process.stdout.write(
+      `▸ Found existing .aaw-config.yaml — its values are pre-filled below.\n` +
+        `  Press Enter at each prompt to keep the current value.\n`,
+    );
+  }
+  process.stdout.write("\n");
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    const tenant = (await rl.question("Tenant name [local]: ")).trim() || "local";
-    const mode = (await rl.question("Mode (local-fs/cloud) [local-fs]: ")).trim() ||
-      "local-fs";
+    const tenantDefault = existingConfig?.tenant ?? "local";
+    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() ||
+      tenantDefault;
+    const modeDefault = existingConfig?.mode ?? "local-fs";
+    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() ||
+      modeDefault;
     if (mode !== "local-fs" && mode !== "cloud") {
       process.stderr.write(`Unsupported mode: ${mode}\n`);
       return 2;
     }
 
     const repoName = path.basename(env.workspaceRoot);
-    const defaultPath = path.join(
-      homedir(),
-      "aaw",
-      tenant,
-      repoName,
-      "work-items",
-    );
+    const defaultPath =
+      existingConfig?.workItemsPath ??
+      path.join(homedir(), "aaw", tenant, repoName, "work-items");
     const workItemsPath =
       (await rl.question(`work_items_path [${defaultPath}]: `)).trim() ||
       defaultPath;
-    const initiativesPath = path.join(path.dirname(workItemsPath), "initiatives");
+    const initiativesPath =
+      existingConfig?.initiativesPath ??
+      path.join(path.dirname(workItemsPath), "initiatives");
 
     const detectedTools = {
       copilot: env.hasGitHub,
@@ -156,6 +169,37 @@ async function detect(cwd: string): Promise<DetectedEnvironment> {
     hasClaude,
     aawSourceRoot,
   };
+}
+
+interface ExistingConfig {
+  tenant?: string;
+  mode?: "local-fs" | "cloud";
+  workItemsPath?: string;
+  initiativesPath?: string;
+}
+
+async function readExistingConfig(workspaceRoot: string): Promise<ExistingConfig | null> {
+  const configPath = path.join(workspaceRoot, ".aaw-config.yaml");
+  try {
+    const text = await readFile(configPath, "utf8");
+    const parsed = parseYaml(text) as Record<string, unknown>;
+    const mode = parsed.mode === "local-fs" || parsed.mode === "cloud"
+      ? parsed.mode
+      : undefined;
+    return {
+      tenant: typeof parsed.tenant === "string" ? parsed.tenant : undefined,
+      mode,
+      workItemsPath:
+        typeof parsed.work_items_path === "string" ? parsed.work_items_path : undefined,
+      initiativesPath:
+        typeof parsed.initiatives_path === "string"
+          ? parsed.initiatives_path
+          : undefined,
+    };
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    return null; // any other error: treat as no existing config
+  }
 }
 
 interface ToolSelection {

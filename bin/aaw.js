@@ -7405,7 +7405,7 @@ async function findWorkspaceRoot(start) {
 
 // src/commands/init.ts
 var import_yaml2 = __toESM(require_dist(), 1);
-import { copyFile, mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile as readFile2, readdir, stat, writeFile } from "node:fs/promises";
 import { homedir as homedir2 } from "node:os";
 import path2 from "node:path";
 import process from "node:process";
@@ -7413,7 +7413,12 @@ import { createInterface } from "node:readline/promises";
 var SUBMODULE_DEFAULT = ".ai-assisted-work";
 async function runInit(input) {
   const env = await detect(input.cwd);
-  process.stdout.write("aaw init \u2014 let's set this up.\n\n");
+  const existingConfig = await readExistingConfig(env.workspaceRoot);
+  if (existingConfig) {
+    process.stdout.write("aaw init \u2014 existing workspace detected.\n\n");
+  } else {
+    process.stdout.write("aaw init \u2014 let's set this up.\n\n");
+  }
   process.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
 `);
   process.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
@@ -7424,28 +7429,31 @@ async function runInit(input) {
       env.hasCursor && "Cursor",
       env.hasClaude && "Claude Code"
     ].filter(Boolean).join(", ") || "none"}
-
 `
   );
+  if (existingConfig) {
+    process.stdout.write(
+      `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
+  Press Enter at each prompt to keep the current value.
+`
+    );
+  }
+  process.stdout.write("\n");
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
-    const tenant = (await rl.question("Tenant name [local]: ")).trim() || "local";
-    const mode = (await rl.question("Mode (local-fs/cloud) [local-fs]: ")).trim() || "local-fs";
+    const tenantDefault = existingConfig?.tenant ?? "local";
+    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
+    const modeDefault = existingConfig?.mode ?? "local-fs";
+    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() || modeDefault;
     if (mode !== "local-fs" && mode !== "cloud") {
       process.stderr.write(`Unsupported mode: ${mode}
 `);
       return 2;
     }
     const repoName = path2.basename(env.workspaceRoot);
-    const defaultPath = path2.join(
-      homedir2(),
-      "aaw",
-      tenant,
-      repoName,
-      "work-items"
-    );
+    const defaultPath = existingConfig?.workItemsPath ?? path2.join(homedir2(), "aaw", tenant, repoName, "work-items");
     const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
-    const initiativesPath = path2.join(path2.dirname(workItemsPath), "initiatives");
+    const initiativesPath = existingConfig?.initiativesPath ?? path2.join(path2.dirname(workItemsPath), "initiatives");
     const detectedTools = {
       copilot: env.hasGitHub,
       cursor: env.hasCursor,
@@ -7515,6 +7523,24 @@ async function detect(cwd) {
     hasClaude,
     aawSourceRoot
   };
+}
+async function readExistingConfig(workspaceRoot) {
+  const configPath = path2.join(workspaceRoot, ".aaw-config.yaml");
+  try {
+    const text = await readFile2(configPath, "utf8");
+    const parsed = (0, import_yaml2.parse)(text);
+    const mode = parsed.mode === "local-fs" || parsed.mode === "cloud" ? parsed.mode : void 0;
+    return {
+      tenant: typeof parsed.tenant === "string" ? parsed.tenant : void 0,
+      mode,
+      workItemsPath: typeof parsed.work_items_path === "string" ? parsed.work_items_path : void 0,
+      initiativesPath: typeof parsed.initiatives_path === "string" ? parsed.initiatives_path : void 0
+    };
+  } catch (err) {
+    if (err.code === "ENOENT")
+      return null;
+    return null;
+  }
 }
 function resolveTools(answer, detected) {
   if (answer === "" || answer === "y" || answer === "yes" || answer === "auto") {
@@ -7605,7 +7631,7 @@ import { readdir as readdir3 } from "node:fs/promises";
 import path4 from "node:path";
 
 // src/backends/local-fs/index.ts
-import { mkdir as mkdir2, readFile as readFile2, readdir as readdir2, stat as stat2, unlink, writeFile as writeFile2 } from "node:fs/promises";
+import { mkdir as mkdir2, readFile as readFile3, readdir as readdir2, stat as stat2, unlink, writeFile as writeFile2 } from "node:fs/promises";
 import path3 from "node:path";
 import process2 from "node:process";
 
@@ -7945,7 +7971,7 @@ var LocalFsBackend = class {
       const dir = path3.join(this.config.workItemsPath, entry);
       const yamlPath = path3.join(dir, "progress.yaml");
       try {
-        const text = await readFile2(yamlPath, "utf8");
+        const text = await readFile3(yamlPath, "utf8");
         result.push(parseWorkItem(text, this.config.tenant));
       } catch (err) {
         const code = err.code;
@@ -7968,7 +7994,7 @@ var LocalFsBackend = class {
       const dir = path3.join(this.config.initiativesPath, entry);
       const yamlPath = path3.join(dir, "progress.yaml");
       try {
-        const text = await readFile2(yamlPath, "utf8");
+        const text = await readFile3(yamlPath, "utf8");
         result.push(parseInitiative(text, this.config.tenant));
       } catch (err) {
         const code = err.code;
@@ -7990,12 +8016,12 @@ var LocalFsBackend = class {
   }
   async loadWorkItem(workItemId) {
     const dir = await this.resolveWorkItemPath(workItemId);
-    const text = await readFile2(path3.join(dir, "progress.yaml"), "utf8");
+    const text = await readFile3(path3.join(dir, "progress.yaml"), "utf8");
     return parseWorkItem(text, this.config.tenant);
   }
   async loadInitiative(initiativeId) {
     const dir = await this.resolveInitiativePath(initiativeId);
-    const text = await readFile2(path3.join(dir, "progress.yaml"), "utf8");
+    const text = await readFile3(path3.join(dir, "progress.yaml"), "utf8");
     return parseInitiative(text, this.config.tenant);
   }
   async resolveWorkItemPath(workItemId) {
@@ -8035,7 +8061,7 @@ async function safeReaddir(dir) {
 }
 async function readJson(file) {
   try {
-    const text = await readFile2(file, "utf8");
+    const text = await readFile3(file, "utf8");
     return JSON.parse(text);
   } catch (err) {
     if (err.code === "ENOENT")
@@ -8280,51 +8306,149 @@ async function runStatus(input) {
   const backend = new LocalFsBackend(input.config);
   const target = input.args[0];
   if (target) {
-    const result = await backend.getState({ kind: "workItem", workItemId: target });
-    if (result.kind !== "workItem")
-      return 1;
-    const wi = result.data;
-    process4.stdout.write(`${wi.id} \u2014 ${wi.title}
-`);
-    process4.stdout.write(`  type: ${wi.type}, status: ${wi.status}
-`);
-    process4.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
-`);
-    process4.stdout.write(`  version: ${wi.version}
-
-`);
-    for (const a of wi.activities) {
-      const tick = symbol(a.status);
-      process4.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
-`);
-      for (const t of a.tasks) {
-        const ttick = symbol(t.status);
-        process4.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
-`);
-      }
+    if (target.startsWith("IN-")) {
+      return showInitiative(backend, target);
     }
-    return 0;
+    return showWorkItem(backend, target);
   }
-  const items = await backend.listPoolWork(input.config.tenant);
-  if (items.length === 0) {
+  const tenantState = await backend.getState({
+    kind: "tenant",
+    tenantId: input.config.tenant
+  });
+  if (tenantState.kind !== "tenant")
+    return 1;
+  const { initiatives, workItems } = tenantState.data;
+  if (initiatives.length === 0 && workItems.length === 0) {
     process4.stdout.write(
-      `No work items in ${input.config.workItemsPath}
+      `No work items or initiatives in ${input.config.workItemsPath}
 (run 'aaw init' if this workspace is not yet configured)
 `
     );
     return 0;
   }
-  process4.stdout.write(`Work items in ${input.config.workItemsPath}:
+  if (initiatives.length > 0) {
+    process4.stdout.write(`Initiatives in ${input.config.initiativesPath}:
 `);
-  for (const wi of items) {
-    const tick = symbol(wi.status);
-    const counts = activityCounts(wi);
-    process4.stdout.write(
-      `  ${tick} ${wi.id} \u2014 ${wi.title} (${wi.status}, ${counts})
+    for (const init of initiatives) {
+      const tick = symbol(init.status);
+      const wiCount = workItems.filter((w) => w.initiativeId === init.id).length;
+      process4.stdout.write(
+        `  ${tick} ${init.id} \u2014 ${init.title} (${init.status}, ${wiCount} WI${wiCount === 1 ? "" : "s"})
 `
-    );
+      );
+    }
+    process4.stdout.write("\n");
+  }
+  if (workItems.length === 0)
+    return 0;
+  const byInit = /* @__PURE__ */ new Map();
+  for (const wi of workItems) {
+    const key = wi.initiativeId ?? "__standalone";
+    const list = byInit.get(key) ?? [];
+    list.push(wi);
+    byInit.set(key, list);
+  }
+  if (initiatives.length > 0) {
+    process4.stdout.write(`Work items in ${input.config.workItemsPath}:
+`);
+    for (const init of initiatives) {
+      const list = byInit.get(init.id);
+      if (!list || list.length === 0)
+        continue;
+      process4.stdout.write(`
+  ${init.id}:
+`);
+      for (const wi of list) {
+        renderWorkItemLine(wi, "    ");
+      }
+    }
+    const standalone = byInit.get("__standalone");
+    if (standalone && standalone.length > 0) {
+      process4.stdout.write(`
+  Standalone:
+`);
+      for (const wi of standalone) {
+        renderWorkItemLine(wi, "    ");
+      }
+    }
+  } else {
+    process4.stdout.write(`Work items in ${input.config.workItemsPath}:
+`);
+    for (const wi of workItems) {
+      renderWorkItemLine(wi, "  ");
+    }
   }
   return 0;
+}
+async function showWorkItem(backend, workItemId) {
+  const result = await backend.getState({ kind: "workItem", workItemId });
+  if (result.kind !== "workItem")
+    return 1;
+  const wi = result.data;
+  process4.stdout.write(`${wi.id} \u2014 ${wi.title}
+`);
+  process4.stdout.write(`  type: ${wi.type}, status: ${wi.status}
+`);
+  process4.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
+`);
+  process4.stdout.write(`  version: ${wi.version}
+
+`);
+  for (const a of wi.activities) {
+    const tick = symbol(a.status);
+    process4.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
+`);
+    for (const t of a.tasks) {
+      const ttick = symbol(t.status);
+      process4.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
+`);
+    }
+  }
+  return 0;
+}
+async function showInitiative(backend, initiativeId) {
+  const result = await backend.getState({ kind: "initiative", initiativeId });
+  if (result.kind !== "initiative")
+    return 1;
+  const init = result.data;
+  process4.stdout.write(`${init.id} \u2014 ${init.title}
+`);
+  process4.stdout.write(`  status: ${init.status}
+`);
+  process4.stdout.write(
+    `  time horizon: ${init.targetStart ?? "?"} \u2013 ${init.targetEnd ?? "?"}
+`
+  );
+  process4.stdout.write(`  owner: ${init.owner ?? "none"}
+`);
+  if (init.rootWorkItem) {
+    process4.stdout.write(`  root work item: ${init.rootWorkItem}
+`);
+  }
+  process4.stdout.write("\n");
+  if (init.workItems.length === 0) {
+    process4.stdout.write(
+      `  (No work items registered. They link via 'initiative_id' in their progress.yaml.)
+`
+    );
+    return 0;
+  }
+  process4.stdout.write(`  Work items:
+`);
+  for (const ref of init.workItems) {
+    const tick = symbol(ref.status);
+    process4.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
+`);
+  }
+  return 0;
+}
+function renderWorkItemLine(wi, indent) {
+  const tick = symbol(wi.status);
+  const counts = activityCounts(wi);
+  process4.stdout.write(
+    `${indent}${tick} ${wi.id} \u2014 ${wi.title} (${wi.status}, ${counts})
+`
+  );
 }
 function activityCounts(wi) {
   const total = wi.activities.length;
@@ -8348,7 +8472,7 @@ function symbol(status) {
 }
 
 // src/commands/verify.ts
-import { mkdir as mkdir3, readFile as readFile3, unlink as unlink2, writeFile as writeFile3 } from "node:fs/promises";
+import { mkdir as mkdir3, readFile as readFile4, unlink as unlink2, writeFile as writeFile3 } from "node:fs/promises";
 import path5 from "node:path";
 import process5 from "node:process";
 async function runVerify(input) {
@@ -8366,7 +8490,7 @@ async function runVerify(input) {
   try {
     await mkdir3(input.config.workItemsPath, { recursive: true });
     await writeFile3(sentinel, "ok\n", "utf8");
-    const back = await readFile3(sentinel, "utf8");
+    const back = await readFile4(sentinel, "utf8");
     writeOk = back.trim() === "ok";
     await unlink2(sentinel);
     writeDetail = input.config.workItemsPath;
