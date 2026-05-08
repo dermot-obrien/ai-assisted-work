@@ -1,6 +1,7 @@
 {
   "name": "aaw-monorepo",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
