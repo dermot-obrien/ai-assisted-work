@@ -16,6 +16,7 @@
 import process from "node:process";
 import { findWorkspaceRoot, loadConfig } from "./config.js";
 import { runInit } from "./commands/init.js";
+import { runLint } from "./commands/lint.js";
 import { runStatus } from "./commands/status.js";
 import { runVerify } from "./commands/verify.js";
 
@@ -25,6 +26,7 @@ Usage:
   aaw init                Bootstrap this workspace (interactive)
   aaw status [WI-NNN]     List work items, or show one
   aaw verify              Sanity-check the local-fs backend
+  aaw lint                Report duplicate IDs, invalid statuses, cycles
   aaw --version           Print CLI version
   aaw --help              Show this help
 
@@ -59,6 +61,8 @@ async function main(argv: string[]): Promise<number> {
       return runStatus({ config, args: rest });
     case "verify":
       return runVerify({ config });
+    case "lint":
+      return runLint({ config });
     default:
       process.stderr.write(`Unknown command: ${command}\n\n${HELP}`);
       return 2;
