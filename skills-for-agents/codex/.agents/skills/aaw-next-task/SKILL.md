@@ -5,6 +5,6 @@ description: Identify the next actionable task for an AI-Assisted Work item in t
 
 # AAW Next Task
 
-1. Read and follow exactly:       `.ai-assisted-work/skill-definitions/work-management/next-task.md`
+1. Read and follow exactly:       `.ai-assisted-work/packages/skills/work-management/next-task.md`
 2. Treat that file as the source of truth for workflow steps and constraints.
 3. Keep all work scoped to this repository.

@@ -1,3 +1,3 @@
 Source instructions for this skill:
 
-`.ai-assisted-work/skill-definitions/work-management/work-status.md`
+`.ai-assisted-work/packages/skills/work-management/work-status.md`

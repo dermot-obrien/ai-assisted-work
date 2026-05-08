@@ -32,7 +32,7 @@ git clone https://github.com/YOUR-ORG/ai-assisted-work.git
 
 ### Option 3: Copy and Own
 
-Copy AI-Assisted Work into your project (see [DEPLOYMENT.md](../../DEPLOYMENT.md) for full steps). Typically you copy into `.ai-assisted-work/`; for a custom location, copy `skill-definitions/` and `skills-for-agents/` as needed.
+Copy AI-Assisted Work into your project (see [DEPLOYMENT.md](../../DEPLOYMENT.md) for full steps). Typically you copy into `.ai-assisted-work/`; for a custom location, copy `packages/skills/` and `skills-for-agents/` as needed.
 
 **Best for**: One-off use, no update requirements.
 
@@ -207,7 +207,7 @@ cp overrides/templates/plan.md contrib-plan.md
 ```
 architecture-project/
 ├── .ai-assisted-work/                    # Submodule
-│   ├── skill-definitions/      # Full instructions
+│   ├── packages/skills/      # Full instructions
 │   └── skills-for-agents/      # Command wrappers
 ├── methodology/                 # Domain-specific
 ├── building-blocks/             # Domain-specific
@@ -218,7 +218,7 @@ architecture-project/
 
 ```
 org-work-standard/               # Your fork
-├── skill-definitions/           # Core + org skill definitions
+├── packages/skills/           # Core + org skill definitions
 ├── skills-for-agents/           # Command wrappers
 └── docs/                        # Org documentation
 

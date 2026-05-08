@@ -36,7 +36,7 @@ cp .ai-assisted-work/skills-for-agents/cursor/commands/aaw/*.md .cursor/rules/
 In Cursor, type `/aiaw-start-work` or tell your AI assistant:
 
 ```
-Follow the instructions in .ai-assisted-work/skill-definitions/work-management/start-work.md 
+Follow the instructions in .ai-assisted-work/packages/skills/work-management/start-work.md 
 to create a work item for: "Research best practices for [topic]"
 ```
 
@@ -74,6 +74,6 @@ Start Work → Progress Work → [Status] → Done
 
 ## Next Steps
 
-- [Work Management](../../skill-definitions/work-management/README.md) - Core concepts and lifecycle
+- [Work Management](../../packages/skills/work-management/README.md) - Core concepts and lifecycle
 - [Integration Guide](../integration/index.md) - Cursor, Copilot, Claude Code setup
 - [DEPLOYMENT.md](../../DEPLOYMENT.md) - Step-by-step deployment

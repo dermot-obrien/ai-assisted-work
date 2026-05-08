@@ -6,4 +6,4 @@ Revise scope or plan after work has started.
 
 **Read and follow exactly the full agent instructions at:**
 
-`.ai-assisted-work/skill-definitions/work-management/pivot-work.md`
+`.ai-assisted-work/packages/skills/work-management/pivot-work.md`

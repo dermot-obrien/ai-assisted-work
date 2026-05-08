@@ -46,7 +46,7 @@ git submodule update --remote
 ```
 your-project/
 ├── .ai-assisted-work/          # Submodule (your fork)
-│   ├── skill-definitions/      # Full instructions
+│   ├── packages/skills/      # Full instructions
 │   └── skills-for-agents/      # Command wrappers (copy from here)
 ├── work/                       # Your work items
 └── .cursor/rules/              # Copy from .ai-assisted-work/skills-for-agents/cursor/
@@ -86,7 +86,7 @@ Linux/Mac:
 # Create rules directory if needed
 mkdir -p .cursor/rules
 
-# Copy from submodule (wrappers point to .ai-assisted-work/skill-definitions/)
+# Copy from submodule (wrappers point to .ai-assisted-work/packages/skills/)
 cp .ai-assisted-work/skills-for-agents/cursor/commands/aaw/*.md .cursor/rules/
 # Rename to .mdc if your Cursor version expects that extension
 ```
@@ -104,10 +104,10 @@ Copy-Item .ai-assisted-work\skills-for-agents\cursor\commands\aaw\*.md .cursor\r
 
 | Command | Purpose | Instruction File |
 |---------|---------|-------------------|
-| `/aiaw-start-work` | Initialize new work item | `.ai-assisted-work/skill-definitions/work-management/start-work.md` |
-| `/aiaw-progress-work` | Continue work on existing item | `.ai-assisted-work/skill-definitions/work-management/progress-work.md` |
-| `/aiaw-work-status` | Check status of work items | `.ai-assisted-work/skill-definitions/work-management/work-status.md` |
-| `/aiaw-next-task` | Identify next task to work on | `.ai-assisted-work/skill-definitions/work-management/next-task.md` |
+| `/aiaw-start-work` | Initialize new work item | `.ai-assisted-work/packages/skills/work-management/start-work.md` |
+| `/aiaw-progress-work` | Continue work on existing item | `.ai-assisted-work/packages/skills/work-management/progress-work.md` |
+| `/aiaw-work-status` | Check status of work items | `.ai-assisted-work/packages/skills/work-management/work-status.md` |
+| `/aiaw-next-task` | Identify next task to work on | `.ai-assisted-work/packages/skills/work-management/next-task.md` |
 
 ---
 
@@ -116,7 +116,7 @@ Copy-Item .ai-assisted-work\skills-for-agents\cursor\commands\aaw\*.md .cursor\r
 Reference agents in prompts:
 
 ```bash
-claude "Follow the instructions in .ai-assisted-work/skill-definitions/work-management/start-work.md 
+claude "Follow the instructions in .ai-assisted-work/packages/skills/work-management/start-work.md 
 to create a work item for: {description}"
 ```
 
@@ -129,7 +129,7 @@ to create a work item for: {description}"
 Use `@workspace` with agent files:
 
 ```
-@workspace #file:.ai-assisted-work/skill-definitions/work-management/start-work.md
+@workspace #file:.ai-assisted-work/packages/skills/work-management/start-work.md
 Initialize a work item for {description}
 ```
 
@@ -153,7 +153,7 @@ Copy-Item .ai-assisted-work\skills-for-agents\github\skills\aaw\*.md .github\
 # Then manually merge content into your .github\copilot-instructions.md
 ```
 
-**Important:** The wrappers point to `.ai-assisted-work/skill-definitions/`. Open them and merge the command definitions into your `.github/copilot-instructions.md`.
+**Important:** The wrappers point to `.ai-assisted-work/packages/skills/`. Open them and merge the command definitions into your `.github/copilot-instructions.md`.
 
 ---
 
@@ -185,11 +185,11 @@ Customize the location by telling agents where to create work items.
 ```
 architecture-project/
 ├── .ai-assisted-work/           # AI-Assisted Work submodule (your fork)
-│   ├── skill-definitions/      # Full instructions
+│   ├── packages/skills/      # Full instructions
 │   └── skills-for-agents/      # Command wrappers
 ├── methodology/                 # Architecture-specific
 ├── building-blocks/             # Architecture-specific
-├── work/                        # Work items (use .ai-assisted-work skill-definitions)
+├── work/                        # Work items (use .ai-assisted-work packages/skills)
 │   └── WI-001/
 │       ├── scope.md
 │       ├── plan.md

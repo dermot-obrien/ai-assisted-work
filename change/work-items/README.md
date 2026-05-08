@@ -32,7 +32,7 @@ change/work-items/
 
 The standard `/start-work`, `/progress-work` commands point to `.ai-assisted-work/agents/...` which is the path when this project is deployed as a submodule in another repository.
 
-The `/aiaw-self-*` commands point to `skill-definitions/...` which is the correct path when working directly on this repository.
+The `/aiaw-self-*` commands point to `packages/skills/...` which is the correct path when working directly on this repository.
 
 ## See Also
 

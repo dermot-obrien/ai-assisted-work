@@ -14,7 +14,7 @@ All AI-Assisted Work commands use the `aiaw-` prefix to avoid conflicts with oth
 | `/aiaw-next-task` | `/aiaw-self-next-task` | Identify the next task to work on |
 
 - **`aiaw-*` commands**: Use when AI-Assisted Work is deployed as a submodule (paths start with `.ai-assisted-work/`)
-- **`aiaw-self-*` commands**: Use when working **on** the AI-Assisted Work repository itself (paths start with `skill-definitions/`)
+- **`aiaw-self-*` commands**: Use when working **on** the AI-Assisted Work repository itself (paths start with `packages/skills/`)
 
 ## Command Behavior Summary
 
@@ -83,7 +83,7 @@ This works similarly to Cursor - commands are discoverable through the UI.
 
 ### File location
 
-Commands are defined in `.claude/commands/aiaw-*.md`. Each command file is a thin wrapper that points to the full instructions in `.ai-assisted-work/skill-definitions/`.
+Commands are defined in `.claude/commands/aiaw-*.md`. Each command file is a thin wrapper that points to the full instructions in `.ai-assisted-work/packages/skills/`.
 
 ### Additional context
 
@@ -181,4 +181,4 @@ Each AI assistant uses a different configuration mechanism, but all provide the 
 | Claude Code | `.claude/commands/` | `aiaw-*.md` | `CLAUDE.md` |
 | GitHub Copilot | `.github/prompts/` | `aiaw-*.prompt.md` | `copilot-instructions.md` |
 
-All command files are thin wrappers pointing to the full instructions in `.ai-assisted-work/skill-definitions/`.
+All command files are thin wrappers pointing to the full instructions in `.ai-assisted-work/packages/skills/`.
