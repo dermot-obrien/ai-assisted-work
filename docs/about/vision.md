@@ -2,190 +2,78 @@
 
 The strategic vision for AI-Assisted Work.
 
-## The Problem
+## The problem
 
-### Fragmented AI Tooling
+Every team that uses AI agents to help with substantive work runs into the same coordination questions:
 
-Every project reinvents the wheel for AI-assisted work:
+- Where do work items, plans, and progress live so multiple agents (and humans) can see and update them?
+- How do agents claim work without stepping on each other?
+- How do you keep "the work" decoupled from any one AI tool, repo, or vendor?
+- How do you scale from "one agent on one project" to "many agents across many projects"?
 
-| Problem | Impact |
-|---------|--------|
-| **Duplicate effort** | Same agents written repeatedly |
-| **Inconsistent patterns** | Different approaches in each project |
-| **No reuse** | Work management tied to specific domains |
-| **Learning curve** | Each project has unique patterns |
+Most existing answers are partial: project-management tools (Jira, Linear) for humans don't expose claim semantics to agents; multi-agent LLM frameworks (CrewAI, AutoGen) are mostly in-process and tool-specific; durable workflow engines (Temporal) work but require committing to one substrate.
 
-### Domain Coupling
+## The vision
 
-Work management shouldn't be domain-specific:
+AAW is a thin, opinionated framework for **work coordination**, designed so the same skills, schema, and protocol work regardless of which AI tool runs the agent or where state is stored.
 
-- Starting work is the same in architecture as in development
-- Progress tracking works the same way everywhere
+### Two ideas
 
----
+**1. Decouple the work model from the transport.**
 
-## The Vision
+There's a small set of operations every agent needs against a shared work store: list claimable work, claim an activity, update a task, release. AAW packages these as a versioned **protocol** (`@aaw/protocol`) that any backend can implement: filesystem (today), Cloud Run + Firestore (next), GitHub Projects (later), Temporal (eventually).
 
-### Domain-Agnostic Foundation
+A skill that knows the protocol can run against any backend without modification.
 
-AI-Assisted Work provides a **reusable foundation**:
+**2. Decouple the schema from any specific work-management methodology.**
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              Your Domain Project                                │
-│                                                                                 │
-│   ┌─────────────────────────────────────────────────────────────────────────┐   │
-│   │  Domain-Specific Content                                                │   │
-│   │  • Methodology                                                          │   │
-│   │  • Templates                                                            │   │
-│   │  • Building blocks                                                      │   │
-│   └─────────────────────────────────────────────────────────────────────────┘   │
-│                                       │                                         │
-│                                       │ Uses                                    │
-│                                       ▼                                         │
-│   ┌─────────────────────────────────────────────────────────────────────────┐   │
-│   │  AI-Assisted Work (Submodule)                                           │   │
-│   │  • Work management agents                                               │   │
-│   │  • Common templates                                                     │   │
-│   └─────────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
+The hierarchy — Initiative → Work Item → Activity → Task — is structural, not methodological. Agile maps onto it (Initiative = Initiative, Work Item = Epic, Activity = Story, Task = Sub-task), but so do research workflows, architecture reviews, consultancy engagements, household projects, and anything else with hierarchy and dependencies.
 
-### Key Principles
+### Key principles
 
 | Principle | Description |
 |-----------|-------------|
-| **Domain-Agnostic** | No assumptions about the type of work |
-| **Reusable** | Embed in any project via submodule |
-| **Customizable** | Organizations can extend and adapt |
-| **Community-Driven** | Contributions improve the foundation |
-| **Tool-Neutral** | Works with Cursor, Claude Code, Copilot |
+| **Domain-agnostic** | Initiative/Work Item/Activity/Task is structure, not method |
+| **Tool-neutral** | The same skills run in Copilot, Cursor, Claude Code, Codex, Gemini |
+| **Transport-pluggable** | One protocol, multiple backends |
+| **Permissive by default** | CC BY 4.0 + Apache-2.0; no copyleft; trademark on the name only |
+| **Cross-platform** | Mac, Linux, Windows; no symlink/junction tricks |
 
----
+## Target users
 
-## What We're Building
+- **Individual contributors** running multiple agents on personal projects
+- **Architecture and consulting teams** managing decisions and deliverables across long engagements
+- **Software engineering teams** coordinating AI-driven work on a codebase
+- **Anyone** with a hierarchical body of work who wants agents to help drive it
 
-### 1. Work Management Agents
+## What's in scope
 
-Universal agents for managing any type of work:
+- Work coordination: claim, update, release, audit
+- Skill definitions consumed by AI tools
+- A CLI for shell-driven and headless use
+- A protocol that bridges filesystem and cloud transports
 
-| Agent | Purpose | Domain Examples |
-|-------|---------|-----------------|
-| **Start Work** | Initialize work items | Architecture decisions, dev tasks, research |
-| **Progress Work** | Execute and track | Any multi-step work |
-| **Work Status** | Report progress | Universal |
-| **Next Task** | Identify next task | Any active work item |
+## What's not in scope
 
-### 2. Common Templates
-
-Reusable templates for work items:
-
-| Template | Purpose |
-|----------|---------|
-| **scope.md** | Define work scope |
-| **plan.md** | Break down into tasks |
-| **progress.yaml** | Track status |
-
-### 3. Integration Patterns
-
-How to embed in other projects:
-
-- Git submodule approach
-- Direct copy approach
-- Cursor rules integration
-
----
-
-## Target Users
-
-### Individual Contributors
-
-- Personal projects using AI assistance
-- Side projects and experiments
-- Learning and exploration
-
-### Development Teams
-
-- Software development projects
-- DevOps and infrastructure work
-- Technical documentation
-
-### Architecture Teams
-
-- Enterprise architecture
-- Solution architecture
-- Platform architecture
-
-### Organizations
-
-- Standardize AI-assisted work practices
-- Customize for organizational needs
-- Contribute improvements back
-
----
-
-## Success Criteria
-
-| Metric | Target |
-|--------|--------|
-| **Adoption** | Multiple domain projects using as submodule |
-| **Contributions** | Community improvements flowing back |
-| **Reuse** | Same agents working across domains |
-| **Independence** | No domain-specific assumptions |
-
----
-
-## Non-Goals
-
-What this project is **not**:
-
-| Non-Goal | Why |
+| Non-goal | Why |
 |----------|-----|
-| **Domain methodology** | That's for domain-specific projects |
-| **Building blocks** | Domain-specific content |
-| **Full project management** | We manage work items, not projects |
-| **Replacement for Jira/etc** | Complementary, not replacement |
+| Methodology (Scrum, SAFe, BMAD) | Methodology is a layer above coordination |
+| Issue tracking UI | That's what Jira / Linear / GitHub Issues are for |
+| LLM tool selection | AAW doesn't pick which AI tool you use |
+| Replacement for project management tools | AAW complements them; doesn't replace them |
 
----
+## Where this is going
 
-## Future Direction
+| Horizon | Direction |
+|---------|-----------|
+| **Short-term** | Cloud mode (Cloud Run + Firestore) and the npm publish lane |
+| **Medium-term** | A web console for human-readable views; headless agent runners on cloud workers |
+| **Long-term** | Backends for GitHub Projects and Temporal; a budget-aware scheduler that maximises parallel work within a fixed subscription cap |
 
-### Short-Term
+See [roadmap.md](roadmap.md) for the version-by-version plan.
 
-- Complete agent suite
-- Integration documentation
-- Example implementations
+## How to participate
 
-### Medium-Term
-
-- Additional utility agents
-- Enhanced templates
-- More tool integrations
-
-### Long-Term
-
-- Community-contributed agents
-- Organizational extensions
-- Plugin ecosystem
-
----
-
-## Call to Action
-
-### For Individuals
-
-1. Try the agents on a personal project
-2. Share feedback
-3. Contribute improvements
-
-### For Organizations
-
-1. Evaluate for adoption
-2. Fork and customize
-3. Contribute generic improvements back
-
-### For Domain Projects
-
-1. Embed as submodule
-2. Build on the foundation
-3. Keep domain-specific content separate
+- Try the agents on a real project, file issues at github.com/dermot-obrien/ai-assisted-work
+- Fork and customise for your organisation; contribute generic improvements back
+- Build a backend (e.g. for your team's PM tool) — the protocol is small enough to implement in a weekend
