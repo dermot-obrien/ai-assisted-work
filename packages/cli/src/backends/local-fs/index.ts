@@ -16,6 +16,7 @@
 
 import { mkdir, readFile, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import process from "node:process";
 import {
   type Activity,
   type ActivityPatch,
@@ -231,7 +232,14 @@ export class LocalFsBackend implements Backend {
         const text = await readFile(yamlPath, "utf8");
         result.push(parseWorkItem(text, this.config.tenant));
       } catch (err) {
-        if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+        const code = (err as NodeJS.ErrnoException).code;
+        if (code === "ENOENT") continue; // No progress.yaml in this folder; skip silently.
+        // Any other error (parse failure, permission denied, etc.) is reported
+        // on stderr and the file is skipped, so one bad work item doesn't
+        // poison the whole listing.
+        process.stderr.write(
+          `aaw: skipping ${yamlPath}: ${(err as Error).message}\n`,
+        );
       }
     }
     return result.sort((a, b) => a.id.localeCompare(b.id));
@@ -248,7 +256,11 @@ export class LocalFsBackend implements Backend {
         const text = await readFile(yamlPath, "utf8");
         result.push(parseInitiative(text, this.config.tenant));
       } catch (err) {
-        if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+        const code = (err as NodeJS.ErrnoException).code;
+        if (code === "ENOENT") continue;
+        process.stderr.write(
+          `aaw: skipping ${yamlPath}: ${(err as Error).message}\n`,
+        );
       }
     }
     return result.sort((a, b) => a.id.localeCompare(b.id));

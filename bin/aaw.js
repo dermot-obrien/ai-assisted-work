@@ -7334,7 +7334,7 @@ var require_dist = __commonJS({
 });
 
 // src/cli.ts
-import process4 from "node:process";
+import process5 from "node:process";
 
 // src/config.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -7600,11 +7600,12 @@ async function pathExists(p) {
 }
 
 // src/commands/status.ts
-import process2 from "node:process";
+import process3 from "node:process";
 
 // src/backends/local-fs/index.ts
 import { mkdir as mkdir2, readFile as readFile2, readdir as readdir2, stat as stat2, unlink, writeFile as writeFile2 } from "node:fs/promises";
 import path3 from "node:path";
+import process2 from "node:process";
 
 // ../protocol/dist/protocol.js
 var ClaimConflictError = class extends Error {
@@ -7945,8 +7946,13 @@ var LocalFsBackend = class {
         const text = await readFile2(yamlPath, "utf8");
         result.push(parseWorkItem(text, this.config.tenant));
       } catch (err) {
-        if (err.code !== "ENOENT")
-          throw err;
+        const code = err.code;
+        if (code === "ENOENT")
+          continue;
+        process2.stderr.write(
+          `aaw: skipping ${yamlPath}: ${err.message}
+`
+        );
       }
     }
     return result.sort((a, b) => a.id.localeCompare(b.id));
@@ -7963,8 +7969,13 @@ var LocalFsBackend = class {
         const text = await readFile2(yamlPath, "utf8");
         result.push(parseInitiative(text, this.config.tenant));
       } catch (err) {
-        if (err.code !== "ENOENT")
-          throw err;
+        const code = err.code;
+        if (code === "ENOENT")
+          continue;
+        process2.stderr.write(
+          `aaw: skipping ${yamlPath}: ${err.message}
+`
+        );
       }
     }
     return result.sort((a, b) => a.id.localeCompare(b.id));
@@ -8040,22 +8051,22 @@ async function runStatus(input) {
     if (result.kind !== "workItem")
       return 1;
     const wi = result.data;
-    process2.stdout.write(`${wi.id} \u2014 ${wi.title}
+    process3.stdout.write(`${wi.id} \u2014 ${wi.title}
 `);
-    process2.stdout.write(`  type: ${wi.type}, status: ${wi.status}
+    process3.stdout.write(`  type: ${wi.type}, status: ${wi.status}
 `);
-    process2.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
+    process3.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
 `);
-    process2.stdout.write(`  version: ${wi.version}
+    process3.stdout.write(`  version: ${wi.version}
 
 `);
     for (const a of wi.activities) {
       const tick = symbol(a.status);
-      process2.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
+      process3.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
 `);
       for (const t of a.tasks) {
         const ttick = symbol(t.status);
-        process2.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
+        process3.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
 `);
       }
     }
@@ -8063,19 +8074,19 @@ async function runStatus(input) {
   }
   const items = await backend.listPoolWork(input.config.tenant);
   if (items.length === 0) {
-    process2.stdout.write(
+    process3.stdout.write(
       `No work items in ${input.config.workItemsPath}
 (run 'aaw init' if this workspace is not yet configured)
 `
     );
     return 0;
   }
-  process2.stdout.write(`Work items in ${input.config.workItemsPath}:
+  process3.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
   for (const wi of items) {
     const tick = symbol(wi.status);
     const counts = activityCounts(wi);
-    process2.stdout.write(
+    process3.stdout.write(
       `  ${tick} ${wi.id} \u2014 ${wi.title} (${wi.status}, ${counts})
 `
     );
@@ -8106,7 +8117,7 @@ function symbol(status) {
 // src/commands/verify.ts
 import { mkdir as mkdir3, readFile as readFile3, unlink as unlink2, writeFile as writeFile3 } from "node:fs/promises";
 import path4 from "node:path";
-import process3 from "node:process";
+import process4 from "node:process";
 async function runVerify(input) {
   const checks = [];
   checks.push({
@@ -8146,11 +8157,11 @@ async function runVerify(input) {
     const tick = c.ok ? "\u2713" : "\u2717";
     const line = `  ${tick} ${c.name}${c.detail ? `  \u2014  ${c.detail}` : ""}
 `;
-    process3.stdout.write(line);
+    process4.stdout.write(line);
     if (!c.ok)
       allOk = false;
   }
-  process3.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
+  process4.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
   return allOk ? 0 : 1;
 }
 
@@ -8170,18 +8181,18 @@ var VERSION = "0.0.0";
 async function main(argv) {
   const [command, ...rest] = argv;
   if (!command || command === "--help" || command === "-h" || command === "help") {
-    process4.stdout.write(HELP);
+    process5.stdout.write(HELP);
     return 0;
   }
   if (command === "--version" || command === "-v") {
-    process4.stdout.write(`${VERSION}
+    process5.stdout.write(`${VERSION}
 `);
     return 0;
   }
   if (command === "init") {
-    return runInit({ cwd: process4.cwd() });
+    return runInit({ cwd: process5.cwd() });
   }
-  const workspaceRoot = await findWorkspaceRoot(process4.cwd());
+  const workspaceRoot = await findWorkspaceRoot(process5.cwd());
   const config = await loadConfig(workspaceRoot);
   switch (command) {
     case "status":
@@ -8189,21 +8200,21 @@ async function main(argv) {
     case "verify":
       return runVerify({ config });
     default:
-      process4.stderr.write(`Unknown command: ${command}
+      process5.stderr.write(`Unknown command: ${command}
 
 ${HELP}`);
       return 2;
   }
 }
-main(process4.argv.slice(2)).then(
-  (code) => process4.exit(code),
+main(process5.argv.slice(2)).then(
+  (code) => process5.exit(code),
   (err) => {
-    process4.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
+    process5.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
 `);
-    if (process4.env.AAW_DEBUG) {
-      process4.stderr.write(`${err.stack ?? ""}
+    if (process5.env.AAW_DEBUG) {
+      process5.stderr.write(`${err.stack ?? ""}
 `);
     }
-    process4.exit(1);
+    process5.exit(1);
   }
 );
