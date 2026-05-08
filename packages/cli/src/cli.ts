@@ -15,20 +15,28 @@
 
 import process from "node:process";
 import { findWorkspaceRoot, loadConfig } from "./config.js";
+import { runClaim } from "./commands/claim.js";
 import { runInit } from "./commands/init.js";
 import { runLint } from "./commands/lint.js";
+import { runNextTask } from "./commands/next-task.js";
+import { runRelease } from "./commands/release.js";
 import { runStatus } from "./commands/status.js";
 import { runVerify } from "./commands/verify.js";
 
 const HELP = `aaw — AI-Assisted Work CLI
 
 Usage:
-  aaw init                Bootstrap this workspace (interactive)
-  aaw status [WI-NNN]     List work items, or show one
-  aaw verify              Sanity-check the local-fs backend
-  aaw lint                Report duplicate IDs, invalid statuses, cycles
-  aaw --version           Print CLI version
-  aaw --help              Show this help
+  aaw init                            Bootstrap this workspace (interactive)
+  aaw status [WI-NNN | IN-NNN]        List work items, or show one
+  aaw next-task [WI-NNN]              Show the next claimable task
+  aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
+                                      Atomically claim an activity
+  aaw release ACTIVITY_ID [--reason REASON]
+                                      Release an activity (must be terminal first)
+  aaw lint                            Report duplicate IDs, invalid statuses, cycles
+  aaw verify                          Sanity-check the local-fs backend
+  aaw --version                       Print CLI version
+  aaw --help                          Show this help
 
 Workspace config lives at .aaw-config.yaml (created by 'aaw init').
 `;
@@ -63,6 +71,12 @@ async function main(argv: string[]): Promise<number> {
       return runVerify({ config });
     case "lint":
       return runLint({ config });
+    case "claim":
+      return runClaim({ config, args: rest });
+    case "release":
+      return runRelease({ config, args: rest });
+    case "next-task":
+      return runNextTask({ config, args: rest });
     default:
       process.stderr.write(`Unknown command: ${command}\n\n${HELP}`);
       return 2;
