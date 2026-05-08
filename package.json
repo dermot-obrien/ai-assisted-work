@@ -7,7 +7,9 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "version": "changeset version",
+    "release": "npm run build --workspaces --if-present && (cd packages/cli && npm run bundle) && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0"
