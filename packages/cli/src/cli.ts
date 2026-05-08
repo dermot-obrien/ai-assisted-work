@@ -20,6 +20,7 @@ import { runInit } from "./commands/init.js";
 import { runLint } from "./commands/lint.js";
 import { runNextTask } from "./commands/next-task.js";
 import { runRelease } from "./commands/release.js";
+import { runRunner } from "./commands/runner.js";
 import { runStatus } from "./commands/status.js";
 import { runVerify } from "./commands/verify.js";
 
@@ -33,6 +34,8 @@ Usage:
                                       Atomically claim an activity
   aaw release ACTIVITY_ID [--reason REASON]
                                       Release an activity (must be terminal first)
+  aaw runner start [--pool POOL] [--interval SECONDS]
+                                      Long-lived poller; reports claimable work
   aaw lint                            Report duplicate IDs, invalid statuses, cycles
   aaw verify                          Sanity-check the local-fs backend
   aaw --version                       Print CLI version
@@ -77,6 +80,8 @@ async function main(argv: string[]): Promise<number> {
       return runRelease({ config, args: rest });
     case "next-task":
       return runNextTask({ config, args: rest });
+    case "runner":
+      return runRunner({ config, args: rest });
     default:
       process.stderr.write(`Unknown command: ${command}\n\n${HELP}`);
       return 2;
