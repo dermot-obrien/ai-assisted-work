@@ -7334,7 +7334,7 @@ var require_dist = __commonJS({
 });
 
 // src/cli.ts
-import process6 from "node:process";
+import process9 from "node:process";
 
 // src/config.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -7403,236 +7403,7 @@ async function findWorkspaceRoot(start) {
   }
 }
 
-// src/commands/init.ts
-var import_yaml2 = __toESM(require_dist(), 1);
-import { copyFile, mkdir, readFile as readFile2, readdir, stat, writeFile } from "node:fs/promises";
-import { homedir as homedir2 } from "node:os";
-import path2 from "node:path";
-import process from "node:process";
-import { createInterface } from "node:readline/promises";
-var SUBMODULE_DEFAULT = ".ai-assisted-work";
-async function runInit(input) {
-  const env = await detect(input.cwd);
-  const existingConfig = await readExistingConfig(env.workspaceRoot);
-  if (existingConfig) {
-    process.stdout.write("aaw init \u2014 existing workspace detected.\n\n");
-  } else {
-    process.stdout.write("aaw init \u2014 let's set this up.\n\n");
-  }
-  process.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
-`);
-  process.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
-`);
-  process.stdout.write(
-    `\u25B8 Detected tools: ${[
-      env.hasGitHub && "GitHub Copilot",
-      env.hasCursor && "Cursor",
-      env.hasClaude && "Claude Code"
-    ].filter(Boolean).join(", ") || "none"}
-`
-  );
-  if (existingConfig) {
-    process.stdout.write(
-      `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
-  Press Enter at each prompt to keep the current value.
-`
-    );
-  }
-  process.stdout.write("\n");
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const tenantDefault = existingConfig?.tenant ?? "local";
-    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
-    const modeDefault = existingConfig?.mode ?? "local-fs";
-    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() || modeDefault;
-    if (mode !== "local-fs" && mode !== "cloud") {
-      process.stderr.write(`Unsupported mode: ${mode}
-`);
-      return 2;
-    }
-    const repoName = path2.basename(env.workspaceRoot);
-    const defaultPath = existingConfig?.workItemsPath ?? path2.join(homedir2(), "aaw", tenant, repoName, "work-items");
-    const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
-    const initiativesPath = existingConfig?.initiativesPath ?? path2.join(path2.dirname(workItemsPath), "initiatives");
-    const detectedTools = {
-      copilot: env.hasGitHub,
-      cursor: env.hasCursor,
-      claude: env.hasClaude
-    };
-    const detectedNames = describeTools(detectedTools);
-    process.stdout.write(`
-Tool shims \u2014 detected: ${detectedNames || "none"}
-`);
-    const wireAnswer = (await rl.question(
-      "Wire up shims for the detected tools? [Y/n, or list to override e.g. cursor,claude]: "
-    )).trim().toLowerCase();
-    const tools = resolveTools(wireAnswer, detectedTools);
-    process.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
-    await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
-    process.stdout.write(`\u25B8 Creating ${workItemsPath}
-`);
-    await mkdir(workItemsPath, { recursive: true });
-    if (tools.copilot) {
-      process.stdout.write("\u25B8 Wiring GitHub Copilot prompts\n");
-      await wireGitHubCopilot(env);
-    }
-    if (tools.claude) {
-      process.stdout.write("\u25B8 Wiring Claude Code commands\n");
-      await wireClaudeCode(env);
-    }
-    if (tools.cursor) {
-      process.stdout.write("\u25B8 Wiring Cursor commands\n");
-      await wireCursor(env);
-    }
-    process.stdout.write("\n\u25B8 Verifying\n");
-    process.stdout.write("    \u2713 config written\n");
-    process.stdout.write("    \u2713 work_items_path created\n");
-    process.stdout.write("    \u2713 shims installed\n");
-    process.stdout.write(
-      `
-Done. Try this in your AI tool:
-    /aaw-start-work add a new feature
-
-Or from the shell:
-    node .ai-assisted-work/bin/aaw.js status
-
-For shorter commands, set up an alias (one-time):
-  PowerShell ($PROFILE):  function aaw { node ".ai-assisted-work/bin/aaw.js" @args }
-  Bash/Zsh   (~/.bashrc): alias aaw='node .ai-assisted-work/bin/aaw.js'
-Then: aaw status
-`
-    );
-    return 0;
-  } finally {
-    rl.close();
-  }
-}
-async function detect(cwd) {
-  const workspaceRoot = await walkUpForGitRoot(cwd);
-  const isGitRepo = await pathExists(path2.join(workspaceRoot, ".git"));
-  const hasGitHub = await pathExists(path2.join(workspaceRoot, ".github"));
-  const hasCursor = await pathExists(path2.join(workspaceRoot, ".cursor"));
-  const hasClaude = await pathExists(path2.join(workspaceRoot, ".claude"));
-  const submodule = path2.join(workspaceRoot, SUBMODULE_DEFAULT);
-  const aawSourceRoot = await pathExists(submodule) ? submodule : workspaceRoot;
-  return {
-    workspaceRoot,
-    isGitRepo,
-    hasGitHub,
-    hasCursor,
-    hasClaude,
-    aawSourceRoot
-  };
-}
-async function readExistingConfig(workspaceRoot) {
-  const configPath = path2.join(workspaceRoot, ".aaw-config.yaml");
-  try {
-    const text = await readFile2(configPath, "utf8");
-    const parsed = (0, import_yaml2.parse)(text);
-    const mode = parsed.mode === "local-fs" || parsed.mode === "cloud" ? parsed.mode : void 0;
-    return {
-      tenant: typeof parsed.tenant === "string" ? parsed.tenant : void 0,
-      mode,
-      workItemsPath: typeof parsed.work_items_path === "string" ? parsed.work_items_path : void 0,
-      initiativesPath: typeof parsed.initiatives_path === "string" ? parsed.initiatives_path : void 0
-    };
-  } catch (err) {
-    if (err.code === "ENOENT")
-      return null;
-    return null;
-  }
-}
-function resolveTools(answer, detected) {
-  if (answer === "" || answer === "y" || answer === "yes" || answer === "auto") {
-    return detected;
-  }
-  if (answer === "n" || answer === "no" || answer === "none") {
-    return { copilot: false, cursor: false, claude: false };
-  }
-  const parts = answer.split(",").map((s) => s.trim());
-  return {
-    copilot: parts.includes("copilot"),
-    cursor: parts.includes("cursor"),
-    claude: parts.includes("claude")
-  };
-}
-function describeTools(t) {
-  const names = [];
-  if (t.copilot)
-    names.push("GitHub Copilot");
-  if (t.cursor)
-    names.push("Cursor");
-  if (t.claude)
-    names.push("Claude Code");
-  return names.join(", ");
-}
-async function writeConfig(root, cfg) {
-  const yaml = (0, import_yaml2.stringify)({
-    tenant: cfg.tenant,
-    mode: cfg.mode,
-    work_items_path: cfg.workItemsPath,
-    initiatives_path: cfg.initiativesPath
-  });
-  await writeFile(path2.join(root, ".aaw-config.yaml"), yaml, "utf8");
-}
-async function wireGitHubCopilot(env) {
-  const src = path2.join(env.aawSourceRoot, "skills-for-agents", "github", "prompts");
-  const dest = path2.join(env.workspaceRoot, ".github", "prompts");
-  await copyDir(src, dest);
-}
-async function wireClaudeCode(env) {
-  const src = path2.join(env.aawSourceRoot, "skills-for-agents", "claude", "commands", "aaw");
-  const dest = path2.join(env.workspaceRoot, ".claude", "commands", "aaw");
-  await copyDir(src, dest);
-}
-async function wireCursor(env) {
-  const src = path2.join(env.aawSourceRoot, "skills-for-agents", "cursor", "commands", "aaw");
-  const dest = path2.join(env.workspaceRoot, ".cursor", "commands", "aaw");
-  await copyDir(src, dest);
-}
-async function copyDir(src, dest) {
-  if (!await pathExists(src))
-    return;
-  await mkdir(dest, { recursive: true });
-  const entries = await readdir(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const from = path2.join(src, entry.name);
-    const to = path2.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      await copyDir(from, to);
-    } else if (entry.isFile()) {
-      await copyFile(from, to);
-    }
-  }
-}
-async function walkUpForGitRoot(start) {
-  let dir = path2.resolve(start);
-  while (true) {
-    if (await pathExists(path2.join(dir, ".git")))
-      return dir;
-    const parent = path2.dirname(dir);
-    if (parent === dir)
-      return path2.resolve(start);
-    dir = parent;
-  }
-}
-async function pathExists(p) {
-  try {
-    await stat(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// src/commands/lint.ts
-import process3 from "node:process";
-import { readdir as readdir3 } from "node:fs/promises";
-import path4 from "node:path";
-
-// src/backends/local-fs/index.ts
-import { mkdir as mkdir2, readFile as readFile3, readdir as readdir2, stat as stat2, unlink, writeFile as writeFile2 } from "node:fs/promises";
-import path3 from "node:path";
+// src/commands/claim.ts
 import process2 from "node:process";
 
 // ../protocol/dist/protocol.js
@@ -7669,10 +7440,15 @@ var NotHolderError = class extends Error {
   }
 };
 
+// src/backends/local-fs/index.ts
+import { mkdir, readFile as readFile2, readdir, stat, unlink, writeFile } from "node:fs/promises";
+import path2 from "node:path";
+import process from "node:process";
+
 // src/backends/local-fs/yaml-codec.ts
-var import_yaml3 = __toESM(require_dist(), 1);
+var import_yaml2 = __toESM(require_dist(), 1);
 function parseWorkItem(yamlText, tenantId) {
-  const y = (0, import_yaml3.parse)(yamlText);
+  const y = (0, import_yaml2.parse)(yamlText);
   return {
     id: y.work_item_id,
     tenantId,
@@ -7779,10 +7555,10 @@ function serialiseWorkItem(wi) {
       deliverables: wi.artifacts.deliverables
     }
   };
-  return (0, import_yaml3.stringify)(y);
+  return (0, import_yaml2.stringify)(y);
 }
 function parseInitiative(yamlText, tenantId) {
-  const y = (0, import_yaml3.parse)(yamlText);
+  const y = (0, import_yaml2.parse)(yamlText);
   return {
     id: y.initiative_id,
     tenantId,
@@ -7841,7 +7617,7 @@ var LocalFsBackend = class {
     if (!activity)
       throw new Error(`Activity ${activityId} not found`);
     const wiPath = await this.resolveWorkItemPath(wi.id);
-    const lockPath = path3.join(wiPath, "locks", `${activityId}.lock`);
+    const lockPath = path2.join(wiPath, "locks", `${activityId}.lock`);
     const now = /* @__PURE__ */ new Date();
     const expires = new Date(now.getTime() + ttlSeconds * 1e3);
     const newClaim = {
@@ -7862,8 +7638,8 @@ var LocalFsBackend = class {
       }
       await unlink(lockPath).catch(() => void 0);
     }
-    await mkdir2(path3.dirname(lockPath), { recursive: true });
-    await writeFile2(lockPath, JSON.stringify(newClaim, null, 2), { flag: "wx" }).catch(
+    await mkdir(path2.dirname(lockPath), { recursive: true });
+    await writeFile(lockPath, JSON.stringify(newClaim, null, 2), { flag: "wx" }).catch(
       (err) => {
         if (err.code === "EEXIST") {
           throw new ClaimConflictError(activityId, null);
@@ -7934,7 +7710,7 @@ var LocalFsBackend = class {
       );
     }
     const wiPath = await this.resolveWorkItemPath(wi.id);
-    const lockPath = path3.join(wiPath, "locks", `${activityId}.lock`);
+    const lockPath = path2.join(wiPath, "locks", `${activityId}.lock`);
     await unlink(lockPath).catch((err) => {
       if (err.code !== "ENOENT")
         throw err;
@@ -7942,7 +7718,7 @@ var LocalFsBackend = class {
   }
   // === appendEvent ===
   async appendEvent(scope, event) {
-    const targetPath = scope.kind === "workItem" ? path3.join(await this.resolveWorkItemPath(scope.workItemId), "changelog.log") : path3.join(await this.resolveInitiativePath(scope.initiativeId), "changelog.log");
+    const targetPath = scope.kind === "workItem" ? path2.join(await this.resolveWorkItemPath(scope.workItemId), "changelog.log") : path2.join(await this.resolveInitiativePath(scope.initiativeId), "changelog.log");
     const line = JSON.stringify(event) + "\n";
     const { appendFile } = await import("node:fs/promises");
     await appendFile(targetPath, line, "utf8");
@@ -7968,16 +7744,16 @@ var LocalFsBackend = class {
     for (const entry of entries) {
       if (!WI_FOLDER.test(entry))
         continue;
-      const dir = path3.join(this.config.workItemsPath, entry);
-      const yamlPath = path3.join(dir, "progress.yaml");
+      const dir = path2.join(this.config.workItemsPath, entry);
+      const yamlPath = path2.join(dir, "progress.yaml");
       try {
-        const text = await readFile3(yamlPath, "utf8");
+        const text = await readFile2(yamlPath, "utf8");
         result.push(parseWorkItem(text, this.config.tenant));
       } catch (err) {
         const code = err.code;
         if (code === "ENOENT")
           continue;
-        process2.stderr.write(
+        process.stderr.write(
           `aaw: skipping ${yamlPath}: ${err.message}
 `
         );
@@ -7991,16 +7767,16 @@ var LocalFsBackend = class {
     for (const entry of entries) {
       if (!IN_FOLDER.test(entry))
         continue;
-      const dir = path3.join(this.config.initiativesPath, entry);
-      const yamlPath = path3.join(dir, "progress.yaml");
+      const dir = path2.join(this.config.initiativesPath, entry);
+      const yamlPath = path2.join(dir, "progress.yaml");
       try {
-        const text = await readFile3(yamlPath, "utf8");
+        const text = await readFile2(yamlPath, "utf8");
         result.push(parseInitiative(text, this.config.tenant));
       } catch (err) {
         const code = err.code;
         if (code === "ENOENT")
           continue;
-        process2.stderr.write(
+        process.stderr.write(
           `aaw: skipping ${yamlPath}: ${err.message}
 `
         );
@@ -8016,12 +7792,12 @@ var LocalFsBackend = class {
   }
   async loadWorkItem(workItemId) {
     const dir = await this.resolveWorkItemPath(workItemId);
-    const text = await readFile3(path3.join(dir, "progress.yaml"), "utf8");
+    const text = await readFile2(path2.join(dir, "progress.yaml"), "utf8");
     return parseWorkItem(text, this.config.tenant);
   }
   async loadInitiative(initiativeId) {
     const dir = await this.resolveInitiativePath(initiativeId);
-    const text = await readFile3(path3.join(dir, "progress.yaml"), "utf8");
+    const text = await readFile2(path2.join(dir, "progress.yaml"), "utf8");
     return parseInitiative(text, this.config.tenant);
   }
   async resolveWorkItemPath(workItemId) {
@@ -8029,14 +7805,14 @@ var LocalFsBackend = class {
     const match = entries.find((e) => e.startsWith(`${workItemId}-`));
     if (!match)
       throw new Error(`Work item ${workItemId} not found`);
-    return path3.join(this.config.workItemsPath, match);
+    return path2.join(this.config.workItemsPath, match);
   }
   async resolveInitiativePath(initiativeId) {
     const entries = await safeReaddir(this.config.initiativesPath);
     const match = entries.find((e) => e.startsWith(`${initiativeId}-`));
     if (!match)
       throw new Error(`Initiative ${initiativeId} not found`);
-    return path3.join(this.config.initiativesPath, match);
+    return path2.join(this.config.initiativesPath, match);
   }
   async writeWorkItem(wi) {
     const dir = await this.resolveWorkItemPath(wi.id);
@@ -8046,12 +7822,12 @@ var LocalFsBackend = class {
       updated: (/* @__PURE__ */ new Date()).toISOString(),
       lastModified: (/* @__PURE__ */ new Date()).toISOString()
     };
-    await writeFile2(path3.join(dir, "progress.yaml"), serialiseWorkItem(updated), "utf8");
+    await writeFile(path2.join(dir, "progress.yaml"), serialiseWorkItem(updated), "utf8");
   }
 };
 async function safeReaddir(dir) {
   try {
-    const all = await readdir2(dir, { withFileTypes: true });
+    const all = await readdir(dir, { withFileTypes: true });
     return all.filter((d) => d.isDirectory()).map((d) => d.name);
   } catch (err) {
     if (err.code === "ENOENT")
@@ -8061,7 +7837,7 @@ async function safeReaddir(dir) {
 }
 async function readJson(file) {
   try {
-    const text = await readFile3(file, "utf8");
+    const text = await readFile2(file, "utf8");
     return JSON.parse(text);
   } catch (err) {
     if (err.code === "ENOENT")
@@ -8069,6 +7845,282 @@ async function readJson(file) {
     throw err;
   }
 }
+
+// src/commands/claim.ts
+async function runClaim(input) {
+  const activityId = input.args[0];
+  if (!activityId) {
+    process2.stderr.write("aaw claim: missing ACTIVITY_ID (e.g. WI-001-A1)\n");
+    return 2;
+  }
+  const opts = parseFlags(input.args.slice(1));
+  const agentId = opts.agent ?? `agent-${randomId()}`;
+  const ttlSeconds = opts.ttl ?? 3600;
+  const backend = new LocalFsBackend(input.config);
+  try {
+    const claim = await backend.claimActivity(activityId, agentId, ttlSeconds);
+    process2.stdout.write(
+      `Claimed ${activityId} as ${agentId} until ${claim.expires}
+`
+    );
+    return 0;
+  } catch (err) {
+    if (err instanceof ClaimConflictError) {
+      process2.stderr.write(
+        `aaw claim: ${activityId} is held by ${err.currentHolder ?? "another worker"}
+`
+      );
+      return 1;
+    }
+    process2.stderr.write(`aaw claim: ${err.message}
+`);
+    return 1;
+  }
+}
+function parseFlags(args) {
+  const out = {};
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === "--agent" && i + 1 < args.length) {
+      out.agent = args[++i];
+    } else if (a === "--ttl" && i + 1 < args.length) {
+      const n = Number.parseInt(args[++i] ?? "", 10);
+      if (Number.isFinite(n) && n > 0)
+        out.ttl = n;
+    }
+  }
+  return out;
+}
+function randomId() {
+  return Math.random().toString(36).slice(2, 8);
+}
+
+// src/commands/init.ts
+var import_yaml3 = __toESM(require_dist(), 1);
+import { copyFile, mkdir as mkdir2, readFile as readFile3, readdir as readdir2, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
+import { homedir as homedir2 } from "node:os";
+import path3 from "node:path";
+import process3 from "node:process";
+import { createInterface } from "node:readline/promises";
+var SUBMODULE_DEFAULT = ".ai-assisted-work";
+async function runInit(input) {
+  const env = await detect(input.cwd);
+  const existingConfig = await readExistingConfig(env.workspaceRoot);
+  if (existingConfig) {
+    process3.stdout.write("aaw init \u2014 existing workspace detected.\n\n");
+  } else {
+    process3.stdout.write("aaw init \u2014 let's set this up.\n\n");
+  }
+  process3.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
+`);
+  process3.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
+`);
+  process3.stdout.write(
+    `\u25B8 Detected tools: ${[
+      env.hasGitHub && "GitHub Copilot",
+      env.hasCursor && "Cursor",
+      env.hasClaude && "Claude Code"
+    ].filter(Boolean).join(", ") || "none"}
+`
+  );
+  if (existingConfig) {
+    process3.stdout.write(
+      `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
+  Press Enter at each prompt to keep the current value.
+`
+    );
+  }
+  process3.stdout.write("\n");
+  const rl = createInterface({ input: process3.stdin, output: process3.stdout });
+  try {
+    const tenantDefault = existingConfig?.tenant ?? "local";
+    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
+    const modeDefault = existingConfig?.mode ?? "local-fs";
+    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() || modeDefault;
+    if (mode !== "local-fs" && mode !== "cloud") {
+      process3.stderr.write(`Unsupported mode: ${mode}
+`);
+      return 2;
+    }
+    const repoName = path3.basename(env.workspaceRoot);
+    const defaultPath = existingConfig?.workItemsPath ?? path3.join(homedir2(), "aaw", tenant, repoName, "work-items");
+    const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
+    const initiativesPath = existingConfig?.initiativesPath ?? path3.join(path3.dirname(workItemsPath), "initiatives");
+    const detectedTools = {
+      copilot: env.hasGitHub,
+      cursor: env.hasCursor,
+      claude: env.hasClaude
+    };
+    const detectedNames = describeTools(detectedTools);
+    process3.stdout.write(`
+Tool shims \u2014 detected: ${detectedNames || "none"}
+`);
+    const wireAnswer = (await rl.question(
+      "Wire up shims for the detected tools? [Y/n, or list to override e.g. cursor,claude]: "
+    )).trim().toLowerCase();
+    const tools = resolveTools(wireAnswer, detectedTools);
+    process3.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
+    await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
+    process3.stdout.write(`\u25B8 Creating ${workItemsPath}
+`);
+    await mkdir2(workItemsPath, { recursive: true });
+    if (tools.copilot) {
+      process3.stdout.write("\u25B8 Wiring GitHub Copilot prompts\n");
+      await wireGitHubCopilot(env);
+    }
+    if (tools.claude) {
+      process3.stdout.write("\u25B8 Wiring Claude Code commands\n");
+      await wireClaudeCode(env);
+    }
+    if (tools.cursor) {
+      process3.stdout.write("\u25B8 Wiring Cursor commands\n");
+      await wireCursor(env);
+    }
+    process3.stdout.write("\n\u25B8 Verifying\n");
+    process3.stdout.write("    \u2713 config written\n");
+    process3.stdout.write("    \u2713 work_items_path created\n");
+    process3.stdout.write("    \u2713 shims installed\n");
+    process3.stdout.write(
+      `
+Done. Try this in your AI tool:
+    /aaw-start-work add a new feature
+
+Or from the shell:
+    node .ai-assisted-work/bin/aaw.js status
+
+For shorter commands, set up an alias (one-time):
+  PowerShell ($PROFILE):  function aaw { node ".ai-assisted-work/bin/aaw.js" @args }
+  Bash/Zsh   (~/.bashrc): alias aaw='node .ai-assisted-work/bin/aaw.js'
+Then: aaw status
+`
+    );
+    return 0;
+  } finally {
+    rl.close();
+  }
+}
+async function detect(cwd) {
+  const workspaceRoot = await walkUpForGitRoot(cwd);
+  const isGitRepo = await pathExists(path3.join(workspaceRoot, ".git"));
+  const hasGitHub = await pathExists(path3.join(workspaceRoot, ".github"));
+  const hasCursor = await pathExists(path3.join(workspaceRoot, ".cursor"));
+  const hasClaude = await pathExists(path3.join(workspaceRoot, ".claude"));
+  const submodule = path3.join(workspaceRoot, SUBMODULE_DEFAULT);
+  const aawSourceRoot = await pathExists(submodule) ? submodule : workspaceRoot;
+  return {
+    workspaceRoot,
+    isGitRepo,
+    hasGitHub,
+    hasCursor,
+    hasClaude,
+    aawSourceRoot
+  };
+}
+async function readExistingConfig(workspaceRoot) {
+  const configPath = path3.join(workspaceRoot, ".aaw-config.yaml");
+  try {
+    const text = await readFile3(configPath, "utf8");
+    const parsed = (0, import_yaml3.parse)(text);
+    const mode = parsed.mode === "local-fs" || parsed.mode === "cloud" ? parsed.mode : void 0;
+    return {
+      tenant: typeof parsed.tenant === "string" ? parsed.tenant : void 0,
+      mode,
+      workItemsPath: typeof parsed.work_items_path === "string" ? parsed.work_items_path : void 0,
+      initiativesPath: typeof parsed.initiatives_path === "string" ? parsed.initiatives_path : void 0
+    };
+  } catch (err) {
+    if (err.code === "ENOENT")
+      return null;
+    return null;
+  }
+}
+function resolveTools(answer, detected) {
+  if (answer === "" || answer === "y" || answer === "yes" || answer === "auto") {
+    return detected;
+  }
+  if (answer === "n" || answer === "no" || answer === "none") {
+    return { copilot: false, cursor: false, claude: false };
+  }
+  const parts = answer.split(",").map((s) => s.trim());
+  return {
+    copilot: parts.includes("copilot"),
+    cursor: parts.includes("cursor"),
+    claude: parts.includes("claude")
+  };
+}
+function describeTools(t) {
+  const names = [];
+  if (t.copilot)
+    names.push("GitHub Copilot");
+  if (t.cursor)
+    names.push("Cursor");
+  if (t.claude)
+    names.push("Claude Code");
+  return names.join(", ");
+}
+async function writeConfig(root, cfg) {
+  const yaml = (0, import_yaml3.stringify)({
+    tenant: cfg.tenant,
+    mode: cfg.mode,
+    work_items_path: cfg.workItemsPath,
+    initiatives_path: cfg.initiativesPath
+  });
+  await writeFile2(path3.join(root, ".aaw-config.yaml"), yaml, "utf8");
+}
+async function wireGitHubCopilot(env) {
+  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "github", "prompts");
+  const dest = path3.join(env.workspaceRoot, ".github", "prompts");
+  await copyDir(src, dest);
+}
+async function wireClaudeCode(env) {
+  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "claude", "commands", "aaw");
+  const dest = path3.join(env.workspaceRoot, ".claude", "commands", "aaw");
+  await copyDir(src, dest);
+}
+async function wireCursor(env) {
+  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "cursor", "commands", "aaw");
+  const dest = path3.join(env.workspaceRoot, ".cursor", "commands", "aaw");
+  await copyDir(src, dest);
+}
+async function copyDir(src, dest) {
+  if (!await pathExists(src))
+    return;
+  await mkdir2(dest, { recursive: true });
+  const entries = await readdir2(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const from = path3.join(src, entry.name);
+    const to = path3.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      await copyDir(from, to);
+    } else if (entry.isFile()) {
+      await copyFile(from, to);
+    }
+  }
+}
+async function walkUpForGitRoot(start) {
+  let dir = path3.resolve(start);
+  while (true) {
+    if (await pathExists(path3.join(dir, ".git")))
+      return dir;
+    const parent = path3.dirname(dir);
+    if (parent === dir)
+      return path3.resolve(start);
+    dir = parent;
+  }
+}
+async function pathExists(p) {
+  try {
+    await stat2(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// src/commands/lint.ts
+import process4 from "node:process";
+import { readdir as readdir3 } from "node:fs/promises";
+import path4 from "node:path";
 
 // src/backends/local-fs/validate.ts
 var WORK_ITEM_STATUSES = [
@@ -8204,14 +8256,14 @@ async function runLint(input) {
     issues.push(...detectActivityIssues(wi));
   }
   if (issues.length === 0) {
-    process3.stdout.write("aaw lint: no issues\n");
+    process4.stdout.write("aaw lint: no issues\n");
     return 0;
   }
-  process3.stdout.write(`aaw lint: ${issues.length} issue(s)
+  process4.stdout.write(`aaw lint: ${issues.length} issue(s)
 
 `);
   for (const issue of issues) {
-    process3.stdout.write(`  \u2717 ${issue.path}
+    process4.stdout.write(`  \u2717 ${issue.path}
       ${issue.message}
 
 `);
@@ -8300,8 +8352,93 @@ function detectActivityIssues(wi) {
   return issues;
 }
 
+// src/commands/next-task.ts
+import process5 from "node:process";
+async function runNextTask(input) {
+  const target = input.args[0];
+  const backend = new LocalFsBackend(input.config);
+  const items = await backend.listPoolWork(input.config.tenant);
+  const candidates = items.filter((wi) => target ? wi.id === target : wi.status !== "done" && wi.status !== "abandoned").flatMap(findNextTaskInWorkItem);
+  if (candidates.length === 0) {
+    if (target) {
+      process5.stdout.write(`No claimable task in ${target}.
+`);
+    } else {
+      process5.stdout.write("No claimable task across the workspace.\n");
+    }
+    return 0;
+  }
+  const c = candidates[0];
+  process5.stdout.write(`Next: ${c.task.id}
+`);
+  process5.stdout.write(`  Work item: ${c.workItem.id} \u2014 ${c.workItem.title}
+`);
+  process5.stdout.write(`  Activity:  ${c.activity.id} \u2014 ${c.activity.title}
+`);
+  process5.stdout.write(`  Task:      ${c.task.title}
+`);
+  if (c.activity.dependsOn.length > 0) {
+    process5.stdout.write(`  Activity depends on: ${c.activity.dependsOn.join(", ")}
+`);
+  }
+  if (c.task.actor === "human") {
+    process5.stdout.write(`  Actor:     human (agent should mark awaiting_human)
+`);
+  } else {
+    process5.stdout.write(`  Actor:     ${c.task.actor}
+`);
+  }
+  return 0;
+}
+function findNextTaskInWorkItem(wi) {
+  const eligible = wi.activities.filter((a) => {
+    if (a.status !== "pending" && a.status !== "in_progress")
+      return false;
+    return a.dependsOn.every(
+      (id) => wi.activities.find((x) => x.id === id)?.status === "completed"
+    );
+  });
+  for (const activity of eligible) {
+    const task = activity.tasks.find((t) => t.status === "pending");
+    if (task)
+      return [{ workItem: wi, activity, task }];
+  }
+  return [];
+}
+
+// src/commands/release.ts
+import process6 from "node:process";
+async function runRelease(input) {
+  const activityId = input.args[0];
+  if (!activityId) {
+    process6.stderr.write("aaw release: missing ACTIVITY_ID\n");
+    return 2;
+  }
+  const opts = parseFlags2(input.args.slice(1));
+  const backend = new LocalFsBackend(input.config);
+  try {
+    await backend.releaseActivity(activityId, opts.reason);
+    process6.stdout.write(`Released ${activityId}
+`);
+    return 0;
+  } catch (err) {
+    process6.stderr.write(`aaw release: ${err.message}
+`);
+    return 1;
+  }
+}
+function parseFlags2(args) {
+  const out = {};
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--reason" && i + 1 < args.length) {
+      out.reason = args[++i];
+    }
+  }
+  return out;
+}
+
 // src/commands/status.ts
-import process4 from "node:process";
+import process7 from "node:process";
 async function runStatus(input) {
   const backend = new LocalFsBackend(input.config);
   const target = input.args[0];
@@ -8319,7 +8456,7 @@ async function runStatus(input) {
     return 1;
   const { initiatives, workItems } = tenantState.data;
   if (initiatives.length === 0 && workItems.length === 0) {
-    process4.stdout.write(
+    process7.stdout.write(
       `No work items or initiatives in ${input.config.workItemsPath}
 (run 'aaw init' if this workspace is not yet configured)
 `
@@ -8327,17 +8464,17 @@ async function runStatus(input) {
     return 0;
   }
   if (initiatives.length > 0) {
-    process4.stdout.write(`Initiatives in ${input.config.initiativesPath}:
+    process7.stdout.write(`Initiatives in ${input.config.initiativesPath}:
 `);
     for (const init of initiatives) {
       const tick = symbol(init.status);
       const wiCount = workItems.filter((w) => w.initiativeId === init.id).length;
-      process4.stdout.write(
+      process7.stdout.write(
         `  ${tick} ${init.id} \u2014 ${init.title} (${init.status}, ${wiCount} WI${wiCount === 1 ? "" : "s"})
 `
       );
     }
-    process4.stdout.write("\n");
+    process7.stdout.write("\n");
   }
   if (workItems.length === 0)
     return 0;
@@ -8349,13 +8486,13 @@ async function runStatus(input) {
     byInit.set(key, list);
   }
   if (initiatives.length > 0) {
-    process4.stdout.write(`Work items in ${input.config.workItemsPath}:
+    process7.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
     for (const init of initiatives) {
       const list = byInit.get(init.id);
       if (!list || list.length === 0)
         continue;
-      process4.stdout.write(`
+      process7.stdout.write(`
   ${init.id}:
 `);
       for (const wi of list) {
@@ -8364,7 +8501,7 @@ async function runStatus(input) {
     }
     const standalone = byInit.get("__standalone");
     if (standalone && standalone.length > 0) {
-      process4.stdout.write(`
+      process7.stdout.write(`
   Standalone:
 `);
       for (const wi of standalone) {
@@ -8372,7 +8509,7 @@ async function runStatus(input) {
       }
     }
   } else {
-    process4.stdout.write(`Work items in ${input.config.workItemsPath}:
+    process7.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
     for (const wi of workItems) {
       renderWorkItemLine(wi, "  ");
@@ -8385,22 +8522,22 @@ async function showWorkItem(backend, workItemId) {
   if (result.kind !== "workItem")
     return 1;
   const wi = result.data;
-  process4.stdout.write(`${wi.id} \u2014 ${wi.title}
+  process7.stdout.write(`${wi.id} \u2014 ${wi.title}
 `);
-  process4.stdout.write(`  type: ${wi.type}, status: ${wi.status}
+  process7.stdout.write(`  type: ${wi.type}, status: ${wi.status}
 `);
-  process4.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
+  process7.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
 `);
-  process4.stdout.write(`  version: ${wi.version}
+  process7.stdout.write(`  version: ${wi.version}
 
 `);
   for (const a of wi.activities) {
     const tick = symbol(a.status);
-    process4.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
+    process7.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
 `);
     for (const t of a.tasks) {
       const ttick = symbol(t.status);
-      process4.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
+      process7.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
 `);
     }
   }
@@ -8411,33 +8548,33 @@ async function showInitiative(backend, initiativeId) {
   if (result.kind !== "initiative")
     return 1;
   const init = result.data;
-  process4.stdout.write(`${init.id} \u2014 ${init.title}
+  process7.stdout.write(`${init.id} \u2014 ${init.title}
 `);
-  process4.stdout.write(`  status: ${init.status}
+  process7.stdout.write(`  status: ${init.status}
 `);
-  process4.stdout.write(
+  process7.stdout.write(
     `  time horizon: ${init.targetStart ?? "?"} \u2013 ${init.targetEnd ?? "?"}
 `
   );
-  process4.stdout.write(`  owner: ${init.owner ?? "none"}
+  process7.stdout.write(`  owner: ${init.owner ?? "none"}
 `);
   if (init.rootWorkItem) {
-    process4.stdout.write(`  root work item: ${init.rootWorkItem}
+    process7.stdout.write(`  root work item: ${init.rootWorkItem}
 `);
   }
-  process4.stdout.write("\n");
+  process7.stdout.write("\n");
   if (init.workItems.length === 0) {
-    process4.stdout.write(
+    process7.stdout.write(
       `  (No work items registered. They link via 'initiative_id' in their progress.yaml.)
 `
     );
     return 0;
   }
-  process4.stdout.write(`  Work items:
+  process7.stdout.write(`  Work items:
 `);
   for (const ref of init.workItems) {
     const tick = symbol(ref.status);
-    process4.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
+    process7.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
 `);
   }
   return 0;
@@ -8445,7 +8582,7 @@ async function showInitiative(backend, initiativeId) {
 function renderWorkItemLine(wi, indent) {
   const tick = symbol(wi.status);
   const counts = activityCounts(wi);
-  process4.stdout.write(
+  process7.stdout.write(
     `${indent}${tick} ${wi.id} \u2014 ${wi.title} (${wi.status}, ${counts})
 `
   );
@@ -8474,7 +8611,7 @@ function symbol(status) {
 // src/commands/verify.ts
 import { mkdir as mkdir3, readFile as readFile4, unlink as unlink2, writeFile as writeFile3 } from "node:fs/promises";
 import path5 from "node:path";
-import process5 from "node:process";
+import process8 from "node:process";
 async function runVerify(input) {
   const checks = [];
   checks.push({
@@ -8514,11 +8651,11 @@ async function runVerify(input) {
     const tick = c.ok ? "\u2713" : "\u2717";
     const line = `  ${tick} ${c.name}${c.detail ? `  \u2014  ${c.detail}` : ""}
 `;
-    process5.stdout.write(line);
+    process8.stdout.write(line);
     if (!c.ok)
       allOk = false;
   }
-  process5.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
+  process8.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
   return allOk ? 0 : 1;
 }
 
@@ -8526,12 +8663,17 @@ async function runVerify(input) {
 var HELP = `aaw \u2014 AI-Assisted Work CLI
 
 Usage:
-  aaw init                Bootstrap this workspace (interactive)
-  aaw status [WI-NNN]     List work items, or show one
-  aaw verify              Sanity-check the local-fs backend
-  aaw lint                Report duplicate IDs, invalid statuses, cycles
-  aaw --version           Print CLI version
-  aaw --help              Show this help
+  aaw init                            Bootstrap this workspace (interactive)
+  aaw status [WI-NNN | IN-NNN]        List work items, or show one
+  aaw next-task [WI-NNN]              Show the next claimable task
+  aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
+                                      Atomically claim an activity
+  aaw release ACTIVITY_ID [--reason REASON]
+                                      Release an activity (must be terminal first)
+  aaw lint                            Report duplicate IDs, invalid statuses, cycles
+  aaw verify                          Sanity-check the local-fs backend
+  aaw --version                       Print CLI version
+  aaw --help                          Show this help
 
 Workspace config lives at .aaw-config.yaml (created by 'aaw init').
 `;
@@ -8539,18 +8681,18 @@ var VERSION = "0.0.0";
 async function main(argv) {
   const [command, ...rest] = argv;
   if (!command || command === "--help" || command === "-h" || command === "help") {
-    process6.stdout.write(HELP);
+    process9.stdout.write(HELP);
     return 0;
   }
   if (command === "--version" || command === "-v") {
-    process6.stdout.write(`${VERSION}
+    process9.stdout.write(`${VERSION}
 `);
     return 0;
   }
   if (command === "init") {
-    return runInit({ cwd: process6.cwd() });
+    return runInit({ cwd: process9.cwd() });
   }
-  const workspaceRoot = await findWorkspaceRoot(process6.cwd());
+  const workspaceRoot = await findWorkspaceRoot(process9.cwd());
   const config = await loadConfig(workspaceRoot);
   switch (command) {
     case "status":
@@ -8559,22 +8701,28 @@ async function main(argv) {
       return runVerify({ config });
     case "lint":
       return runLint({ config });
+    case "claim":
+      return runClaim({ config, args: rest });
+    case "release":
+      return runRelease({ config, args: rest });
+    case "next-task":
+      return runNextTask({ config, args: rest });
     default:
-      process6.stderr.write(`Unknown command: ${command}
+      process9.stderr.write(`Unknown command: ${command}
 
 ${HELP}`);
       return 2;
   }
 }
-main(process6.argv.slice(2)).then(
-  (code) => process6.exit(code),
+main(process9.argv.slice(2)).then(
+  (code) => process9.exit(code),
   (err) => {
-    process6.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
+    process9.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
 `);
-    if (process6.env.AAW_DEBUG) {
-      process6.stderr.write(`${err.stack ?? ""}
+    if (process9.env.AAW_DEBUG) {
+      process9.stderr.write(`${err.stack ?? ""}
 `);
     }
-    process6.exit(1);
+    process9.exit(1);
   }
 );
