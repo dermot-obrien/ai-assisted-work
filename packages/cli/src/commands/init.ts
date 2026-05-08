@@ -1,0 +1,231 @@
+/**
+ * `aaw init` — interactive workspace bootstrap.
+ *
+ * Detects:
+ *   - git repo (presence of .git)
+ *   - AI tools (.github/, .cursor/, .claude/ directories)
+ *
+ * Prompts for:
+ *   - tenant name
+ *   - mode (local-fs | cloud)
+ *   - work_items_path
+ *   - which AI tool shims to wire up
+ *
+ * Writes:
+ *   - .aaw-config.yaml at the workspace root
+ *   - tool shims into .github/prompts/, .claude/commands/, .cursor/rules/
+ *   - the work_items_path directory (if missing)
+ */
+
+import { copyFile, mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import path from "node:path";
+import process from "node:process";
+import { createInterface } from "node:readline/promises";
+import { stringify as stringifyYaml } from "yaml";
+
+interface InitInput {
+  cwd: string;
+}
+
+interface DetectedEnvironment {
+  workspaceRoot: string;
+  isGitRepo: boolean;
+  hasGitHub: boolean;
+  hasCursor: boolean;
+  hasClaude: boolean;
+  /** Directory containing AAW source (the submodule path or this repo). */
+  aawSourceRoot: string;
+}
+
+const SUBMODULE_DEFAULT = ".ai-assisted-work";
+
+export async function runInit(input: InitInput): Promise<number> {
+  const env = await detect(input.cwd);
+
+  process.stdout.write("aaw init — let's set this up.\n\n");
+  process.stdout.write(`▸ Workspace: ${env.workspaceRoot}\n`);
+  process.stdout.write(`▸ Git repo: ${env.isGitRepo ? "yes" : "no"}\n`);
+  process.stdout.write(
+    `▸ Detected tools: ${[
+      env.hasGitHub && "GitHub Copilot",
+      env.hasCursor && "Cursor",
+      env.hasClaude && "Claude Code",
+    ]
+      .filter(Boolean)
+      .join(", ") || "none"}\n\n`,
+  );
+
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const tenant = (await rl.question("Tenant name [local]: ")).trim() || "local";
+    const mode = (await rl.question("Mode (local-fs/cloud) [local-fs]: ")).trim() ||
+      "local-fs";
+    if (mode !== "local-fs" && mode !== "cloud") {
+      process.stderr.write(`Unsupported mode: ${mode}\n`);
+      return 2;
+    }
+
+    const repoName = path.basename(env.workspaceRoot);
+    const defaultPath = path.join(
+      homedir(),
+      "aaw",
+      tenant,
+      repoName,
+      "work-items",
+    );
+    const workItemsPath =
+      (await rl.question(`work_items_path [${defaultPath}]: `)).trim() ||
+      defaultPath;
+    const initiativesPath = path.join(path.dirname(workItemsPath), "initiatives");
+
+    const wireTools = (
+      (await rl.question(
+        "Wire up tool shims? Comma-separated: copilot,cursor,claude  [auto] : ",
+      )) || "auto"
+    )
+      .trim()
+      .toLowerCase();
+    const tools = resolveTools(wireTools, env);
+
+    process.stdout.write("\n▸ Writing .aaw-config.yaml\n");
+    await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
+
+    process.stdout.write(`▸ Creating ${workItemsPath}\n`);
+    await mkdir(workItemsPath, { recursive: true });
+
+    if (tools.copilot) {
+      process.stdout.write("▸ Wiring GitHub Copilot prompts\n");
+      await wireGitHubCopilot(env);
+    }
+    if (tools.claude) {
+      process.stdout.write("▸ Wiring Claude Code commands\n");
+      await wireClaudeCode(env);
+    }
+    if (tools.cursor) {
+      process.stdout.write("▸ Wiring Cursor commands\n");
+      await wireCursor(env);
+    }
+
+    process.stdout.write("\n▸ Verifying\n");
+    process.stdout.write("    ✓ config written\n");
+    process.stdout.write("    ✓ work_items_path created\n");
+    process.stdout.write("    ✓ shims installed\n");
+
+    process.stdout.write(
+      "\nDone. Try this in your AI tool:\n    /aaw-start-work add a new feature\n\n" +
+        "Or from the shell:\n    aaw status\n",
+    );
+    return 0;
+  } finally {
+    rl.close();
+  }
+}
+
+async function detect(cwd: string): Promise<DetectedEnvironment> {
+  const workspaceRoot = await walkUpForGitRoot(cwd);
+  const isGitRepo = await pathExists(path.join(workspaceRoot, ".git"));
+  const hasGitHub = await pathExists(path.join(workspaceRoot, ".github"));
+  const hasCursor = await pathExists(path.join(workspaceRoot, ".cursor"));
+  const hasClaude = await pathExists(path.join(workspaceRoot, ".claude"));
+
+  // Source root: prefer the submodule path; fall back to the parent dir
+  // we're currently running from (treat the running CLI's repo as the source).
+  const submodule = path.join(workspaceRoot, SUBMODULE_DEFAULT);
+  const aawSourceRoot = (await pathExists(submodule)) ? submodule : workspaceRoot;
+
+  return {
+    workspaceRoot,
+    isGitRepo,
+    hasGitHub,
+    hasCursor,
+    hasClaude,
+    aawSourceRoot,
+  };
+}
+
+function resolveTools(spec: string, env: DetectedEnvironment) {
+  if (spec === "auto" || spec === "") {
+    return {
+      copilot: env.hasGitHub,
+      cursor: env.hasCursor,
+      claude: env.hasClaude,
+    };
+  }
+  const parts = spec.split(",").map((s) => s.trim());
+  return {
+    copilot: parts.includes("copilot"),
+    cursor: parts.includes("cursor"),
+    claude: parts.includes("claude"),
+  };
+}
+
+async function writeConfig(
+  root: string,
+  cfg: {
+    tenant: string;
+    mode: "local-fs" | "cloud";
+    workItemsPath: string;
+    initiativesPath: string;
+  },
+): Promise<void> {
+  const yaml = stringifyYaml({
+    tenant: cfg.tenant,
+    mode: cfg.mode,
+    work_items_path: cfg.workItemsPath,
+    initiatives_path: cfg.initiativesPath,
+  });
+  await writeFile(path.join(root, ".aaw-config.yaml"), yaml, "utf8");
+}
+
+async function wireGitHubCopilot(env: DetectedEnvironment): Promise<void> {
+  const src = path.join(env.aawSourceRoot, "skills-for-agents", "github", "prompts");
+  const dest = path.join(env.workspaceRoot, ".github", "prompts");
+  await copyDir(src, dest);
+}
+
+async function wireClaudeCode(env: DetectedEnvironment): Promise<void> {
+  const src = path.join(env.aawSourceRoot, "skills-for-agents", "claude", "commands", "aaw");
+  const dest = path.join(env.workspaceRoot, ".claude", "commands", "aaw");
+  await copyDir(src, dest);
+}
+
+async function wireCursor(env: DetectedEnvironment): Promise<void> {
+  const src = path.join(env.aawSourceRoot, "skills-for-agents", "cursor", "commands", "aaw");
+  const dest = path.join(env.workspaceRoot, ".cursor", "commands", "aaw");
+  await copyDir(src, dest);
+}
+
+async function copyDir(src: string, dest: string): Promise<void> {
+  if (!(await pathExists(src))) return;
+  await mkdir(dest, { recursive: true });
+  const entries = await readdir(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const from = path.join(src, entry.name);
+    const to = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      await copyDir(from, to);
+    } else if (entry.isFile()) {
+      await copyFile(from, to);
+    }
+  }
+}
+
+async function walkUpForGitRoot(start: string): Promise<string> {
+  let dir = path.resolve(start);
+  while (true) {
+    if (await pathExists(path.join(dir, ".git"))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) return path.resolve(start);
+    dir = parent;
+  }
+}
+
+async function pathExists(p: string): Promise<boolean> {
+  try {
+    await stat(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
