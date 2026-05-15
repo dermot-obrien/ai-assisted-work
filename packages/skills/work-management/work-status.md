@@ -17,15 +17,12 @@ Check the status of all work items or a specific work item.
 
 ## All Work Items View
 
-**Discovery (must include symlinks):**
+**Discovery:**
 
-1. **Locate work item roots** at any level in the workspace:
-   - Every `work-items/` directory (real directory or symlink target).
-   - Every `work-items-private/` directory (real directory or symlink target).
-2. **Explicitly follow symlinks:** `work-items` and `work-items-private` are often symlinks (Unix) or junctions (Windows). Normal directory recursion may skip them. You MUST discover and scan symlinked / junctioned paths as well as real directories—e.g. list reparse points (Windows) or resolve symlinks (Unix) when enumerating roots, then scan inside those paths for `WI-*/progress.yaml` and `WIP-*/progress.yaml`.
-3. **Scan** each discovered root for `WI-*/progress.yaml` and `WIP-*/progress.yaml`.
-4. **Group by initiative** (optional): Work items with an `initiative_id` field in their progress.yaml can be shown under their initiative heading. Standalone work items (no `initiative_id`) appear ungrouped.
-5. **Display** a simple list with status indicators:
+1. Read `work_items_path` from `.aaw-config.yaml` at the workspace root.
+2. Scan the resolved path for `WI-*/progress.yaml`.
+3. **Group by initiative** (optional): Work items with an `initiative_id` field in their progress.yaml can be shown under their initiative heading. Standalone work items (no `initiative_id`) appear ungrouped.
+4. **Display** a simple list with status indicators:
 
 ```
 Work Items
@@ -165,11 +162,8 @@ For `/work-status IN-001`:
 
 **Discovery:**
 
-1. **Locate initiative roots** at any level in the workspace:
-   - Every `initiatives/` directory (real directory or symlink target).
-   - Every `initiatives-private/` directory (real directory or symlink target).
-2. **Explicitly follow symlinks:** Same rules as work item discovery.
-3. **Scan** each discovered root for `IN-*/progress.yaml` and `INP-*/progress.yaml`.
+1. Read `initiatives_path` from `.aaw-config.yaml` at the workspace root.
+2. Scan the resolved path for `IN-*/progress.yaml`.
 
 **Display:**
 

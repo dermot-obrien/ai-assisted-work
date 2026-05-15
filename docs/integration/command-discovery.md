@@ -4,17 +4,17 @@ This guide explains how AI-Assisted Work commands are discovered and invoked acr
 
 ## Command Naming Convention
 
-All AI-Assisted Work commands use the `aiaw-` prefix to avoid conflicts with other tools in your repository:
+All AI-Assisted Work commands use the `aaw-` prefix to avoid conflicts with other tools in your repository:
 
 | Standard Command | Self-Development Command | Purpose |
 |------------------|--------------------------|---------|
-| `/aiaw-start-work` | `/aiaw-self-start-work` | Initialize a new work item |
-| `/aiaw-progress-work` | `/aiaw-self-progress-work` | Continue work on an existing item |
-| `/aiaw-work-status` | `/aiaw-self-work-status` | Check status of work items |
-| `/aiaw-next-task` | `/aiaw-self-next-task` | Identify the next task to work on |
+| `/aaw-start-work` | `/aaw-self-start-work` | Initialize a new work item |
+| `/aaw-progress-work` | `/aaw-self-progress-work` | Continue work on an existing item |
+| `/aaw-work-status` | `/aaw-self-work-status` | Check status of work items |
+| `/aaw-next-task` | `/aaw-self-next-task` | Identify the next task to work on |
 
-- **`aiaw-*` commands**: Use when AI-Assisted Work is deployed as a submodule (paths start with `.ai-assisted-work/`)
-- **`aiaw-self-*` commands**: Use when working **on** the AI-Assisted Work repository itself (paths start with `skill-definitions/`)
+- **`aaw-*` commands**: Use when AI-Assisted Work is deployed as a submodule (paths start with `.ai-assisted-work/`)
+- **`aaw-self-*` commands**: Use when working **on** the AI-Assisted Work repository itself (paths start with `packages/skills/`)
 
 ## Command Behavior Summary
 
@@ -23,7 +23,7 @@ All AI-Assisted Work commands use the `aiaw-` prefix to avoid conflicts with oth
 | Commands appear in `/` menu | ✅ Yes | ✅ Yes | ✅ Yes |
 | Commands work when typed | ✅ Yes | ✅ Yes | ✅ Yes |
 | Requires knowing command names | No (discoverable) | No (discoverable) | No (discoverable) |
-| Configuration location | `.cursor/rules/aiaw-*.mdc` | `.claude/commands/aiaw-*.md` | `.github/prompts/aiaw-*.prompt.md` |
+| Configuration location | `.cursor/rules/aaw-*.mdc` | `.claude/commands/aaw-*.md` | `.github/prompts/aaw-*.prompt.md` |
 
 ---
 
@@ -35,25 +35,25 @@ Cursor has a **custom slash command registration system**. When you create `.mdc
 
 ```yaml
 ---
-name: aiaw-start-work
+name: aaw-start-work
 description: Initialize a new work item (AI-Assisted Work)
 type: manual
 ---
 ```
 
-- **`name`**: The slash command name (e.g., `/aiaw-start-work`)
+- **`name`**: The slash command name (e.g., `/aaw-start-work`)
 - **`description`**: Shown in the command menu
 - **`type: manual`**: Command must be explicitly invoked (not auto-applied)
 
 ### User experience
 
 1. Type `/` in Cursor chat
-2. See a dropdown menu of available commands including `/aiaw-start-work`, `/aiaw-progress-work`, etc.
+2. See a dropdown menu of available commands including `/aaw-start-work`, `/aaw-progress-work`, etc.
 3. Select a command to invoke it
 
 ### File location
 
-Commands are defined in `.cursor/rules/aiaw-*.mdc` files. The `aiaw-` prefix ensures they don't conflict with other rules when copied to an existing repository.
+Commands are defined in `.cursor/rules/aaw-*.mdc` files. The `aaw-` prefix ensures they don't conflict with other rules when copied to an existing repository.
 
 ---
 
@@ -65,10 +65,10 @@ Claude Code has a **native slash command system** via `.claude/commands/`. Each 
 
 ```
 .claude/commands/
-├── aiaw-start-work.md           → /aiaw-start-work
-├── aiaw-progress-work.md        → /aiaw-progress-work
-├── aiaw-work-status.md          → /aiaw-work-status
-└── aiaw-next-task.md            → /aiaw-next-task
+├── aaw-start-work.md           → /aaw-start-work
+├── aaw-progress-work.md        → /aaw-progress-work
+├── aaw-work-status.md          → /aaw-work-status
+└── aaw-next-task.md            → /aaw-next-task
 ```
 
 The filename (without extension) becomes the command name. Each file contains instructions pointing to the full agent documentation.
@@ -76,14 +76,14 @@ The filename (without extension) becomes the command name. Each file contains in
 ### User experience
 
 1. Type `/` in Claude Code
-2. See a dropdown menu of available commands including `/aiaw-start-work`, `/aiaw-progress-work`, etc.
+2. See a dropdown menu of available commands including `/aaw-start-work`, `/aaw-progress-work`, etc.
 3. Select a command to invoke it
 
 This works similarly to Cursor - commands are discoverable through the UI.
 
 ### File location
 
-Commands are defined in `.claude/commands/aiaw-*.md`. Each command file is a thin wrapper that points to the full instructions in `.ai-assisted-work/skill-definitions/`.
+Commands are defined in `.claude/commands/aaw-*.md`. Each command file is a thin wrapper that points to the full instructions in `.ai-assisted-work/packages/skills/`.
 
 ### Additional context
 
@@ -99,10 +99,10 @@ GitHub Copilot supports **discoverable slash commands** via `.github/prompts/` f
 
 ```
 .github/prompts/
-├── aiaw-start-work.prompt.md           → /aiaw-start-work
-├── aiaw-progress-work.prompt.md        → /aiaw-progress-work
-├── aiaw-work-status.prompt.md          → /aiaw-work-status
-└── aiaw-next-task.prompt.md            → /aiaw-next-task
+├── aaw-start-work.prompt.md           → /aaw-start-work
+├── aaw-progress-work.prompt.md        → /aaw-progress-work
+├── aaw-work-status.prompt.md          → /aaw-work-status
+└── aaw-next-task.prompt.md            → /aaw-next-task
 ```
 
 The filename (without `.prompt.md` extension) becomes the command name. Each file contains instructions pointing to the full agent documentation.
@@ -110,14 +110,14 @@ The filename (without `.prompt.md` extension) becomes the command name. Each fil
 ### User experience
 
 1. Type `/` in GitHub Copilot Chat
-2. See a dropdown menu of available commands including `/aiaw-start-work`, `/aiaw-progress-work`, etc.
+2. See a dropdown menu of available commands including `/aaw-start-work`, `/aaw-progress-work`, etc.
 3. Select a command to invoke it
 
 This works similarly to Cursor and Claude Code - commands are discoverable through the UI.
 
 ### File locations
 
-- **Prompt files**: `.github/prompts/aiaw-*.prompt.md` - Discoverable slash commands
+- **Prompt files**: `.github/prompts/aaw-*.prompt.md` - Discoverable slash commands
 - **Background context**: `.github/copilot-instructions.md` - Always loaded as workspace context
 
 The prompt files provide UI discoverability, while `copilot-instructions.md` provides background context for all interactions.
@@ -137,10 +137,10 @@ All AI assistants support these commands (typed manually or selected from menu):
 
 | Command | Purpose |
 |---------|---------|
-| `/aiaw-start-work` | Initialize a new work item with scope, plan, and progress tracking |
-| `/aiaw-progress-work` | Continue work on an existing work item |
-| `/aiaw-work-status` | Check status of work items |
-| `/aiaw-next-task` | Identify the next task to work on from a work item |
+| `/aaw-start-work` | Initialize a new work item with scope, plan, and progress tracking |
+| `/aaw-progress-work` | Continue work on an existing work item |
+| `/aaw-work-status` | Check status of work items |
+| `/aaw-next-task` | Identify the next task to work on from a work item |
 
 ---
 
@@ -149,9 +149,9 @@ All AI assistants support these commands (typed manually or selected from menu):
 All three AI assistants now support discoverable commands:
 
 1. **Type `/`** in any chat to see available commands
-2. **Look for `aiaw-` prefix** to identify AI-Assisted Work commands
-3. **Use `aiaw-self-*` commands** when developing AI-Assisted Work itself
-4. **Include context** after selecting a command: `/aiaw-start-work Add caching layer to API`
+2. **Look for `aaw-` prefix** to identify AI-Assisted Work commands
+3. **Use `aaw-self-*` commands** when developing AI-Assisted Work itself
+4. **Include context** after selecting a command: `/aaw-start-work Add caching layer to API`
 5. **The AI will read the full instructions** from the agent files automatically
 6. **Use the same workflow** across all three tools
 
@@ -167,7 +167,7 @@ Research shows that **subfolders are not reliably supported** across all tools:
 | Claude Code | ✅ Yes - supports hierarchical command folders |
 | GitHub Copilot | ⚠️ Requires VS Code settings workaround |
 
-Using the `aiaw-` prefix ensures commands work correctly in all three tools without requiring user configuration.
+Using the `aaw-` prefix ensures commands work correctly in all three tools without requiring user configuration.
 
 ---
 
@@ -177,8 +177,8 @@ Each AI assistant uses a different configuration mechanism, but all provide the 
 
 | Tool | Configuration Folder | File Pattern | Context File |
 |------|---------------------|--------------|--------------|
-| Cursor | `.cursor/rules/` | `aiaw-*.mdc` | N/A |
-| Claude Code | `.claude/commands/` | `aiaw-*.md` | `CLAUDE.md` |
-| GitHub Copilot | `.github/prompts/` | `aiaw-*.prompt.md` | `copilot-instructions.md` |
+| Cursor | `.cursor/rules/` | `aaw-*.mdc` | N/A |
+| Claude Code | `.claude/commands/` | `aaw-*.md` | `CLAUDE.md` |
+| GitHub Copilot | `.github/prompts/` | `aaw-*.prompt.md` | `copilot-instructions.md` |
 
-All command files are thin wrappers pointing to the full instructions in `.ai-assisted-work/skill-definitions/`.
+All command files are thin wrappers pointing to the full instructions in `.ai-assisted-work/packages/skills/`.

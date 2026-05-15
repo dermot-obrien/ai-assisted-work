@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 Dermot O'Brien
+# SPDX-License-Identifier: Apache-2.0
+
+name: CI
+
+on:
+  push:
+    branches: [main, v2-redesign]
+  pull_request:
+    branches: [main, v2-redesign]
+
+jobs:
+  build:
+    name: Build & verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck protocol
+        working-directory: packages/protocol
+        run: npx tsc -p tsconfig.json --noEmit
+
+      - name: Typecheck CLI
+        working-directory: packages/cli
+        run: npx tsc -p tsconfig.json --noEmit
+
+      - name: Build bundle
+        working-directory: packages/cli
+        run: npm run bundle
+
+      - name: Verify bundle is up to date
+        run: |
+          if [ -n "$(git status --porcelain bin/aaw.js)" ]; then
+            echo "::error::bin/aaw.js is out of date — run 'cd packages/cli && npm run bundle' and commit the result."
+            git diff bin/aaw.js | head -50
+            exit 1
+          fi
+
+      - name: Smoke test CLI
+        run: |
+          node bin/aaw.js --version
+          node bin/aaw.js --help
+
+  reuse:
+    name: REUSE compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fsfe/reuse-action@v3

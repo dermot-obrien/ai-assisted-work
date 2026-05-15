@@ -1,0 +1,30 @@
+{
+  "name": "@aaw/cli",
+  "version": "2.0.0",
+  "description": "AI-Assisted Work CLI: bootstrap, status, claim, and run agent workflows.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "aaw": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "bundle": "node build.mjs",
+    "clean": "rm -rf dist"
+  },
+  "files": [
+    "dist/"
+  ],
+  "dependencies": {
+    "@aaw/protocol": "2.0.0",
+    "yaml": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

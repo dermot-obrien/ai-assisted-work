@@ -60,15 +60,13 @@ This process works the same for humans and AI agents across all work types (deve
 
 **Activity Lock Guarantee:** Once you hold an activity lock, you can trust the documented state. If progress.yaml shows a task as pending, it IS pending. This guarantee depends on all agents updating progress.yaml before releasing their locks.
 
-**Discovering work item locations (must include symlinks):**
+**Discovering work item locations:**
 
-Before loading or listing work items, you MUST discover roots and follow symlinks. Normal directory recursion often skips symlinks and junctions.
+Before loading or listing work items, resolve the root from `.aaw-config.yaml`:
 
-1. **Locate work item roots** at any level in the workspace: every `work-items/` and every `work-items-private/` (real directory or symlink target).
-2. **Explicitly follow symlinks:** These folders are often symlinks (Unix) or junctions (Windows). You MUST discover symlinked/junctioned paths as well as real directories—e.g. list reparse points (Windows) or resolve symlinks (Unix) when enumerating roots.
-3. **Scan** each discovered root for `WI-*/progress.yaml` and `WIP-*/progress.yaml` (or for `WI-{NNN}-*/` / `WIP-{NNN}-*/` folders) to find work item paths.
-
-If you only scan real directories and skip this step, you will miss work items under `work-items-private/` when it is a symlink.
+1. Read `work_items_path` from `.aaw-config.yaml` at the workspace root.
+2. Scan the resolved path for `WI-*/progress.yaml` (or for `WI-{NNN}-*/` folders) to find work item paths.
+3. If the config is missing, fall back to `./change/work-items/` in the artefact repo (legacy default).
 
 **See also:** [AGENTS.md](AGENTS.md) for complete boundary rules.
 
@@ -379,14 +377,14 @@ Update work item status from `planning` to `in_progress` in progress.yaml.
 
 ### Step 1: Load Work Item Context
 
-1. **Discover work item location** using the discovery rules in the Critical Rules section (must include symlinks). Scan discovered roots for `WI-{NNN}-*/` or `WIP-{NNN}-*/` (or for `WI-*/progress.yaml` / `WIP-*/progress.yaml`) to get the work item path.
+1. **Discover work item location** using the discovery rules in the Critical Rules section. Scan the configured root for `WI-{NNN}-*/` (or for `WI-*/progress.yaml`) to get the work item path.
 2. Read `{work-item-path}/progress.yaml` to see current state (source of truth)
 3. Read `{work-item-path}/scope.md` to understand the stakeholder-facing requirements
 4. Read `{work-item-path}/scope-ai.md` to understand intent formation, decision rationale, and agent instructions
 5. Read `{work-item-path}/plan.md` to understand the approach and activities
 6. Read `{work-item-path}/notes.md` if it exists (for session history and findings)
 7. Read `{work-item-path}/changes.md` if it exists (to see what's already been changed)
-7. Check if there's an `agents.md` file for work-item-specific guidance
+8. Check if there's an `agents.md` file for work-item-specific guidance
 
 **Important**: Both `scope.md` AND `scope-ai.md` should be read. The AI addendum contains critical context about WHY decisions were made and specific instructions for agents working on this item.
 
@@ -631,7 +629,7 @@ When human tasks are pending, include the Manual Tasks Report (see above).
 
 If run without argument:
 
-1. **Discover work item roots** using the discovery rules in the Critical Rules section (must include symlinks). Scan discovered roots for `WI-*/progress.yaml` and `WIP-*/progress.yaml`.
+1. **Discover work item root** using the discovery rules in the Critical Rules section. Scan the configured root for `WI-*/progress.yaml`.
 2. Filter for `status` not equal to "done"
 3. Display list with activity status:
 

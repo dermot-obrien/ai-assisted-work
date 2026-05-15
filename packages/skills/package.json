@@ -1,0 +1,12 @@
+{
+  "name": "@aaw/skills",
+  "version": "2.0.0",
+  "description": "AI-Assisted Work skill definitions (markdown). Tool-neutral source consumed by all AAW clients.",
+  "private": true,
+  "files": [
+    "work-management/**/*"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

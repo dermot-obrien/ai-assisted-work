@@ -23,7 +23,7 @@ last_modified_by: "agent-cursor-session"
 work_item_id: WI-001
 title: "Namespace Delta File Commands"
 type: development
-status: completed
+status: done
 
 # === TIMESTAMPS ===
 created: "2026-02-01T12:00:00Z"

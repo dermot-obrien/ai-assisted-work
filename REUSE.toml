@@ -1,0 +1,62 @@
+version = 1
+
+# AI-Assisted Work is dual-licensed:
+#   - Documentation, skill definitions, agent shims, templates, and
+#     examples are licensed under CC BY 4.0.
+#   - Executable code (TypeScript / JavaScript / build scripts) is
+#     licensed under Apache-2.0.
+#
+# This file follows the REUSE Specification 3.3 (https://reuse.software/).
+# It applies bulk licensing rules to files where adding an SPDX header in
+# the file itself is impractical (Markdown, YAML, JSON, images). Source
+# code files SHOULD declare an SPDX-License-Identifier header inline; the
+# rule below acts as a safety net.
+
+# --- Documentation, skill definitions, agent shims, templates, examples ---
+[[annotations]]
+path = [
+  "**.md",
+  "**.yaml",
+  "**.yml",
+  "**.csv",
+  "**.drawio",
+  "**.png",
+  "**.svg",
+  "**.txt",
+  "**.log",
+  "packages/skills/**",
+  "skills-for-agents/**",
+  "docs/**",
+  "change/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Dermot O'Brien"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# --- Executable code (override the broad rule above) ---
+[[annotations]]
+path = [
+  "packages/cli/src/**.ts",
+  "packages/cli/build.mjs",
+  "packages/protocol/src/**.ts",
+  "bin/**.js",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Dermot O'Brien"
+SPDX-License-Identifier = "Apache-2.0"
+
+# --- Repository metadata files (no creative content; CC BY 4.0 by default) ---
+[[annotations]]
+path = [
+  ".gitignore",
+  ".gitattributes",
+  "REUSE.toml",
+  "LICENSE",
+  "package.json",
+  "package-lock.json",
+  "**/package.json",
+  "**/tsconfig.json",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 Dermot O'Brien"
+SPDX-License-Identifier = "CC-BY-4.0"
