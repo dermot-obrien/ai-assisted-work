@@ -6,4 +6,4 @@ Check status of work items.
 
 **Read and follow exactly the full agent instructions at:**
 
-`.ai-assisted-work/skill-definitions/work-management/work-status.md`
+`.ai-assisted-work/packages/skills/work-management/work-status.md`

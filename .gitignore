@@ -1,10 +1,33 @@
-# Agents.
+# Agent configs that contributors might run against this repo locally —
+# don't pollute the repo with one author's tool setup. The shipped tool
+# shims live in skills-for-agents/ and packages/skills/.
 CLAUDE.md
 /.cursor/
 /.claude/
-/.github/
-CLAUDE.md
 
-# Private work items (not committed).
+# Block .github/ contents EXCEPT the CI workflows that ship with the repo.
+/.github/*
+!/.github/workflows/
+
+# v1-era work-items-private/ guard.
+# Pre-v2 setups used this folder for gitignored private work items, sometimes
+# as a symlink/junction to a cloud-synced location. v2 moved private items
+# to a configured work_items_path outside the repo, so a fresh v2 install
+# won't have this folder at all. The lines below remain as a safety net so
+# any contributor with leftover v1 data doesn't accidentally publish it.
 change/work-items-private/
 change/work-items-private
+
+# Node / TypeScript build output.
+node_modules/
+packages/*/dist/
+packages/*/node_modules/
+*.tsbuildinfo
+
+# Bundled CLI output: bin/aaw.js IS committed (ships in the submodule
+# install path; see DEPLOYMENT.md). The sourcemap is regenerated and
+# noisy, so it's ignored.
+bin/aaw.js.map
+
+# Bundled CLI dependency cache.
+.aaw-cache/

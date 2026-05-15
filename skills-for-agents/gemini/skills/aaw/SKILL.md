@@ -17,4 +17,4 @@ This skill provides access to the Work Management system.
 ## Reference
 
 Full skill definitions and agent rules are located in:
-- `.ai-assisted-work/skill-definitions/work-management/`
+- `.ai-assisted-work/packages/skills/work-management/`
