@@ -7,6 +7,9 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Work Classification & Ceremony standard** (`packages/skills/work-management/work-classification.md`): a domain- and substrate-agnostic model for classifying any unit of work by three axes (certainty × impact × kind) into four classes — **chore · change · intervention · inquiry** — with the ceremony (AAW artifacts/phases) and version impact each class earns. Inverts the default to *minimum ceremony, escalate by class*; demotes the `WI-NNN/` workspace to "the intervention substrate." Defines class-vs-substrate orthogonality (routing by `class × tenant`), the inquiry→AAR and decision→AAA seams, promotion/re-triage, and an explicit consumer-entity mapping (e.g. task/commitment/idea/decision) so downstream capture/extraction platforms apply one shared vocabulary. Referenced from the work-management README lifecycle.
+
 ## [2.0.0] - 2026-05-08
 
 Major redesign. AAW is now a TypeScript monorepo with a defined protocol, a CLI, and a single install path that works in corporate / work-restricted environments.
