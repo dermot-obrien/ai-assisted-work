@@ -234,7 +234,10 @@ WI-{NNN}-{descriptive-name}/
 
 ### Document Categories
 
-**Required Documents** (every work item):
+**Documents an `intervention` requires** (the table below describes a full `WI-NNN/`
+workspace, which only the **intervention** class creates — see
+[work-classification.md](work-classification.md)). A **chore** creates none of these (it's
+a branch + a changelog line); a **change** creates a light `progress.yaml` + brief plan:
 
 | Document | Purpose | Audience | Created In |
 |----------|---------|----------|------------|
@@ -429,6 +432,11 @@ Work items progress through four phases. Each phase has a recommended interactio
 | `review` | 4 | Work complete, awaiting verification. |
 | `abandoned` | - | Work is abandoned. |
 | `done` | - | Outcome achieved and verified. |
+
+The `scoping`/`discovery`/`planning` statuses apply only to the **intervention** path. A
+**chore** has no tracked work item, so it has no status (it's a branch + changelog); a
+**change** goes straight `planning → in_progress → done`. See
+[work-classification.md](work-classification.md).
 
 ## Commands
 

@@ -8,6 +8,12 @@ alwaysApply: false
 
 Execute a work item that has completed the Scoping, Discovery, and Planning phases. This is Phase 4 (Execution) of the work item lifecycle. Use this to continue implementation or resume after an interruption.
 
+> **Applies to `intervention` (and `change`) work items** — those with a `WI-NNN/`
+> workspace and `progress.yaml`. A **chore** has no work item to progress (it's a branch +
+> a changelog line, completed in one pass by `start-work`). The activity/lock machinery
+> below exists for multi-agent interventions; a single-agent `change` uses the same flow
+> with one activity. See [work-classification.md](work-classification.md).
+
 ## Quick Start (Essential Path)
 
 For most single-agent work, follow this simple flow:
