@@ -1,8 +1,16 @@
 {
   "name": "ai-assisted-work",
   "version": "2.0.0",
+  "description": "AI-Assisted Work (AAW) — domain-agnostic work-management agents + the shared install engine for the AAW framework family.",
   "private": true,
   "type": "module",
+  "license": "Apache-2.0",
+  "author": "Dermot O'Brien",
+  "homepage": "https://github.com/dermot-obrien/ai-assisted-work",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dermot-obrien/ai-assisted-work.git"
+  },
   "bin": {
     "aaw": "./bin/aaw.js"
   },
