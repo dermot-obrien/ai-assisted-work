@@ -31,3 +31,6 @@ bin/aaw.js.map
 
 # Bundled CLI dependency cache.
 .aaw-cache/
+
+# npm pack output
+*.tgz
