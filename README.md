@@ -19,13 +19,43 @@ AI Assisted Work provides structured agents that help AI assistants (Cursor, Git
 
 ## Install
 
+AAW is the **base** framework — [AI-Assisted Architecture](https://github.com/dermot-obrien/ai-assisted-architecture)
+and [AI-Assisted Research](https://github.com/dermot-obrien/ai-assisted-research)
+install through its engine. Both consumption models below work **without
+npm-registry access** (git is enough).
+
+### Option A — npm git-dependency (recommended)
+
+```bash
+npm i github:dermot-obrien/ai-assisted-work
+npx aaw init          # interactive: tenant, mode, work_items_path, wire tool shims
+# or non-interactive (just wire shims for detected tools):
+npx aaw install
+```
+
+`bin/aaw.js` is a committed, self-contained bundle, so `npm i` pulls **no** registry
+packages and needs no build. No submodules to manage.
+
+### Option B — git submodule
+
 ```bash
 git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
 git submodule update --init
 node .ai-assisted-work/bin/aaw.js init
 ```
 
-Requires Node.js (16+). Works in corporate environments where npm registry access is restricted but git+GitHub access is allowed — the bundled CLI ships in the submodule. Cross-platform on Mac, Linux, and Windows. See [DEPLOYMENT.md](DEPLOYMENT.md) for details.
+Requires **Node.js 18+** (20+ recommended). Works in corporate environments where the
+npm registry is restricted but git+GitHub access is allowed — the bundled CLI ships in
+the package/submodule. Cross-platform on macOS, Linux, and Windows. See
+[DEPLOYMENT.md](DEPLOYMENT.md).
+
+### `aaw init` vs `aaw install`
+
+- `aaw init` — interactive first-time setup: writes `.aaw-config.yaml` (tenant, mode,
+  work-items path) **and** wires shims.
+- `aaw install` — non-interactive, manifest-driven shim wiring (reads
+  `framework.manifest.yaml`). Re-runnable any time; also the entry AAA/AAR delegate to
+  via `aaw install --framework <path>`.
 
 ## Available Commands
 
@@ -61,6 +91,36 @@ Once aliased: `aaw status`, `aaw status WI-001`, `aaw verify`.
 ## Customization
 
 Fork this repository to customize for your organization. See [Organization Adoption](docs/about/organization-adoption.md) for guidance.
+
+## Development (building from source)
+
+AAW is an npm workspaces monorepo: `@aaw/protocol` (types), `@aaw/installer` (the
+shared install engine + manifest contract), `@aaw/cli` (the `aaw` command), and
+`@aaw/skills` (markdown skill definitions).
+
+**Requirements:** Node.js 18+ (20+ recommended) and npm. No other system deps.
+
+```bash
+git clone https://github.com/dermot-obrien/ai-assisted-work.git
+cd ai-assisted-work
+npm install                                   # install workspace dev deps
+
+# Regenerate the committed bundle (bin/aaw.js). Build order matters — esbuild
+# bundles the CLI and inlines @aaw/protocol + @aaw/installer from their dist/:
+npm run build --workspace @aaw/protocol
+npm run build --workspace @aaw/installer
+(cd packages/cli && node build.mjs)           # → bin/aaw.js (commit this)
+```
+
+`bin/aaw.js` **is committed** (it ships for the git-only / submodule install paths) —
+rebuild and commit it whenever the CLI or installer changes. `packages/*/dist/` and
+`node_modules/` are gitignored.
+
+The install behaviour is driven by `framework.manifest.yaml` (see `@aaw/installer`'s
+`manifest.ts` for the schema): `shims` (per-tool source→dest), `config` (files seeded
+idempotently), `data_dirs`, `tool_setup.python` (pip), `seed` (optional Node seeder),
+and `source_token` (rewritten to the real install location so shims resolve whether
+the framework is a submodule or in `node_modules`).
 
 ## Contributing
 
