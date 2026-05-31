@@ -8245,7 +8245,7 @@ async function loadManifest(frameworkRoot) {
 var import_yaml5 = __toESM(require_dist(), 1);
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { copyFile as copyFile2, mkdir as mkdir3, readdir as readdir3, readFile as readFile5, stat as stat3, writeFile as writeFile3 } from "node:fs/promises";
+import { copyFile as copyFile2, mkdir as mkdir3, readdir as readdir3, readFile as readFile5, rm, stat as stat3, writeFile as writeFile3 } from "node:fs/promises";
 import path5 from "node:path";
 var noopLog = () => {
 };
@@ -8328,6 +8328,9 @@ async function wireShims(opts, selection) {
       continue;
     const src = path5.join(manifest.frameworkRoot, mapping.src);
     const dest = path5.join(workspaceRoot, mapping.dest);
+    if (path5.basename(dest) === manifest.id && await pathExists2(dest)) {
+      await rm(dest, { recursive: true, force: true });
+    }
     const n = await copyDir2(src, dest, rewrite);
     if (n > 0) {
       log(`  \u25B8 ${tool}: wired ${n} shim file(s) \u2192 ${mapping.dest}`);
@@ -8816,7 +8819,7 @@ function detectActivityIssues(wi) {
 }
 
 // src/commands/migrate.ts
-import { copyFile as copyFile3, mkdir as mkdir4, readFile as readFile6, readdir as readdir5, rename, rm, stat as stat4, writeFile as writeFile4 } from "node:fs/promises";
+import { copyFile as copyFile3, mkdir as mkdir4, readFile as readFile6, readdir as readdir5, rename, rm as rm2, stat as stat4, writeFile as writeFile4 } from "node:fs/promises";
 import path8 from "node:path";
 import process6 from "node:process";
 async function runMigrate(input) {
@@ -9021,7 +9024,7 @@ async function renameOrCopyAndRemove(from, to) {
     if (err.code !== "EXDEV")
       throw err;
     await copyDirRecursive(from, to);
-    await rm(from, { recursive: true, force: true });
+    await rm2(from, { recursive: true, force: true });
   }
 }
 async function copyDirRecursive(src, dest) {

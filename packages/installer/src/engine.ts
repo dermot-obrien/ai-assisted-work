@@ -19,7 +19,7 @@
 
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import {
@@ -163,6 +163,12 @@ export async function wireShims(
     if (!mapping || !selection[tool]) continue;
     const src = path.join(manifest.frameworkRoot, mapping.src);
     const dest = path.join(workspaceRoot, mapping.dest);
+    // Make install authoritative: clear the framework-owned dest first so shims for
+    // upstream-renamed/removed commands don't linger, and so a submodule→npm move
+    // leaves no stale paths. Guarded to id-namespaced dirs (we own `<tool>/…/<id>`).
+    if (path.basename(dest) === manifest.id && (await pathExists(dest))) {
+      await rm(dest, { recursive: true, force: true });
+    }
     const n = await copyDir(src, dest, rewrite);
     if (n > 0) {
       log(`  ▸ ${tool}: wired ${n} shim file(s) → ${mapping.dest}`);
