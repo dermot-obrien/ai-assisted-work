@@ -69,6 +69,14 @@ export interface FrameworkManifest {
   id: string;
   name: string;
   version: string;
+  /**
+   * The path string the framework's shim files use to reference their own
+   * source (typically the submodule dir, e.g. ".ai-assisted-work"). When shims
+   * are wired, this token is rewritten to the framework's ACTUAL relative
+   * location, so shims work whether the framework is a git submodule or lives
+   * in node_modules. Omit if shims contain no self-references.
+   */
+  sourceToken?: string;
   /** Framework ids this one depends on (must be installed/present first). */
   depends: string[];
   runtime: FrameworkRuntime;
@@ -174,6 +182,7 @@ export function parseManifest(text: string, frameworkRoot: string): FrameworkMan
     id: asString(raw.id, "id"),
     name: asString(raw.name, "name"),
     version: asString(raw.version, "version"),
+    sourceToken: typeof raw.source_token === "string" ? raw.source_token : undefined,
     depends: asStringArray(raw.depends, "depends"),
     runtime,
     toolSetup: parseToolSetup(raw.tool_setup),

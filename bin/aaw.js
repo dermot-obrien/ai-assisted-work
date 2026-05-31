@@ -8224,6 +8224,7 @@ function parseManifest(text, frameworkRoot) {
     id: asString(raw.id, "id"),
     name: asString(raw.name, "name"),
     version: asString(raw.version, "version"),
+    sourceToken: typeof raw.source_token === "string" ? raw.source_token : void 0,
     depends: asStringArray(raw.depends, "depends"),
     runtime,
     toolSetup: parseToolSetup(raw.tool_setup),
@@ -8262,7 +8263,11 @@ async function pathExists2(p) {
     return false;
   }
 }
-async function copyDir2(src, dest) {
+var TEXT_SHIM_EXT = /* @__PURE__ */ new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
+function isTextShim(name) {
+  return TEXT_SHIM_EXT.has(path5.extname(name).toLowerCase());
+}
+async function copyDir2(src, dest, rewrite) {
   if (!await pathExists2(src))
     return 0;
   await mkdir3(dest, { recursive: true });
@@ -8272,9 +8277,14 @@ async function copyDir2(src, dest) {
     const from = path5.join(src, entry.name);
     const to = path5.join(dest, entry.name);
     if (entry.isDirectory()) {
-      count += await copyDir2(from, to);
+      count += await copyDir2(from, to, rewrite);
     } else if (entry.isFile()) {
-      await copyFile2(from, to);
+      if (rewrite && isTextShim(entry.name)) {
+        const text = await readFile5(from, "utf8");
+        await writeFile3(to, text.split(rewrite.from).join(rewrite.to), "utf8");
+      } else {
+        await copyFile2(from, to);
+      }
       count += 1;
     }
   }
@@ -8304,13 +8314,21 @@ async function wireShims(opts, selection) {
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
   const wired = [];
+  let rewrite;
+  if (manifest.sourceToken) {
+    const rel = path5.relative(workspaceRoot, manifest.frameworkRoot).split(path5.sep).join("/");
+    if (rel.length > 0 && rel !== manifest.sourceToken) {
+      rewrite = { from: manifest.sourceToken, to: rel };
+      log(`  \u25B8 shim paths: rewriting "${manifest.sourceToken}" \u2192 "${rel}"`);
+    }
+  }
   for (const tool of TOOL_NAMES) {
     const mapping = manifest.shims[tool];
     if (!mapping || !selection[tool])
       continue;
     const src = path5.join(manifest.frameworkRoot, mapping.src);
     const dest = path5.join(workspaceRoot, mapping.dest);
-    const n = await copyDir2(src, dest);
+    const n = await copyDir2(src, dest, rewrite);
     if (n > 0) {
       log(`  \u25B8 ${tool}: wired ${n} shim file(s) \u2192 ${mapping.dest}`);
       wired.push(tool);

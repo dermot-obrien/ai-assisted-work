@@ -83,7 +83,20 @@ async function pathExists(p: string): Promise<boolean> {
   }
 }
 
-async function copyDir(src: string, dest: string): Promise<number> {
+/** Token rewrite applied to text shim files so self-references track the real install location. */
+interface Rewrite {
+  from: string;
+  to: string;
+}
+
+const TEXT_SHIM_EXT = new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
+
+function isTextShim(name: string): boolean {
+  // ".prompt.md" → ext ".md"; also treat ".prompt" defensively.
+  return TEXT_SHIM_EXT.has(path.extname(name).toLowerCase());
+}
+
+async function copyDir(src: string, dest: string, rewrite?: Rewrite): Promise<number> {
   if (!(await pathExists(src))) return 0;
   await mkdir(dest, { recursive: true });
   let count = 0;
@@ -92,9 +105,14 @@ async function copyDir(src: string, dest: string): Promise<number> {
     const from = path.join(src, entry.name);
     const to = path.join(dest, entry.name);
     if (entry.isDirectory()) {
-      count += await copyDir(from, to);
+      count += await copyDir(from, to, rewrite);
     } else if (entry.isFile()) {
-      await copyFile(from, to);
+      if (rewrite && isTextShim(entry.name)) {
+        const text = await readFile(from, "utf8");
+        await writeFile(to, text.split(rewrite.from).join(rewrite.to), "utf8");
+      } else {
+        await copyFile(from, to);
+      }
       count += 1;
     }
   }
@@ -130,12 +148,22 @@ export async function wireShims(
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
   const wired: ToolName[] = [];
+  // Rewrite the framework's self-reference token to its actual relative location,
+  // so shims resolve whether it's a submodule (".ai-assisted-work") or in node_modules.
+  let rewrite: Rewrite | undefined;
+  if (manifest.sourceToken) {
+    const rel = path.relative(workspaceRoot, manifest.frameworkRoot).split(path.sep).join("/");
+    if (rel.length > 0 && rel !== manifest.sourceToken) {
+      rewrite = { from: manifest.sourceToken, to: rel };
+      log(`  ▸ shim paths: rewriting "${manifest.sourceToken}" → "${rel}"`);
+    }
+  }
   for (const tool of TOOL_NAMES) {
     const mapping = manifest.shims[tool];
     if (!mapping || !selection[tool]) continue;
     const src = path.join(manifest.frameworkRoot, mapping.src);
     const dest = path.join(workspaceRoot, mapping.dest);
-    const n = await copyDir(src, dest);
+    const n = await copyDir(src, dest, rewrite);
     if (n > 0) {
       log(`  ▸ ${tool}: wired ${n} shim file(s) → ${mapping.dest}`);
       wired.push(tool);
