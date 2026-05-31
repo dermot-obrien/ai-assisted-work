@@ -7,7 +7,23 @@ Create a new **work item** workspace and guide it through scoping, discovery, an
 - [progress-work.md](progress-work.md) - Execution phase (after planning).
 - [work-status.md](work-status.md) - Checking status.
 
-## Phases Overview
+## Classify first, then route
+
+`/start-work` **classifies the work before applying any ceremony**, and applies only the
+ceremony the class earns — see **[work-classification.md](work-classification.md)**.
+**Default to the lightest class (chore); escalate only on a classification signal.**
+
+| Class | What start-work does | Artifacts |
+|-------|----------------------|-----------|
+| **Chore** *(default)* | Skip the phases. Create a branch, do the work, add a changelog line. No work-item folder. | none |
+| **Change** | Brief Planning → Execution (skip Scoping/Discovery). | `progress.yaml` (+ a light plan) |
+| **Intervention** | The full four phases below. | `scope.md`/`plan.md`/`deliverables/` + Activities/Tasks/`locks/` |
+| **Inquiry** | Hand to research (AAR `start-hypothesis`); **re-triage** when it concludes. | — |
+
+The four phases below (Scoping → Discovery → Planning → Execution) are the **intervention**
+path. Lighter classes run a subset — Phase 0 (Triage) decides which.
+
+### Phases (the intervention path)
 
 | Phase | Interaction Style | Purpose | Output |
 |-------|-------------------|---------|--------|
@@ -51,6 +67,40 @@ The scoping phase produces scope documentation:
 ```
 /start-work {brief description of what you want to work on}
 ```
+
+---
+
+## Phase 0: Triage (always first)
+
+Classify the work **before** doing anything else, using the three axes in
+[work-classification.md](work-classification.md). Default to the lightest answer; ask the
+user only when genuinely ambiguous.
+
+```
+Uncertain what to do?                         → INQUIRY
+  no ↓
+Changes observable behaviour/output?   no →   → CHORE  (enabler / cosmetic / docs / fix)
+  yes ↓
+Reaches beyond one unit (shared / many / safety)?
+  no  → CHANGE
+  yes → INTERVENTION
+```
+
+Then route — **do not create a work-item folder unless the class is `intervention`:**
+
+| Class | Action | Then |
+|-------|--------|------|
+| **Chore** | Create a branch (`chore/{kebab-desc}`), do the work, add a changelog line (patch). | **Done.** Skip Phases 1–4 entirely. No `WI-NNN/`, no `scope.md`/`plan.md`/`progress.yaml`. |
+| **Change** | Assign `WI-NNN`; create a **minimal** workspace: a short `progress.yaml` + a one-paragraph plan; branch `wi/WI-NNN-…`. | Go to **Phase 3 (Planning, light)** → **Phase 4**. Skip Scoping/Discovery. |
+| **Intervention** | Assign `WI-NNN`; full workspace. | Continue to **Phase 1 (Scoping)** below. |
+| **Inquiry** | Hand to research: invoke AAR `/start-hypothesis`. | When research concludes, **re-triage** the outcome into chore/change/intervention (or close as a lesson). |
+
+The substrate (where the record lives) is a separate decision — a `class × tenant`
+routing policy, with `WI-NNN/` being only the *intervention* substrate. See
+[work-classification.md](work-classification.md#class-vs-substrate-they-are-orthogonal).
+
+**Everything below applies to `intervention` (and, from Phase 3, the light `change` path).
+A `chore` never reaches here.**
 
 ---
 
@@ -415,16 +465,24 @@ For continued implementation, use `/progress-work WI-NNN` or the progress-work a
 
 ## Document Structure
 
-### Required Documents
+### Documents required *by class*
 
-| Document | Created In | Purpose | Audience |
-|----------|------------|---------|----------|
-| `scope.md` | Scoping Phase | Stakeholder-facing specification | Humans + AI |
-| `scope-ai.md` | Scoping Phase | Intent history, rationale, agent instructions | AI only |
-| `plan.md` | Planning Phase | Activities, tasks, dependencies (lean - refs deliverables) | Humans + AI |
-| `progress.yaml` | Planning Phase | Machine-readable state, deliverables list | Humans + AI |
-| `changes.md` | Planning Phase | Files changed + decisions (for PR/changelog) | Humans + AI |
-| `deliverables/` | Execution Phase | Concrete outputs from activities | Humans + AI |
+There is **no fixed required set** — a document is required only when the work's class
+earns it (see [work-classification.md](work-classification.md)). A chore creates none of
+these; an intervention creates them all.
+
+| Document | Created In | Chore | Change | Intervention |
+|----------|------------|:-----:|:------:|:------------:|
+| *(branch + changelog line)* | — | ✅ | ✅ | ✅ |
+| `progress.yaml` | Planning | — | ✅ | ✅ |
+| `plan.md` | Planning | — | light | ✅ |
+| `scope.md` | Scoping | — | — | ✅ |
+| `scope-ai.md` | Scoping | — | — | recommended |
+| `deliverables/` | Execution | — | optional | ✅ |
+| `changes.md` | Planning | — | optional | optional (for PR) |
+
+(A chore is recorded by its **substrate** — a commit + changelog line, or an external
+tracker task — not by a work-item folder.)
 
 ### Optional Documents
 
