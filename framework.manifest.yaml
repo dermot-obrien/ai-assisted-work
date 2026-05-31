@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Dermot O'Brien
+# SPDX-License-Identifier: Apache-2.0
+#
+# Framework manifest — the shared install contract (see @aaw/installer).
+# AAW is the base framework: Node tooling, no dependencies.
+# `aaw install` reads this to wire AI-tool shims and record itself in the
+# .aaw-config.yaml modules registry. Interactive workspace bootstrap
+# (tenant, mode, work_items_path) is still done by `aaw init`.
+
+id: aaw
+name: AI-Assisted Work
+version: 2.0.0
+depends: []
+runtime: node
+
+shims:
+  claude:  { src: skills-for-agents/claude/commands/aaw, dest: .claude/commands/aaw }
+  cursor:  { src: skills-for-agents/cursor/commands/aaw, dest: .cursor/commands/aaw }
+  copilot: { src: skills-for-agents/github/prompts,      dest: .github/prompts }
+  gemini:  { src: skills-for-agents/gemini/skills/aaw,   dest: .gemini/skills/aaw }
+
+config: []
+data_dirs: []

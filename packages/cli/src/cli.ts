@@ -17,6 +17,7 @@ import process from "node:process";
 import { findWorkspaceRoot, loadConfig } from "./config.js";
 import { runClaim } from "./commands/claim.js";
 import { runInit } from "./commands/init.js";
+import { runInstallCommand } from "./commands/install.js";
 import { runLint } from "./commands/lint.js";
 import { runMigrate } from "./commands/migrate.js";
 import { runNextTask } from "./commands/next-task.js";
@@ -29,6 +30,7 @@ const HELP = `aaw — AI-Assisted Work CLI
 
 Usage:
   aaw init                            Bootstrap this workspace (interactive)
+  aaw install [--no-python]           Wire AAW shims via the manifest (non-interactive)
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
   aaw next-task [WI-NNN]              Show the next claimable task
   aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
@@ -63,6 +65,9 @@ async function main(argv: string[]): Promise<number> {
   // Commands that don't need an existing config:
   if (command === "init") {
     return runInit({ cwd: process.cwd() });
+  }
+  if (command === "install") {
+    return runInstallCommand({ args: rest });
   }
 
   // Commands that need a workspace + config:

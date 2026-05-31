@@ -1,0 +1,33 @@
+{
+  "name": "@aaw/installer",
+  "version": "2.0.0",
+  "description": "Shared install engine + framework manifest contract for AAW-family frameworks (work, architecture, research). Wires AI-tool shims, seeds config + data dirs, runs language-appropriate tool setup (pip), and records installed modules.",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "src/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "yaml": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
