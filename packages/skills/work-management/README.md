@@ -356,6 +356,14 @@ This avoids maintaining two places during active work.
 
 ## Work Item Lifecycle
 
+> **Ceremony is set by the work's class.** Before applying the four-phase lifecycle below,
+> classify the work — see **[work-classification.md](work-classification.md)**. The full
+> pipeline (Scoping → Discovery → Planning → Execution with `scope.md`/`plan.md`/
+> `deliverables/`) is the **intervention** path. Most work is lighter: a **chore** is just
+> a branch + a changelog line, a **change** is a brief plan + `progress.yaml`, and an
+> **inquiry** goes to research first. Default to the lightest class; escalate by
+> classification.
+
 Work items progress through four phases. Each phase has a recommended interaction style:
 
 - **Read-only phases** (Scoping, Discovery): Focus on dialogue, research, and analysis before making changes. Use read-only tool modes where available.
@@ -772,6 +780,7 @@ If scope changes after work has started:
 ## Reference
 
 - [AGENTS.md](AGENTS.md) - **Critical rules for AI agents** (read first)
+- [work-classification.md](work-classification.md) - **Work classes & ceremony** — classify work by certainty × impact × kind (chore / change / intervention / inquiry); ceremony scales with class
 - [limitations.md](limitations.md) - Scaling limits and system constraints
 - [start-initiative.md](start-initiative.md) - Creating initiatives (strategic containers)
 - [start-work.md](start-work.md) - Creating work items (Scoping → Discovery → Planning)
