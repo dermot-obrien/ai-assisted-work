@@ -12,6 +12,9 @@ name: AI-Assisted Work
 version: 2.0.0
 depends: []
 runtime: node
+# Shim files reference their source via this path; the installer rewrites it to
+# the real relative location (submodule dir or node_modules).
+source_token: .ai-assisted-work
 
 shims:
   claude:  { src: skills-for-agents/claude/commands/aaw, dest: .claude/commands/aaw }

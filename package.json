@@ -1,7 +1,17 @@
 {
   "name": "aaw-monorepo",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "aaw": "./bin/aaw.js"
+  },
+  "files": [
+    "bin/",
+    "skills-for-agents/",
+    "packages/skills/",
+    "framework.manifest.yaml"
+  ],
   "workspaces": [
     "packages/*"
   ],
