@@ -1,7 +1,9 @@
----
-description: Create a new initiative — a strategic container that groups related work items
----
+# /aaw-start-initiative
 
-**Read and follow exactly the full agent instructions at:**
+Create a new initiative — a strategic container that groups related work items.
+
+## Instructions
+
+**Read and follow the full agent instructions at:**
 
 `.ai-assisted-work/packages/skills/work-management/start-initiative.md`
