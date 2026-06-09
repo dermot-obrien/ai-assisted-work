@@ -19,7 +19,7 @@ source_token: .ai-assisted-work
 shims:
   claude:  { src: skills-for-agents/claude/commands/aaw, dest: .claude/commands/aaw }
   cursor:  { src: skills-for-agents/cursor/commands/aaw, dest: .cursor/commands/aaw }
-  copilot: { src: skills-for-agents/github/prompts,      dest: .github/prompts/aaw }
+  copilot: { src: skills-for-agents/github/prompts,      dest: .github/prompts }
   gemini:  { src: skills-for-agents/gemini/skills/aaw,   dest: .gemini/skills/aaw }
 
 config: []
