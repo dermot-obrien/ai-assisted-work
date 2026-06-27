@@ -9,7 +9,7 @@
 
 This AI Assisted Work (AAW) method is not opinionated about any specific work management method and uses a simple `Work Item` → `Activity`→ `Task` hierarchy (which can map to `Epic`, `Story` and `Task` in an Agile workflow). Inspired by the [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) which is better if you want to specifically align to Agile methods. 
 
-AI Assisted Work provides structured agents that help AI assistants (Cursor, GitHub Copilot, Claude Code) manage complex work items through their lifecycle. It is designed to be included in your projects via Git submodule or copy-paste.
+AI Assisted Work provides structured agents that help AI assistants (Cursor, GitHub Copilot, Claude Code) manage complex work items through their lifecycle. It is designed to be included in your projects via a local git clone or copy-paste.
 
 ## Key Features
 
@@ -19,7 +19,7 @@ AI Assisted Work provides structured agents that help AI assistants (Cursor, Git
 
 ## Install
 
-AAW is the **base** framework — [AI-Assisted Architecture](https://github.com/dermot-obrien/ai-assisted-architecture)
+AAW is the **base** framework for [AI-Assisted Architecture](https://github.com/dermot-obrien/ai-assisted-architecture)
 and [AI-Assisted Research](https://github.com/dermot-obrien/ai-assisted-research)
 install through its engine. Both consumption models below work **without
 npm-registry access** (git is enough).
@@ -28,34 +28,33 @@ npm-registry access** (git is enough).
 
 ```bash
 npm i github:dermot-obrien/ai-assisted-work
-npx aaw init          # interactive: tenant, mode, work_items_path, wire tool shims
-# or non-interactive (just wire shims for detected tools):
-npx aaw install
+npx aaw install       # interactive bootstrap: workspace, tenant, mode, work_items_path, shims
 ```
 
 `bin/aaw.js` is a committed, self-contained bundle, so `npm i` pulls **no** registry
 packages and needs no build. No submodules to manage.
 
-### Option B — git submodule
+### Option B — local git clone
 
 ```bash
-git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
-git submodule update --init
-node .ai-assisted-work/bin/aaw.js init
+git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
+node .ai-assisted-work/bin/aaw.js install
 ```
 
 Requires **Node.js 18+** (20+ recommended). Works in corporate environments where the
 npm registry is restricted but git+GitHub access is allowed — the bundled CLI ships in
-the package/submodule. Cross-platform on macOS, Linux, and Windows. See
+the repository. Cross-platform on macOS, Linux, and Windows. See
 [DEPLOYMENT.md](DEPLOYMENT.md).
 
-### `aaw init` vs `aaw install`
+`aaw install` asks which workspace to install into and defaults to the current workspace.
+You can keep one local AAW clone outside your repos and install it into multiple
+workspaces; each workspace stores the relative source path in `.aaw-config.yaml` so the
+generated shims keep resolving back to the correct AAW clone.
 
-- `aaw init` — interactive first-time setup: writes `.aaw-config.yaml` (tenant, mode,
-  work-items path) **and** wires shims.
-- `aaw install` — non-interactive, manifest-driven shim wiring (reads
-  `framework.manifest.yaml`). Re-runnable any time; also the entry AAA/AAR delegate to
-  via `aaw install --framework <path>`.
+`aaw install` is the canonical setup command. For AAW itself, it runs the full interactive
+bootstrap and writes `.aaw-config.yaml` plus shims. For other AAW-family frameworks,
+the same command is reused as the shared installer entrypoint via
+`aaw install --framework <path>`. `aaw init` is kept as a compatibility alias.
 
 ## Available Commands
 
@@ -69,7 +68,7 @@ Once installed, these commands are available in your AI assistant:
 | `/aaw-next-task` | Identify the next task to work on. |
 | `/aaw-start-initiative` | Create a strategic initiative grouping work items. |
 
-And from the shell (the v2 submodule install does not put `aaw` on your PATH; either type the bundle path, or set up a shell alias — see [DEPLOYMENT.md](DEPLOYMENT.md#shell-alias)):
+And from the shell (the git-clone install does not put `aaw` on your PATH; either type the bundle path, or set up a shell alias — see [DEPLOYMENT.md](DEPLOYMENT.md#shell-alias)):
 
 ```bash
 node .ai-assisted-work/bin/aaw.js status            # list work items in this workspace
@@ -112,7 +111,7 @@ npm run build --workspace @aaw/installer
 (cd packages/cli && node build.mjs)           # → bin/aaw.js (commit this)
 ```
 
-`bin/aaw.js` **is committed** (it ships for the git-only / submodule install paths) —
+`bin/aaw.js` **is committed** (it ships for the git-only install paths) —
 rebuild and commit it whenever the CLI or installer changes. `packages/*/dist/` and
 `node_modules/` are gitignored.
 
@@ -120,7 +119,9 @@ The install behaviour is driven by `framework.manifest.yaml` (see `@aaw/installe
 `manifest.ts` for the schema): `shims` (per-tool source→dest), `config` (files seeded
 idempotently), `data_dirs`, `tool_setup.python` (pip), `seed` (optional Node seeder),
 and `source_token` (rewritten to the real install location so shims resolve whether
-the framework is a submodule or in `node_modules`).
+the framework is a local clone or in `node_modules`). Installed modules also record
+their `source_root` in `.aaw-config.yaml`, so other frameworks can resolve back to the
+correct local clone for that workspace.
 
 ## Contributing
 

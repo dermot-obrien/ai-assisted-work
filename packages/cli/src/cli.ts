@@ -5,7 +5,7 @@
  * AAW CLI entry point.
  *
  * Commands:
- *   aaw init               Bootstrap a workspace (interactive)
+ *   aaw install            Bootstrap/install a workspace
  *   aaw status [WI-NNN]    Show pool status, or one work item
  *   aaw verify             Sanity-check the local-fs backend can read+write
  *
@@ -14,6 +14,8 @@
  */
 
 import process from "node:process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { findWorkspaceRoot, loadConfig } from "./config.js";
 import { runClaim } from "./commands/claim.js";
 import { runInit } from "./commands/init.js";
@@ -29,8 +31,9 @@ import { runVerify } from "./commands/verify.js";
 const HELP = `aaw — AI-Assisted Work CLI
 
 Usage:
-  aaw init                            Bootstrap this workspace (interactive)
-  aaw install [--no-python]           Wire AAW shims via the manifest (non-interactive)
+  aaw install                         Bootstrap/install this workspace
+  aaw install --workspace PATH        Bootstrap/install another workspace
+  aaw install --framework PATH        Install another AAW-family framework
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
   aaw next-task [WI-NNN]              Show the next claimable task
   aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
@@ -45,10 +48,18 @@ Usage:
   aaw --version                       Print CLI version
   aaw --help                          Show this help
 
-Workspace config lives at .aaw-config.yaml (created by 'aaw init').
+Workspace config lives at .aaw-config.yaml (created by 'aaw install').
+`aaw init` is kept as a compatibility alias for `aaw install`.
 `;
 
 const VERSION = "0.0.0";
+
+function resolveAawRoot(): string {
+  const self = fileURLToPath(import.meta.url);
+  const dir = path.dirname(self);
+  if (path.basename(dir) === "bin") return path.resolve(dir, "..");
+  return path.resolve(dir, "..", "..", "..");
+}
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -64,7 +75,7 @@ async function main(argv: string[]): Promise<number> {
 
   // Commands that don't need an existing config:
   if (command === "init") {
-    return runInit({ cwd: process.cwd() });
+    return runInit({ cwd: process.cwd(), frameworkRoot: resolveAawRoot() });
   }
   if (command === "install") {
     return runInstallCommand({ args: rest });

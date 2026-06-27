@@ -301,6 +301,7 @@ export async function recordModule(opts: InstallOptions): Promise<void> {
     name: manifest.name,
     version: manifest.version,
     runtime: manifest.runtime,
+    source_root: path.relative(workspaceRoot, manifest.frameworkRoot).split(path.sep).join("/") || ".",
   };
   raw.modules = modules;
   await writeFile(configPath, stringifyYaml(raw), "utf8");
@@ -353,6 +354,8 @@ export interface RunInstallOptions {
   frameworkRoot: string;
   /** Where install was invoked from (used to find the workspace root). */
   cwd: string;
+  /** Explicit target workspace root. */
+  workspaceRoot?: string;
   tools?: Partial<DetectedTools>;
   runPython?: boolean;
   runSeed?: boolean;
@@ -365,7 +368,9 @@ export interface RunInstallOptions {
  */
 export async function runInstall(opts: RunInstallOptions): Promise<InstallResult> {
   const manifest = await loadManifest(opts.frameworkRoot);
-  const workspaceRoot = await findWorkspaceRoot(opts.cwd);
+  const workspaceRoot = opts.workspaceRoot
+    ? path.resolve(opts.workspaceRoot)
+    : await findWorkspaceRoot(opts.cwd);
   return installFramework({
     manifest,
     workspaceRoot,
