@@ -7903,36 +7903,41 @@ import path3 from "node:path";
 import process3 from "node:process";
 import { createInterface } from "node:readline/promises";
 var SUBMODULE_DEFAULT = ".ai-assisted-work";
+var MODULE_ID = "aaw";
+var TEXT_SHIM_EXT2 = /* @__PURE__ */ new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
 async function runInit(input) {
-  const env = await detect(input.cwd);
-  const existingConfig = await readExistingConfig(env.workspaceRoot);
-  if (existingConfig) {
-    process3.stdout.write("aaw init \u2014 existing workspace detected.\n\n");
-  } else {
-    process3.stdout.write("aaw init \u2014 let's set this up.\n\n");
-  }
-  process3.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
-`);
-  process3.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
-`);
-  process3.stdout.write(
-    `\u25B8 Detected tools: ${[
-      env.hasGitHub && "GitHub Copilot",
-      env.hasCursor && "Cursor",
-      env.hasClaude && "Claude Code"
-    ].filter(Boolean).join(", ") || "none"}
-`
-  );
-  if (existingConfig) {
-    process3.stdout.write(
-      `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
-  Press Enter at each prompt to keep the current value.
-`
-    );
-  }
-  process3.stdout.write("\n");
   const rl = createInterface({ input: process3.stdin, output: process3.stdout });
   try {
+    const defaultWorkspaceRoot = await walkUpForGitRoot(input.cwd);
+    const workspaceAnswer = (await rl.question(`Install into workspace [${defaultWorkspaceRoot}]: `)).trim();
+    const workspaceRoot = workspaceAnswer === "" ? defaultWorkspaceRoot : path3.resolve(input.cwd, workspaceAnswer);
+    const env = await detect(workspaceRoot, input.frameworkRoot);
+    const existingConfig = await readExistingConfig(env.workspaceRoot);
+    if (existingConfig) {
+      process3.stdout.write("aaw install \u2014 existing workspace detected.\n\n");
+    } else {
+      process3.stdout.write("aaw install \u2014 let's set this up.\n\n");
+    }
+    process3.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
+`);
+    process3.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
+`);
+    process3.stdout.write(
+      `\u25B8 Detected tools: ${[
+        env.hasGitHub && "GitHub Copilot",
+        env.hasCursor && "Cursor",
+        env.hasClaude && "Claude Code"
+      ].filter(Boolean).join(", ") || "none"}
+`
+    );
+    if (existingConfig) {
+      process3.stdout.write(
+        `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
+  Press Enter at each prompt to keep the current value.
+`
+      );
+    }
+    process3.stdout.write("\n");
     const tenantDefault = existingConfig?.tenant ?? "local";
     const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
     const modeDefault = existingConfig?.mode ?? "local-fs";
@@ -7959,8 +7964,10 @@ Tool shims \u2014 detected: ${detectedNames || "none"}
       "Wire up shims for the detected tools? [Y/n, or list to override e.g. cursor,claude]: "
     )).trim().toLowerCase();
     const tools = resolveTools(wireAnswer, detectedTools);
+    await mkdir2(env.workspaceRoot, { recursive: true });
     process3.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
     await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
+    await recordSelfModule(env.workspaceRoot, env.aawSourceRoot);
     process3.stdout.write(`\u25B8 Creating ${workItemsPath}
 `);
     await mkdir2(workItemsPath, { recursive: true });
@@ -7980,17 +7987,18 @@ Tool shims \u2014 detected: ${detectedNames || "none"}
     process3.stdout.write("    \u2713 config written\n");
     process3.stdout.write("    \u2713 work_items_path created\n");
     process3.stdout.write("    \u2713 shims installed\n");
+    const cliPath = toPortableRelativePath2(env.workspaceRoot, path3.join(env.aawSourceRoot, "bin", "aaw.js"));
     process3.stdout.write(
       `
 Done. Try this in your AI tool:
     /aaw-start-work add a new feature
 
 Or from the shell:
-    node .ai-assisted-work/bin/aaw.js status
+    node ${cliPath} status
 
 For shorter commands, set up an alias (one-time):
-  PowerShell ($PROFILE):  function aaw { node ".ai-assisted-work/bin/aaw.js" @args }
-  Bash/Zsh   (~/.bashrc): alias aaw='node .ai-assisted-work/bin/aaw.js'
+  PowerShell ($PROFILE):  function aaw { node "${cliPath}" @args }
+  Bash/Zsh   (~/.bashrc): alias aaw='node ${cliPath}'
 Then: aaw status
 `
     );
@@ -7999,14 +8007,19 @@ Then: aaw status
     rl.close();
   }
 }
-async function detect(cwd) {
-  const workspaceRoot = await walkUpForGitRoot(cwd);
+async function detect(workspaceRoot, frameworkRoot) {
   const isGitRepo = await pathExists(path3.join(workspaceRoot, ".git"));
   const hasGitHub = await pathExists(path3.join(workspaceRoot, ".github"));
   const hasCursor = await pathExists(path3.join(workspaceRoot, ".cursor"));
   const hasClaude = await pathExists(path3.join(workspaceRoot, ".claude"));
-  const submodule = path3.join(workspaceRoot, SUBMODULE_DEFAULT);
-  const aawSourceRoot = await pathExists(submodule) ? submodule : workspaceRoot;
+  const localClone = path3.join(workspaceRoot, SUBMODULE_DEFAULT);
+  let aawSourceRoot = frameworkRoot;
+  if (aawSourceRoot.length === 0 && await pathExists(localClone)) {
+    aawSourceRoot = localClone;
+  }
+  if (aawSourceRoot.length === 0) {
+    aawSourceRoot = workspaceRoot;
+  }
   return {
     workspaceRoot,
     isGitRepo,
@@ -8059,7 +8072,9 @@ function describeTools(t) {
   return names.join(", ");
 }
 async function writeConfig(root, cfg) {
+  const existing = await readExistingYaml(root);
   const yaml = (0, import_yaml3.stringify)({
+    ...existing,
     tenant: cfg.tenant,
     mode: cfg.mode,
     work_items_path: cfg.workItemsPath,
@@ -8067,22 +8082,56 @@ async function writeConfig(root, cfg) {
   });
   await writeFile2(path3.join(root, ".aaw-config.yaml"), yaml, "utf8");
 }
+async function recordSelfModule(workspaceRoot, sourceRoot) {
+  const existing = await readExistingYaml(workspaceRoot);
+  const modulesValue = existing.modules;
+  const modules = modulesValue && typeof modulesValue === "object" ? modulesValue : {};
+  const currentValue = modules[MODULE_ID];
+  const current = currentValue && typeof currentValue === "object" ? currentValue : {};
+  modules[MODULE_ID] = {
+    ...current,
+    source_root: toPortableRelativePath2(workspaceRoot, sourceRoot)
+  };
+  existing.modules = modules;
+  await writeFile2(path3.join(workspaceRoot, ".aaw-config.yaml"), (0, import_yaml3.stringify)(existing), "utf8");
+}
+async function readExistingYaml(workspaceRoot) {
+  const configPath = path3.join(workspaceRoot, ".aaw-config.yaml");
+  try {
+    const text = await readFile3(configPath, "utf8");
+    const parsed = (0, import_yaml3.parse)(text);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
 async function wireGitHubCopilot(env) {
   const src = path3.join(env.aawSourceRoot, "skills-for-agents", "github", "prompts");
   const dest = path3.join(env.workspaceRoot, ".github", "prompts");
-  await copyDir(src, dest);
+  await copyDir(src, dest, rewriteFor2(env));
 }
 async function wireClaudeCode(env) {
   const src = path3.join(env.aawSourceRoot, "skills-for-agents", "claude", "commands", "aaw");
   const dest = path3.join(env.workspaceRoot, ".claude", "commands", "aaw");
-  await copyDir(src, dest);
+  await copyDir(src, dest, rewriteFor2(env));
 }
 async function wireCursor(env) {
   const src = path3.join(env.aawSourceRoot, "skills-for-agents", "cursor", "commands", "aaw");
   const dest = path3.join(env.workspaceRoot, ".cursor", "commands", "aaw");
-  await copyDir(src, dest);
+  await copyDir(src, dest, rewriteFor2(env));
 }
-async function copyDir(src, dest) {
+function rewriteFor2(env) {
+  const actual = toPortableRelativePath2(env.workspaceRoot, env.aawSourceRoot);
+  return actual === SUBMODULE_DEFAULT ? void 0 : { from: SUBMODULE_DEFAULT, to: actual };
+}
+function isTextShim2(name) {
+  return TEXT_SHIM_EXT2.has(path3.extname(name).toLowerCase());
+}
+function toPortableRelativePath2(from, to) {
+  const rel = path3.relative(from, to).split(path3.sep).join("/");
+  return rel === "" ? "." : rel;
+}
+async function copyDir(src, dest, rewrite) {
   if (!await pathExists(src))
     return;
   await mkdir2(dest, { recursive: true });
@@ -8091,9 +8140,14 @@ async function copyDir(src, dest) {
     const from = path3.join(src, entry.name);
     const to = path3.join(dest, entry.name);
     if (entry.isDirectory()) {
-      await copyDir(from, to);
+      await copyDir(from, to, rewrite);
     } else if (entry.isFile()) {
-      await copyFile(from, to);
+      if (rewrite && isTextShim2(entry.name)) {
+        const text = await readFile3(from, "utf8");
+        await writeFile2(to, text.split(rewrite.from).join(rewrite.to), "utf8");
+      } else {
+        await copyFile(from, to);
+      }
     }
   }
 }
@@ -8453,7 +8507,8 @@ async function recordModule(opts) {
   modules[manifest.id] = {
     name: manifest.name,
     version: manifest.version,
-    runtime: manifest.runtime
+    runtime: manifest.runtime,
+    source_root: path5.relative(workspaceRoot, manifest.frameworkRoot).split(path5.sep).join("/") || "."
   };
   raw.modules = modules;
   await writeFile3(configPath, (0, import_yaml5.stringify)(raw), "utf8");
@@ -8494,7 +8549,7 @@ function defaultDependencyResolver(workspaceRoot) {
 }
 async function runInstall(opts) {
   const manifest = await loadManifest(opts.frameworkRoot);
-  const workspaceRoot = await findWorkspaceRoot2(opts.cwd);
+  const workspaceRoot = opts.workspaceRoot ? path5.resolve(opts.workspaceRoot) : await findWorkspaceRoot2(opts.cwd);
   return installFramework({
     manifest,
     workspaceRoot,
@@ -8561,13 +8616,43 @@ function frameworkArg(args) {
   }
   return path6.resolve(process4.cwd(), value);
 }
+function workspaceArg2(args) {
+  const i = args.indexOf("--workspace");
+  if (i === -1)
+    return void 0;
+  const value = args[i + 1];
+  if (value === void 0 || value.startsWith("--")) {
+    throw new Error("--workspace requires a path argument");
+  }
+  return path6.resolve(process4.cwd(), value);
+}
+async function resolveWorkspaceRoot2(args) {
+  const explicit = workspaceArg2(args);
+  if (explicit)
+    return explicit;
+  const detected = await findWorkspaceRoot2(process4.cwd());
+  if (!process4.stdin.isTTY || !process4.stdout.isTTY)
+    return detected;
+  const rl = createInterface({ input: process4.stdin, output: process4.stdout });
+  try {
+    const answer = (await rl.question(`Install into workspace [${detected}]: `)).trim();
+    return answer === "" ? detected : path6.resolve(process4.cwd(), answer);
+  } finally {
+    rl.close();
+  }
+}
 async function runInstallCommand(input) {
+  if (!input.args.includes("--framework")) {
+    return runInit({ cwd: process4.cwd(), frameworkRoot: resolveAawRoot() });
+  }
   const noPython = input.args.includes("--no-python");
   const runSeed2 = input.args.includes("--seed");
   const frameworkRoot = frameworkArg(input.args) ?? resolveAawRoot();
+  const workspaceRoot = await resolveWorkspaceRoot2(input.args);
   const result = await runInstall({
     frameworkRoot,
     cwd: process4.cwd(),
+    workspaceRoot,
     runPython: noPython ? false : void 0,
     runSeed: runSeed2,
     log: (msg) => process4.stdout.write(`${msg}
@@ -9273,7 +9358,7 @@ async function runStatus(input) {
   if (initiatives.length === 0 && workItems.length === 0) {
     process10.stdout.write(
       `No work items or initiatives in ${input.config.workItemsPath}
-(run 'aaw init' if this workspace is not yet configured)
+ (run 'aaw install' if this workspace is not yet configured)
 `
     );
     return 0;
@@ -9478,8 +9563,9 @@ async function runVerify(input) {
 var HELP = `aaw \u2014 AI-Assisted Work CLI
 
 Usage:
-  aaw init                            Bootstrap this workspace (interactive)
-  aaw install [--no-python]           Wire AAW shims via the manifest (non-interactive)
+  aaw install                         Bootstrap/install this workspace
+  aaw install --workspace PATH        Bootstrap/install another workspace
+  aaw install --framework PATH        Install another AAW-family framework
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
   aaw next-task [WI-NNN]              Show the next claimable task
   aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
@@ -9494,9 +9580,17 @@ Usage:
   aaw --version                       Print CLI version
   aaw --help                          Show this help
 
-Workspace config lives at .aaw-config.yaml (created by 'aaw init').
+Workspace config lives at .aaw-config.yaml (created by 'aaw install').
+\`aaw init\` is kept as a compatibility alias for \`aaw install\`.
 `;
 var VERSION = "0.0.0";
+function resolveAawRoot2() {
+  const self = fileURLToPath(import.meta.url);
+  const dir = path6.dirname(self);
+  if (path6.basename(dir) === "bin")
+    return path6.resolve(dir, "..");
+  return path6.resolve(dir, "..", "..", "..");
+}
 async function main(argv) {
   const [command, ...rest] = argv;
   if (!command || command === "--help" || command === "-h" || command === "help") {
@@ -9509,7 +9603,7 @@ async function main(argv) {
     return 0;
   }
   if (command === "init") {
-    return runInit({ cwd: process12.cwd() });
+    return runInit({ cwd: process12.cwd(), frameworkRoot: resolveAawRoot2() });
   }
   if (command === "install") {
     return runInstallCommand({ args: rest });

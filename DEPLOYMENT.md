@@ -5,32 +5,36 @@ This guide explains how to deploy AI-Assisted Work (AAW) into your project.
 ## v2 model: a single install path
 
 ```bash
-git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
-git submodule update --init
-node .ai-assisted-work/bin/aaw.js init
+git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
+node .ai-assisted-work/bin/aaw.js install
 ```
 
-That's it. The `init` command:
+That's it. The `install` command:
 
-1. Detects git, GitHub Copilot, Cursor, and Claude Code in your workspace
-2. Prompts for tenant name, mode, and the path where work items should live
-3. Writes `.aaw-config.yaml` at your workspace root
-4. Wires up tool shims (`.github/prompts/`, `.cursor/commands/aaw/`, `.claude/commands/aaw/`)
-5. Creates the work-items directory if it doesn't exist
+1. Prompts for the target workspace to install into (default: current workspace)
+2. Detects git, GitHub Copilot, Cursor, and Claude Code in that workspace
+3. Prompts for tenant name, mode, and the path where work items should live
+4. Writes `.aaw-config.yaml` at your workspace root
+5. Wires up tool shims (`.github/prompts/`, `.cursor/commands/aaw/`, `.claude/commands/aaw/`)
+6. Creates the work-items directory if it doesn't exist
 
-Requires Node.js (16 or newer). For corporate environments where npm registry access is restricted but git+GitHub access is allowed, this single command works without any other registry plumbing — `bin/aaw.js` is a self-contained bundle that ships in the submodule.
+Requires Node.js (16 or newer). For corporate environments where npm registry access is restricted but git+GitHub access is allowed, this single command works without any other registry plumbing — `bin/aaw.js` is a self-contained bundle that ships in the cloned repository.
 
-A future release will also publish `@aaw/cli` to npm for users who prefer `npx @aaw/cli init`. The behaviour is identical; the npm path simply replaces the submodule + bundle steps.
+A future release will also publish `@aaw/cli` to npm for users who prefer `npx @aaw/cli install`. The behaviour is identical; the npm path simply replaces the clone + bundle steps.
+
+You can treat the AAW clone as an install package: keep one clone anywhere on disk and run
+its installer into multiple workspaces. Each workspace records AAW's `source_root` in
+`.aaw-config.yaml`, so shims and dependent frameworks resolve back to the right clone.
 
 ---
 
 ## What gets created
 
-After `aaw init`:
+After `aaw install`:
 
 ```
 your-repo/
-├── .ai-assisted-work/                      # Submodule (the AAW repo)
+├── .ai-assisted-work/                      # Local clone of the AAW repo
 │   ├── packages/skills/work-management/    # Skill markdown (read by AI tools)
 │   ├── packages/cli/                       # CLI source
 │   ├── bin/aaw.js                          # Bundled CLI entry
@@ -71,28 +75,27 @@ initiatives_path: ~/aaw/{tenant}/{repo}/initiatives/
 
 ---
 
-## Updating the submodule
+## Updating the local clone
 
 ```bash
 cd .ai-assisted-work
 git pull origin main
 cd ..
-git add .ai-assisted-work
-git commit -m "Update AAW"
-node .ai-assisted-work/bin/aaw.js init      # re-run if shim files changed
+node .ai-assisted-work/bin/aaw.js install   # re-run if shim files changed
 ```
 
-The `init` command is idempotent — re-running it on an existing workspace updates shims and config without clobbering custom edits.
+The `install` command is idempotent — re-running it on an existing workspace updates shims and config without clobbering custom edits.
+
+If you maintain one shared AAW clone and install it into many workspaces, update the clone once,
+then re-run `node path/to/aaw/bin/aaw.js install` or `aaw install --workspace <path>` for each workspace
+that should pick up the new shim content.
 
 ---
 
 ## Removing AAW
 
 ```bash
-git submodule deinit .ai-assisted-work
-git rm .ai-assisted-work
-rm -rf .git/modules/.ai-assisted-work
-git commit -m "Remove AAW submodule"
+rm -rf .ai-assisted-work
 
 # Optional cleanup:
 rm .aaw-config.yaml
@@ -107,7 +110,7 @@ Your work items at `~/aaw/{tenant}/{repo}/` are not touched. Delete them manuall
 
 ## Shell alias
 
-The submodule install does not put `aaw` on your PATH (npm publish ships in v2.1; until then it's a bundle inside the submodule). Either type the full path, or set up a one-line alias.
+The git-clone install does not put `aaw` on your PATH (npm publish ships in v2.1; until then it's a bundle inside the cloned repo). Either type the full path, or set up a one-line alias.
 
 **PowerShell** — add to `$PROFILE`:
 
@@ -132,7 +135,7 @@ alias aaw='node .ai-assisted-work/bin/aaw.js'
 
 Reload with `source ~/.bashrc` (or open a new shell).
 
-The function/alias resolves `.ai-assisted-work/bin/aaw.js` relative to your current directory, so `aaw status` works in any workspace where AAW is installed as a submodule.
+The function/alias resolves `.ai-assisted-work/bin/aaw.js` relative to your current directory, so `aaw status` works in any workspace where AAW is installed as a local clone.
 
 ---
 
@@ -178,7 +181,7 @@ When cloud mode ships, switching is a one-line config change — your skills, yo
 
 ## Troubleshooting
 
-**`aaw init` says "no AI tools detected"**
+**`aaw install` says "no AI tools detected"**
 
 The init script looks for `.github/`, `.cursor/`, and `.claude/` directories at the workspace root. If your tool keeps configuration elsewhere, create the directory yourself first or pass an explicit list when prompted (e.g. `copilot,claude`).
 
@@ -201,7 +204,7 @@ ls -la $(node .ai-assisted-work/bin/aaw.js status 2>&1 | head -1)
 
 v1 used `change/work-items/` (committed) and optional `change/work-items-private/` (gitignored, often a symlink). v2 reads from a single configured path. Migration steps:
 
-1. Run `aaw init` — pick a `work_items_path` that points at where you want them to live.
+1. Run `aaw install` — pick a `work_items_path` that points at where you want them to live.
 2. Move existing `change/work-items/WI-*/` and `change/work-items-private/WIP-*/` folders into the new path. Rename `WIP-NNN-*` to `WI-NNN-*` (use the next-available number to avoid clashes).
 3. Delete the old `change/work-items*` directories.
 4. The v1 `.gitignore` lines for `work-items-private/` are kept in this repo's `.gitignore` to protect any pre-migration data on contributor machines; you can remove them once migration is complete.

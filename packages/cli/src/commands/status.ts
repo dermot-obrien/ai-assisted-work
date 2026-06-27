@@ -32,7 +32,7 @@ export async function runStatus(input: StatusInput): Promise<number> {
   if (initiatives.length === 0 && workItems.length === 0) {
     process.stdout.write(
       `No work items or initiatives in ${input.config.workItemsPath}\n` +
-        `(run 'aaw init' if this workspace is not yet configured)\n`,
+        `(run 'aaw install' if this workspace is not yet configured)\n`,
     );
     return 0;
   }
