@@ -46,6 +46,7 @@ title: "{Work Item Title}"
 type: development             # development | architecture | consultancy | mixed
 status: scoping               # scoping | discovery | planning | in_progress | blocked | review | abandoned | done
 initiative_id: null            # Optional parent Initiative ID (e.g., IN-001). null = standalone work item.
+advances_kr_ids: []            # Optional OKR layer: KR-NNN Key Results this work item advances.
 
 # === TIMESTAMPS ===
 created: "{ISO-8601-timestamp}"
