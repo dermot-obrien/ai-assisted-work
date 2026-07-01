@@ -1,0 +1,17 @@
+# Objective + Key Results — optional OKR layer. Context-free (no domain vocabulary).
+objective_id: OBJ-NNN
+title: ""
+horizon: ""              # e.g. 2026-Q3 (the quarter)
+owner: null
+status: active           # active | achieved | missed | dropped
+key_results:
+  - id: KR-NNN
+    statement: ""        # the measurable signal (outcome, not output)
+    type: lagging        # leading | lagging
+    baseline: null
+    target: null
+    current: null
+    milestone_ids: []    # MS-NNN checkpoints (optional)
+# Convenience cache; source of truth is each work item's advances_kr_ids.
+advanced_by_work_item_ids: []
+notes: null
