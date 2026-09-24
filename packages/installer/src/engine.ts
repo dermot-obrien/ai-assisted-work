@@ -22,7 +22,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { Document, parse as parseYaml, parseDocument } from "yaml";
 import {
   type FrameworkManifest,
   type ToolName,
@@ -392,24 +392,27 @@ export async function runSeed(opts: InstallOptions, warnings: string[]): Promise
 export async function recordModule(opts: InstallOptions): Promise<void> {
   const { manifest, workspaceRoot } = opts;
   const configPath = path.join(workspaceRoot, ".aaw-config.yaml");
-  let raw: Record<string, unknown> = {};
+
+  // .aaw-config.yaml is hand-edited: it carries comments explaining why a workspace
+  // points its ontology or its deliverables register where it does. parse+stringify
+  // would round-trip those away, so edit the document in place instead.
+  let doc: Document.Parsed | Document;
   if (await pathExists(configPath)) {
-    const parsed = parseYaml(await readFile(configPath, "utf8")) as Record<string, unknown> | null;
-    if (parsed && typeof parsed === "object") raw = parsed;
+    doc = parseDocument(await readFile(configPath, "utf8"));
+    if (doc.contents === null) doc = new Document({});
+  } else {
+    doc = new Document({});
   }
-  const modulesValue = raw.modules;
-  const modules: Record<string, unknown> =
-    modulesValue && typeof modulesValue === "object"
-      ? (modulesValue as Record<string, unknown>)
-      : {};
-  modules[manifest.id] = {
+
+  doc.setIn(["modules", manifest.id], {
     name: manifest.name,
     version: manifest.version,
     runtime: manifest.runtime,
-    source_root: path.relative(workspaceRoot, manifest.frameworkRoot).split(path.sep).join("/") || ".",
-  };
-  raw.modules = modules;
-  await writeFile(configPath, stringifyYaml(raw), "utf8");
+    source_root:
+      path.relative(workspaceRoot, manifest.frameworkRoot).split(path.sep).join("/") || ".",
+  });
+
+  await writeFile(configPath, doc.toString(), "utf8");
 }
 
 /** Check that depended-on frameworks are present (resolvable or already recorded). */

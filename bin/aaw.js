@@ -3409,7 +3409,7 @@ var require_Document = __commonJS({
     var applyReviver = require_applyReviver();
     var createNode = require_createNode();
     var directives = require_directives();
-    var Document = class _Document {
+    var Document2 = class _Document {
       constructor(value, replacer, options) {
         this.commentBefore = null;
         this.comment = null;
@@ -3699,7 +3699,7 @@ var require_Document = __commonJS({
         return true;
       throw new Error("Expected a YAML collection as document contents");
     }
-    exports.Document = Document;
+    exports.Document = Document2;
   }
 });
 
@@ -5059,13 +5059,13 @@ var require_compose_node = __commonJS({
 var require_compose_doc = __commonJS({
   "../../node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
-    var Document = require_Document();
+    var Document2 = require_Document();
     var composeNode = require_compose_node();
     var resolveEnd = require_resolve_end();
     var resolveProps = require_resolve_props();
     function composeDoc(options, directives, { offset, start, value, end }, onError) {
       const opts = Object.assign({ _directives: directives }, options);
-      const doc = new Document.Document(void 0, opts);
+      const doc = new Document2.Document(void 0, opts);
       const ctx = {
         atKey: false,
         atRoot: true,
@@ -5104,7 +5104,7 @@ var require_composer = __commonJS({
     "use strict";
     var node_process = __require("process");
     var directives = require_directives();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var errors = require_errors();
     var identity = require_identity();
     var composeDoc = require_compose_doc();
@@ -5291,7 +5291,7 @@ ${end.comment}` : end.comment;
           this.doc = null;
         } else if (forceDoc) {
           const opts = Object.assign({ _directives: this.directives }, this.options);
-          const doc = new Document.Document(void 0, opts);
+          const doc = new Document2.Document(void 0, opts);
           if (this.atDirectives)
             this.onError(endOffset, "MISSING_CHAR", "Missing directives-end indicator line");
           doc.range = [0, endOffset, endOffset];
@@ -7189,7 +7189,7 @@ var require_public_api = __commonJS({
   "../../node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
     var composer = require_composer();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var errors = require_errors();
     var log = require_log();
     var identity = require_identity();
@@ -7214,7 +7214,7 @@ var require_public_api = __commonJS({
         return docs;
       return Object.assign([], { empty: true }, composer$1.streamInfo());
     }
-    function parseDocument(source, options = {}) {
+    function parseDocument2(source, options = {}) {
       const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
       const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
       const composer$1 = new composer.Composer(options);
@@ -7240,7 +7240,7 @@ var require_public_api = __commonJS({
       } else if (options === void 0 && reviver && typeof reviver === "object") {
         options = reviver;
       }
-      const doc = parseDocument(src, options);
+      const doc = parseDocument2(src, options);
       if (!doc)
         return null;
       doc.warnings.forEach((warning) => log.warn(doc.options.logLevel, warning));
@@ -7272,11 +7272,11 @@ var require_public_api = __commonJS({
       }
       if (identity.isDocument(value) && !_replacer)
         return value.toString(options);
-      return new Document.Document(value, _replacer, options).toString(options);
+      return new Document2.Document(value, _replacer, options).toString(options);
     }
     exports.parse = parse;
     exports.parseAllDocuments = parseAllDocuments;
-    exports.parseDocument = parseDocument;
+    exports.parseDocument = parseDocument2;
     exports.stringify = stringify;
   }
 });
@@ -7286,7 +7286,7 @@ var require_dist = __commonJS({
   "../../node_modules/yaml/dist/index.js"(exports) {
     "use strict";
     var composer = require_composer();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var Schema = require_Schema();
     var errors = require_errors();
     var Alias = require_Alias();
@@ -7302,7 +7302,7 @@ var require_dist = __commonJS({
     var publicApi = require_public_api();
     var visit = require_visit();
     exports.Composer = composer.Composer;
-    exports.Document = Document.Document;
+    exports.Document = Document2.Document;
     exports.Schema = Schema.Schema;
     exports.YAMLError = errors.YAMLError;
     exports.YAMLParseError = errors.YAMLParseError;
@@ -8579,22 +8579,21 @@ async function runSeed(opts, warnings) {
 async function recordModule(opts) {
   const { manifest, workspaceRoot } = opts;
   const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
-  let raw = {};
+  let doc;
   if (await pathExists2(configPath)) {
-    const parsed = (0, import_yaml5.parse)(await readFile5(configPath, "utf8"));
-    if (parsed && typeof parsed === "object")
-      raw = parsed;
+    doc = (0, import_yaml5.parseDocument)(await readFile5(configPath, "utf8"));
+    if (doc.contents === null)
+      doc = new import_yaml5.Document({});
+  } else {
+    doc = new import_yaml5.Document({});
   }
-  const modulesValue = raw.modules;
-  const modules = modulesValue && typeof modulesValue === "object" ? modulesValue : {};
-  modules[manifest.id] = {
+  doc.setIn(["modules", manifest.id], {
     name: manifest.name,
     version: manifest.version,
     runtime: manifest.runtime,
     source_root: path5.relative(workspaceRoot, manifest.frameworkRoot).split(path5.sep).join("/") || "."
-  };
-  raw.modules = modules;
-  await writeFile3(configPath, (0, import_yaml5.stringify)(raw), "utf8");
+  });
+  await writeFile3(configPath, doc.toString(), "utf8");
 }
 async function checkDependencies(opts, warnings) {
   const { manifest, workspaceRoot } = opts;
