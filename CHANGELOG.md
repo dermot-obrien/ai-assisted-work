@@ -29,7 +29,7 @@ integration.
 ### Added
 
 - `aaw install` removes shims it previously wrote, once the framework has stopped declaring
-  any. Without this an upgraded workspace keeps `.claude/commands/aaw/` and friends pointing at
+  any. Covers the `aaw`, `aaa` and `aar` namespaces. Without this an upgraded workspace keeps `.claude/commands/aaw/` and friends pointing at
   deleted files, so the command fails only when someone types it. Scoped to id-namespaced paths
   the installer created and owns: an unrelated `.github/prompts/*.prompt.md` is never touched.
 

@@ -317,10 +317,21 @@ const LEGACY_SHIM_DESTS: Record<string, string[]> = {
     path.join(".github", "prompts", "aaa"),
     path.join(".gemini", "skills", "aaa"),
   ],
+  aar: [
+    path.join(".claude", "commands", "aar"),
+    path.join(".cursor", "commands", "aar"),
+    path.join(".cursor", "rules", "aar"),
+    path.join(".github", "prompts", "aar"),
+    path.join(".gemini", "skills", "aar"),
+  ],
 };
 
 /** Copilot prompt shims are loose files, not a namespaced directory. */
-const LEGACY_SHIM_PROMPT_PREFIX: Record<string, string> = { aaw: "aaw-", aaa: "aaa-" };
+const LEGACY_SHIM_PROMPT_PREFIX: Record<string, string> = {
+  aaw: "aaw-",
+  aaa: "aaa-",
+  aar: "aar-",
+};
 
 /**
  * Remove shims this framework installed before it moved to Agent Skills.
