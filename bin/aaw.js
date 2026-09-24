@@ -8393,6 +8393,9 @@ async function wireShims(opts, selection) {
       log(`  \u25B8 shim paths: rewriting "${manifest.sourceToken}" \u2192 "${rel}"`);
     }
   }
+  if (Object.keys(manifest.shims).length > 0) {
+    log(`  ! ${manifest.id}: still ships per-tool command shims, which are deprecated. Move its workflows to Agent Skills (a 'skills' manifest key); shim support will be removed.`);
+  }
   for (const tool of TOOL_NAMES) {
     const mapping = manifest.shims[tool];
     if (!mapping || !selection[tool])
@@ -8477,6 +8480,54 @@ async function wireSkills(opts, selection) {
     }
   }
   return installed;
+}
+var LEGACY_SHIM_DESTS = {
+  aaw: [
+    path5.join(".claude", "commands", "aaw"),
+    path5.join(".cursor", "commands", "aaw"),
+    path5.join(".cursor", "rules", "aaw"),
+    path5.join(".gemini", "skills", "aaw")
+  ],
+  aaa: [
+    path5.join(".claude", "commands", "aaa"),
+    path5.join(".cursor", "commands", "aaa"),
+    path5.join(".cursor", "rules", "aaa"),
+    path5.join(".github", "prompts", "aaa"),
+    path5.join(".gemini", "skills", "aaa")
+  ]
+};
+var LEGACY_SHIM_PROMPT_PREFIX = { aaw: "aaw-", aaa: "aaa-" };
+async function removeLegacyShims(opts) {
+  const { manifest, workspaceRoot } = opts;
+  const log = opts.log ?? noopLog;
+  if (Object.keys(manifest.shims).length > 0)
+    return [];
+  const removed = [];
+  for (const rel of LEGACY_SHIM_DESTS[manifest.id] ?? []) {
+    const dest = path5.join(workspaceRoot, rel);
+    if (await pathExists2(dest)) {
+      await rm(dest, { recursive: true, force: true });
+      removed.push(rel);
+    }
+  }
+  const prefix = LEGACY_SHIM_PROMPT_PREFIX[manifest.id];
+  if (prefix) {
+    const promptsDir = path5.join(workspaceRoot, ".github", "prompts");
+    if (await pathExists2(promptsDir)) {
+      for (const entry of await readdir3(promptsDir)) {
+        if (entry.startsWith(prefix) && entry.endsWith(".prompt.md")) {
+          await rm(path5.join(promptsDir, entry), { force: true });
+          removed.push(path5.join(".github", "prompts", entry));
+        }
+      }
+    }
+  }
+  if (removed.length > 0) {
+    log(`  \u25B8 removed ${removed.length} legacy shim path(s) superseded by skills:`);
+    for (const r of removed)
+      log(`      ${r}`);
+  }
+  return removed;
 }
 async function seedConfig(opts) {
   const { manifest, workspaceRoot } = opts;
@@ -8654,6 +8705,7 @@ async function installFramework(opts) {
     ...opts.tools ?? {}
   };
   const skills = await wireSkills(opts, selection);
+  await removeLegacyShims(opts);
   const wired = await wireShims(opts, selection);
   const seededConfig = await seedConfig(opts);
   const dataDirs = await ensureDataDirs(opts);
@@ -9668,7 +9720,7 @@ Usage:
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
 'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
-var VERSION = true ? "2.1.0" : "0.0.0-dev";
+var VERSION = true ? "3.0.0" : "0.0.0-dev";
 function resolveAawRoot2() {
   const self = fileURLToPath2(import.meta.url);
   const dir = path10.dirname(self);

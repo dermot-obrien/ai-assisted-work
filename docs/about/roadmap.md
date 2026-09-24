@@ -39,11 +39,12 @@ v2.0 is the working baseline: a TypeScript monorepo with `@aaw/protocol`, `@aaw/
 - [ ] `aaw next-task [WI-NNN]` — what's the next claimable thing
 - [ ] `aaw runner start --pool default` — long-lived headless agent runner
 
-### v2.3 — Retire the shims
+### Shipped in v3.0
 
-- [ ] Remove `skills-for-agents/` and `packages/skills/work-management/`
-- [ ] Delete the `source_token` rewrite machinery, which exists only for shim pointers
-- [ ] Major version bump: this is breaking for installs still using the command shims
+- [x] Removed `skills-for-agents/` and `packages/skills/`
+- [x] Deleted the `source_token` rewrite machinery, which existed only for shim pointers
+- [x] `aaw install` sweeps away shims it previously wrote
+- [x] Reference docs relocated to `docs/concepts/`
 
 ### v2.4 — Migration tooling
 

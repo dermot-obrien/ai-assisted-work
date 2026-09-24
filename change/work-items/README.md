@@ -6,7 +6,7 @@ This folder contains work items committed to the repository as live demonstratio
 
 ## Usage
 
-Use the `/aiaw-self-*` commands to manage work items here. The standard `/aiaw-*` commands point to `.ai-assisted-work/packages/skills/...` (the submodule path); the `/aiaw-self-*` variants point to `packages/skills/...` for development directly on this repo.
+Use the `/aaw-*` skills to manage work items here. Skills are self-contained under `skills/<name>/`, so the same ones serve development on this repo and deployed use elsewhere.
 
 | Command | Purpose |
 |---------|---------|
@@ -30,5 +30,5 @@ change/work-items/
 
 ## See Also
 
-- [packages/skills/work-management/README.md](../../packages/skills/work-management/README.md) - Work management concepts
+- [docs/concepts/work-management.md](../../docs/concepts/work-management.md) - Work management concepts
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contribution guidelines
