@@ -17,7 +17,7 @@ Work is organised into four levels, from strategic to operational:
 
 A **work item** is a bounded unit of work with a clear outcome or deliverable. A work item has the following characteristics:
 
-> **AI Agents:** Read [AGENTS.md](AGENTS.md) before working with work items. It contains critical rules about concurrency, lock handling, and boundaries that must not be violated.
+> **AI Agents:** Read [agent-boundaries.md](agent-boundaries.md) before working with work items. It contains critical rules about concurrency, lock handling, and boundaries that must not be violated.
 
 ## Quick Start
 
@@ -180,7 +180,7 @@ This enables:
 - **Expired locks** can be claimed by any worker for recovery
 - **Task state** is tracked within the activity lock file (for observability, not claiming)
 
-**Critical:** Agents claim activities, not tasks. An agent holding an activity lock works ALL tasks in that activity. No other agent may work any task in that activity until the lock is released or expires. See [AGENTS.md](AGENTS.md) for detailed rules.
+**Critical:** Agents claim activities, not tasks. An agent holding an activity lock works ALL tasks in that activity. No other agent may work any task in that activity until the lock is released or expires. See [agent-boundaries.md](agent-boundaries.md) for detailed rules.
 
 **Writeback Requirement:** Before releasing a lock, agents MUST update `progress.yaml` to reflect completed work. This ensures the next agent can trust the documented state. Releasing a lock without updating progress.yaml corrupts the system for subsequent agents.
 
@@ -205,7 +205,7 @@ The system uses file-based coordination:
 
 **Recommended: 2-5 workers per work item, maximum 10.**
 
-See [limitations.md](limitations.md) for detailed analysis of structural and technical constraints.
+See [scaling-limits.md](scaling-limits.md) for detailed analysis of structural and technical constraints.
 
 ## Work Item Workspace
 
@@ -493,7 +493,7 @@ If an agent session ends unexpectedly:
 6. Continues from last incomplete task
 7. Updates changelog with recovery action
 
-**Critical:** Recovery only applies when a lock is genuinely expired. If the lock file is being modified by another agent, that agent is still active - do not attempt recovery. See [AGENTS.md](AGENTS.md) for the recovery protocol.
+**Critical:** Recovery only applies when a lock is genuinely expired. If the lock file is being modified by another agent, that agent is still active - do not attempt recovery. See [agent-boundaries.md](agent-boundaries.md) for the recovery protocol.
 
 ## Parallel Work
 
@@ -567,7 +567,7 @@ WI-001-A3: Integration      depends_on: [WI-001-A2]
 
 ## Templates
 
-See `./_templates/` ([link](./_templates/)) for starter files:
+Each skill bundles the templates it writes, under `skills/<name>/assets/templates/`:
 
 **Initiative Templates:**
 
@@ -628,7 +628,7 @@ If lock acquisition fails:
 4. **Never forcefully delete non-expired locks** without user approval.
 5. **Never overwrite lock files** - use atomic create operations only.
 
-See [AGENTS.md](AGENTS.md) for the lock acquisition decision tree.
+See [agent-boundaries.md](agent-boundaries.md) for the lock acquisition decision tree.
 
 ### Version Conflicts
 
@@ -787,13 +787,13 @@ If scope changes after work has started:
 
 ## Reference
 
-- [AGENTS.md](AGENTS.md) - **Critical rules for AI agents** (read first)
+- [agent-boundaries.md](agent-boundaries.md) - **Critical rules for AI agents** (read first)
 - [work-classification.md](work-classification.md) - **Work classes & ceremony** — classify work by certainty × impact × kind (chore / change / intervention / inquiry); ceremony scales with class
-- [limitations.md](limitations.md) - Scaling limits and system constraints
-- [start-initiative.md](start-initiative.md) - Creating initiatives (strategic containers)
-- [start-work.md](start-work.md) - Creating work items (Scoping → Discovery → Planning)
-- [progress-work.md](progress-work.md) - Executing work items (Implementation phase)
-- [work-status.md](work-status.md) - Checking work item and initiative status
-- [next-task.md](next-task.md) - Identifying the next task to work on
+- [scaling-limits.md](scaling-limits.md) - Scaling limits and system constraints
+- the `/aaw-start-initiative` skill - Creating initiatives (strategic containers)
+- the `/aaw-start-work` skill - Creating work items (Scoping → Discovery → Planning)
+- the `/aaw-progress-work` skill - Executing work items (Implementation phase)
+- the `/aaw-work-status` skill - Checking work item and initiative status
+- the `/aaw-next-task` skill - Identifying the next task to work on
 - [architecture-work.md](architecture-work.md) - **Architecture work type guidance** (deliverables, diagrams, ADRs)
-- [_templates/](./_templates/) - Template files for all documents
+- `skills/<name>/assets/templates/` - template files, bundled with the skill that writes them

@@ -46,7 +46,7 @@ Every unit of work is classified along three independent axes. None reference an
 ## Work classes & the ceremony each earns
 
 The axes collapse into four classes. Ceremony is expressed in AAW's own artifacts
-(see [README.md](README.md)); version impact uses semantic versioning (itself
+(see [work-management.md](work-management.md)); version impact uses semantic versioning (itself
 domain-neutral).
 
 | Class | Axes | Ceremony — AAW artifacts it earns | Phases | Concurrency | Version |
