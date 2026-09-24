@@ -8494,9 +8494,20 @@ var LEGACY_SHIM_DESTS = {
     path5.join(".cursor", "rules", "aaa"),
     path5.join(".github", "prompts", "aaa"),
     path5.join(".gemini", "skills", "aaa")
+  ],
+  aar: [
+    path5.join(".claude", "commands", "aar"),
+    path5.join(".cursor", "commands", "aar"),
+    path5.join(".cursor", "rules", "aar"),
+    path5.join(".github", "prompts", "aar"),
+    path5.join(".gemini", "skills", "aar")
   ]
 };
-var LEGACY_SHIM_PROMPT_PREFIX = { aaw: "aaw-", aaa: "aaa-" };
+var LEGACY_SHIM_PROMPT_PREFIX = {
+  aaw: "aaw-",
+  aaa: "aaa-",
+  aar: "aar-"
+};
 async function removeLegacyShims(opts) {
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
