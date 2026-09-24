@@ -9669,7 +9669,7 @@ Usage:
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
 'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
-var VERSION = "0.0.0";
+var VERSION = true ? "2.1.0" : "0.0.0-dev";
 function resolveAawRoot2() {
   const self = fileURLToPath2(import.meta.url);
   const dir = path10.dirname(self);

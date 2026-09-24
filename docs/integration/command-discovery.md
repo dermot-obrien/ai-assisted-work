@@ -1,184 +1,96 @@
 # Command Discovery Across AI Assistants
 
-This guide explains how AI-Assisted Work commands are discovered and invoked across different AI coding assistants.
+How AI-Assisted Work surfaces in each AI assistant, and why it now works the same way in all
+of them.
 
-## Command Naming Convention
+## The short version
 
-All AI-Assisted Work commands use the `aaw-` prefix to avoid conflicts with other tools in your repository:
+AAW ships its workflows as standalone [Agent Skills](https://agentskills.io). `aaw install`
+puts them in `.agents/skills/<name>/` and links `.claude/skills/<name>` at the same directory.
+Every supported tool then discovers them natively, with no per-tool file to maintain.
 
-| Standard Command | Self-Development Command | Purpose |
-|------------------|--------------------------|---------|
-| `/aaw-start-work` | `/aaw-self-start-work` | Initialize a new work item |
-| `/aaw-progress-work` | `/aaw-self-progress-work` | Continue work on an existing item |
-| `/aaw-work-status` | `/aaw-self-work-status` | Check status of work items |
-| `/aaw-next-task` | `/aaw-self-next-task` | Identify the next task to work on |
+| Skill | Invoke |
+|-------|--------|
+| `aaw-start-work` | `/aaw-start-work` |
+| `aaw-progress-work` | `/aaw-progress-work` |
+| `aaw-work-status` | `/aaw-work-status` |
+| `aaw-next-task` | `/aaw-next-task` |
+| `aaw-start-initiative` | `/aaw-start-initiative` |
 
-- **`aaw-*` commands**: Use when AI-Assisted Work is deployed as a submodule (paths start with `.ai-assisted-work/`)
-- **`aaw-self-*` commands**: Use when working **on** the AI-Assisted Work repository itself (paths start with `packages/skills/`)
+## Where each tool looks
 
-## Command Behavior Summary
+`.agents/skills/` is the interoperability path, read natively by most tools. Claude Code is the
+exception: it reads only `.claude/skills/`, which is why the installer links that at the same
+directory rather than copying twice.
 
-| Feature | Cursor | Claude Code | GitHub Copilot |
-|---------|--------|-------------|----------------|
-| Commands appear in `/` menu | ✅ Yes | ✅ Yes | ✅ Yes |
-| Commands work when typed | ✅ Yes | ✅ Yes | ✅ Yes |
-| Requires knowing command names | No (discoverable) | No (discoverable) | No (discoverable) |
-| Configuration location | `.cursor/rules/aaw-*.mdc` | `.claude/commands/aaw-*.md` | `.github/prompts/aaw-*.prompt.md` |
+| Tool | Reads `.agents/skills/` | Also reads |
+|------|:-----------------------:|------------|
+| OpenAI Codex | yes, from the working directory up to the repo root | `~/.agents/skills` |
+| Cursor | yes | `.cursor/skills/`, plus `.claude/skills/` and `.codex/skills/` for back-compat |
+| GitHub Copilot, VS Code | yes | `.github/skills/`, `.claude/skills/` |
+| Gemini CLI | yes, and it takes precedence | `.gemini/skills/` |
+| Claude Code | **no** | `.claude/skills/` only, plus its personal, plugin and enterprise tiers |
 
----
+One consequence worth knowing: Cursor and Copilot read both `.agents/skills/` and
+`.claude/skills/`. In a workspace also set up for Claude Code they may list each skill twice.
+Because the second path is a link to the first, both entries are the same content.
 
-## Cursor
+## What you get beyond a slash command
 
-### How it works
+A skill carries a `description`, so an assistant can invoke it when a request matches rather
+than only when you type the command. Ask an assistant to "start a work item for the auth
+migration" and it can reach for `aaw-start-work` on its own.
 
-Cursor has a **custom slash command registration system**. When you create `.mdc` files with specific frontmatter, Cursor registers them as discoverable commands.
+A skill also loads progressively. At startup the assistant sees only each skill's name and
+description, roughly 100 tokens. The `SKILL.md` body loads when the skill activates, and the
+files under `references/` load only when a branch of the workflow reaches them. That is why
+`aaw-progress-work` can hold a full concurrency protocol, an actor model and a recovery
+procedure without costing anything until it is used.
 
-```yaml
----
-name: aaw-start-work
-description: Initialize a new work item (AI-Assisted Work)
-type: manual
----
-```
+## Naming
 
-- **`name`**: The slash command name (e.g., `/aaw-start-work`)
-- **`description`**: Shown in the command menu
-- **`type: manual`**: Command must be explicitly invoked (not auto-applied)
+Skills are named `aaw-*`, and the Agent Skills format has no namespacing of its own. The prefix
+is what keeps them from colliding with other skills in a workspace.
 
-### User experience
+If a tool namespaces skills itself, follow the tool. Claude Code, for example, namespaces
+plugin-supplied skills as `/plugin-name:skill-name`, but skills installed into
+`.claude/skills/` are invoked by their directory name, so `/aaw-start-work` is correct.
 
-1. Type `/` in Cursor chat
-2. See a dropdown menu of available commands including `/aaw-start-work`, `/aaw-progress-work`, etc.
-3. Select a command to invoke it
+## Verifying an install
 
-### File location
+Type `/` in your assistant. The five `/aaw-*` skills should appear. If they do not:
 
-Commands are defined in `.cursor/rules/aaw-*.mdc` files. The `aaw-` prefix ensures they don't conflict with other rules when copied to an existing repository.
+1. Restart the assistant. Several tools cache the skill list at startup.
+2. Check `.agents/skills/` exists and holds a directory per skill, each with a `SKILL.md`.
+3. For Claude Code, check `.claude/skills/<name>` exists and resolves. On Windows it is a
+   directory junction; if the filesystem refused both a symlink and a junction, the installer
+   falls back to a copy and says so in its output.
+4. Confirm the `SKILL.md` frontmatter parses: `name` must match the directory name exactly, and
+   both `name` and `description` are required.
 
----
+## Legacy command shims
 
-## Claude Code
+Before the Agent Skills format existed, every tool had its own incompatible layout, so AAW
+shipped a per-tool shim: a small file whose only content was a pointer to the real instructions
+elsewhere in the framework. Those shims are still installed for setups that have not moved.
 
-### How it works
+| Tool | Legacy location |
+|------|-----------------|
+| Claude Code | `.claude/commands/aaw/*.md` → `/aaw:start-work` |
+| Cursor | `.cursor/commands/aaw/*.md` |
+| GitHub Copilot | `.github/prompts/aaw-*.prompt.md` |
+| Gemini CLI | `.gemini/skills/aaw/` |
 
-Claude Code has a **native slash command system** via `.claude/commands/`. Each `.md` file in this folder becomes a discoverable command.
+They are superseded and will be removed. Two reasons they are worth leaving behind rather than
+maintaining: a shim carries no `description`, so the assistant can only run it when you type
+the command; and a shim points at one large instruction file that is read whole on every
+invocation, which is the opposite of progressive disclosure.
 
-```
-.claude/commands/
-├── aaw-start-work.md           → /aaw-start-work
-├── aaw-progress-work.md        → /aaw-progress-work
-├── aaw-work-status.md          → /aaw-work-status
-└── aaw-next-task.md            → /aaw-next-task
-```
+Prefer the skills. If you have both installed, the skills and the shims will both appear, and
+the skill is the maintained definition.
 
-The filename (without extension) becomes the command name. Each file contains instructions pointing to the full agent documentation.
+## See also
 
-### User experience
-
-1. Type `/` in Claude Code
-2. See a dropdown menu of available commands including `/aaw-start-work`, `/aaw-progress-work`, etc.
-3. Select a command to invoke it
-
-This works similarly to Cursor - commands are discoverable through the UI.
-
-### File location
-
-Commands are defined in `.claude/commands/aaw-*.md`. Each command file is a thin wrapper that points to the full instructions in `.ai-assisted-work/packages/skills/`.
-
-### Additional context
-
-Claude Code also reads `CLAUDE.md` in the project root for general project context (architecture, conventions, etc.). This provides background knowledge but isn't required for commands to work.
-
----
-
-## GitHub Copilot
-
-### How it works
-
-GitHub Copilot supports **discoverable slash commands** via `.github/prompts/` folder. Each `.prompt.md` file becomes a command you can invoke.
-
-```
-.github/prompts/
-├── aaw-start-work.prompt.md           → /aaw-start-work
-├── aaw-progress-work.prompt.md        → /aaw-progress-work
-├── aaw-work-status.prompt.md          → /aaw-work-status
-└── aaw-next-task.prompt.md            → /aaw-next-task
-```
-
-The filename (without `.prompt.md` extension) becomes the command name. Each file contains instructions pointing to the full agent documentation.
-
-### User experience
-
-1. Type `/` in GitHub Copilot Chat
-2. See a dropdown menu of available commands including `/aaw-start-work`, `/aaw-progress-work`, etc.
-3. Select a command to invoke it
-
-This works similarly to Cursor and Claude Code - commands are discoverable through the UI.
-
-### File locations
-
-- **Prompt files**: `.github/prompts/aaw-*.prompt.md` - Discoverable slash commands
-- **Background context**: `.github/copilot-instructions.md` - Always loaded as workspace context
-
-The prompt files provide UI discoverability, while `copilot-instructions.md` provides background context for all interactions.
-
-### Additional features
-
-GitHub Copilot prompts support:
-- **File references**: Use `#file:path/to/file.md` or Markdown links to include other files
-- **Variables**: Use `${VARIABLE}` syntax for dynamic content
-- **Rich instructions**: Full Markdown support for complex agent instructions
-
----
-
-## Available Commands
-
-All AI assistants support these commands (typed manually or selected from menu):
-
-| Command | Purpose |
-|---------|---------|
-| `/aaw-start-work` | Initialize a new work item with scope, plan, and progress tracking |
-| `/aaw-progress-work` | Continue work on an existing work item |
-| `/aaw-work-status` | Check status of work items |
-| `/aaw-next-task` | Identify the next task to work on from a work item |
-
----
-
-## Tips for Users
-
-All three AI assistants now support discoverable commands:
-
-1. **Type `/`** in any chat to see available commands
-2. **Look for `aaw-` prefix** to identify AI-Assisted Work commands
-3. **Use `aaw-self-*` commands** when developing AI-Assisted Work itself
-4. **Include context** after selecting a command: `/aaw-start-work Add caching layer to API`
-5. **The AI will read the full instructions** from the agent files automatically
-6. **Use the same workflow** across all three tools
-
----
-
-## Why Prefixes Instead of Subfolders?
-
-Research shows that **subfolders are not reliably supported** across all tools:
-
-| Tool | Subfolder Support |
-|------|-------------------|
-| Cursor | ❌ No - nested folders within `.cursor/rules/` don't work |
-| Claude Code | ✅ Yes - supports hierarchical command folders |
-| GitHub Copilot | ⚠️ Requires VS Code settings workaround |
-
-Using the `aaw-` prefix ensures commands work correctly in all three tools without requiring user configuration.
-
----
-
-## Configuration Summary
-
-Each AI assistant uses a different configuration mechanism, but all provide the same discoverable command experience:
-
-| Tool | Configuration Folder | File Pattern | Context File |
-|------|---------------------|--------------|--------------|
-| Cursor | `.cursor/rules/` | `aaw-*.mdc` | N/A |
-| Claude Code | `.claude/commands/` | `aaw-*.md` | `CLAUDE.md` |
-| GitHub Copilot | `.github/prompts/` | `aaw-*.prompt.md` | `copilot-instructions.md` |
-
-All command files are thin wrappers pointing to the full instructions in `.ai-assisted-work/packages/skills/`.
+- [Integration Guide](index.md) — per-tool notes and shell access
+- [DEPLOYMENT.md](../../DEPLOYMENT.md) — full install and migration guide
+- [Agent Skills specification](https://agentskills.io/specification)

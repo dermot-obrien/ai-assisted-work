@@ -49,6 +49,32 @@ jobs:
           node bin/aaw.js --version
           node bin/aaw.js --help
 
+  skills:
+    name: Agent Skills validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Zero-dependency on purpose, so this job needs no install step.
+      - name: Validate skills against the agentskills.io spec
+        run: node scripts/validate-skills.mjs skills
+
+      - name: Install skills into a scratch workspace
+        run: |
+          mkdir -p /tmp/ws/.claude && cd /tmp/ws && git init -q .
+          node "$GITHUB_WORKSPACE/bin/aaw.js" install             --framework "$GITHUB_WORKSPACE" --no-python
+
+      - name: Check the installed skills resolve
+        run: |
+          node "$GITHUB_WORKSPACE/scripts/validate-skills.mjs" /tmp/ws/.agents/skills
+          for s in /tmp/ws/.claude/skills/aaw-*; do
+            test -f "$s/SKILL.md" || { echo "::error::$s does not resolve"; exit 1; }
+          done
+
   reuse:
     name: REUSE compliance
     runs-on: ubuntu-latest
