@@ -1,7 +1,8 @@
 version = 1
 
 # AI-Assisted Work is dual-licensed:
-#   - Documentation, skill definitions, agent shims, templates, and
+#   - Documentation, Agent Skills, skill definitions, agent shims,
+#     templates, and
 #     examples are licensed under CC BY 4.0.
 #   - Executable code (TypeScript / JavaScript / build scripts) is
 #     licensed under Apache-2.0.
@@ -25,6 +26,7 @@ path = [
   "**.txt",
   "**.log",
   "packages/skills/**",
+  "skills/**",
   "skills-for-agents/**",
   "docs/**",
   "change/**",

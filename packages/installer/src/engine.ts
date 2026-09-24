@@ -7,19 +7,20 @@
  * Given a {@link FrameworkManifest}, performs the same install steps for any
  * AAW-family framework:
  *   1. ensure depended-on frameworks are present
- *   2. wire AI-tool shims (Claude/Cursor/Copilot/Gemini)
- *   3. seed config files (idempotent)
- *   4. ensure data dirs exist
- *   5. run language tool setup (pip for python frameworks)
- *   6. run an optional content seeder (e.g. AAA foundation)
- *   7. record the install in the `.aaw-config.yaml` modules registry
+ *   2. install standalone Agent Skills (.agents/skills + a .claude/skills link)
+ *   3. wire legacy AI-tool shims (Claude/Cursor/Copilot/Gemini)
+ *   4. seed config files (idempotent)
+ *   5. ensure data dirs exist
+ *   6. run language tool setup (pip for python frameworks)
+ *   7. run an optional content seeder (e.g. AAA foundation)
+ *   8. record the install in the `.aaw-config.yaml` modules registry
  *
  * Pure orchestration over node:fs — no framework-specific logic lives here.
  */
 
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import {
@@ -67,6 +68,8 @@ export interface InstallResult {
   id: string;
   version: string;
   wired: ToolName[];
+  /** Names of the Agent Skills installed into .agents/skills. */
+  skills: string[];
   seededConfig: string[];
   dataDirs: string[];
   pythonInstalled: boolean;
@@ -178,6 +181,108 @@ export async function wireShims(
     }
   }
   return wired;
+}
+
+/** Where standalone Agent Skills land. Fixed by convention, not by the manifest. */
+const SKILLS_INTEROP_DIR = path.join(".agents", "skills");
+const SKILLS_CLAUDE_DIR = path.join(".claude", "skills");
+
+/** Does this directory hold a skill (i.e. a SKILL.md)? */
+async function isSkillDir(dir: string): Promise<boolean> {
+  return pathExists(path.join(dir, "SKILL.md"));
+}
+
+/**
+ * Point `linkPath` at `targetPath`.
+ *
+ * Symlink where we can; on Windows a directory junction, which needs neither
+ * elevation nor developer mode. Falls back to a plain copy when the filesystem
+ * refuses both (some CI images, network shares), because a stale copy is better
+ * than an uninstalled skill. Returns how it was linked.
+ */
+async function linkOrCopyDir(
+  targetPath: string,
+  linkPath: string,
+): Promise<"link" | "copy"> {
+  await rm(linkPath, { recursive: true, force: true });
+  await mkdir(path.dirname(linkPath), { recursive: true });
+  try {
+    if (process.platform === "win32") {
+      await symlink(targetPath, linkPath, "junction");
+    } else {
+      const rel = path.relative(path.dirname(linkPath), targetPath);
+      await symlink(rel, linkPath, "dir");
+    }
+    return "link";
+  } catch {
+    await copyDir(targetPath, linkPath);
+    return "copy";
+  }
+}
+
+/**
+ * Install the framework's standalone Agent Skills.
+ *
+ * Each skill directory is copied to `.agents/skills/<name>`, which Codex, Cursor,
+ * GitHub Copilot, VS Code and Gemini CLI all read natively. Claude Code reads only
+ * `.claude/skills/`, so when Claude is selected we link that at the same directory
+ * rather than copying twice — Claude Code follows symlinked skill dirs and loads a
+ * skill once even when several paths resolve to it.
+ *
+ * No `source_token` rewrite happens here: a skill is self-contained and holds no
+ * path back into the framework.
+ */
+export async function wireSkills(
+  opts: InstallOptions,
+  selection: DetectedTools,
+): Promise<string[]> {
+  const { manifest, workspaceRoot } = opts;
+  const log = opts.log ?? noopLog;
+  if (!manifest.skills) return [];
+
+  const srcRoot = path.join(manifest.frameworkRoot, manifest.skills.src);
+  if (!(await pathExists(srcRoot))) {
+    log(`  ! skills: source missing (${manifest.skills.src})`);
+    return [];
+  }
+
+  const installed: string[] = [];
+  let linked = 0;
+  let copied = 0;
+  const entries = await readdir(srcRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const from = path.join(srcRoot, entry.name);
+    if (!(await isSkillDir(from))) {
+      log(`  ! skills: ${entry.name} has no SKILL.md, skipped`);
+      continue;
+    }
+    // Framework-owned: clear first so a renamed or removed upstream skill
+    // doesn't linger in the workspace.
+    const interop = path.join(workspaceRoot, SKILLS_INTEROP_DIR, entry.name);
+    await rm(interop, { recursive: true, force: true });
+    await copyDir(from, interop);
+
+    if (selection.claude) {
+      const how = await linkOrCopyDir(
+        interop,
+        path.join(workspaceRoot, SKILLS_CLAUDE_DIR, entry.name),
+      );
+      if (how === "link") linked += 1;
+      else copied += 1;
+    }
+    installed.push(entry.name);
+  }
+
+  if (installed.length > 0) {
+    log(`  ▸ skills: installed ${installed.length} → ${SKILLS_INTEROP_DIR}/`);
+    log(`      ${installed.join(", ")}`);
+    if (linked > 0) log(`  ▸ claude: linked ${linked} → ${SKILLS_CLAUDE_DIR}/`);
+    if (copied > 0) {
+      log(`  ▸ claude: copied ${copied} → ${SKILLS_CLAUDE_DIR}/ (links unavailable)`);
+    }
+  }
+  return installed;
 }
 
 /** Seed config files into the workspace root, only if they don't already exist. */
@@ -397,6 +502,7 @@ export async function installFramework(opts: InstallOptions): Promise<InstallRes
     ...(opts.tools ?? {}),
   };
 
+  const skills = await wireSkills(opts, selection);
   const wired = await wireShims(opts, selection);
   const seededConfig = await seedConfig(opts);
   const dataDirs = await ensureDataDirs(opts);
@@ -417,6 +523,7 @@ export async function installFramework(opts: InstallOptions): Promise<InstallRes
     id: manifest.id,
     version: manifest.version,
     wired,
+    skills,
     seededConfig,
     dataDirs,
     pythonInstalled,

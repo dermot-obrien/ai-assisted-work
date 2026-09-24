@@ -1,5 +1,11 @@
 # Start Initiative
 
+> **Superseded.** This workflow has migrated to the Agent Skill at
+> `skills/aaw-start-initiative/`, which is the maintained definition. This file remains only for
+> the legacy per-tool command shims under `skills-for-agents/` and will be removed once
+> those are retired. See the Agent Skills section of the README for how to install the
+> skill.
+
 Create a new **initiative** — a strategic container that groups related Work Items toward a shared goal.
 
 **See also:**

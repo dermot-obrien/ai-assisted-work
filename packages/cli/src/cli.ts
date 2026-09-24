@@ -49,7 +49,7 @@ Usage:
   aaw --help                          Show this help
 
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
-`aaw init` is kept as a compatibility alias for `aaw install`.
+'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
 
 const VERSION = "0.0.0";

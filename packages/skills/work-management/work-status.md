@@ -1,5 +1,11 @@
 # Work Status
 
+> **Superseded.** This workflow has migrated to the Agent Skill at
+> `skills/aaw-work-status/`, which is the maintained definition. This file remains only for
+> the legacy per-tool command shims under `skills-for-agents/` and will be removed once
+> those are retired. See the Agent Skills section of the README for how to install the
+> skill.
+
 Check the status of all work items or a specific work item.
 
 **See also:**

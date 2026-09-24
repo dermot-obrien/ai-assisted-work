@@ -36,6 +36,24 @@ export interface ShimMapping {
   dest: string;
 }
 
+/**
+ * Standalone Agent Skills the framework ships (agentskills.io format).
+ *
+ * Unlike shims, a skill is self-contained: a directory with a SKILL.md plus its
+ * own references/ and assets/. It carries no pointer back into the framework, so
+ * `source_token` rewriting does NOT apply to it.
+ *
+ * The destination is fixed by convention, not by the manifest:
+ *   - `.agents/skills/<name>/` — read natively by Codex, Cursor, Copilot, VS Code
+ *     and Gemini CLI.
+ *   - `.claude/skills/<name>/` — linked at the above, because Claude Code does not
+ *     read `.agents/skills/`.
+ */
+export interface SkillsMapping {
+  /** Directory of skill folders, relative to the framework root. */
+  src: string;
+}
+
 /** A config file to seed into the host workspace (idempotent — only if absent). */
 export interface ConfigSeed {
   /** Destination filename, relative to the workspace root. */
@@ -83,6 +101,8 @@ export interface FrameworkManifest {
   toolSetup?: ToolSetup;
   /** Per-tool shim wiring. Only the tools present here can be wired. */
   shims: Partial<Record<ToolName, ShimMapping>>;
+  /** Standalone Agent Skills to install. Preferred over shims for new work. */
+  skills?: SkillsMapping;
   /** Config files to seed (idempotent). */
   config: ConfigSeed[];
   /** Data dirs to create in the workspace (committed homes for generated artefacts). */
@@ -122,6 +142,13 @@ function parseShims(value: unknown): Partial<Record<ToolName, ShimMapping>> {
     };
   }
   return out;
+}
+
+function parseSkills(value: unknown): SkillsMapping | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "object") throw new Error("manifest: skills must be a map");
+  const rec = value as Record<string, unknown>;
+  return { src: asString(rec.src, "skills.src") };
 }
 
 function parseConfig(value: unknown): ConfigSeed[] {
@@ -187,6 +214,7 @@ export function parseManifest(text: string, frameworkRoot: string): FrameworkMan
     runtime,
     toolSetup: parseToolSetup(raw.tool_setup),
     shims: parseShims(raw.shims),
+    skills: parseSkills(raw.skills),
     config: parseConfig(raw.config),
     dataDirs: asStringArray(raw.data_dirs, "data_dirs"),
     seed: parseSeed(raw.seed),
