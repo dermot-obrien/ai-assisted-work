@@ -92,7 +92,7 @@ Scoping → Discovery → Planning → Execution → Done
 ## Next steps
 
 - [Command Discovery](../integration/command-discovery.md) — how the skills surface in each tool
-- [Work Management Concepts](../../packages/skills/work-management/README.md) — hierarchy, lifecycle, concurrency model
+- [Work Management Concepts](../concepts/work-management.md) — hierarchy, lifecycle, concurrency model
 - [Protocol Reference](../../packages/protocol/README.md) — the contract every backend implements
 - [Integration Guide](../integration/index.md) — tool-specific notes
 - [DEPLOYMENT.md](../../DEPLOYMENT.md) — full install + migration guide

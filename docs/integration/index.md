@@ -56,7 +56,7 @@ documented for installs that have not yet moved.
 | `.github/prompts/aaw-next-task.prompt.md` | `/aaw-next-task` |
 | `.github/prompts/aaw-start-initiative.prompt.md` | `/aaw-start-initiative` |
 
-Each prompt is a thin wrapper that points at the canonical instruction file in `.ai-assisted-work/packages/skills/work-management/`.
+Each prompt was a thin wrapper pointing at a canonical instruction file. Retired in 3.0.0.
 
 ### Background context (optional)
 
@@ -67,7 +67,7 @@ GitHub Copilot also reads `.github/copilot-instructions.md` for global context. 
 
 This project uses AAW for work management. When the user invokes /aaw-*
 slash commands, follow the instructions in
-.ai-assisted-work/packages/skills/work-management/.
+.agents/skills/aaw-*/.
 ```
 
 ## Claude Code (legacy shims)
@@ -150,8 +150,7 @@ This keeps work-state out of your project's git history. If you want a particula
 
 Override the standard templates by forking AAW and editing the copies bundled with each skill
 under `skills/<name>/assets/templates/`. Your fork's `aaw install` then ships the customised
-templates. The legacy set under `packages/skills/work-management/_templates/` feeds the shims
-only; keep the two in step while both are installed.
+templates.
 
 ### Custom skills
 
@@ -180,5 +179,5 @@ Implement the `Backend` interface from `@aaw/protocol` and ship as a separate pa
 
 - [DEPLOYMENT.md](../../DEPLOYMENT.md) — full install + migration guide
 - [Command Discovery](command-discovery.md) — how slash commands surface across tools
-- [packages/skills/work-management/README.md](../../packages/skills/work-management/README.md) — concepts and lifecycle
+- [docs/concepts/work-management.md](../concepts/work-management.md) — concepts and lifecycle
 - [packages/protocol/README.md](../../packages/protocol/README.md) — the contract for backends

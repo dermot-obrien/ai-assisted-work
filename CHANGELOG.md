@@ -7,6 +7,53 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-25
+
+Retires the per-tool command shims. Agent Skills, added in 2.1.0, are now the only
+integration.
+
+### Removed
+
+- **BREAKING: `skills-for-agents/` and `packages/skills/`.** The per-tool command shims and the
+  instruction files they pointed at are gone. A workspace that still invokes `/aaw:start-work`
+  from `.claude/commands/aaw/` will find nothing behind it; use `/aaw-start-work` instead.
+- **BREAKING: the `@aaw/skills` workspace package**, which held only those instruction files.
+  Removed from `packages/*` and from the changeset fixed group.
+- **BREAKING: the `shims` and `source_token` manifest keys are no longer set by AAW.** Both
+  existed only for the shims: `source_token` rewrote a shim's pointer to wherever the framework
+  actually lived. A skill is self-contained and holds no path back into the framework, so
+  nothing needs rewriting at install time. The installer still *understands* both keys, so an
+  AAW-family framework that has not migrated keeps working; it now logs a deprecation notice
+  when it sees them.
+
+### Added
+
+- `aaw install` removes shims it previously wrote, once the framework has stopped declaring
+  any. Without this an upgraded workspace keeps `.claude/commands/aaw/` and friends pointing at
+  deleted files, so the command fails only when someone types it. Scoped to id-namespaced paths
+  the installer created and owns: an unrelated `.github/prompts/*.prompt.md` is never touched.
+
+### Changed
+
+- The reference documentation that lived beside the retired instruction files moved to
+  `docs/concepts/` rather than being deleted with them: work-management concepts and lifecycle,
+  work classification, scaling limits, architecture and development work notes, and the agent
+  boundary rules.
+- Templates that no skill had yet bundled (`agents.md`, `changelog.log`, the locks README) moved
+  into `skills/aaw-progress-work/assets/`, so every template now ships with the skill that uses
+  it.
+- `DEPLOYMENT.md`, `CONTRIBUTING.md` and the integration docs updated: there is no longer a
+  deployed-versus-self split, since a skill is the same artefact in both cases.
+
+### Migration
+
+1. Pull, then re-run `aaw install` in each workspace. It installs the skills and removes the
+   old shims in one pass.
+2. Change any muscle memory or scripts from `/aaw:start-work` to `/aaw-start-work`.
+3. If you forked AAW to customise templates, they now live at
+   `skills/<name>/assets/templates/` rather than `packages/skills/work-management/_templates/`.
+
+
 ## [2.1.0] - 2026-09-25
 
 ### Added

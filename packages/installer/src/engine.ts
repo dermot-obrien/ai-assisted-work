@@ -8,7 +8,8 @@
  * AAW-family framework:
  *   1. ensure depended-on frameworks are present
  *   2. install standalone Agent Skills (.agents/skills + a .claude/skills link)
- *   3. wire legacy AI-tool shims (Claude/Cursor/Copilot/Gemini)
+ *   3. wire legacy AI-tool shims, for frameworks that still declare them, and
+ *      sweep away shims this framework used to install
  *   4. seed config files (idempotent)
  *   5. ensure data dirs exist
  *   6. run language tool setup (pip for python frameworks)
@@ -161,6 +162,12 @@ export async function wireShims(
       log(`  ▸ shim paths: rewriting "${manifest.sourceToken}" → "${rel}"`);
     }
   }
+  if (Object.keys(manifest.shims).length > 0) {
+    log(
+      `  ! ${manifest.id}: still ships per-tool command shims, which are deprecated. ` +
+        `Move its workflows to Agent Skills (a 'skills' manifest key); shim support will be removed.`,
+    );
+  }
   for (const tool of TOOL_NAMES) {
     const mapping = manifest.shims[tool];
     if (!mapping || !selection[tool]) continue;
@@ -283,6 +290,76 @@ export async function wireSkills(
     }
   }
   return installed;
+}
+
+/**
+ * Legacy per-tool shim destinations, by framework id.
+ *
+ * A workspace installed before the Agent Skills migration still holds these, and
+ * they point at instruction files that no longer exist, so they would fail at the
+ * moment someone typed the command. Install removes them once the framework has
+ * stopped declaring shims.
+ *
+ * Only id-namespaced paths appear here: directories this installer created and owns.
+ * Nothing outside `<tool dir>/.../<framework id>` is ever touched.
+ */
+const LEGACY_SHIM_DESTS: Record<string, string[]> = {
+  aaw: [
+    path.join(".claude", "commands", "aaw"),
+    path.join(".cursor", "commands", "aaw"),
+    path.join(".cursor", "rules", "aaw"),
+    path.join(".gemini", "skills", "aaw"),
+  ],
+  aaa: [
+    path.join(".claude", "commands", "aaa"),
+    path.join(".cursor", "commands", "aaa"),
+    path.join(".cursor", "rules", "aaa"),
+    path.join(".github", "prompts", "aaa"),
+    path.join(".gemini", "skills", "aaa"),
+  ],
+};
+
+/** Copilot prompt shims are loose files, not a namespaced directory. */
+const LEGACY_SHIM_PROMPT_PREFIX: Record<string, string> = { aaw: "aaw-", aaa: "aaa-" };
+
+/**
+ * Remove shims this framework installed before it moved to Agent Skills.
+ *
+ * Runs only when the manifest no longer declares any shim, so a framework that has
+ * not migrated is left alone. Returns the paths removed.
+ */
+export async function removeLegacyShims(opts: InstallOptions): Promise<string[]> {
+  const { manifest, workspaceRoot } = opts;
+  const log = opts.log ?? noopLog;
+  if (Object.keys(manifest.shims).length > 0) return [];
+
+  const removed: string[] = [];
+  for (const rel of LEGACY_SHIM_DESTS[manifest.id] ?? []) {
+    const dest = path.join(workspaceRoot, rel);
+    if (await pathExists(dest)) {
+      await rm(dest, { recursive: true, force: true });
+      removed.push(rel);
+    }
+  }
+
+  const prefix = LEGACY_SHIM_PROMPT_PREFIX[manifest.id];
+  if (prefix) {
+    const promptsDir = path.join(workspaceRoot, ".github", "prompts");
+    if (await pathExists(promptsDir)) {
+      for (const entry of await readdir(promptsDir)) {
+        if (entry.startsWith(prefix) && entry.endsWith(".prompt.md")) {
+          await rm(path.join(promptsDir, entry), { force: true });
+          removed.push(path.join(".github", "prompts", entry));
+        }
+      }
+    }
+  }
+
+  if (removed.length > 0) {
+    log(`  ▸ removed ${removed.length} legacy shim path(s) superseded by skills:`);
+    for (const r of removed) log(`      ${r}`);
+  }
+  return removed;
 }
 
 /** Seed config files into the workspace root, only if they don't already exist. */
@@ -506,6 +583,7 @@ export async function installFramework(opts: InstallOptions): Promise<InstallRes
   };
 
   const skills = await wireSkills(opts, selection);
+  await removeLegacyShims(opts);
   const wired = await wireShims(opts, selection);
   const seededConfig = await seedConfig(opts);
   const dataDirs = await ensureDataDirs(opts);

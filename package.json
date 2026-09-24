@@ -1,6 +1,6 @@
 {
   "name": "ai-assisted-work",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "AI-Assisted Work (AAW) — domain-agnostic work-management agents + the shared install engine for the AAW framework family.",
   "private": true,
   "type": "module",
@@ -17,7 +17,6 @@
   "files": [
     "bin/",
     "skills-for-agents/",
-    "packages/skills/",
     "framework.manifest.yaml"
   ],
   "workspaces": [

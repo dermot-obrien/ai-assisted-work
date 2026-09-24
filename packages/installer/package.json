@@ -1,6 +1,6 @@
 {
   "name": "@aaw/installer",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Shared install engine + framework manifest contract for AAW-family frameworks (work, architecture, research). Wires AI-tool shims, seeds config + data dirs, runs language-appropriate tool setup (pip), and records installed modules.",
   "private": true,
   "type": "module",

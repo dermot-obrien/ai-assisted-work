@@ -1,6 +1,6 @@
 # AI Assisted Work
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](CHANGELOG.md)
 [![Licence: CC BY 4.0](https://img.shields.io/badge/content-CC%20BY%204.0-blue.svg)](LICENSES/CC-BY-4.0.txt)
 [![Licence: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSES/Apache-2.0.txt)
 [![REUSE 3.3](https://img.shields.io/badge/REUSE-3.3-lightgrey.svg)](https://reuse.software/spec-3.3/)
@@ -94,9 +94,10 @@ Each carries a `description`, so an assistant can invoke it on its own when a re
 rather than only when you type the slash command. The long-form procedure sits in
 `references/` and loads only when that branch is reached.
 
-The shims under `skills-for-agents/` and the instruction files under
-`packages/skills/work-management/` are superseded, retained for installs that have not yet
-moved, and are no longer the maintained definitions.
+The per-tool command shims that preceded these were removed in 3.0.0. `aaw install` sweeps
+away any it previously wrote, because they point at instruction files that no longer exist.
+The reference documentation that lived beside them moved to
+[docs/concepts/](docs/concepts/work-management.md).
 
 ### Installing
 

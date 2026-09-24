@@ -375,10 +375,12 @@ content.
 ### Consequences
 
 - The per-tool shims under `skills-for-agents/` and the instruction files under
-  `packages/skills/work-management/` are superseded, retained only for installs that have not
-  moved, and each marked as such.
-- Once they are retired, the `source_token` rewrite machinery in the installer can be deleted
-  outright: it exists only to keep shim pointers resolving.
+  `packages/skills/work-management/` were removed in 3.0.0, along with the `source_token`
+  rewrite machinery that existed only to keep shim pointers resolving. `aaw install` sweeps
+  away shims it previously wrote, since they point at files that no longer exist.
+- The reference documentation that lived alongside those instruction files — concepts,
+  lifecycle, scaling limits, work-type notes, agent boundary rules — moved to `docs/concepts/`
+  rather than being deleted with them.
 - Skills are validated against the spec with `skills-ref validate`.
 
 ---
