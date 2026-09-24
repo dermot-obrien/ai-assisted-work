@@ -4,21 +4,29 @@ Quick start guide for AI-Assisted Work.
 
 ## What is AAW?
 
-A domain-agnostic framework for managing work with AI agents. Initiative → Work Item → Activity → Task hierarchy. One CLI, one protocol, multiple AI tools, file-based or cloud transport.
+A domain-agnostic framework for managing work with AI agents. Initiative → Work Item →
+Activity → Task, where a work item sits at one of two levels: a `workstream` that accretes
+scope and may never end, or an `epic` that lands inside one planning period, three months at
+most. One CLI, one protocol, multiple AI tools, file-based or cloud transport.
+
+Planning is product-based: a work item names the products it will leave behind, then derives
+the activities that produce them.
 
 ## Install
 
+AAW is an independent clone, not a submodule:
+
 ```bash
-git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
-git submodule update --init
-node .ai-assisted-work/bin/aaw.js init
+git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
+node .ai-assisted-work/bin/aaw.js install
 ```
 
-That's it. Requires Node 16+. The `init` command:
+That's it. Requires Node 18+, 20+ recommended. The `install` command:
 
-- Detects which AI tools you have (GitHub Copilot, Cursor, Claude Code)
+- Detects which AI tools you have (Claude Code, Cursor, GitHub Copilot, Gemini CLI)
 - Prompts for tenant name, mode (local-fs / cloud), and where work items should live
-- Wires up tool shims and writes `.aaw-config.yaml`
+- Installs the Agent Skills into `.agents/skills/`, linking `.claude/skills/` at them
+- Wires the legacy tool shims and writes `.aaw-config.yaml`
 - Creates the work-items directory
 
 See [DEPLOYMENT.md](../../DEPLOYMENT.md) for the long form.
@@ -33,10 +41,12 @@ In your AI tool, run the slash command for new work:
 
 The agent will:
 
-1. Ask clarifying questions about scope and intent
-2. Optionally do discovery (research workspace + web sources)
-3. Create a plan with activities and tasks
-4. Create the work item folder under your configured `work_items_path`
+1. Triage the request. Most work is a chore and gets a branch and a changelog line, not a work
+   item. Only an intervention earns the full workspace
+2. Ask clarifying questions about scope and intent
+3. Optionally do discovery (research workspace + web sources)
+4. Name the products the work will leave behind, then derive activities from them
+5. Create the work item folder under your configured `work_items_path`
 
 ## Continue / check progress
 
@@ -64,7 +74,7 @@ WI-001-add-auth-flow/
 ├── scope-ai.md       # AI agent addendum (intent history, rationale)
 ├── plan.md           # Activities and tasks
 ├── progress.yaml     # Source of truth (versioned for concurrency)
-├── deliverables/     # Activity outputs
+├── deliverables/     # The products named up front in progress.yaml
 └── locks/            # Activity claim records
 ```
 
@@ -81,6 +91,7 @@ Scoping → Discovery → Planning → Execution → Done
 
 ## Next steps
 
+- [Command Discovery](../integration/command-discovery.md) — how the skills surface in each tool
 - [Work Management Concepts](../../packages/skills/work-management/README.md) — hierarchy, lifecycle, concurrency model
 - [Protocol Reference](../../packages/protocol/README.md) — the contract every backend implements
 - [Integration Guide](../integration/index.md) — tool-specific notes

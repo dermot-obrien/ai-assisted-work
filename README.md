@@ -1,6 +1,6 @@
 # AI Assisted Work
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](CHANGELOG.md)
 [![Licence: CC BY 4.0](https://img.shields.io/badge/content-CC%20BY%204.0-blue.svg)](LICENSES/CC-BY-4.0.txt)
 [![Licence: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSES/Apache-2.0.txt)
 [![REUSE 3.3](https://img.shields.io/badge/REUSE-3.3-lightgrey.svg)](https://reuse.software/spec-3.3/)
@@ -78,13 +78,9 @@ the same command is reused as the shared installer entrypoint via
 
 ## Agent Skills
 
-AAW workflows are being migrated to the [Agent Skills](https://agentskills.io) open format:
-a directory holding a `SKILL.md` (YAML frontmatter plus instructions) alongside its
-`references/` and `assets/`. One definition works in every skills-compatible tool, so the
-per-tool command shims under `skills-for-agents/` are no longer needed for a migrated
-workflow.
-
-All five workflows have migrated:
+AAW ships its workflows as standalone [Agent Skills](https://agentskills.io): a directory
+holding a `SKILL.md` (YAML frontmatter plus instructions) alongside its `references/` and
+`assets/`. One definition works in every skills-compatible tool.
 
 | Skill | Location |
 |-------|----------|
@@ -94,50 +90,42 @@ All five workflows have migrated:
 | `/aaw-next-task` | `skills/aaw-next-task/` |
 | `/aaw-start-initiative` | `skills/aaw-start-initiative/` |
 
+Each carries a `description`, so an assistant can invoke it on its own when a request matches
+rather than only when you type the slash command. The long-form procedure sits in
+`references/` and loads only when that branch is reached.
+
 The shims under `skills-for-agents/` and the instruction files under
-`packages/skills/work-management/` are retained for installs that have not yet moved and are
-no longer the maintained definitions.
+`packages/skills/work-management/` are superseded, retained for installs that have not yet
+moved, and are no longer the maintained definitions.
 
-A migrated skill carries a `description`, so an assistant can invoke it on its own when a
-request matches, rather than only when you type the slash command. The long-form procedure
-sits in `references/` and loads only when that branch is reached.
+### Installing
 
-### Installing a skill
-
-Copy the skill into `.agents/skills/` at your workspace root. Codex, Cursor, GitHub Copilot,
-VS Code and Gemini CLI all read that path natively.
+`aaw install` wires the skills. There is nothing else to do:
 
 ```bash
-mkdir -p .agents/skills
-cp -r .ai-assisted-work/skills/aaw-* .agents/skills/
+node .ai-assisted-work/bin/aaw.js install
 ```
 
-Claude Code reads `.claude/skills/` and does not read `.agents/skills/`, so add a link for
-it. A link rather than a second copy keeps one source of truth:
-
-```bash
-mkdir -p .claude/skills
-for s in .agents/skills/aaw-*; do
-  ln -s "../../$s" ".claude/skills/$(basename "$s")"
-done
-```
-
-On Windows, use a directory junction, which needs no elevation and no developer mode:
-
-```powershell
-New-Item -ItemType Directory -Force .claude\skills | Out-Null
-Get-ChildItem .agents\skills\aaw-* -Directory | ForEach-Object {
-  New-Item -ItemType Junction -Path ".claude\skills\$($_.Name)" -Target $_.FullName
-}
-```
+Skills land in `.agents/skills/<name>/`, which Codex, Cursor, GitHub Copilot, VS Code and
+Gemini CLI read natively. Claude Code reads only `.claude/skills/`, so the installer links
+`.claude/skills/<name>` at the same directory rather than copying twice: a symlink, or a
+directory junction on Windows, which needs neither elevation nor developer mode. Where the
+filesystem refuses both it falls back to a copy and says so.
 
 Verify by typing `/` in your assistant: the five `/aaw-*` skills should appear.
 
-Two caveats worth knowing. Cursor and Copilot read both `.agents/skills/` and
-`.claude/skills/`, so a workspace also set up for Claude Code may list a skill twice in
-those tools; the link means both entries are the same content. And `aaw install` does not
-yet wire skills, only the legacy shims, so install skills with the commands above until it
-does.
+Do not commit the installed skills into a consuming repository. They are generated from this
+clone, so gitignore `.agents/skills/aaw-*` and re-run the installer instead.
+
+One caveat worth knowing: Cursor and Copilot read both `.agents/skills/` and `.claude/skills/`,
+so a workspace also set up for Claude Code may list a skill twice in those tools. The link
+means both entries are the same content.
+
+Validate a skill against the spec with:
+
+```bash
+node .ai-assisted-work/scripts/validate-skills.mjs skills
+```
 
 ### Optional: a deliverables type register
 

@@ -6,12 +6,19 @@ Development roadmap for AI-Assisted Work.
 
 v2.0 is the working baseline: a TypeScript monorepo with `@aaw/protocol`, `@aaw/cli`, and a `local-fs` backend. One install command, cross-platform, no symlinks. See [CHANGELOG.md](../../CHANGELOG.md) for the full v2.0 entry.
 
+### Shipped in v2.1
+
+- [x] Agent Skills — all five workflows as standalone `SKILL.md` directories (DD-10)
+- [x] `skills` manifest key and installer wiring: `.agents/skills/` plus a `.claude/skills/` link
+- [x] `work_item_level` (workstream / epic) and product-based planning (`schema_version` 3)
+- [x] Optional `deliverables_register` config key for a deliverable type catalogue
+
 ### Shipped in v2.0
 
 - [x] `@aaw/protocol` — schema types and Backend interface
 - [x] `@aaw/cli` — Node CLI with `init`, `status`, `verify`
 - [x] LocalFsBackend — protocol against the filesystem
-- [x] `bin/aaw.js` — self-contained ESM bundle for the submodule install path
+- [x] `bin/aaw.js` — self-contained ESM bundle for the git-clone install path
 - [x] `.aaw-config.yaml` — single source of truth for workspace config
 - [x] Single `WI-NNN` and `IN-NNN` ID series (public/private split removed)
 
@@ -22,7 +29,7 @@ v2.0 is the working baseline: a TypeScript monorepo with `@aaw/protocol`, `@aaw/
 ### v2.1 — npm publish lane
 
 - [ ] Publish `@aaw/cli`, `@aaw/protocol`, `@aaw/skills` to npm under the `@aaw` org
-- [ ] `npx @aaw/cli init` works as an alternative to the submodule path
+- [ ] `npx @aaw/cli install` works as an alternative to the git-clone path
 - [ ] Document corporate artifactory proxy patterns in DEPLOYMENT.md
 
 ### v2.2 — More CLI commands
@@ -32,7 +39,13 @@ v2.0 is the working baseline: a TypeScript monorepo with `@aaw/protocol`, `@aaw/
 - [ ] `aaw next-task [WI-NNN]` — what's the next claimable thing
 - [ ] `aaw runner start --pool default` — long-lived headless agent runner
 
-### v2.3 — Migration tooling
+### v2.3 — Retire the shims
+
+- [ ] Remove `skills-for-agents/` and `packages/skills/work-management/`
+- [ ] Delete the `source_token` rewrite machinery, which exists only for shim pointers
+- [ ] Major version bump: this is breaking for installs still using the command shims
+
+### v2.4 — Migration tooling
 
 - [ ] `aaw migrate v1` — move v1's `WI-`/`WIP-` folders into the v2 single-path layout, renumber clashes, update `.gitignore`
 

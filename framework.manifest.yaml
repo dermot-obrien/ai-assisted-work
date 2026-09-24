@@ -9,7 +9,7 @@
 
 id: aaw
 name: AI-Assisted Work
-version: 2.0.0
+version: 2.1.0
 depends: []
 runtime: node
 # Shim files reference their source via this path; the installer rewrites it to
