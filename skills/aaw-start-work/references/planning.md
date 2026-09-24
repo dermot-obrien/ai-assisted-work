@@ -50,15 +50,23 @@ install.
 **No register configured.** Write `quality_criteria` and `approver` inline on each product,
 and leave `type` null. This is the default and is fully supported.
 
-**A register is configured.** It points at a file, CSV or YAML, of deliverable types, each
-with at least an id, a name, a purpose, quality criteria, a quality method and an approver.
-Then:
+**A register is configured.** The key is either a plain path, or a map carrying `path`,
+`id_column`, an optional `standard_only` gate, and a `columns` map from the register's own
+column names onto the fields AAW reads (`name`, `purpose`, `composition`, `quality_criteria`,
+`quality_tolerance`, `quality_method`, `responsibilities`, `governance_forum`,
+`system_of_record`, `points`). Read the mapping rather than assuming column names, and ignore
+columns it does not mention. Then:
 
-- Pick each product's `type` from the register rather than inventing a bespoke one. If the
-  register marks types as standard or non-standard, only commit to standard ones.
+- Pick each product's `type` from the register rather than inventing a bespoke one. Where
+  `standard_only` is set, only commit to rows whose `standard_column` equals `standard_true`.
 - The product inherits the type's quality criteria, quality method and approver. Do not
   restate them on the product; set a field on the product only where it genuinely differs
   from the type, and say why.
+- Where the register carries `points`, use it as the starting estimate rather than inventing
+  one, and record a reason when you depart from it.
+- Where the register names a `governance_forum` or `system_of_record`, carry them into the
+  product so the definition of done says where acceptance happens and where the artefact
+  lands.
 - If nothing in the register fits, say so and ask whether to add a type to the register or
   proceed with an inline product. Do not quietly invent a type id.
 

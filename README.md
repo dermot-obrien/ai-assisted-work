@@ -134,22 +134,47 @@ their quality criteria and approver. By default those are written inline on each
 and a fresh install ships no register.
 
 An organisation that already maintains a catalogue of the things it produces can point AAW at
-it, so work items pick a type rather than re-arguing quality criteria each time. Add to
-`.aaw-config.yaml`:
+it, so a type's quality criteria are argued once rather than re-argued per work item. Add to
+`.aaw-config.yaml`, either as a plain path:
 
 ```yaml
-# Optional. Path to a register of deliverable types, relative to the workspace root.
-# Unset or null (the default) means each work item writes its criteria inline.
 deliverables_register: governance/deliverables/deliverable-types.csv
 ```
 
-The register is a CSV or YAML file of types, each carrying at least an id, a name, a purpose,
-quality criteria, a quality method and an approver. A product then sets `type` to one of those
-ids and inherits the rest, overriding only what genuinely differs. Where the register marks
-types as standard or non-standard, work items commit only to standard ones.
+or, when the register's column names differ from AAW's field names, as a map. This is the
+usual case: a real register keeps its own shape and should not have to migrate.
 
-AAW ships no register and no schema for one: the catalogue is the organisation's, and the
-config key is the only coupling. The `aaw` CLI does not read this key; the skills read
+```yaml
+deliverables_register:
+  path: governance/deliverables/architecture-deliverables.csv
+  id_column: id
+  standard_only: true          # only commit to agreed types
+  standard_column: standard_type
+  standard_true: "Yes"
+  columns:
+    name: title
+    purpose: purpose
+    composition: composition
+    quality_criteria: quality_criteria
+    quality_tolerance: quality_tolerance
+    quality_method: quality_method
+    responsibilities: quality_responsibilities
+    governance_forum: governance_forum
+    system_of_record: system_of_record
+    points: base_story_points
+```
+
+A product then sets `type` to a register id and inherits the rest, overriding only what
+genuinely differs and saying why. Where `standard_only` is set, work items may commit only to
+rows the register marks as standard.
+
+The register is a CSV or YAML file. AAW reads `name`, `quality_criteria`, `quality_method` and
+`responsibilities` at minimum; the remaining mappings are optional and are surfaced when
+present. Unmapped columns are ignored, so a register with more columns than AAW knows about
+works unchanged.
+
+AAW ships no register and no schema for one: the catalogue belongs to the organisation and the
+config key is the only coupling. The `aaw` CLI does not read this key; the skills parse
 `.aaw-config.yaml` directly.
 
 ## Available Commands
