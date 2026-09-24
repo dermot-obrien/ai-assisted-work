@@ -16,6 +16,14 @@ runtime: node
 # the real relative location (submodule dir or node_modules).
 source_token: .ai-assisted-work
 
+# Standalone Agent Skills (agentskills.io). Self-contained, so no source_token
+# rewrite applies. Installed to .agents/skills/<name>, which Codex, Cursor, Copilot,
+# VS Code and Gemini CLI read natively; .claude/skills/<name> is linked at it because
+# Claude Code does not read .agents/skills/.
+skills: { src: skills }
+
+# Legacy per-tool command shims. Superseded by `skills` above; retained for installs
+# that have not yet moved.
 shims:
   claude: { src: skills-for-agents/claude/commands/aaw, dest: .claude/commands/aaw }
   cursor: { src: skills-for-agents/cursor/commands/aaw, dest: .cursor/commands/aaw }

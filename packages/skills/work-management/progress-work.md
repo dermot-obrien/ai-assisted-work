@@ -6,6 +6,12 @@ alwaysApply: false
 
 # Progress Work
 
+> **Superseded.** This workflow has migrated to the Agent Skill at
+> `skills/aaw-progress-work/`, which is the maintained definition. This file remains only for
+> the legacy per-tool command shims under `skills-for-agents/` and will be removed once
+> those are retired. See the Agent Skills section of the README for how to install the
+> skill.
+
 Execute a work item that has completed the Scoping, Discovery, and Planning phases. This is Phase 4 (Execution) of the work item lifecycle. Use this to continue implementation or resume after an interruption.
 
 > **Applies to `intervention` (and `change`) work items** — those with a `WI-NNN/`
@@ -111,7 +117,7 @@ WI-001-feature-name/
 **Why this structure?**
 - `progress.yaml`: **Source of truth** for all state - activities, tasks, deliverables, file changes
 - `locks/`: Separate files reduce contention, atomic file operations
-- `deliverables/`: Concrete outputs - every activity produces a deliverable
+- `deliverables/`: The products named up front in `progress.yaml`; every activity names the one it advances via `produces`
 - `changelog.log`: Optional audit trail for multi-agent scenarios
 
 **Scaling limits:** 2-5 workers recommended, max 10. See [limitations.md](limitations.md).
@@ -506,7 +512,28 @@ Update `locks/{activity_id}.lock`:
 - Complete the work appropriate to the task type
 - **Produce a deliverable** (see Deliverables Rule below)
 
-**Deliverables Rule: Every completed activity should produce a deliverable:**
+**Deliverables Rule (schema_version 3): products are planned first, not discovered.**
+
+The products were named at planning time in the top-level `deliverables:` block of
+`progress.yaml`, and every activity carries a `produces` field naming the one it advances.
+Execution does not invent deliverables; it moves the named ones through their states.
+
+1. Read the activity's `produces` to find which product it advances. If it is missing on an
+   activity you are about to work, stop and get the plan fixed: an activity that produces
+   nothing is invalid.
+2. As you work, set that product's `state`: `planned` → `drafted` → `in_review` → `accepted`.
+   `accepted` is set only once it passes its own `quality_criteria` and its `approver` has
+   accepted it, which is usually not the agent doing the work.
+3. Record the product's file at its `path`, and every workspace file it touched in its
+   `files_changed`.
+4. The product's `state` is distinct from the status of the activities producing it. All
+   activities on a product can be `completed` while the product is still `in_review`. Do not
+   mark the work item done until every product is `accepted`.
+
+On an older work item (`schema_version` 2 or below) there is no top-level `deliverables:`
+block and no `produces`. Fall back to the old behaviour below, and do not retrofit.
+
+Legacy behaviour, schema_version 2 and below:
 
 1. **A file created or modified** - tracked in progress.yaml deliverables section
 2. **A decision documented** - in deliverables/D{NN}-{name}.md
@@ -782,7 +809,7 @@ activities:
 
 ### Consultancy Work
 - Track research in `artifacts.research`
-- List final deliverables in `artifacts.deliverables`
+- Confirm every product in the top-level `deliverables:` block has reached `state: accepted` (schema_version 3). On older items, list final deliverables in `artifacts.deliverables`
 - Note interview findings in notes.md
 - Update changes.md with all document changes
 

@@ -1,0 +1,9 @@
+{
+  "holder": "agent-abc123",
+  "holder_type": "agent",
+  "acquired": "2026-01-24T10:00:00Z",
+  "expires": "2026-01-24T11:00:00Z",
+  "task_id": "WI-NNN-A1-T2",
+  "task_acquired": "2026-01-24T10:30:00Z",
+  "task_expires": "2026-01-24T11:00:00Z"
+}

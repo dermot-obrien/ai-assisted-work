@@ -7,7 +7,27 @@
 
 **Domain-agnostic, reusable AI agents for work management.**
 
-This AI Assisted Work (AAW) method is not opinionated about any specific work management method and uses a simple `Work Item` → `Activity`→ `Task` hierarchy (which can map to `Epic`, `Story` and `Task` in an Agile workflow). Inspired by the [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) which is better if you want to specifically align to Agile methods. 
+This AI Assisted Work (AAW) method is not opinionated about any specific work management
+method. It uses an `Initiative` → `Work Item` → `Activity` → `Task` hierarchy, where a work
+item sits at one of two levels:
+
+| Tier | Level | Grain | Agile equivalent |
+|------|-------|-------|------------------|
+| Initiative | — | A funded body of work | Initiative |
+| Work Item | `workstream` | A durable strand inside an initiative. A subject, not a schedule; accretes scope, may never end | — |
+| Work Item | `epic` | A bounded slice that lands in one planning period, three months at most | Epic |
+| Activity | — | One product advanced to done | Story |
+| Task | — | One step inside an activity | Task |
+
+Planning is **product-based**, after PRINCE2: a work item names the products it will leave
+behind, declares the order they must be built in, composes its definition of done from them,
+and only then derives the activities that produce them. Every activity names the product it
+advances. An activity that produces nothing is invalid, because effort with nothing left
+behind is motion rather than work.
+
+Inspired by the [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) which is better if
+you want to specifically align to Agile methods.
+
 
 AI Assisted Work provides structured agents that help AI assistants (Cursor, GitHub Copilot, Claude Code) manage complex work items through their lifecycle. It is designed to be included in your projects via a local git clone or copy-paste.
 
@@ -56,13 +76,101 @@ bootstrap and writes `.aaw-config.yaml` plus shims. For other AAW-family framewo
 the same command is reused as the shared installer entrypoint via
 `aaw install --framework <path>`. `aaw init` is kept as a compatibility alias.
 
+## Agent Skills
+
+AAW workflows are being migrated to the [Agent Skills](https://agentskills.io) open format:
+a directory holding a `SKILL.md` (YAML frontmatter plus instructions) alongside its
+`references/` and `assets/`. One definition works in every skills-compatible tool, so the
+per-tool command shims under `skills-for-agents/` are no longer needed for a migrated
+workflow.
+
+All five workflows have migrated:
+
+| Skill | Location |
+|-------|----------|
+| `/aaw-start-work` | `skills/aaw-start-work/` |
+| `/aaw-progress-work` | `skills/aaw-progress-work/` |
+| `/aaw-work-status` | `skills/aaw-work-status/` |
+| `/aaw-next-task` | `skills/aaw-next-task/` |
+| `/aaw-start-initiative` | `skills/aaw-start-initiative/` |
+
+The shims under `skills-for-agents/` and the instruction files under
+`packages/skills/work-management/` are retained for installs that have not yet moved and are
+no longer the maintained definitions.
+
+A migrated skill carries a `description`, so an assistant can invoke it on its own when a
+request matches, rather than only when you type the slash command. The long-form procedure
+sits in `references/` and loads only when that branch is reached.
+
+### Installing a skill
+
+Copy the skill into `.agents/skills/` at your workspace root. Codex, Cursor, GitHub Copilot,
+VS Code and Gemini CLI all read that path natively.
+
+```bash
+mkdir -p .agents/skills
+cp -r .ai-assisted-work/skills/aaw-* .agents/skills/
+```
+
+Claude Code reads `.claude/skills/` and does not read `.agents/skills/`, so add a link for
+it. A link rather than a second copy keeps one source of truth:
+
+```bash
+mkdir -p .claude/skills
+for s in .agents/skills/aaw-*; do
+  ln -s "../../$s" ".claude/skills/$(basename "$s")"
+done
+```
+
+On Windows, use a directory junction, which needs no elevation and no developer mode:
+
+```powershell
+New-Item -ItemType Directory -Force .claude\skills | Out-Null
+Get-ChildItem .agents\skills\aaw-* -Directory | ForEach-Object {
+  New-Item -ItemType Junction -Path ".claude\skills\$($_.Name)" -Target $_.FullName
+}
+```
+
+Verify by typing `/` in your assistant: the five `/aaw-*` skills should appear.
+
+Two caveats worth knowing. Cursor and Copilot read both `.agents/skills/` and
+`.claude/skills/`, so a workspace also set up for Claude Code may list a skill twice in
+those tools; the link means both entries are the same content. And `aaw install` does not
+yet wire skills, only the legacy shims, so install skills with the commands above until it
+does.
+
+### Optional: a deliverables type register
+
+Planning is product-based, so each work item names the products it will leave behind with
+their quality criteria and approver. By default those are written inline on each work item,
+and a fresh install ships no register.
+
+An organisation that already maintains a catalogue of the things it produces can point AAW at
+it, so work items pick a type rather than re-arguing quality criteria each time. Add to
+`.aaw-config.yaml`:
+
+```yaml
+# Optional. Path to a register of deliverable types, relative to the workspace root.
+# Unset or null (the default) means each work item writes its criteria inline.
+deliverables_register: governance/deliverables/deliverable-types.csv
+```
+
+The register is a CSV or YAML file of types, each carrying at least an id, a name, a purpose,
+quality criteria, a quality method and an approver. A product then sets `type` to one of those
+ids and inherits the rest, overriding only what genuinely differs. Where the register marks
+types as standard or non-standard, work items commit only to standard ones.
+
+AAW ships no register and no schema for one: the catalogue is the organisation's, and the
+config key is the only coupling. The `aaw` CLI does not read this key; the skills read
+`.aaw-config.yaml` directly.
+
 ## Available Commands
 
 Once installed, these commands are available in your AI assistant:
 
 | Command | Purpose |
 |---------|---------|
-| `/aaw-start-work` | Initialize new work items. |
+| `/aaw-start-work` | Triage a request and, when it earns one, initialize a work item. Agent Skill. |
 | `/aaw-progress-work` | Continue work on items. |
 | `/aaw-work-status` | Report work status. |
 | `/aaw-next-task` | Identify the next task to work on. |

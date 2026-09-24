@@ -1,5 +1,13 @@
 # Start Work
 
+> **Superseded.** This workflow has migrated to the Agent Skill at
+> `skills/aaw-start-work/`, which is the maintained definition and the one that carries the
+> `work_item_level` tiering and product-based planning introduced in `schema_version` 3.
+> This file remains only for the legacy per-tool command shims under `skills-for-agents/`
+> and will be removed once those are retired. See the Agent Skills section of the README
+> for how to install the skill.
+
+
 Create a new **work item** workspace and guide it through scoping, discovery, and planning phases.
 
 **See also:**
