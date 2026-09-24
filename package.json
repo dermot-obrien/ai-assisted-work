@@ -16,7 +16,7 @@
   },
   "files": [
     "bin/",
-    "skills-for-agents/",
+    "skills/",
     "framework.manifest.yaml"
   ],
   "workspaces": [

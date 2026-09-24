@@ -3,8 +3,8 @@
 This document describes the scaling limits and constraints of the file-based work management system.
 
 **See also:**
-- [README.md](README.md) - Core concepts and workflow
-- [progress-work.md](progress-work.md) - Execution details including concurrency protocol
+- [work-management.md](work-management.md) - Core concepts and workflow
+- the `/aaw-progress-work` skill - Execution details including concurrency protocol
 
 ## Scaling Limits
 

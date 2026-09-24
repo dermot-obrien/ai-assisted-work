@@ -48,7 +48,7 @@ npm-registry access** (git is enough).
 
 ```bash
 npm i github:dermot-obrien/ai-assisted-work
-npx aaw install       # interactive bootstrap: workspace, tenant, mode, work_items_path, shims
+npx aaw install       # interactive bootstrap: workspace, tenant, mode, work_items_path, skills
 ```
 
 `bin/aaw.js` is a committed, self-contained bundle, so `npm i` pulls **no** registry
@@ -216,8 +216,8 @@ Fork this repository to customize for your organization. See [Organization Adopt
 ## Development (building from source)
 
 AAW is an npm workspaces monorepo: `@aaw/protocol` (types), `@aaw/installer` (the
-shared install engine + manifest contract), `@aaw/cli` (the `aaw` command), and
-`@aaw/skills` (markdown skill definitions).
+shared install engine + manifest contract) and `@aaw/cli` (the `aaw` command). The
+Agent Skills are not a package: they live in `skills/` and are placed by `aaw install`.
 
 **Requirements:** Node.js 18+ (20+ recommended) and npm. No other system deps.
 
@@ -238,12 +238,14 @@ rebuild and commit it whenever the CLI or installer changes. `packages/*/dist/` 
 `node_modules/` are gitignored.
 
 The install behaviour is driven by `framework.manifest.yaml` (see `@aaw/installer`'s
-`manifest.ts` for the schema): `shims` (per-tool source→dest), `config` (files seeded
-idempotently), `data_dirs`, `tool_setup.python` (pip), `seed` (optional Node seeder),
-and `source_token` (rewritten to the real install location so shims resolve whether
-the framework is a local clone or in `node_modules`). Installed modules also record
-their `source_root` in `.aaw-config.yaml`, so other frameworks can resolve back to the
-correct local clone for that workspace.
+`manifest.ts` for the schema): `skills` (the Agent Skills directory), `config` (files
+seeded idempotently), `data_dirs`, `tool_setup.python` (pip), and `seed` (an optional
+Node seeder). Installed modules record their `source_root` in `.aaw-config.yaml`, so
+other frameworks can resolve back to the correct local clone for that workspace.
+
+The engine still understands the retired `shims` and `source_token` keys so an
+AAW-family framework that has not migrated keeps installing, and logs a deprecation
+notice when it sees them.
 
 ## Contributing
 
