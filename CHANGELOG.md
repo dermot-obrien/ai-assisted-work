@@ -8,6 +8,15 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Approval stages in `quarter-planning`** (skill 2.1.0). The validator gains a seventh
+  section reporting how far the quarterly WorkPlan, each committed epic and each of its products
+  have been approved, read from an `approval` field on each model record. Stages default to
+  draft, sized, validated, approved, least advanced first, and a workspace can rename them with
+  `approvalStages`; the last is read as approval, and approval is commitment. It fails the run
+  on an approval the records beneath it do not support: an epic further on than its least
+  advanced product, an epic approved before the quarter's budget and resourcing are, or an epic
+  past draft with nothing named. It also flags an approved plan whose budget no longer follows
+  from its registers.
 - **`aaw check-skills`**, which reports installed skills that no longer match the framework
   that owns them. A skill is mastered in its framework repository and copied into a workspace
   by install, and the copy is writable, so an edit made there is lost by the next install
