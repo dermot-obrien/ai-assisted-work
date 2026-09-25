@@ -247,6 +247,16 @@ A missing file, deck, section or slide fails the build, and the message lists wh
 
 The source is named by its `deck_eyebrow`, then its `sidebar_label`, then its `title`. The same `deck_eyebrow` sets the line above every slide title in the source's own deck, so a resourcing document with `deck_eyebrow: "FY27 Q1 Resourcing"` reads that way in its own deck and as "From FY27 Q1 Resourcing" in any deck that includes it.
 
+## Designed slides in HTML
+
+Some slides are designed rather than written: a hand-laid diagram, a styled comparison, an animation. `<!-- deck:html src="./slides/roadmap.html" title="Roadmap" -->` makes a whole slide from a self-contained HTML file drawn on the 1920x1080 canvas. It stands alone, needs no heading and takes its place in document order, like `deck:image`, and it keeps working HTML, scripts and animation where an image would not.
+
+The file is isolated in a frame, so its styles and scripts cannot reach the deck or another slide, and the deck still provides the index, navigation, comments, thumbnails and PDF. Keys pressed inside the frame are passed to the deck, so the arrow keys still move between slides. The files it loads, `src` and `poster` on any tag, stylesheet links and CSS `url(...)`, are copied into `assets/` with the paths rewritten, so the deck still opens from disk with no server. Anything it loads from the network is warned about. `header="true"` puts the deck's own header above the frame, and `eyebrow="..."` sets its eyebrow.
+
+The same copying applies to video, audio and their posters written as HTML in an ordinary Markdown slide. Media over 50 MB is warned about.
+
+Keep the document the source of truth: prefer Markdown, and reserve an HTML slide for a slide whose design is the point, because its text is not in the document.
+
 ## Stale renders and dependencies
 
 An image rendered from a diagram goes out of date silently when the diagram changes. A renderer that follows the convention leaves `<image>.render.json` beside the image, naming the source and a SHA-256 of it with line endings normalised; the model skill's `render` writes one. When a deck uses an image with a record and the diagram no longer matches, the build warns and prints the command that re-renders it. With `CI` set, or `strictRenders: true`, it fails. `build --refresh` (`refresh: true`) re-renders a stale image through the model skill installed beside this one before using it, and fails if the render does. An image without a record is not checked.

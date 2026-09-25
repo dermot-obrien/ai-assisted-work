@@ -4,7 +4,7 @@ description: Render tagged sections of a Markdown document into HTML slides and 
 license: Apache-2.0
 compatibility: Node.js 18 or newer. PDF export additionally needs playwright and a Chromium-family browser; on Windows the bundled Edge is used automatically.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   homepage: https://github.com/OWNER/markdown-deck
   requires-skills: ""
 ---
@@ -22,6 +22,7 @@ The document stays the source of truth. Tags are HTML comments, so the file stil
 | `<!-- deck:cover subtitle="..." date="..." footnote="..." -->` | Anywhere, usually after the H1 | Produces the cover slide |
 | `<!-- deck:slide label="..." -->` | Immediately before a heading | That heading's section becomes one slide, running to the next heading of the same or higher level |
 | `<!-- deck:image src="./slide.png" title="..." -->` | On its own line, anywhere | A whole slide from a finished 16:9 image, such as a slide exported from another deck. The title labels it in the index, comments and address; the image is not overdrawn. Add `header="true"` to put the deck's own header above the image instead |
+| `<!-- deck:html src="./slide.html" title="..." -->` | On its own line, anywhere | A whole slide from a self-contained HTML file designed on the 1920x1080 canvas, for a layout Markdown cannot express. It is isolated in a frame, so its styles and scripts cannot reach the deck; the deck still provides the index, navigation, comments and PDF. `header="true"` puts the deck's header above it |
 | `<!-- deck:include src="../other.md" section="Heading" -->` | On its own line, anywhere | A section of another document, rendered live in this deck's theme and headed "From <source>". `deck="<deck_id>"` finds a published deck by id instead of `src`, so moving it does not break the include; `slide="<slide-id>"` takes one of its tagged slides instead of `section`; `title="..."` renames it. A target that cannot be found fails the build |
 | `<!-- deck:skip -->` ... `<!-- /deck:skip -->` | Inside a tagged section | Kept in the document, dropped from the slide |
 | `<!-- deck:note -->` ... `<!-- /deck:note -->` | Inside a tagged section | Becomes presenter notes, never rendered on screen or in the PDF |
@@ -35,6 +36,8 @@ Rules that matter:
 - An image slide should be a PNG at 1920x1080 or larger in 16:9. The build warns when one is not 16:9, which is letterboxed, or is smaller than 1920x1080, which looks soft when presented. A missing image slide is warned about and skipped.
 - Reference links, `[text][label]` with `[label]: url` at the foot of the document, resolve on every slide. Relative links to other documents are not rewritten, so they only work where the deck sits beside those documents.
 - Local images are copied into the output `assets/` folder and the paths rewritten. A missing image is warned about and left alone rather than failing the build.
+- Video, audio and other files a slide loads are copied the same way: `src` and `poster` on any tag in a Markdown slide, and in an HTML slide also stylesheet links and CSS `url(...)`. Media over 50 MB is warned about; compress it or link to it instead.
+- Prefer Markdown. Use `deck:html` only for a slide whose design is the point, such as a hand-laid diagram or a styled comparison, because its text is not in the document. An HTML slide that loads anything from the network, such as web fonts or a script from a CDN, is warned about, since the deck is meant to open from disk; copy the file in beside it instead. A missing HTML slide is warned about and skipped.
 - An image with a `<image>.render.json` record, as `model render` writes, is checked against its diagram. If the diagram changed after the render, the build warns and gives the command that re-renders it; with `CI` set it fails. Re-render rather than suppress it; `--refresh` on `build` re-renders stale images itself, through the model skill, before building.
 - `manifest.json` lists `dependencies`: the documents and images the deck was built from, relative to the workspace root. `publish --graph` prints them for every deck, with anything used by more than one deck, so the reach of a change is visible.
 
