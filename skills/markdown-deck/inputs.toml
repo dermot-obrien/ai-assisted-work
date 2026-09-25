@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Repository-wide defaults this skill accepts. The consuming repository answers in
+# [suite.markdown-deck] of its .agents/skill-bindings.toml. Every key is optional, and a
+# deck's own front matter overrides any of them for that deck:
+#
+#   binding            front matter overriding it
+#   theme              deck_theme
+#   palette            deck_palette
+#   comments           deck_comments
+#   thumbnails         deck_thumbnails
+#   feedbackTo         deck_feedback_to
+#   feedbackSubject    deck_feedback_subject
+#   pdf                deck_pdf
+#
+# Checked by:  python <skills>/model/bin/model.py doctor --skill markdown-deck
+
+[inputs]
+short_description = "Repository defaults for building decks"
+
+[inputs.options.theme]
+type = "str"
+required = false
+default = "default"
+description = "Theme for every deck: a built-in name or a path to a .css file"
+
+[inputs.options.comments]
+type = "str"
+required = false
+default = "false"
+description = "true to give every deck the per-slide review comments panel"
+
+[inputs.options.thumbnails]
+type = "str"
+required = false
+default = "false"
+description = "true to open every deck's slide index with thumbnails rather than titles"
+
+[inputs.options.pdf]
+type = "str"
+required = false
+default = "false"
+description = """true to export deck.pdf whenever `markdown-deck build` runs, unless --no-pdf
+is given. Needs playwright. Does not apply to `publish`, which exports PDFs only with --pdf."""
+
+[inputs.options.feedbackTo]
+type = "str"
+required = false
+description = """Where Email review sends a deck's review, for every deck that does not name
+its own address. Comma-separate several addresses."""
+
+[inputs.options.feedbackSubject]
+type = "str"
+required = false
+description = "Subject of the review email; defaults to 'Review: <deck title>'"
+
+[inputs.options.registry]
+type = "path"
+required = false
+description = """The published-deck registry, a JSON file committed with the workspace. When set,
+`markdown-deck publish` records every deck URL it publishes and fails when one that was
+published disappears, until it is marked retired or redirected there."""
+
+[inputs.options.palette]
+type = "table"
+required = false
+description = """Colour tokens overriding whichever theme is chosen, so an organisation gets
+its own palette without a CSS file in the skill. Keys are token names without the `--`
+prefix: font-body, font-mono, deck-bg, slide-bg, slide-fg, body, heading, on-heading, rule,
+row-alt, accent, accent-deep, accent-wash, code-bg, code-fg, code-inline-bg, cover-bg,
+cover-fg, cover-accent, cover-muted, cover-faint, chrome-fg. An unknown key fails the build
+rather than being ignored. A deck overrides the repository palette with deck_palette."""
