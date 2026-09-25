@@ -124,7 +124,7 @@ Every render also writes `<image>.render.json` beside the image: the source diag
 
 Run `doctor` before anything else. It resolves every binding to an absolute path, verifies the ones that must exist, and exits non-zero if any do not. `--skill NAME` checks a sibling skill's `inputs.toml` contract instead of this skill's own, so a prose skill can declare what it needs without shipping a runtime.
 
-A path binding may carry a `{placeholder}`, such as `change/planning/{quarter}/{quarter}-basis.csv`, when one binding covers many runs. Only the skill that owns the placeholder can fill it, so `doctor` checks the directory in front of the first placeholder and leaves the rest to that skill.
+A path binding may carry a `{placeholder}`, such as `planning/{quarter}/basis.csv`, when one binding covers many runs. Only the skill that owns the placeholder can fill it, so `doctor` checks the directory in front of the first placeholder and leaves the rest to that skill.
 
 Relative paths anchor to the directory holding the binding file, never to the working directory, so a binding means the same thing wherever it is run from. `bindingsVersion` is refused if its major is one this skill does not understand: a silently misread binding is worse than a stopped run.
 

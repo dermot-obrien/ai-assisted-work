@@ -8,7 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semanti
 
 ### Fixed
 
-- `doctor` no longer reports a templated path binding as missing. A binding carrying a `{placeholder}`, such as `change/planning/{quarter}/{quarter}-basis.csv`, names a different location per run, so the directory in front of the first placeholder is checked and the rest is left to the skill that fills it.
+- `doctor` no longer reports a templated path binding as missing. A binding carrying a `{placeholder}`, such as `planning/{quarter}/basis.csv`, names a different location per run, so the directory in front of the first placeholder is checked and the rest is left to the skill that fills it.
 
 ## [0.2.0] - 2026-09-25
 

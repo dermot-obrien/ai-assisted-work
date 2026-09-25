@@ -63,7 +63,7 @@ def _template_stem(raw: str):
     """The directory part of a templated path, before its first {placeholder}.
 
     None when the path carries no placeholder. A binding may be written once and mean a
-    different location per run, `change/planning/{quarter}/{quarter}-calendar.csv` being
+    different location per run, `planning/{quarter}/calendar.csv` being
     the case this was added for. Checking such a path for existence is checking a name
     nothing ever has, so the stable part in front of it is checked instead.
     """
