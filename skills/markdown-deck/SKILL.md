@@ -4,7 +4,7 @@ description: Render tagged sections of a Markdown document into HTML slides and 
 license: Apache-2.0
 compatibility: Node.js 18 or newer. PDF export additionally needs playwright and a Chromium-family browser; on Windows the bundled Edge is used automatically.
 metadata:
-  version: "0.4.0"
+  version: "0.4.1"
   homepage: https://github.com/OWNER/markdown-deck
   requires-skills: ""
 ---

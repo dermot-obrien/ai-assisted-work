@@ -506,5 +506,12 @@ sequenceDiagram
   assert.ok(bottom(r.text) <= bottom(r.box) + 1, `note text ends at ${bottom(r.text)}, below its box at ${bottom(r.box)}`);
   assert.ok(r.box.width + 2 >= r.text.width, `note box ${r.box.width} wide holds text ${r.text.width}`);
   assert.equal(await page.evaluate(() => document.querySelectorAll('.diagram-measuring').length), 0);
+  const colours = await page.evaluate(() => ({
+    box: getComputedStyle(document.querySelector('svg rect.note')).fill,
+    text: getComputedStyle(document.querySelector('svg .noteText')).fill,
+  }));
+  const lum = (c) => { const [r, g, b] = c.match(/\d+/g).map(Number); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  assert.ok(lum(colours.box) > 180 && lum(colours.text) < 100,
+    `notes are light with dark text, so overflow still reads: box ${colours.box}, text ${colours.text}`);
   await page.close();
 });

@@ -4,6 +4,12 @@
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions are semantic, with the contract defined as: MAJOR for a changed skill `name`, a removed script, a changed CLI interface or a changed output shape; MINOR for new capabilities, themes or tags; PATCH for wording, fixes and documentation.
 
+## [0.4.1] - 2026-09-26
+
+### Fixed
+
+- Mermaid notes are light boxes with dark text, from the theme's `--accent-wash`, `--rule` and `--slide-fg`. Mermaid sometimes sizes a note narrower than its text, and with the neutral theme's white text on a dark box the overflow vanished, losing a character or two at each edge; dark text past a light box still reads.
+
 ## [0.4.0] - 2026-09-26
 
 ### Added
