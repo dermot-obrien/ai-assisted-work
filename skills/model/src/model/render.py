@@ -97,9 +97,21 @@ def capabilities(exe) -> set:
     return caps
 
 
+THEMES = ("light", "dark", "auto")
+
+
 def export(path, out, fmt=None, layers=None, scale=None, width=None,
-           transparent=False, binary=None, timeout=120) -> dict:
-    """Export one .drawio. `layers` is a list of layer NAMES, not indexes."""
+           transparent=False, binary=None, timeout=120, theme="light") -> dict:
+    """Export one .drawio. `layers` is a list of layer NAMES, not indexes.
+
+    `theme` applies to SVG. draw.io's own default is "auto": colours written as
+    light-dark() pairs that follow the viewer's colour scheme, on a transparent
+    background. An image embedded in a document or a slide then turns dark when the
+    viewer's system does, while everything around it stays light. "light" and "dark"
+    pin the image to one scheme; "auto" keeps draw.io's behaviour.
+    """
+    if theme not in THEMES:
+        raise SystemExit(f"  ! unknown theme {theme!r}; use one of {', '.join(THEMES)}")
     exe = find_binary(binary)
     caps = capabilities(exe)
     fmt = (fmt or os.path.splitext(out)[1].lstrip(".") or "svg").lower()
@@ -118,6 +130,8 @@ def export(path, out, fmt=None, layers=None, scale=None, width=None,
         cmd += ["--width", str(width)]
     if transparent and fmt in ("png", "svg"):
         cmd.append("-t")
+    if fmt == "svg" and theme != "auto" and "--svg-theme" in caps:
+        cmd += ["--svg-theme", theme]
     cmd.append(os.path.abspath(path))
 
     os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
@@ -130,9 +144,57 @@ def export(path, out, fmt=None, layers=None, scale=None, width=None,
         raise SystemExit(f"  ! export produced nothing (exit {proc.returncode}){': ' + msg if msg else ''}")
     if before is not None and os.path.getmtime(out) == before:
         raise SystemExit(f"  ! export did not rewrite {out}; is draw.io already open on this file?")
+    if fmt == "svg":
+        pin_svg_theme(out, theme, transparent)
     record = write_record(path, out, layers)
     return {"path": os.path.abspath(out), "bytes": os.path.getsize(out), "format": fmt,
             "record": record}
+
+
+_SVG_ROOT = re.compile(r"<svg\b[^>]*>")
+_STYLE = re.compile(r'\sstyle="([^"]*)"')
+
+
+def pin_svg_theme(svg_path, theme="light", transparent=False) -> bool:
+    """Pin a draw.io SVG to one colour scheme, in its root element's style.
+
+    Done after export as well as through --svg-theme, because older draw.io builds lack
+    the flag and still write light-dark() colours. color-scheme on the root decides
+    which half of every light-dark() pair applies, so the image looks the same whatever
+    the viewer's setting. A light image also gets a white background unless it was
+    asked to be transparent, since a transparent one shows whatever is behind it.
+    Returns whether the file changed.
+    """
+    if theme == "auto":
+        return False
+    with open(svg_path, encoding="utf-8") as fh:
+        text = fh.read()
+    root = _SVG_ROOT.search(text)
+    if not root:
+        return False
+    tag = root.group(0)
+    m = _STYLE.search(tag)
+    decls = []
+    if m:
+        for part in m.group(1).split(";"):
+            if ":" not in part:
+                continue
+            key = part.split(":", 1)[0].strip().lower()
+            if key == "color-scheme":
+                continue
+            if key in ("background", "background-color") and theme == "light" and not transparent:
+                continue
+            decls.append(part.strip())
+    if theme == "light" and not transparent:
+        decls = ["background: #ffffff", "background-color: #ffffff"] + decls
+    decls.append(f"color-scheme: {theme}")
+    style = ' style="' + "; ".join(decls) + ';"'
+    new_tag = _STYLE.sub(lambda _: style, tag, count=1) if m else tag[:4] + style + tag[4:]
+    if new_tag == tag:
+        return False
+    with open(svg_path, "w", encoding="utf-8", newline="") as fh:
+        fh.write(text[:root.start()] + new_tag + text[root.end():])
+    return True
 
 
 # ---------------------------------------------------------------------- render records
