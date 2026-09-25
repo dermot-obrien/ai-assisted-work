@@ -91,6 +91,7 @@ holding a `SKILL.md` (YAML frontmatter plus instructions) alongside its `referen
 | `/aaw-work-status` | `skills/aaw-work-status/` |
 | `/aaw-next-task` | `skills/aaw-next-task/` |
 | `/aaw-start-initiative` | `skills/aaw-start-initiative/` |
+| `/quarter-planning` | `skills/quarter-planning/` |
 
 **General tooling**, domain-agnostic and useful on their own. They are not work management,
 but they are the kind of thing every project needs and nothing about them is specific to one:
@@ -204,6 +205,7 @@ Once installed, these commands are available in your AI assistant:
 | `/aaw-work-status` | Report work status. |
 | `/aaw-next-task` | Identify the next task to work on. |
 | `/aaw-start-initiative` | Create a strategic initiative grouping work items. |
+| `/quarter-planning` | Derive a quarter's budget from the calendar and the resourcing register, allocate it to epics, and keep the plan honest. |
 
 And from the shell (the git-clone install does not put `aaw` on your PATH; either type the bundle path, or set up a shell alias — see [DEPLOYMENT.md](DEPLOYMENT.md#shell-alias)):
 

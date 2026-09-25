@@ -34,3 +34,7 @@ bin/aaw.js.map
 
 # npm pack output
 *.tgz
+
+# Python bytecode, from the skills that ship Python
+__pycache__/
+*.pyc
