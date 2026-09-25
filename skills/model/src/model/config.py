@@ -109,6 +109,22 @@ class MappingSpec:
 class Catalogue:
     path: str
     column: str
+    # How abstract an identifier from this catalogue is: "logical" for a catalogue of
+    # technology-neutral building blocks, "physical" for one of products. Empty means the
+    # catalogue says nothing about abstraction, and its identifiers are left out of it.
+    level: str = ""
+
+
+# Abstraction levels a node can contribute, from most to least abstract.
+LEVELS = ("conceptual", "logical", "physical")
+# Node kinds, as written in a table's kind column, that say something about abstraction.
+# External nodes are outside the model's scope and contribute nothing.
+KIND_LEVELS = {
+    "local": "conceptual", "conceptual": "conceptual",
+    "logical": "logical",
+    "product": "physical", "physical": "physical",
+    "external": None, "context": None,
+}
 
 
 @dataclass
@@ -317,8 +333,11 @@ def load(path: str | None, near: str | None = None) -> Config:
             columns={**MappingSpec().columns, **mp.get("columns", {})},
         )
 
-    cfg.catalogues = [Catalogue(path=c["path"], column=c["column"])
+    cfg.catalogues = [Catalogue(path=c["path"], column=c["column"], level=c.get("level", ""))
                       for c in raw.get("catalogues", [])]
+    for c in cfg.catalogues:
+        if c.level and c.level not in LEVELS:
+            raise SystemExit(f"  ! catalogue {c.path} has level '{c.level}'; expected one of {LEVELS}")
 
     for k, v in (raw.get("rules") or {}).items():
         if v not in SEVERITIES:

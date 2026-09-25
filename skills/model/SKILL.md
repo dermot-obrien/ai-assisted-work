@@ -4,7 +4,7 @@ description: Treat a diagram and a document as two views of one model of boxes a
 license: Apache-2.0
 compatibility: Python 3.9 or newer; Python 3.11 or newer to read a binding file. Rendering needs draw.io desktop installed (the installed build, not the portable exe). Reading YAML needs PyYAML; writing YAML needs nothing.
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   x-skill-requires: ""
 ---
 
@@ -77,6 +77,20 @@ The relationship is one of `realises`, `partial` or `gap`. A gap names no target
 
 When the catalogue gains the entry, `rename <doc> 01 ABB-106` promotes it: the identifier in the document, the attribute on the shape, the cell id and every reference to it, overlay assertions and labels. Front matter is never touched, and a plain-number id is replaced only where it leads a table cell, so the same number in prose or a date is left alone. The mapping row goes, because a catalogued node is its own mapping. It refuses to rename onto an id already in use.
 
+## Abstraction, derived rather than declared
+
+How abstract a model is follows from its boxes, so `validate` reports it rather than asking anyone to maintain it: `index.md: 12 nodes, 12 edges, 2 scenarios; abstraction conceptual`, and `"abstraction"` in `--json`.
+
+| A box counts as | When |
+|---|---|
+| Conceptual | Its id is local, or its kind is `local` or `conceptual` |
+| Logical | It comes from a catalogue declared with `level = "logical"`, or its kind is `logical` |
+| Physical | It comes from a catalogue declared with `level = "physical"`, or its kind is `product` or `physical` |
+| Nothing | Its kind is `external` or `context`: outside the model's scope, shown for context |
+| Unknown | None of the above, for example a catalogue declared without a level |
+
+The model is then conceptual if every counted box is conceptual, logical if the boxes are logical with or without conceptual ones, physical if every box is physical, and mixed otherwise, including when any box is unknown. A kind comes from a table's `kind` column, when the binding maps one, and wins over the identifier. The levels are generic: they say nothing about what the model is for, which is why one model of boxes, lines and walkthroughs can serve as a single-problem pattern and as a whole-scope reference architecture alike, with any mix of boxes in either.
+
 ## Bringing a hand-drawn diagram into a model
 
 `sync --adopt` tags shapes that carry no identifier but whose label names a row, instead of adding new shapes beside them. A match is exact after normalising case, whitespace and markup, against the whole label, its first line, or its leading bold run, so `<b>Q&A agent</b><br/>retrieve and synthesise` matches a row labelled `Q&A agent`. A connector between two identified shapes takes the id of the one row joining them, in either direction, and is then rewired to the document's direction. Two candidates for one row are reported as `ambig` and neither is tagged. Geometry, captions and formatting are kept: a label whose name line already matches its row is never rewritten.
@@ -143,7 +157,7 @@ A path binding may carry a `{placeholder}`, such as `planning/{quarter}/basis.cs
 
 Relative paths anchor to the directory holding the binding file, never to the working directory, so a binding means the same thing wherever it is run from. `bindingsVersion` is refused if its major is one this skill does not understand: a silently misread binding is worse than a stopped run.
 
-It declares the draw.io attribute names, the Markdown table contract as section and column names, optional catalogue files to check identifiers against, and a severity for each rule. `examples/model.toml` is a complete worked example. With no config at all, conventional headings such as `## Components` and `## Interfaces` work out of the box.
+It declares the draw.io attribute names, the Markdown table contract as section and column names, optional catalogue files to check identifiers against, each with an optional `level` of `conceptual`, `logical` or `physical` for the derived abstraction, and a severity for each rule. `examples/model.toml` is a complete worked example. With no config at all, conventional headings such as `## Components` and `## Interfaces` work out of the box.
 
 A declared catalogue that cannot be read is an error, not an absence. Skipping it silently would turn `not_in_catalogue` into a no-op exactly when the binding is wrong, which is the moment it most needs to speak up.
 

@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "model-skill"
-version = "0.3.0"
+version = "0.4.0"
 description = "One model, several representations: Markdown tables, draw.io, JSON and YAML."
 readme = "README.md"
 license = { text = "Apache-2.0" }
