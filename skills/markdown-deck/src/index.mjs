@@ -200,8 +200,18 @@ export function build(input, opts = {}) {
   const assetsDir = path.join(outDir, 'assets');
   fs.mkdirSync(outDir, { recursive: true });
 
-  const repo = opts.bindings === false ? {} : repoDefaults(srcDir).values;
+  const bound = opts.bindings === false ? { file: null, values: {} } : repoDefaults(srcDir);
+  const repo = bound.values;
   const pick = (opt, fm, key, fallback) => opt ?? data[fm] ?? repo[key] ?? fallback;
+  // A theme named in the binding may be a path to a .css file the repository keeps for
+  // itself, which is how an organisation holds its own theme without one in this skill.
+  // Resolve it against the binding file, as every other path in that file resolves, so it
+  // does not depend on where the build was run from.
+  const themeFrom = (v) => (
+    v === repo.theme && bound.file && typeof v === 'string' && v.endsWith('.css')
+      ? path.resolve(path.dirname(bound.file), v)
+      : v
+  );
   const title = opts.title || data.title || data.sidebar_label || path.basename(srcPath, '.md');
   // The small line above every slide title. deck_eyebrow sets it for the deck, "" turns
   // it off; a slide's own eyebrow attribute overrides it for that slide.
@@ -209,7 +219,7 @@ export function build(input, opts = {}) {
   const deckId = slug(opts.deckId || data.deck_id || title);
   const htmlName = opts.htmlName || 'deck.html';
   const css = loadTheme(
-    pick(opts.theme, 'deck_theme', 'theme', 'default'),
+    themeFrom(pick(opts.theme, 'deck_theme', 'theme', 'default')),
     pick(opts.palette, 'deck_palette', 'palette', undefined),
   );
   const mdInst = makeMarked();

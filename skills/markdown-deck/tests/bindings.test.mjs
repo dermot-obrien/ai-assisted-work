@@ -113,3 +113,22 @@ test('pdf resolves option, then deck_pdf, then the binding, else off', () => {
   assert.equal(run('', { pdf: false }), false);
   assert.equal(run('', { bindings: false }), false);
 });
+
+test('a theme named in the binding as a .css path resolves against the binding file', () => {
+  // The repository keeps its own theme outside the skill; the path must not depend on
+  // where the build was run from.
+  write('.agents/themes/house.css', ':root { --deck-bg: #ABCDEF; }\n');
+  write('.agents/skill-bindings.toml', `bindingsVersion = "1.0"
+
+[suite.markdown-deck]
+theme = "themes/house.css"
+`);
+  const cwd = process.cwd();
+  process.chdir(os.tmpdir());
+  try {
+    const r = build(write('docs/doc.md', DOC()), { out: path.join(dir, 'themed'), onWarn: () => {} });
+    assert.match(r.deckHtml, /--deck-bg: #ABCDEF/, 'the repository theme was found');
+  } finally {
+    process.chdir(cwd);
+  }
+});
