@@ -14,6 +14,7 @@ import matter from 'gray-matter';
 import { createRequire } from 'node:module';
 import {
   collectSlides, collectCover, slideBody, rewriteImages, linkDefinitions, findSection, slug,
+  rewriteResources, remoteResources,
 } from './parse.mjs';
 import { makeMarked, renderSlideBody, renderDeck, renderPartial } from './render.mjs';
 import { repoDefaults, workspaceRoot } from './bindings.mjs';
@@ -150,6 +151,10 @@ export function pngSize(file) {
   }
 }
 
+/** Media above this size is warned about: it makes the deck slow to open and to publish. */
+export const MEDIA_WARN_BYTES = 50 * 1024 * 1024;
+const MEDIA_EXT = /\.(mp4|m4v|mov|webm|ogv|ogg|mp3|m4a|wav|aac|flac)$/i;
+
 /** An image slide fills the 16:9 canvas; say so when the image will not. */
 function checkImage(file, label, onWarn) {
   const size = pngSize(file);
@@ -193,7 +198,7 @@ export function build(input, opts = {}) {
   const cover = collectCover(content);
   const found = collectSlides(content, { onWarn });
   if (!cover && found.length === 0) {
-    throw new Error(`${input} carries no deck: tags. Add <!-- deck:cover -->, <!-- deck:slide --> or <!-- deck:image -->.`);
+    throw new Error(`${input} carries no deck: tags. Add <!-- deck:cover -->, <!-- deck:slide -->, <!-- deck:image --> or <!-- deck:html -->.`);
   }
 
   const outDir = path.resolve(opts.out || path.join(srcDir, 'dist'));
@@ -233,11 +238,15 @@ export function build(input, opts = {}) {
   const documents = new Set([srcPath]);
   const images = new Map();
   const stale = [];
-  const copyAsset = (href, baseDir = srcDir) => {
+  const copyAsset = (href, baseDir = srcDir, what = 'image') => {
     const from = path.resolve(baseDir, href);
-    if (!fs.existsSync(from)) {
-      onWarn(`image not found, left as-is: ${href}`);
+    if (!fs.existsSync(from) || !fs.statSync(from).isFile()) {
+      onWarn(`${what} not found, left as-is: ${href}`);
       return null;
+    }
+    if (MEDIA_EXT.test(from) && !images.has(from) && fs.statSync(from).size > (opts.mediaWarnBytes ?? MEDIA_WARN_BYTES)) {
+      onWarn(`${path.basename(from)} is ${Math.round(fs.statSync(from).size / 1048576)} MB; `
+        + 'a deck this heavy is slow to open and to publish');
     }
     if (!images.has(from)) {
       let check = checkRender(from);
@@ -305,6 +314,29 @@ export function build(input, opts = {}) {
       });
       continue;
     }
+    if (s.kind === 'html') {
+      // A whole slide from a self-contained HTML file, for a layout Markdown cannot
+      // express. The files it loads are copied like images, and the renderer isolates it
+      // in a frame so its styles and scripts cannot reach the deck.
+      const file = path.resolve(srcDir, decodeURIComponent(s.src));
+      if (!fs.existsSync(file)) {
+        onWarn(`html slide "${s.label}" skipped: ${s.src} not found`);
+        continue;
+      }
+      documents.add(file);
+      const raw = fs.readFileSync(file, 'utf8');
+      const remote = remoteResources(raw);
+      if (remote.length) {
+        onWarn(`html slide "${s.label}" loads ${remote.length} resource(s) from the network, so it is `
+          + `incomplete offline: ${remote.slice(0, 3).join(', ')}${remote.length > 3 ? ', ...' : ''}`);
+      }
+      const html = rewriteResources(raw, (h) => copyAsset(h, path.dirname(file), 'file'), { css: true });
+      slides.push({
+        kind: 'html', file: uniqueId(s.label), label: s.label, title: s.title, html,
+        header: s.header, ...(s.eyebrow !== undefined ? { eyebrow: s.eyebrow } : {}), notes: [],
+      });
+      continue;
+    }
     if (s.kind === 'image') {
       const src = copyAsset(decodeURIComponent(s.src));
       if (!src) {
@@ -327,7 +359,9 @@ export function build(input, opts = {}) {
       title: s.title,
       ...(s.eyebrow !== undefined ? { eyebrow: s.eyebrow } : {}),
       notes,
-      bodyHtml: renderSlideBody(`${rewriteImages(stripped, copyAsset)}\n\n${defs}`, mdInst),
+      bodyHtml: renderSlideBody(
+        `${rewriteImages(rewriteResources(stripped, (h) => copyAsset(h, srcDir, 'file')), copyAsset)}\n\n${defs}`,
+        mdInst),
     });
   }
 

@@ -416,3 +416,49 @@ test('comment chrome never reaches the PDF', { skip: skip() }, async () => {
   assert.deepEqual(shown, ['none', 'none', 'none']);
   await page.close();
 });
+
+test('an html slide renders from disk, keeps navigation, and reaches the PDF', { skip: skip() }, async () => {
+  const hdir = path.join(dir, 'html');
+  fs.mkdirSync(path.join(hdir, 'art'), { recursive: true });
+  fs.writeFileSync(path.join(hdir, 'art', 'dot.svg'),
+    '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="20"/></svg>');
+  fs.writeFileSync(path.join(hdir, 'designed.html'), `<!doctype html><html><head>
+<style>html,body{margin:0;width:1920px;height:1080px} h2{font:64px sans-serif}</style></head>
+<body><h2 id="made">Designed by hand</h2><img id="dot" src="art/dot.svg"></body></html>`);
+  const src = path.join(hdir, 'doc.md');
+  fs.writeFileSync(src, `---
+title: "Html"
+---
+
+# Html
+
+<!-- deck:cover -->
+
+<!-- deck:html src="./designed.html" title="Designed" -->
+
+<!-- deck:slide -->
+## After
+
+The end.
+`);
+  build(src, { out: path.join(hdir, 'dist'), theme: 'default', onWarn: () => {} });
+  const deck = path.join(hdir, 'dist', 'deck.html');
+  const page = await open(pathToFileURL(deck).href);
+  await page.evaluate(() => window.__deck.show(1));
+  const frame = page.frameLocator('.slide.active iframe.slide-frame');
+  assert.equal(await frame.locator('#made').textContent(), 'Designed by hand');
+  const width = await frame.locator('#dot').evaluate((img) =>
+    img.complete ? img.naturalWidth : new Promise((r) => { img.onload = () => r(img.naturalWidth); }));
+  assert.equal(width, 40, 'the copied image loads from disk, with no server');
+
+  await frame.locator('body').click();
+  await frame.locator('body').press('ArrowRight');
+  assert.equal(await page.evaluate(() => document.getElementById('counter').textContent), '3 / 3',
+    'a key pressed inside the frame still moves the deck');
+  await page.close();
+
+  const r = await exportPdf(deck, path.join(hdir, 'dist', 'deck.pdf'), { onLog: () => {} });
+  const raw = fs.readFileSync(path.join(hdir, 'dist', 'deck.pdf'), 'latin1');
+  assert.ok(r.bytes > 0);
+  assert.equal((raw.match(/\/Type\s*\/Page\b/g) || []).length, 3);
+});

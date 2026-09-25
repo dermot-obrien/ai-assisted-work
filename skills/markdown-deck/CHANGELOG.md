@@ -4,6 +4,14 @@
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions are semantic, with the contract defined as: MAJOR for a changed skill `name`, a removed script, a changed CLI interface or a changed output shape; MINOR for new capabilities, themes or tags; PATCH for wording, fixes and documentation.
 
+## [0.3.0] - 2026-09-26
+
+### Added
+
+- `deck:html`, a whole slide from a self-contained HTML file designed on the 1920x1080 canvas, for a layout Markdown cannot express. It is isolated in an iframe, so its styles and scripts cannot reach the deck, and forwards keys so navigation still works inside it. The files it loads, `src` and `poster` on any tag, `<link>` stylesheets and CSS `url(...)`, are copied into `assets/` and rewritten, so the deck opens from disk. A resource loaded from the network is warned about. `header="true"` and `eyebrow="..."` work as on `deck:image`. The PDF export waits for each frame, its images and fonts to load. `--partials` writes the rewritten file itself.
+- Media in Markdown slides. `src` and `poster` on any HTML tag in a slide, such as `<video>`, `<audio>` or `<source>`, are copied into `assets/` like images, and a missing file is warned about as a file. Media over 50 MB is warned about (`mediaWarnBytes` changes the threshold).
+- `rewriteResources` and `remoteResources` in `src/parse.mjs`.
+
 ## [0.2.0] - 2026-09-25
 
 ### Added
