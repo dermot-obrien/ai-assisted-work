@@ -1,0 +1,293 @@
+# Work Item Progress Tracking
+#
+# CONCURRENCY MODEL:
+# This file uses optimistic locking with version control.
+# Multiple workers (2-5 but no more than 10) can work on different activities in parallel.
+#
+# IMPORTANT - Read-Modify-Write Protocol:
+# 1. READ: Read this file, note the `version` number
+# 2. WORK: Do your analysis/work
+# 3. RE-READ: Before writing, read file again
+# 4. CHECK: If version changed, abort and restart from step 1
+# 5. WRITE: Increment version and write atomically
+#
+# If version conflict detected, another worker modified the file.
+# Re-read, merge your changes with theirs, and retry.
+#
+# FILE STRUCTURE:
+# - progress.yaml      : State only (this file) - versioned, conflicts detected
+# - changelog.log      : Append-only log - safe for concurrent appends
+# - locks/             : Lock files per activity - atomic create/delete
+#
+# SUPPORTED WORK TYPES:
+# - development: Software development (code, tests, deployments)
+# - architecture: System/Platform strategy and solution design (diagrams, documents, decisions, specifications)
+# - consultancy: Advisory work (stakeholder engagement, research, analysis, options, recommendations, deliverables)
+# - mixed: Combination of the above
+#
+# ID CONVENTIONS (hierarchical, globally unique):
+#   Deliverable ID: {work_item_id}-D{N} e.g., WI-001-D1, WI-001-D2
+#   Activity ID: {work_item_id}-A{N}   e.g., WI-001-A1, WI-001-A2
+#   Task ID: {activity_id}-T{N}        e.g., WI-001-A1-T1, WI-001-A1-T2
+#
+# PRODUCT-BASED PLANNING:
+# Deliverables are named FIRST and activities are derived from them, never the
+# other way round. Every activity declares the deliverable it produces. An
+# activity that produces nothing is invalid: it is effort with nothing left behind.
+
+# === SCHEMA VERSION ===
+# Schema version tracks format changes for backward compatibility.
+# Agents reading older work items should apply defaults for missing fields.
+# See progress-work.md "Older Work Items (Backward Compatibility)" section.
+schema_version: 3             # v1 = no actor; v2 = actor model; v3 = work_item_level + product-based deliverables
+
+# === VERSIONING (for optimistic locking) ===
+version: 1                    # Increment on EVERY write - used for conflict detection
+last_modified: null           # ISO-8601 timestamp of last write
+last_modified_by: null        # Worker ID who last modified
+
+# === WORK ITEM IDENTITY ===
+work_item_id: WI-NNN
+title: "{Work Item Title}"
+type: development             # development | architecture | consultancy | mixed
+status: scoping               # scoping | discovery | planning | in_progress | blocked | review | abandoned | done
+
+# === GRANULARITY ===
+# Two levels of work item, one entity:
+#   workstream : a durable strand of work inside an Initiative. A subject, not a
+#                schedule. It accretes scope and may be long-running or never-ending.
+#                Decomposed into epics. Sets no parent_work_item_id; its parent is
+#                the Initiative.
+#   epic       : a bounded slice sized to land inside one planning period, three
+#                months at most. Decomposed into activities at story granularity.
+#                Anything that cannot land in one period is a workstream, not an epic.
+# Task-level work is not promoted above the activity that owns it.
+work_item_level: epic         # workstream | epic
+parent_work_item_id: null     # For an epic, the workstream it belongs to. null = hangs
+                              # directly off the Initiative, the normal shape where a
+                              # lane's epics are sequential phases rather than parallel
+                              # subjects. A workstream never sets this.
+initiative_id: null           # Optional parent Initiative ID (e.g., IN-001). null = standalone.
+planning_period: null         # The period this epic lands in, in whatever calendar the
+                              # organisation uses (e.g. "Q1-FY27", "2026-H1"). Epic-only.
+advances_kr_ids: []           # Optional OKR layer: the KR-NNN Key Results this work item
+                              # advances. Empty unless the workspace runs objectives; see
+                              # the objective and cadence templates in aaw-start-initiative.
+
+# === TIMESTAMPS ===
+created: "{ISO-8601-timestamp}"
+updated: "{ISO-8601-timestamp}"
+
+# === DELIVERABLES (the products this work item will produce) ===
+# Epic-only. Named BEFORE the activities, because the activities are derived from
+# them. This is the product breakdown: what will exist at the end that does not
+# exist now. The definition of done is composed from these rather than authored
+# separately, so the two cannot drift.
+#
+# A deliverable is anything tangible left behind and verifiable by someone other
+# than its author: a document, a diagram, a running service, a dataset, a decision
+# of record. An outcome counts when it is measurable, because then it can be
+# checked. "Ran the workshop" does not count. "Workshop decisions recorded and
+# agreed by the named approver" does.
+#
+# depends_on across deliverables is the product flow: the order the products must
+# be built in, independent of who builds them.
+#
+# OPTIONAL TYPE REGISTER:
+# If `.aaw-config.yaml` sets `deliverables_register`, each product may name a `type`
+# from that register, and inherits the type's purpose, quality criteria, quality
+# method and approver instead of restating them here. Set only what differs. With no
+# register configured, which is the state after a fresh install, leave `type` null and
+# write quality_criteria and approver inline.
+deliverables:
+  - id: WI-NNN-D1
+    type: null                 # Optional. A type id from the configured deliverables
+                               # register, e.g. DLV-012. Null when no register is
+                               # configured, or when this product has no standard type.
+    name: "{What will exist at the end}"
+    why_needed: "{Why this work item cannot be done without it}"
+    depends_on: []             # Deliverable IDs on THIS work item that must exist first
+    quality_criteria: |        # How a reviewer decides this is good enough. Inherited
+      {Testable statements, not aspirations. "Every ABB traces to a capability"
+       rather than "high quality".}
+                               # from `type` when a register is configured; written here
+                               # otherwise, or here to override the type's criteria.
+    approver: null             # Who accepts it. Inherited from `type` when a register is
+                               # configured. null = the work item owner.
+    state: planned             # planned | drafted | in_review | accepted
+                               # Tracks the PRODUCT. Distinct from the status of the
+                               # activities producing it: all activities can be
+                               # complete while the product sits in review.
+    approval: draft            # draft | validated | approved
+                               # Tracks this PLANNING RECORD: whether the deliverable
+                               # as defined has been agreed. Keeping the two apart is
+                               # what distinguishes a draft plan for a finished product
+                               # from an approved plan for one not started.
+    path: null                 # Set when drafted, e.g. "./deliverables/D1-{name}.md"
+    files_changed: []          # Workspace files this product created or modified
+                               # - path: "path/to/file.md"
+                               #   action: created   # created | modified | deleted
+
+  - id: WI-NNN-D2
+    type: null
+    name: "{A second product, built on the first}"
+    why_needed: "{...}"
+    depends_on: ["WI-NNN-D1"]  # Product flow: D2 cannot start before D1 exists
+    quality_criteria: |
+      {...}
+    approver: null
+    state: planned
+    approval: draft
+    path: null
+    files_changed: []
+
+# === ACTIVITIES ===
+# Each activity tracks its state here.
+# LOCKS are stored in separate lock files (see locks/ directory).
+# This reduces write contention on this file.
+#
+# ACTOR MODEL:
+# Tasks and activities can be assigned to specific actors:
+#   - agent: Can be done by AI agents (documentation, analysis, code)
+#   - human: Must be done by a human (portal configuration, meetings, approvals)
+#   - any: Either can do it (default if not specified)
+#
+# ACTIVITY ACTOR INFERENCE:
+# If all tasks in an activity have actor: human, the activity is human-only.
+# If any task has actor: agent or any, agents can claim the activity.
+# When an agent claims a mixed activity, it works agent/any tasks and
+# marks human tasks as "awaiting_human" for the manual tasks report.
+#
+# Examples by work type:
+#   Development: "Implement API endpoint", "Add unit tests", "Deploy to staging"
+#   Architecture: "Document current state", "Evaluate options", "Create diagrams"
+#   Consultancy: "Stakeholder interviews", "Gap analysis", "Write recommendations"
+activities:
+  - id: WI-NNN-A1              # Format: {work_item_id}-A{N}
+    title: "{Activity name - names the product it advances}"
+    produces: WI-NNN-D1        # REQUIRED. The deliverable on this work item that this
+                               # activity contributes to. An activity that produces
+                               # nothing is invalid - split it, fold it into another,
+                               # or name the product it was really for.
+    status: pending            # pending | in_progress | awaiting_human | completed | blocked | skipped
+    actor: any                 # agent | human | any (inferred from tasks if not set)
+    depends_on: []             # Activity IDs that must complete first. Derived from the
+                               # product flow: if D2 depends on D1, activities producing
+                               # D2 depend on those producing D1.
+    completed_by: null         # Worker that completed all tasks
+    completed_at: null         # When activity was marked complete
+    
+    # Tasks within this activity (sequential, no external dependencies)
+    # Tasks within this activity (sequential, no external dependencies)
+    # Task status includes:
+    #   pending | in_progress | completed | blocked | skipped | awaiting_human
+    # awaiting_human: Agent marked this for Manual Tasks Report (human action required)
+    tasks:
+      - id: WI-NNN-A1-T1       # Format: {activity_id}-T{N}
+        title: "{First task in sequence}"
+        status: pending
+        actor: agent           # agent | human | any - who can perform this task
+        completed_by: null
+        completed_at: null
+        notes: null
+        deliverables: []
+      
+      - id: WI-NNN-A1-T2       # Format: {activity_id}-T{N}
+        title: "{Second task - depends on task 1}"
+        status: pending
+        actor: any             # Default: any worker can do this
+        completed_by: null
+        completed_at: null
+        notes: null
+        deliverables: []
+
+  - id: WI-NNN-A2
+    title: "{Another activity - can run in parallel with A1}"
+    produces: WI-NNN-D1        # Two activities may feed the same product
+    status: pending
+    actor: human               # Explicit: only humans can do this activity
+    depends_on: []
+    completed_by: null
+    completed_at: null
+    tasks:
+      - id: WI-NNN-A2-T1
+        title: "{Human task - e.g., configure cloud console settings}"
+        status: pending
+        actor: human           # Requires human action
+        completed_by: null
+        completed_at: null
+        notes: null
+        deliverables: []
+
+  - id: WI-NNN-A3
+    title: "{Activity that depends on A1 and A2}"
+    produces: WI-NNN-D2        # D2 depends on D1, so A3 waits on A1 and A2
+    status: pending
+    actor: any
+    depends_on: ["WI-NNN-A1", "WI-NNN-A2"]
+    completed_by: null
+    completed_at: null
+    tasks:
+      - id: WI-NNN-A3-T1
+        title: "{Task}"
+        status: pending
+        actor: agent
+        completed_by: null
+        completed_at: null
+        notes: null
+        deliverables: []
+
+# === BLOCKERS ===
+blockers: []
+  # - id: WI-NNN-B1
+  #   activity_id: WI-NNN-A1
+  #   task_id: WI-NNN-A1-T2
+  #   description: "Need clarification on X"
+  #   raised_at: "{ISO-8601-timestamp}"
+  #   raised_by: "{worker-id}"
+  #   resolved_at: null
+  #   resolution: null
+
+# === ARTIFACTS ===
+# Required documents:
+#   scope.md       - Created in Scoping Phase (stakeholder-facing specification)
+#   plan.md        - Created in Planning Phase (product breakdown, product flow, activities)
+#   deliverables/  - The products named in the `deliverables:` block above
+# Recommended documents:
+#   scope-ai.md    - AI agent addendum (for complex work items)
+# Optional documents:
+#   changes.md     - Can be generated from this file when preparing PR
+#   changelog.log  - Append-only audit log (for multi-agent scenarios)
+#   research.md    - Research findings
+#   decisions.md   - Options and decisions (legacy - prefer deliverables/)
+#   notes.md       - Session logs, findings
+artifacts:
+  # Required
+  scope: "./scope.md"
+  plan: "./plan.md"
+  # Recommended
+  scope_ai: null               # Set to "./scope-ai.md" if created (recommended for complex items)
+  # Optional
+  changes: null                # Set to "./changes.md" if created (can generate from progress.yaml)
+  research: null               # Set to "./research.md" if created
+  decisions: null              # Set to "./decisions.md" if created (legacy)
+  notes: null                  # Set to "./notes.md" if created
+  # External integration
+  jira: null                   # JIRA ticket URL (created manually before work starts)
+  branch: null                 # Git branch: wi/WI-{NNN}-{kebab-name}
+  pr: null                     # Pull request URL (created when work complete)
+  # Work type specific
+  diagrams: []                 # Diagram files (architecture)
+  # NOTE: deliverables are NOT listed here. They are planned up front in the
+  # top-level `deliverables:` block above, because the activities are derived from
+  # them. This section holds only the supporting documents around the work.
+
+# === LOCK DURATIONS (reference) ===
+# Locks are stored in locks/ directory, not in this file.
+# - Agents: 1 hour (activity), 30 min (task)
+# - Humans: 8 hours (activity), 4 hours (task)
+
+# === CHANGELOG (OPTIONAL) ===
+# For multi-agent scenarios, an optional changelog.log file can be created.
+# This file is append-only, which is safe for concurrent writes.
+# For single-agent work, the changelog is not required - progress.yaml is sufficient.

@@ -113,17 +113,17 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node, visitor, path10) {
-      const ctrl = callVisitor(key, node, visitor, path10);
+    function visit_(key, node, visitor, path11) {
+      const ctrl = callVisitor(key, node, visitor, path11);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path10, ctrl);
-        return visit_(key, ctrl, visitor, path10);
+        replaceNode(key, path11, ctrl);
+        return visit_(key, ctrl, visitor, path11);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path10 = Object.freeze(path10.concat(node));
+          path11 = Object.freeze(path11.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = visit_(i, node.items[i], visitor, path10);
+            const ci = visit_(i, node.items[i], visitor, path11);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -134,13 +134,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path10 = Object.freeze(path10.concat(node));
-          const ck = visit_("key", node.key, visitor, path10);
+          path11 = Object.freeze(path11.concat(node));
+          const ck = visit_("key", node.key, visitor, path11);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = visit_("value", node.value, visitor, path10);
+          const cv = visit_("value", node.value, visitor, path11);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -161,17 +161,17 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node, visitor, path10) {
-      const ctrl = await callVisitor(key, node, visitor, path10);
+    async function visitAsync_(key, node, visitor, path11) {
+      const ctrl = await callVisitor(key, node, visitor, path11);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path10, ctrl);
-        return visitAsync_(key, ctrl, visitor, path10);
+        replaceNode(key, path11, ctrl);
+        return visitAsync_(key, ctrl, visitor, path11);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path10 = Object.freeze(path10.concat(node));
+          path11 = Object.freeze(path11.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = await visitAsync_(i, node.items[i], visitor, path10);
+            const ci = await visitAsync_(i, node.items[i], visitor, path11);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -182,13 +182,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path10 = Object.freeze(path10.concat(node));
-          const ck = await visitAsync_("key", node.key, visitor, path10);
+          path11 = Object.freeze(path11.concat(node));
+          const ck = await visitAsync_("key", node.key, visitor, path11);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = await visitAsync_("value", node.value, visitor, path10);
+          const cv = await visitAsync_("value", node.value, visitor, path11);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -215,23 +215,23 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node, visitor, path10) {
+    function callVisitor(key, node, visitor, path11) {
       if (typeof visitor === "function")
-        return visitor(key, node, path10);
+        return visitor(key, node, path11);
       if (identity.isMap(node))
-        return visitor.Map?.(key, node, path10);
+        return visitor.Map?.(key, node, path11);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key, node, path10);
+        return visitor.Seq?.(key, node, path11);
       if (identity.isPair(node))
-        return visitor.Pair?.(key, node, path10);
+        return visitor.Pair?.(key, node, path11);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key, node, path10);
+        return visitor.Scalar?.(key, node, path11);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key, node, path10);
+        return visitor.Alias?.(key, node, path11);
       return void 0;
     }
-    function replaceNode(key, path10, node) {
-      const parent = path10[path10.length - 1];
+    function replaceNode(key, path11, node) {
+      const parent = path11[path11.length - 1];
       if (identity.isCollection(parent)) {
         parent.items[key] = node;
       } else if (identity.isPair(parent)) {
@@ -841,10 +841,10 @@ var require_Collection = __commonJS({
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema, path10, value) {
+    function collectionFromPath(schema, path11, value) {
       let v = value;
-      for (let i = path10.length - 1; i >= 0; --i) {
-        const k = path10[i];
+      for (let i = path11.length - 1; i >= 0; --i) {
+        const k = path11[i];
         if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
           const a = [];
           a[k] = v;
@@ -863,7 +863,7 @@ var require_Collection = __commonJS({
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
-    var isEmptyPath = (path10) => path10 == null || typeof path10 === "object" && !!path10[Symbol.iterator]().next().done;
+    var isEmptyPath = (path11) => path11 == null || typeof path11 === "object" && !!path11[Symbol.iterator]().next().done;
     var Collection = class extends Node.NodeBase {
       constructor(type, schema) {
         super(type);
@@ -893,11 +893,11 @@ var require_Collection = __commonJS({
        * be a Pair instance or a `{ key, value }` object, which may not have a key
        * that already exists in the map.
        */
-      addIn(path10, value) {
-        if (isEmptyPath(path10))
+      addIn(path11, value) {
+        if (isEmptyPath(path11))
           this.add(value);
         else {
-          const [key, ...rest] = path10;
+          const [key, ...rest] = path11;
           const node = this.get(key, true);
           if (identity.isCollection(node))
             node.addIn(rest, value);
@@ -911,8 +911,8 @@ var require_Collection = __commonJS({
        * Removes a value from the collection.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path10) {
-        const [key, ...rest] = path10;
+      deleteIn(path11) {
+        const [key, ...rest] = path11;
         if (rest.length === 0)
           return this.delete(key);
         const node = this.get(key, true);
@@ -926,8 +926,8 @@ var require_Collection = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path10, keepScalar) {
-        const [key, ...rest] = path10;
+      getIn(path11, keepScalar) {
+        const [key, ...rest] = path11;
         const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
@@ -945,8 +945,8 @@ var require_Collection = __commonJS({
       /**
        * Checks if the collection includes a value with the key `key`.
        */
-      hasIn(path10) {
-        const [key, ...rest] = path10;
+      hasIn(path11) {
+        const [key, ...rest] = path11;
         if (rest.length === 0)
           return this.has(key);
         const node = this.get(key, true);
@@ -956,8 +956,8 @@ var require_Collection = __commonJS({
        * Sets a value in this collection. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path10, value) {
-        const [key, ...rest] = path10;
+      setIn(path11, value) {
+        const [key, ...rest] = path11;
         if (rest.length === 0) {
           this.set(key, value);
         } else {
@@ -3409,7 +3409,7 @@ var require_Document = __commonJS({
     var applyReviver = require_applyReviver();
     var createNode = require_createNode();
     var directives = require_directives();
-    var Document = class _Document {
+    var Document2 = class _Document {
       constructor(value, replacer, options) {
         this.commentBefore = null;
         this.comment = null;
@@ -3472,9 +3472,9 @@ var require_Document = __commonJS({
           this.contents.add(value);
       }
       /** Adds a value to the document. */
-      addIn(path10, value) {
+      addIn(path11, value) {
         if (assertCollection(this.contents))
-          this.contents.addIn(path10, value);
+          this.contents.addIn(path11, value);
       }
       /**
        * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
@@ -3549,14 +3549,14 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path10) {
-        if (Collection.isEmptyPath(path10)) {
+      deleteIn(path11) {
+        if (Collection.isEmptyPath(path11)) {
           if (this.contents == null)
             return false;
           this.contents = null;
           return true;
         }
-        return assertCollection(this.contents) ? this.contents.deleteIn(path10) : false;
+        return assertCollection(this.contents) ? this.contents.deleteIn(path11) : false;
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -3571,10 +3571,10 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path10, keepScalar) {
-        if (Collection.isEmptyPath(path10))
+      getIn(path11, keepScalar) {
+        if (Collection.isEmptyPath(path11))
           return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
-        return identity.isCollection(this.contents) ? this.contents.getIn(path10, keepScalar) : void 0;
+        return identity.isCollection(this.contents) ? this.contents.getIn(path11, keepScalar) : void 0;
       }
       /**
        * Checks if the document includes a value with the key `key`.
@@ -3585,10 +3585,10 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value at `path`.
        */
-      hasIn(path10) {
-        if (Collection.isEmptyPath(path10))
+      hasIn(path11) {
+        if (Collection.isEmptyPath(path11))
           return this.contents !== void 0;
-        return identity.isCollection(this.contents) ? this.contents.hasIn(path10) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path11) : false;
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
@@ -3605,13 +3605,13 @@ var require_Document = __commonJS({
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path10, value) {
-        if (Collection.isEmptyPath(path10)) {
+      setIn(path11, value) {
+        if (Collection.isEmptyPath(path11)) {
           this.contents = value;
         } else if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, Array.from(path10), value);
+          this.contents = Collection.collectionFromPath(this.schema, Array.from(path11), value);
         } else if (assertCollection(this.contents)) {
-          this.contents.setIn(path10, value);
+          this.contents.setIn(path11, value);
         }
       }
       /**
@@ -3699,7 +3699,7 @@ var require_Document = __commonJS({
         return true;
       throw new Error("Expected a YAML collection as document contents");
     }
-    exports.Document = Document;
+    exports.Document = Document2;
   }
 });
 
@@ -5059,13 +5059,13 @@ var require_compose_node = __commonJS({
 var require_compose_doc = __commonJS({
   "../../node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
-    var Document = require_Document();
+    var Document2 = require_Document();
     var composeNode = require_compose_node();
     var resolveEnd = require_resolve_end();
     var resolveProps = require_resolve_props();
     function composeDoc(options, directives, { offset, start, value, end }, onError) {
       const opts = Object.assign({ _directives: directives }, options);
-      const doc = new Document.Document(void 0, opts);
+      const doc = new Document2.Document(void 0, opts);
       const ctx = {
         atKey: false,
         atRoot: true,
@@ -5104,7 +5104,7 @@ var require_composer = __commonJS({
     "use strict";
     var node_process = __require("process");
     var directives = require_directives();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var errors = require_errors();
     var identity = require_identity();
     var composeDoc = require_compose_doc();
@@ -5291,7 +5291,7 @@ ${end.comment}` : end.comment;
           this.doc = null;
         } else if (forceDoc) {
           const opts = Object.assign({ _directives: this.directives }, this.options);
-          const doc = new Document.Document(void 0, opts);
+          const doc = new Document2.Document(void 0, opts);
           if (this.atDirectives)
             this.onError(endOffset, "MISSING_CHAR", "Missing directives-end indicator line");
           doc.range = [0, endOffset, endOffset];
@@ -5565,9 +5565,9 @@ var require_cst_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path10) => {
+    visit.itemAtPath = (cst, path11) => {
       let item = cst;
-      for (const [field, index] of path10) {
+      for (const [field, index] of path11) {
         const tok = item?.[field];
         if (tok && "items" in tok) {
           item = tok.items[index];
@@ -5576,23 +5576,23 @@ var require_cst_visit = __commonJS({
       }
       return item;
     };
-    visit.parentCollection = (cst, path10) => {
-      const parent = visit.itemAtPath(cst, path10.slice(0, -1));
-      const field = path10[path10.length - 1][0];
+    visit.parentCollection = (cst, path11) => {
+      const parent = visit.itemAtPath(cst, path11.slice(0, -1));
+      const field = path11[path11.length - 1][0];
       const coll = parent?.[field];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path10, item, visitor) {
-      let ctrl = visitor(item, path10);
+    function _visit(path11, item, visitor) {
+      let ctrl = visitor(item, path11);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field of ["key", "value"]) {
         const token = item[field];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path10.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path11.concat([[field, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -5603,10 +5603,10 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field === "key")
-            ctrl = ctrl(item, path10);
+            ctrl = ctrl(item, path11);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item, path10) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item, path11) : ctrl;
     }
     exports.visit = visit;
   }
@@ -7189,7 +7189,7 @@ var require_public_api = __commonJS({
   "../../node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
     var composer = require_composer();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var errors = require_errors();
     var log = require_log();
     var identity = require_identity();
@@ -7214,7 +7214,7 @@ var require_public_api = __commonJS({
         return docs;
       return Object.assign([], { empty: true }, composer$1.streamInfo());
     }
-    function parseDocument(source, options = {}) {
+    function parseDocument2(source, options = {}) {
       const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
       const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
       const composer$1 = new composer.Composer(options);
@@ -7240,7 +7240,7 @@ var require_public_api = __commonJS({
       } else if (options === void 0 && reviver && typeof reviver === "object") {
         options = reviver;
       }
-      const doc = parseDocument(src, options);
+      const doc = parseDocument2(src, options);
       if (!doc)
         return null;
       doc.warnings.forEach((warning) => log.warn(doc.options.logLevel, warning));
@@ -7272,11 +7272,11 @@ var require_public_api = __commonJS({
       }
       if (identity.isDocument(value) && !_replacer)
         return value.toString(options);
-      return new Document.Document(value, _replacer, options).toString(options);
+      return new Document2.Document(value, _replacer, options).toString(options);
     }
     exports.parse = parse;
     exports.parseAllDocuments = parseAllDocuments;
-    exports.parseDocument = parseDocument;
+    exports.parseDocument = parseDocument2;
     exports.stringify = stringify;
   }
 });
@@ -7286,7 +7286,7 @@ var require_dist = __commonJS({
   "../../node_modules/yaml/dist/index.js"(exports) {
     "use strict";
     var composer = require_composer();
-    var Document = require_Document();
+    var Document2 = require_Document();
     var Schema = require_Schema();
     var errors = require_errors();
     var Alias = require_Alias();
@@ -7302,7 +7302,7 @@ var require_dist = __commonJS({
     var publicApi = require_public_api();
     var visit = require_visit();
     exports.Composer = composer.Composer;
-    exports.Document = Document.Document;
+    exports.Document = Document2.Document;
     exports.Schema = Schema.Schema;
     exports.YAMLError = errors.YAMLError;
     exports.YAMLParseError = errors.YAMLParseError;
@@ -7334,7 +7334,9 @@ var require_dist = __commonJS({
 });
 
 // src/cli.ts
-import process12 from "node:process";
+import process13 from "node:process";
+import path10 from "node:path";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
 
 // src/config.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -7404,7 +7406,7 @@ async function findWorkspaceRoot(start) {
 }
 
 // src/commands/claim.ts
-import process2 from "node:process";
+import process3 from "node:process";
 
 // ../protocol/dist/protocol.js
 var ClaimConflictError = class extends Error {
@@ -7443,7 +7445,7 @@ var NotHolderError = class extends Error {
 // src/backends/local-fs/index.ts
 import { mkdir, readFile as readFile2, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import path2 from "node:path";
-import process from "node:process";
+import process2 from "node:process";
 
 // src/backends/local-fs/yaml-codec.ts
 var import_yaml2 = __toESM(require_dist(), 1);
@@ -7753,7 +7755,7 @@ var LocalFsBackend = class {
         const code = err.code;
         if (code === "ENOENT")
           continue;
-        process.stderr.write(
+        process2.stderr.write(
           `aaw: skipping ${yamlPath}: ${err.message}
 `
         );
@@ -7776,7 +7778,7 @@ var LocalFsBackend = class {
         const code = err.code;
         if (code === "ENOENT")
           continue;
-        process.stderr.write(
+        process2.stderr.write(
           `aaw: skipping ${yamlPath}: ${err.message}
 `
         );
@@ -7850,7 +7852,7 @@ async function readJson(file) {
 async function runClaim(input) {
   const activityId = input.args[0];
   if (!activityId) {
-    process2.stderr.write("aaw claim: missing ACTIVITY_ID (e.g. WI-001-A1)\n");
+    process3.stderr.write("aaw claim: missing ACTIVITY_ID (e.g. WI-001-A1)\n");
     return 2;
   }
   const opts = parseFlags(input.args.slice(1));
@@ -7859,20 +7861,20 @@ async function runClaim(input) {
   const backend = new LocalFsBackend(input.config);
   try {
     const claim = await backend.claimActivity(activityId, agentId, ttlSeconds);
-    process2.stdout.write(
+    process3.stdout.write(
       `Claimed ${activityId} as ${agentId} until ${claim.expires}
 `
     );
     return 0;
   } catch (err) {
     if (err instanceof ClaimConflictError) {
-      process2.stderr.write(
+      process3.stderr.write(
         `aaw claim: ${activityId} is held by ${err.currentHolder ?? "another worker"}
 `
       );
       return 1;
     }
-    process2.stderr.write(`aaw claim: ${err.message}
+    process3.stderr.write(`aaw claim: ${err.message}
 `);
     return 1;
   }
@@ -7896,290 +7898,17 @@ function randomId() {
 }
 
 // src/commands/init.ts
-var import_yaml3 = __toESM(require_dist(), 1);
-import { copyFile, mkdir as mkdir2, readFile as readFile3, readdir as readdir2, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
+var import_yaml5 = __toESM(require_dist(), 1);
+import { mkdir as mkdir3, readFile as readFile5, stat as stat3, writeFile as writeFile3 } from "node:fs/promises";
 import { homedir as homedir2 } from "node:os";
-import path3 from "node:path";
-import process3 from "node:process";
-import { createInterface } from "node:readline/promises";
-var SUBMODULE_DEFAULT = ".ai-assisted-work";
-var MODULE_ID = "aaw";
-var TEXT_SHIM_EXT2 = /* @__PURE__ */ new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
-async function runInit(input) {
-  const rl = createInterface({ input: process3.stdin, output: process3.stdout });
-  try {
-    const defaultWorkspaceRoot = await walkUpForGitRoot(input.cwd);
-    const workspaceAnswer = (await rl.question(`Install into workspace [${defaultWorkspaceRoot}]: `)).trim();
-    const workspaceRoot = workspaceAnswer === "" ? defaultWorkspaceRoot : path3.resolve(input.cwd, workspaceAnswer);
-    const env = await detect(workspaceRoot, input.frameworkRoot);
-    const existingConfig = await readExistingConfig(env.workspaceRoot);
-    if (existingConfig) {
-      process3.stdout.write("aaw install \u2014 existing workspace detected.\n\n");
-    } else {
-      process3.stdout.write("aaw install \u2014 let's set this up.\n\n");
-    }
-    process3.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
-`);
-    process3.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
-`);
-    process3.stdout.write(
-      `\u25B8 Detected tools: ${[
-        env.hasGitHub && "GitHub Copilot",
-        env.hasCursor && "Cursor",
-        env.hasClaude && "Claude Code"
-      ].filter(Boolean).join(", ") || "none"}
-`
-    );
-    if (existingConfig) {
-      process3.stdout.write(
-        `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
-  Press Enter at each prompt to keep the current value.
-`
-      );
-    }
-    process3.stdout.write("\n");
-    const tenantDefault = existingConfig?.tenant ?? "local";
-    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
-    const modeDefault = existingConfig?.mode ?? "local-fs";
-    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() || modeDefault;
-    if (mode !== "local-fs" && mode !== "cloud") {
-      process3.stderr.write(`Unsupported mode: ${mode}
-`);
-      return 2;
-    }
-    const repoName = path3.basename(env.workspaceRoot);
-    const defaultPath = existingConfig?.workItemsPath ?? path3.join(homedir2(), "aaw", tenant, repoName, "work-items");
-    const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
-    const initiativesPath = existingConfig?.initiativesPath ?? path3.join(path3.dirname(workItemsPath), "initiatives");
-    const detectedTools = {
-      copilot: env.hasGitHub,
-      cursor: env.hasCursor,
-      claude: env.hasClaude
-    };
-    const detectedNames = describeTools(detectedTools);
-    process3.stdout.write(`
-Tool shims \u2014 detected: ${detectedNames || "none"}
-`);
-    const wireAnswer = (await rl.question(
-      "Wire up shims for the detected tools? [Y/n, or list to override e.g. cursor,claude]: "
-    )).trim().toLowerCase();
-    const tools = resolveTools(wireAnswer, detectedTools);
-    await mkdir2(env.workspaceRoot, { recursive: true });
-    process3.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
-    await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
-    await recordSelfModule(env.workspaceRoot, env.aawSourceRoot);
-    process3.stdout.write(`\u25B8 Creating ${workItemsPath}
-`);
-    await mkdir2(workItemsPath, { recursive: true });
-    if (tools.copilot) {
-      process3.stdout.write("\u25B8 Wiring GitHub Copilot prompts\n");
-      await wireGitHubCopilot(env);
-    }
-    if (tools.claude) {
-      process3.stdout.write("\u25B8 Wiring Claude Code commands\n");
-      await wireClaudeCode(env);
-    }
-    if (tools.cursor) {
-      process3.stdout.write("\u25B8 Wiring Cursor commands\n");
-      await wireCursor(env);
-    }
-    process3.stdout.write("\n\u25B8 Verifying\n");
-    process3.stdout.write("    \u2713 config written\n");
-    process3.stdout.write("    \u2713 work_items_path created\n");
-    process3.stdout.write("    \u2713 shims installed\n");
-    const cliPath = toPortableRelativePath2(env.workspaceRoot, path3.join(env.aawSourceRoot, "bin", "aaw.js"));
-    process3.stdout.write(
-      `
-Done. Try this in your AI tool:
-    /aaw-start-work add a new feature
-
-Or from the shell:
-    node ${cliPath} status
-
-For shorter commands, set up an alias (one-time):
-  PowerShell ($PROFILE):  function aaw { node "${cliPath}" @args }
-  Bash/Zsh   (~/.bashrc): alias aaw='node ${cliPath}'
-Then: aaw status
-`
-    );
-    return 0;
-  } finally {
-    rl.close();
-  }
-}
-async function detect(workspaceRoot, frameworkRoot) {
-  const isGitRepo = await pathExists(path3.join(workspaceRoot, ".git"));
-  const hasGitHub = await pathExists(path3.join(workspaceRoot, ".github"));
-  const hasCursor = await pathExists(path3.join(workspaceRoot, ".cursor"));
-  const hasClaude = await pathExists(path3.join(workspaceRoot, ".claude"));
-  const localClone = path3.join(workspaceRoot, SUBMODULE_DEFAULT);
-  let aawSourceRoot = frameworkRoot;
-  if (aawSourceRoot.length === 0 && await pathExists(localClone)) {
-    aawSourceRoot = localClone;
-  }
-  if (aawSourceRoot.length === 0) {
-    aawSourceRoot = workspaceRoot;
-  }
-  return {
-    workspaceRoot,
-    isGitRepo,
-    hasGitHub,
-    hasCursor,
-    hasClaude,
-    aawSourceRoot
-  };
-}
-async function readExistingConfig(workspaceRoot) {
-  const configPath = path3.join(workspaceRoot, ".aaw-config.yaml");
-  try {
-    const text = await readFile3(configPath, "utf8");
-    const parsed = (0, import_yaml3.parse)(text);
-    const mode = parsed.mode === "local-fs" || parsed.mode === "cloud" ? parsed.mode : void 0;
-    return {
-      tenant: typeof parsed.tenant === "string" ? parsed.tenant : void 0,
-      mode,
-      workItemsPath: typeof parsed.work_items_path === "string" ? parsed.work_items_path : void 0,
-      initiativesPath: typeof parsed.initiatives_path === "string" ? parsed.initiatives_path : void 0
-    };
-  } catch (err) {
-    if (err.code === "ENOENT")
-      return null;
-    return null;
-  }
-}
-function resolveTools(answer, detected) {
-  if (answer === "" || answer === "y" || answer === "yes" || answer === "auto") {
-    return detected;
-  }
-  if (answer === "n" || answer === "no" || answer === "none") {
-    return { copilot: false, cursor: false, claude: false };
-  }
-  const parts = answer.split(",").map((s) => s.trim());
-  return {
-    copilot: parts.includes("copilot"),
-    cursor: parts.includes("cursor"),
-    claude: parts.includes("claude")
-  };
-}
-function describeTools(t) {
-  const names = [];
-  if (t.copilot)
-    names.push("GitHub Copilot");
-  if (t.cursor)
-    names.push("Cursor");
-  if (t.claude)
-    names.push("Claude Code");
-  return names.join(", ");
-}
-async function writeConfig(root, cfg) {
-  const existing = await readExistingYaml(root);
-  const yaml = (0, import_yaml3.stringify)({
-    ...existing,
-    tenant: cfg.tenant,
-    mode: cfg.mode,
-    work_items_path: cfg.workItemsPath,
-    initiatives_path: cfg.initiativesPath
-  });
-  await writeFile2(path3.join(root, ".aaw-config.yaml"), yaml, "utf8");
-}
-async function recordSelfModule(workspaceRoot, sourceRoot) {
-  const existing = await readExistingYaml(workspaceRoot);
-  const modulesValue = existing.modules;
-  const modules = modulesValue && typeof modulesValue === "object" ? modulesValue : {};
-  const currentValue = modules[MODULE_ID];
-  const current = currentValue && typeof currentValue === "object" ? currentValue : {};
-  modules[MODULE_ID] = {
-    ...current,
-    source_root: toPortableRelativePath2(workspaceRoot, sourceRoot)
-  };
-  existing.modules = modules;
-  await writeFile2(path3.join(workspaceRoot, ".aaw-config.yaml"), (0, import_yaml3.stringify)(existing), "utf8");
-}
-async function readExistingYaml(workspaceRoot) {
-  const configPath = path3.join(workspaceRoot, ".aaw-config.yaml");
-  try {
-    const text = await readFile3(configPath, "utf8");
-    const parsed = (0, import_yaml3.parse)(text);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-async function wireGitHubCopilot(env) {
-  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "github", "prompts");
-  const dest = path3.join(env.workspaceRoot, ".github", "prompts");
-  await copyDir(src, dest, rewriteFor2(env));
-}
-async function wireClaudeCode(env) {
-  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "claude", "commands", "aaw");
-  const dest = path3.join(env.workspaceRoot, ".claude", "commands", "aaw");
-  await copyDir(src, dest, rewriteFor2(env));
-}
-async function wireCursor(env) {
-  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "cursor", "commands", "aaw");
-  const dest = path3.join(env.workspaceRoot, ".cursor", "commands", "aaw");
-  await copyDir(src, dest, rewriteFor2(env));
-}
-function rewriteFor2(env) {
-  const actual = toPortableRelativePath2(env.workspaceRoot, env.aawSourceRoot);
-  return actual === SUBMODULE_DEFAULT ? void 0 : { from: SUBMODULE_DEFAULT, to: actual };
-}
-function isTextShim2(name) {
-  return TEXT_SHIM_EXT2.has(path3.extname(name).toLowerCase());
-}
-function toPortableRelativePath2(from, to) {
-  const rel = path3.relative(from, to).split(path3.sep).join("/");
-  return rel === "" ? "." : rel;
-}
-async function copyDir(src, dest, rewrite) {
-  if (!await pathExists(src))
-    return;
-  await mkdir2(dest, { recursive: true });
-  const entries = await readdir2(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const from = path3.join(src, entry.name);
-    const to = path3.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      await copyDir(from, to, rewrite);
-    } else if (entry.isFile()) {
-      if (rewrite && isTextShim2(entry.name)) {
-        const text = await readFile3(from, "utf8");
-        await writeFile2(to, text.split(rewrite.from).join(rewrite.to), "utf8");
-      } else {
-        await copyFile(from, to);
-      }
-    }
-  }
-}
-async function walkUpForGitRoot(start) {
-  let dir = path3.resolve(start);
-  while (true) {
-    if (await pathExists(path3.join(dir, ".git")))
-      return dir;
-    const parent = path3.dirname(dir);
-    if (parent === dir)
-      return path3.resolve(start);
-    dir = parent;
-  }
-}
-async function pathExists(p) {
-  try {
-    await stat2(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// src/commands/install.ts
-import path6 from "node:path";
+import path5 from "node:path";
 import process4 from "node:process";
-import { fileURLToPath } from "node:url";
+import { createInterface } from "node:readline/promises";
 
 // ../installer/dist/manifest.js
-var import_yaml4 = __toESM(require_dist(), 1);
-import { readFile as readFile4 } from "node:fs/promises";
-import path4 from "node:path";
+var import_yaml3 = __toESM(require_dist(), 1);
+import { readFile as readFile3 } from "node:fs/promises";
+import path3 from "node:path";
 var MANIFEST_FILENAME = "framework.manifest.yaml";
 var TOOL_NAMES = ["claude", "cursor", "copilot", "gemini"];
 function asString(value, where) {
@@ -8195,26 +7924,13 @@ function asStringArray(value, where) {
     throw new Error(`manifest: ${where} must be a list`);
   return value.map((v, i) => asString(v, `${where}[${i}]`));
 }
-function parseShims(value) {
+function parseSkills(value) {
   if (value === void 0 || value === null)
-    return {};
+    return void 0;
   if (typeof value !== "object")
-    throw new Error("manifest: shims must be a map");
-  const out = {};
-  for (const tool of TOOL_NAMES) {
-    const entry = value[tool];
-    if (entry === void 0)
-      continue;
-    if (typeof entry !== "object" || entry === null) {
-      throw new Error(`manifest: shims.${tool} must be a {src,dest} map`);
-    }
-    const rec = entry;
-    out[tool] = {
-      src: asString(rec.src, `shims.${tool}.src`),
-      dest: asString(rec.dest, `shims.${tool}.dest`)
-    };
-  }
-  return out;
+    throw new Error("manifest: skills must be a map");
+  const rec = value;
+  return { src: asString(rec.src, "skills.src") };
 }
 function parseConfig(value) {
   if (value === void 0 || value === null)
@@ -8266,7 +7982,7 @@ function parseSeed(value) {
   };
 }
 function parseManifest(text, frameworkRoot) {
-  const raw = (0, import_yaml4.parse)(text);
+  const raw = (0, import_yaml3.parse)(text);
   if (raw === null || typeof raw !== "object") {
     throw new Error("manifest: file is empty or not a map");
   }
@@ -8278,11 +7994,10 @@ function parseManifest(text, frameworkRoot) {
     id: asString(raw.id, "id"),
     name: asString(raw.name, "name"),
     version: asString(raw.version, "version"),
-    sourceToken: typeof raw.source_token === "string" ? raw.source_token : void 0,
     depends: asStringArray(raw.depends, "depends"),
     runtime,
     toolSetup: parseToolSetup(raw.tool_setup),
-    shims: parseShims(raw.shims),
+    skills: parseSkills(raw.skills),
     config: parseConfig(raw.config),
     dataDirs: asStringArray(raw.data_dirs, "data_dirs"),
     seed: parseSeed(raw.seed),
@@ -8290,17 +8005,17 @@ function parseManifest(text, frameworkRoot) {
   };
 }
 async function loadManifest(frameworkRoot) {
-  const file = path4.join(frameworkRoot, MANIFEST_FILENAME);
-  const text = await readFile4(file, "utf8");
+  const file = path3.join(frameworkRoot, MANIFEST_FILENAME);
+  const text = await readFile3(file, "utf8");
   return parseManifest(text, frameworkRoot);
 }
 
 // ../installer/dist/engine.js
-var import_yaml5 = __toESM(require_dist(), 1);
+var import_yaml4 = __toESM(require_dist(), 1);
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { copyFile as copyFile2, mkdir as mkdir3, readdir as readdir3, readFile as readFile5, rm, stat as stat3, writeFile as writeFile3 } from "node:fs/promises";
-import path5 from "node:path";
+import { copyFile, mkdir as mkdir2, readdir as readdir2, readFile as readFile4, rm, stat as stat2, symlink, writeFile as writeFile2 } from "node:fs/promises";
+import path4 from "node:path";
 var noopLog = () => {
 };
 var TOOL_DETECT_DIR = {
@@ -8309,109 +8024,192 @@ var TOOL_DETECT_DIR = {
   copilot: ".github",
   gemini: ".gemini"
 };
-async function pathExists2(p) {
+async function pathExists(p) {
   try {
-    await stat3(p);
+    await stat2(p);
     return true;
   } catch {
     return false;
   }
 }
-var TEXT_SHIM_EXT = /* @__PURE__ */ new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
-function isTextShim(name) {
-  return TEXT_SHIM_EXT.has(path5.extname(name).toLowerCase());
-}
-async function copyDir2(src, dest, rewrite) {
-  if (!await pathExists2(src))
+async function copyDir(src, dest) {
+  if (!await pathExists(src))
     return 0;
-  await mkdir3(dest, { recursive: true });
+  await mkdir2(dest, { recursive: true });
   let count = 0;
-  const entries = await readdir3(src, { withFileTypes: true });
+  const entries = await readdir2(src, { withFileTypes: true });
   for (const entry of entries) {
-    const from = path5.join(src, entry.name);
-    const to = path5.join(dest, entry.name);
+    const from = path4.join(src, entry.name);
+    const to = path4.join(dest, entry.name);
     if (entry.isDirectory()) {
-      count += await copyDir2(from, to, rewrite);
+      count += await copyDir(from, to);
     } else if (entry.isFile()) {
-      if (rewrite && isTextShim(entry.name)) {
-        const text = await readFile5(from, "utf8");
-        await writeFile3(to, text.split(rewrite.from).join(rewrite.to), "utf8");
-      } else {
-        await copyFile2(from, to);
-      }
+      await copyFile(from, to);
       count += 1;
     }
   }
   return count;
 }
 async function findWorkspaceRoot2(start) {
-  let dir = path5.resolve(start);
+  let dir = path4.resolve(start);
   for (; ; ) {
     for (const sentinel of [".aaw-config.yaml", ".git"]) {
-      if (await pathExists2(path5.join(dir, sentinel)))
+      if (await pathExists(path4.join(dir, sentinel)))
         return dir;
     }
-    const parent = path5.dirname(dir);
+    const parent = path4.dirname(dir);
     if (parent === dir)
-      return path5.resolve(start);
+      return path4.resolve(start);
     dir = parent;
   }
 }
 async function detectTools(workspaceRoot) {
   const out = { claude: false, cursor: false, copilot: false, gemini: false };
   for (const tool of TOOL_NAMES) {
-    out[tool] = await pathExists2(path5.join(workspaceRoot, TOOL_DETECT_DIR[tool]));
+    out[tool] = await pathExists(path4.join(workspaceRoot, TOOL_DETECT_DIR[tool]));
   }
   return out;
 }
-async function wireShims(opts, selection) {
+var SKILLS_INTEROP_DIR = path4.join(".agents", "skills");
+var SKILLS_CLAUDE_DIR = path4.join(".claude", "skills");
+async function isSkillDir(dir) {
+  return pathExists(path4.join(dir, "SKILL.md"));
+}
+async function linkOrCopyDir(targetPath, linkPath) {
+  await rm(linkPath, { recursive: true, force: true });
+  await mkdir2(path4.dirname(linkPath), { recursive: true });
+  try {
+    if (process.platform === "win32") {
+      await symlink(targetPath, linkPath, "junction");
+    } else {
+      const rel = path4.relative(path4.dirname(linkPath), targetPath);
+      await symlink(rel, linkPath, "dir");
+    }
+    return "link";
+  } catch {
+    await copyDir(targetPath, linkPath);
+    return "copy";
+  }
+}
+async function wireSkills(opts, selection) {
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
-  const wired = [];
-  let rewrite;
-  if (manifest.sourceToken) {
-    const rel = path5.relative(workspaceRoot, manifest.frameworkRoot).split(path5.sep).join("/");
-    if (rel.length > 0 && rel !== manifest.sourceToken) {
-      rewrite = { from: manifest.sourceToken, to: rel };
-      log(`  \u25B8 shim paths: rewriting "${manifest.sourceToken}" \u2192 "${rel}"`);
-    }
+  if (!manifest.skills)
+    return [];
+  const srcRoot = path4.join(manifest.frameworkRoot, manifest.skills.src);
+  if (!await pathExists(srcRoot)) {
+    log(`  ! skills: source missing (${manifest.skills.src})`);
+    return [];
   }
-  for (const tool of TOOL_NAMES) {
-    const mapping = manifest.shims[tool];
-    if (!mapping || !selection[tool])
+  const installed = [];
+  let linked = 0;
+  let copied = 0;
+  const entries = await readdir2(srcRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory())
       continue;
-    const src = path5.join(manifest.frameworkRoot, mapping.src);
-    const dest = path5.join(workspaceRoot, mapping.dest);
-    if (path5.basename(dest) === manifest.id && await pathExists2(dest)) {
-      await rm(dest, { recursive: true, force: true });
+    const from = path4.join(srcRoot, entry.name);
+    if (!await isSkillDir(from)) {
+      log(`  ! skills: ${entry.name} has no SKILL.md, skipped`);
+      continue;
     }
-    const n = await copyDir2(src, dest, rewrite);
-    if (n > 0) {
-      log(`  \u25B8 ${tool}: wired ${n} shim file(s) \u2192 ${mapping.dest}`);
-      wired.push(tool);
-    } else {
-      log(`  ! ${tool}: shim source missing or empty (${mapping.src})`);
+    const interop = path4.join(workspaceRoot, SKILLS_INTEROP_DIR, entry.name);
+    await rm(interop, { recursive: true, force: true });
+    await copyDir(from, interop);
+    if (selection.claude) {
+      const how = await linkOrCopyDir(interop, path4.join(workspaceRoot, SKILLS_CLAUDE_DIR, entry.name));
+      if (how === "link")
+        linked += 1;
+      else
+        copied += 1;
+    }
+    installed.push(entry.name);
+  }
+  if (installed.length > 0) {
+    log(`  \u25B8 skills: installed ${installed.length} \u2192 ${SKILLS_INTEROP_DIR}/`);
+    log(`      ${installed.join(", ")}`);
+    if (linked > 0)
+      log(`  \u25B8 claude: linked ${linked} \u2192 ${SKILLS_CLAUDE_DIR}/`);
+    if (copied > 0) {
+      log(`  \u25B8 claude: copied ${copied} \u2192 ${SKILLS_CLAUDE_DIR}/ (links unavailable)`);
     }
   }
-  return wired;
+  return installed;
+}
+var LEGACY_SHIM_DESTS = {
+  aaw: [
+    path4.join(".claude", "commands", "aaw"),
+    path4.join(".cursor", "commands", "aaw"),
+    path4.join(".cursor", "rules", "aaw"),
+    path4.join(".gemini", "skills", "aaw")
+  ],
+  aaa: [
+    path4.join(".claude", "commands", "aaa"),
+    path4.join(".cursor", "commands", "aaa"),
+    path4.join(".cursor", "rules", "aaa"),
+    path4.join(".github", "prompts", "aaa"),
+    path4.join(".gemini", "skills", "aaa")
+  ],
+  aar: [
+    path4.join(".claude", "commands", "aar"),
+    path4.join(".cursor", "commands", "aar"),
+    path4.join(".cursor", "rules", "aar"),
+    path4.join(".github", "prompts", "aar"),
+    path4.join(".gemini", "skills", "aar")
+  ]
+};
+var LEGACY_SHIM_PROMPT_PREFIX = {
+  aaw: "aaw-",
+  aaa: "aaa-",
+  aar: "aar-"
+};
+async function removeLegacyShims(opts) {
+  const { manifest, workspaceRoot } = opts;
+  const log = opts.log ?? noopLog;
+  const removed = [];
+  for (const rel of LEGACY_SHIM_DESTS[manifest.id] ?? []) {
+    const dest = path4.join(workspaceRoot, rel);
+    if (await pathExists(dest)) {
+      await rm(dest, { recursive: true, force: true });
+      removed.push(rel);
+    }
+  }
+  const prefix = LEGACY_SHIM_PROMPT_PREFIX[manifest.id];
+  if (prefix) {
+    const promptsDir = path4.join(workspaceRoot, ".github", "prompts");
+    if (await pathExists(promptsDir)) {
+      for (const entry of await readdir2(promptsDir)) {
+        if (entry.startsWith(prefix) && entry.endsWith(".prompt.md")) {
+          await rm(path4.join(promptsDir, entry), { force: true });
+          removed.push(path4.join(".github", "prompts", entry));
+        }
+      }
+    }
+  }
+  if (removed.length > 0) {
+    log(`  \u25B8 removed ${removed.length} legacy shim path(s) superseded by skills:`);
+    for (const r of removed)
+      log(`      ${r}`);
+  }
+  return removed;
 }
 async function seedConfig(opts) {
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
   const seeded = [];
   for (const cfg of manifest.config) {
-    const dest = path5.join(workspaceRoot, cfg.file);
-    if (await pathExists2(dest)) {
+    const dest = path4.join(workspaceRoot, cfg.file);
+    if (await pathExists(dest)) {
       log(`  = ${cfg.file}: already present, left unchanged`);
       continue;
     }
-    const template = path5.join(manifest.frameworkRoot, cfg.template);
-    if (!await pathExists2(template)) {
+    const template = path4.join(manifest.frameworkRoot, cfg.template);
+    if (!await pathExists(template)) {
       log(`  ! ${cfg.file}: template missing (${cfg.template}), skipped`);
       continue;
     }
-    await mkdir3(path5.dirname(dest), { recursive: true });
-    await copyFile2(template, dest);
+    await mkdir2(path4.dirname(dest), { recursive: true });
+    await copyFile(template, dest);
     log(`  \u25B8 seeded ${cfg.file}`);
     seeded.push(cfg.file);
   }
@@ -8422,8 +8220,8 @@ async function ensureDataDirs(opts) {
   const log = opts.log ?? noopLog;
   const made = [];
   for (const dir of manifest.dataDirs) {
-    const abs = path5.join(workspaceRoot, dir);
-    await mkdir3(abs, { recursive: true });
+    const abs = path4.join(workspaceRoot, dir);
+    await mkdir2(abs, { recursive: true });
     made.push(dir);
     log(`  \u25B8 data dir ${dir}`);
   }
@@ -8447,14 +8245,14 @@ async function runToolSetup(opts, warnings) {
     log("  = python deps: skipped (runPython=false)");
     return false;
   }
-  const reqAbs = path5.join(manifest.frameworkRoot, py.requirements);
-  if (!await pathExists2(reqAbs)) {
+  const reqAbs = path4.join(manifest.frameworkRoot, py.requirements);
+  if (!await pathExists(reqAbs)) {
     warnings.push(`tool_setup.python.requirements not found: ${py.requirements}`);
     return false;
   }
   const python = findPython();
   if (!python) {
-    const msg = `python not found on PATH \u2014 skipped dependency install. Install it later with:  python -m pip install -r ${path5.relative(opts.workspaceRoot, reqAbs)}`;
+    const msg = `python not found on PATH \u2014 skipped dependency install. Install it later with:  python -m pip install -r ${path4.relative(opts.workspaceRoot, reqAbs)}`;
     if (py.optional)
       log(`  = ${msg}`);
     else
@@ -8479,8 +8277,8 @@ async function runSeed(opts, warnings) {
   const log = opts.log ?? noopLog;
   if (!manifest.seed)
     return false;
-  const entry = path5.join(manifest.frameworkRoot, manifest.seed.entry);
-  if (!await pathExists2(entry)) {
+  const entry = path4.join(manifest.frameworkRoot, manifest.seed.entry);
+  if (!await pathExists(entry)) {
     warnings.push(`seed.entry not found: ${manifest.seed.entry}`);
     return false;
   }
@@ -8495,32 +8293,31 @@ async function runSeed(opts, warnings) {
 }
 async function recordModule(opts) {
   const { manifest, workspaceRoot } = opts;
-  const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
-  let raw = {};
-  if (await pathExists2(configPath)) {
-    const parsed = (0, import_yaml5.parse)(await readFile5(configPath, "utf8"));
-    if (parsed && typeof parsed === "object")
-      raw = parsed;
+  const configPath = path4.join(workspaceRoot, ".aaw-config.yaml");
+  let doc;
+  if (await pathExists(configPath)) {
+    doc = (0, import_yaml4.parseDocument)(await readFile4(configPath, "utf8"));
+    if (doc.contents === null)
+      doc = new import_yaml4.Document({});
+  } else {
+    doc = new import_yaml4.Document({});
   }
-  const modulesValue = raw.modules;
-  const modules = modulesValue && typeof modulesValue === "object" ? modulesValue : {};
-  modules[manifest.id] = {
+  doc.setIn(["modules", manifest.id], {
     name: manifest.name,
     version: manifest.version,
     runtime: manifest.runtime,
-    source_root: path5.relative(workspaceRoot, manifest.frameworkRoot).split(path5.sep).join("/") || "."
-  };
-  raw.modules = modules;
-  await writeFile3(configPath, (0, import_yaml5.stringify)(raw), "utf8");
+    source_root: path4.relative(workspaceRoot, manifest.frameworkRoot).split(path4.sep).join("/") || "."
+  });
+  await writeFile2(configPath, doc.toString(), "utf8");
 }
 async function checkDependencies(opts, warnings) {
   const { manifest, workspaceRoot } = opts;
   if (manifest.depends.length === 0)
     return;
   let recorded = {};
-  const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
-  if (await pathExists2(configPath)) {
-    const parsed = (0, import_yaml5.parse)(await readFile5(configPath, "utf8"));
+  const configPath = path4.join(workspaceRoot, ".aaw-config.yaml");
+  if (await pathExists(configPath)) {
+    const parsed = (0, import_yaml4.parse)(await readFile4(configPath, "utf8"));
     const mods = parsed?.modules;
     if (mods && typeof mods === "object")
       recorded = mods;
@@ -8543,13 +8340,13 @@ function defaultDependencyResolver(workspaceRoot) {
     const dir = CONVENTIONAL_FRAMEWORK_DIRS[id];
     if (dir === void 0)
       return void 0;
-    const abs = path5.join(workspaceRoot, dir);
+    const abs = path4.join(workspaceRoot, dir);
     return existsSync(abs) ? abs : void 0;
   };
 }
 async function runInstall(opts) {
   const manifest = await loadManifest(opts.frameworkRoot);
-  const workspaceRoot = opts.workspaceRoot ? path5.resolve(opts.workspaceRoot) : await findWorkspaceRoot2(opts.cwd);
+  const workspaceRoot = opts.workspaceRoot ? path4.resolve(opts.workspaceRoot) : await findWorkspaceRoot2(opts.cwd);
   return installFramework({
     manifest,
     workspaceRoot,
@@ -8571,7 +8368,8 @@ async function installFramework(opts) {
     ...await detectTools(workspaceRoot),
     ...opts.tools ?? {}
   };
-  const wired = await wireShims(opts, selection);
+  const skills = await wireSkills(opts, selection);
+  const removedLegacyShims = await removeLegacyShims(opts);
   const seededConfig = await seedConfig(opts);
   const dataDirs = await ensureDataDirs(opts);
   const pythonInstalled = await runToolSetup(opts, warnings);
@@ -8589,7 +8387,8 @@ async function installFramework(opts) {
   return {
     id: manifest.id,
     version: manifest.version,
-    wired,
+    skills,
+    removedLegacyShims,
     seededConfig,
     dataDirs,
     pythonInstalled,
@@ -8598,7 +8397,208 @@ async function installFramework(opts) {
   };
 }
 
+// src/commands/init.ts
+var SUBMODULE_DEFAULT = ".ai-assisted-work";
+async function runInit(input) {
+  const rl = createInterface({ input: process4.stdin, output: process4.stdout });
+  try {
+    const defaultWorkspaceRoot = await walkUpForGitRoot(input.cwd);
+    const workspaceAnswer = (await rl.question(
+      `Install into workspace [${defaultWorkspaceRoot}]: `
+    )).trim();
+    const workspaceRoot = workspaceAnswer === "" ? defaultWorkspaceRoot : path5.resolve(input.cwd, workspaceAnswer);
+    const env = await detect(workspaceRoot, input.frameworkRoot);
+    const existingConfig = await readExistingConfig(env.workspaceRoot);
+    if (existingConfig) {
+      process4.stdout.write("aaw install \u2014 existing workspace detected.\n\n");
+    } else {
+      process4.stdout.write("aaw install \u2014 let's set this up.\n\n");
+    }
+    process4.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
+`);
+    process4.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
+`);
+    process4.stdout.write(
+      `\u25B8 Detected tools: ${[
+        env.hasGitHub && "GitHub Copilot",
+        env.hasCursor && "Cursor",
+        env.hasClaude && "Claude Code"
+      ].filter(Boolean).join(", ") || "none"}
+`
+    );
+    if (existingConfig) {
+      process4.stdout.write(
+        `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
+  Press Enter at each prompt to keep the current value.
+`
+      );
+    }
+    process4.stdout.write("\n");
+    const tenantDefault = existingConfig?.tenant ?? "local";
+    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
+    const modeDefault = existingConfig?.mode ?? "local-fs";
+    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() || modeDefault;
+    if (mode !== "local-fs" && mode !== "cloud") {
+      process4.stderr.write(`Unsupported mode: ${mode}
+`);
+      return 2;
+    }
+    const repoName = path5.basename(env.workspaceRoot);
+    const defaultPath = existingConfig?.workItemsPath ?? path5.join(homedir2(), "aaw", tenant, repoName, "work-items");
+    const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
+    const initiativesPath = existingConfig?.initiativesPath ?? path5.join(path5.dirname(workItemsPath), "initiatives");
+    const detectedNames = describeTools({
+      copilot: env.hasGitHub,
+      cursor: env.hasCursor,
+      claude: env.hasClaude
+    });
+    process4.stdout.write(`
+AI tools detected: ${detectedNames || "none"}
+`);
+    process4.stdout.write(
+      "Skills install to .agents/skills/, which every supported tool reads.\nClaude Code reads only .claude/skills/, so that is linked at it when detected.\n"
+    );
+    await mkdir3(env.workspaceRoot, { recursive: true });
+    process4.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
+    await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
+    process4.stdout.write(`\u25B8 Creating ${workItemsPath}
+`);
+    await mkdir3(workItemsPath, { recursive: true });
+    const result = await runInstall({
+      frameworkRoot: env.aawSourceRoot,
+      cwd: env.workspaceRoot,
+      workspaceRoot: env.workspaceRoot,
+      log: (msg) => process4.stdout.write(`${msg}
+`)
+    });
+    process4.stdout.write("\n\u25B8 Verifying\n");
+    process4.stdout.write("    \u2713 config written\n");
+    process4.stdout.write("    \u2713 work_items_path created\n");
+    process4.stdout.write(`    \u2713 ${result.skills.length} skill(s) installed
+`);
+    const cliPath = toPortableRelativePath(
+      env.workspaceRoot,
+      path5.join(env.aawSourceRoot, "bin", "aaw.js")
+    );
+    process4.stdout.write(
+      `
+Done. Try this in your AI tool:
+    /aaw-start-work add a new feature
+
+Or from the shell:
+    node ${cliPath} status
+
+For shorter commands, set up an alias (one-time):
+  PowerShell ($PROFILE):  function aaw { node "${cliPath}" @args }
+  Bash/Zsh   (~/.bashrc): alias aaw='node ${cliPath}'
+Then: aaw status
+`
+    );
+    return 0;
+  } finally {
+    rl.close();
+  }
+}
+async function detect(workspaceRoot, frameworkRoot) {
+  const isGitRepo = await pathExists2(path5.join(workspaceRoot, ".git"));
+  const hasGitHub = await pathExists2(path5.join(workspaceRoot, ".github"));
+  const hasCursor = await pathExists2(path5.join(workspaceRoot, ".cursor"));
+  const hasClaude = await pathExists2(path5.join(workspaceRoot, ".claude"));
+  const localClone = path5.join(workspaceRoot, SUBMODULE_DEFAULT);
+  let aawSourceRoot = frameworkRoot;
+  if (aawSourceRoot.length === 0 && await pathExists2(localClone)) {
+    aawSourceRoot = localClone;
+  }
+  if (aawSourceRoot.length === 0) {
+    aawSourceRoot = workspaceRoot;
+  }
+  return {
+    workspaceRoot,
+    isGitRepo,
+    hasGitHub,
+    hasCursor,
+    hasClaude,
+    aawSourceRoot
+  };
+}
+async function readExistingConfig(workspaceRoot) {
+  const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
+  try {
+    const text = await readFile5(configPath, "utf8");
+    const parsed = (0, import_yaml5.parse)(text);
+    const mode = parsed.mode === "local-fs" || parsed.mode === "cloud" ? parsed.mode : void 0;
+    return {
+      tenant: typeof parsed.tenant === "string" ? parsed.tenant : void 0,
+      mode,
+      workItemsPath: typeof parsed.work_items_path === "string" ? parsed.work_items_path : void 0,
+      initiativesPath: typeof parsed.initiatives_path === "string" ? parsed.initiatives_path : void 0
+    };
+  } catch (err) {
+    if (err.code === "ENOENT")
+      return null;
+    return null;
+  }
+}
+function describeTools(t) {
+  const names = [];
+  if (t.copilot)
+    names.push("GitHub Copilot");
+  if (t.cursor)
+    names.push("Cursor");
+  if (t.claude)
+    names.push("Claude Code");
+  return names.join(", ");
+}
+async function writeConfig(root, cfg) {
+  const existing = await readExistingYaml(root);
+  const yaml = (0, import_yaml5.stringify)({
+    ...existing,
+    tenant: cfg.tenant,
+    mode: cfg.mode,
+    work_items_path: cfg.workItemsPath,
+    initiatives_path: cfg.initiativesPath
+  });
+  await writeFile3(path5.join(root, ".aaw-config.yaml"), yaml, "utf8");
+}
+async function readExistingYaml(workspaceRoot) {
+  const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
+  try {
+    const text = await readFile5(configPath, "utf8");
+    const parsed = (0, import_yaml5.parse)(text);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function toPortableRelativePath(from, to) {
+  const rel = path5.relative(from, to).split(path5.sep).join("/");
+  return rel === "" ? "." : rel;
+}
+async function walkUpForGitRoot(start) {
+  let dir = path5.resolve(start);
+  while (true) {
+    if (await pathExists2(path5.join(dir, ".git")))
+      return dir;
+    const parent = path5.dirname(dir);
+    if (parent === dir)
+      return path5.resolve(start);
+    dir = parent;
+  }
+}
+async function pathExists2(p) {
+  try {
+    await stat3(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // src/commands/install.ts
+import path6 from "node:path";
+import process5 from "node:process";
+import { createInterface as createInterface2 } from "node:readline/promises";
+import { fileURLToPath } from "node:url";
 function resolveAawRoot() {
   const self = fileURLToPath(import.meta.url);
   const dir = path6.dirname(self);
@@ -8614,9 +8614,9 @@ function frameworkArg(args) {
   if (value === void 0 || value.startsWith("--")) {
     throw new Error("--framework requires a path argument");
   }
-  return path6.resolve(process4.cwd(), value);
+  return path6.resolve(process5.cwd(), value);
 }
-function workspaceArg2(args) {
+function workspaceArg(args) {
   const i = args.indexOf("--workspace");
   if (i === -1)
     return void 0;
@@ -8624,43 +8624,45 @@ function workspaceArg2(args) {
   if (value === void 0 || value.startsWith("--")) {
     throw new Error("--workspace requires a path argument");
   }
-  return path6.resolve(process4.cwd(), value);
+  return path6.resolve(process5.cwd(), value);
 }
-async function resolveWorkspaceRoot2(args) {
-  const explicit = workspaceArg2(args);
+async function resolveWorkspaceRoot(args) {
+  const explicit = workspaceArg(args);
   if (explicit)
     return explicit;
-  const detected = await findWorkspaceRoot2(process4.cwd());
-  if (!process4.stdin.isTTY || !process4.stdout.isTTY)
+  const detected = await findWorkspaceRoot2(process5.cwd());
+  if (!process5.stdin.isTTY || !process5.stdout.isTTY)
     return detected;
-  const rl = createInterface({ input: process4.stdin, output: process4.stdout });
+  const rl = createInterface2({ input: process5.stdin, output: process5.stdout });
   try {
     const answer = (await rl.question(`Install into workspace [${detected}]: `)).trim();
-    return answer === "" ? detected : path6.resolve(process4.cwd(), answer);
+    return answer === "" ? detected : path6.resolve(process5.cwd(), answer);
   } finally {
     rl.close();
   }
 }
 async function runInstallCommand(input) {
   if (!input.args.includes("--framework")) {
-    return runInit({ cwd: process4.cwd(), frameworkRoot: resolveAawRoot() });
+    return runInit({ cwd: process5.cwd(), frameworkRoot: resolveAawRoot() });
   }
   const noPython = input.args.includes("--no-python");
   const runSeed2 = input.args.includes("--seed");
   const frameworkRoot = frameworkArg(input.args) ?? resolveAawRoot();
-  const workspaceRoot = await resolveWorkspaceRoot2(input.args);
+  const workspaceRoot = await resolveWorkspaceRoot(input.args);
   const result = await runInstall({
     frameworkRoot,
-    cwd: process4.cwd(),
+    cwd: process5.cwd(),
     workspaceRoot,
     runPython: noPython ? false : void 0,
     runSeed: runSeed2,
-    log: (msg) => process4.stdout.write(`${msg}
+    log: (msg) => process5.stdout.write(`${msg}
 `)
   });
-  process4.stdout.write(
+  const skills = result.skills.length > 0 ? `${result.skills.length} skill(s)` : "no skills";
+  const swept = result.removedLegacyShims.length > 0 ? `; ${result.removedLegacyShims.length} legacy shim path(s) removed` : "";
+  process5.stdout.write(
     `
-Done. ${result.id}@${result.version} \u2014 wired: ${result.wired.join(", ") || "none"}.
+Done. ${result.id}@${result.version} \u2014 ${skills}${swept}.
 `
   );
   if (result.warnings.length > 0)
@@ -8669,8 +8671,8 @@ Done. ${result.id}@${result.version} \u2014 wired: ${result.wired.join(", ") || 
 }
 
 // src/commands/lint.ts
-import process5 from "node:process";
-import { readdir as readdir4 } from "node:fs/promises";
+import process6 from "node:process";
+import { readdir as readdir3 } from "node:fs/promises";
 import path7 from "node:path";
 
 // src/backends/local-fs/validate.ts
@@ -8807,14 +8809,14 @@ async function runLint(input) {
     issues.push(...detectActivityIssues(wi));
   }
   if (issues.length === 0) {
-    process5.stdout.write("aaw lint: no issues\n");
+    process6.stdout.write("aaw lint: no issues\n");
     return 0;
   }
-  process5.stdout.write(`aaw lint: ${issues.length} issue(s)
+  process6.stdout.write(`aaw lint: ${issues.length} issue(s)
 
 `);
   for (const issue of issues) {
-    process5.stdout.write(`  \u2717 ${issue.path}
+    process6.stdout.write(`  \u2717 ${issue.path}
       ${issue.message}
 
 `);
@@ -8826,7 +8828,7 @@ async function detectDuplicateFolders(root, prefix) {
   const re = new RegExp(`^${prefix}-(\\d+)`);
   let entries;
   try {
-    const all = await readdir4(root, { withFileTypes: true });
+    const all = await readdir3(root, { withFileTypes: true });
     entries = all.filter((d) => d.isDirectory()).map((d) => d.name);
   } catch {
     return issues;
@@ -8904,13 +8906,13 @@ function detectActivityIssues(wi) {
 }
 
 // src/commands/migrate.ts
-import { copyFile as copyFile3, mkdir as mkdir4, readFile as readFile6, readdir as readdir5, rename, rm as rm2, stat as stat4, writeFile as writeFile4 } from "node:fs/promises";
+import { copyFile as copyFile2, mkdir as mkdir4, readFile as readFile6, readdir as readdir4, rename, rm as rm2, stat as stat4, writeFile as writeFile4 } from "node:fs/promises";
 import path8 from "node:path";
-import process6 from "node:process";
+import process7 from "node:process";
 async function runMigrate(input) {
   const sub = input.args[0];
   if (sub !== "v1") {
-    process6.stderr.write(
+    process7.stderr.write(
       "aaw migrate: expected 'v1' (e.g. `aaw migrate v1` or `aaw migrate v1 --dry-run`)\n"
     );
     return 2;
@@ -8925,7 +8927,7 @@ async function runMigrate(input) {
     [v1Shared, v1Private, v1SharedInit, v1PrivateInit].map(pathExists3)
   );
   if (!haveSources.some(Boolean)) {
-    process6.stdout.write(
+    process7.stdout.write(
       `aaw migrate v1: no v1 directories found under ${path8.join(root, "change")}.
 Nothing to do.
 `
@@ -8943,24 +8945,24 @@ Nothing to do.
     input.config.initiativesPath
   );
   if (wiPlan.length === 0 && initPlan.length === 0) {
-    process6.stdout.write("aaw migrate v1: no work items or initiatives to migrate.\n");
+    process7.stdout.write("aaw migrate v1: no work items or initiatives to migrate.\n");
     return 0;
   }
-  process6.stdout.write(
+  process7.stdout.write(
     dryRun ? "aaw migrate v1 (dry run) \u2014 would do:\n\n" : "aaw migrate v1 \u2014 moving:\n\n"
   );
   for (const p of [...wiPlan, ...initPlan]) {
     if (p.oldId === p.newId) {
-      process6.stdout.write(`  ${p.oldId}: ${p.fromDir} \u2192 ${p.toDir}
+      process7.stdout.write(`  ${p.oldId}: ${p.fromDir} \u2192 ${p.toDir}
 `);
     } else {
-      process6.stdout.write(`  ${p.oldId} \u2192 ${p.newId}: ${p.fromDir} \u2192 ${p.toDir}
+      process7.stdout.write(`  ${p.oldId} \u2192 ${p.newId}: ${p.fromDir} \u2192 ${p.toDir}
 `);
     }
   }
-  process6.stdout.write("\n");
+  process7.stdout.write("\n");
   if (dryRun) {
-    process6.stdout.write(
+    process7.stdout.write(
       "Dry run complete. Re-run without --dry-run to apply.\nNote: the move uses rename + content rewrite; combine with `git status`\nin the parent repo afterward to commit the result.\n"
     );
     return 0;
@@ -8972,7 +8974,7 @@ Nothing to do.
       await rewriteContentInPlace(p.toDir, p.rewrites);
     }
   }
-  process6.stdout.write(
+  process7.stdout.write(
     `Migrated ${wiPlan.length} work item(s) and ${initPlan.length} initiative(s).
 Old paths under change/ may be left empty \u2014 review and remove manually.
 `
@@ -9078,7 +9080,7 @@ async function scanIds(dir, re) {
 }
 async function listFolders(dir, re) {
   try {
-    const all = await readdir5(dir, { withFileTypes: true });
+    const all = await readdir4(dir, { withFileTypes: true });
     return all.filter((d) => d.isDirectory() && re.test(d.name)).map((d) => d.name);
   } catch {
     return [];
@@ -9114,19 +9116,19 @@ async function renameOrCopyAndRemove(from, to) {
 }
 async function copyDirRecursive(src, dest) {
   await mkdir4(dest, { recursive: true });
-  const entries = await readdir5(src, { withFileTypes: true });
+  const entries = await readdir4(src, { withFileTypes: true });
   for (const entry of entries) {
     const s = path8.join(src, entry.name);
     const d = path8.join(dest, entry.name);
     if (entry.isDirectory()) {
       await copyDirRecursive(s, d);
     } else if (entry.isFile()) {
-      await copyFile3(s, d);
+      await copyFile2(s, d);
     }
   }
 }
 async function rewriteContentInPlace(dir, rewrites) {
-  const entries = await readdir5(dir, { withFileTypes: true });
+  const entries = await readdir4(dir, { withFileTypes: true });
   for (const entry of entries) {
     const p = path8.join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -9155,7 +9157,7 @@ function isTextFile(name) {
 }
 
 // src/commands/next-task.ts
-import process7 from "node:process";
+import process8 from "node:process";
 async function runNextTask(input) {
   const target = input.args[0];
   const backend = new LocalFsBackend(input.config);
@@ -9163,31 +9165,31 @@ async function runNextTask(input) {
   const candidates = items.filter((wi) => target ? wi.id === target : wi.status !== "done" && wi.status !== "abandoned").flatMap(findNextTaskInWorkItem);
   if (candidates.length === 0) {
     if (target) {
-      process7.stdout.write(`No claimable task in ${target}.
+      process8.stdout.write(`No claimable task in ${target}.
 `);
     } else {
-      process7.stdout.write("No claimable task across the workspace.\n");
+      process8.stdout.write("No claimable task across the workspace.\n");
     }
     return 0;
   }
   const c = candidates[0];
-  process7.stdout.write(`Next: ${c.task.id}
+  process8.stdout.write(`Next: ${c.task.id}
 `);
-  process7.stdout.write(`  Work item: ${c.workItem.id} \u2014 ${c.workItem.title}
+  process8.stdout.write(`  Work item: ${c.workItem.id} \u2014 ${c.workItem.title}
 `);
-  process7.stdout.write(`  Activity:  ${c.activity.id} \u2014 ${c.activity.title}
+  process8.stdout.write(`  Activity:  ${c.activity.id} \u2014 ${c.activity.title}
 `);
-  process7.stdout.write(`  Task:      ${c.task.title}
+  process8.stdout.write(`  Task:      ${c.task.title}
 `);
   if (c.activity.dependsOn.length > 0) {
-    process7.stdout.write(`  Activity depends on: ${c.activity.dependsOn.join(", ")}
+    process8.stdout.write(`  Activity depends on: ${c.activity.dependsOn.join(", ")}
 `);
   }
   if (c.task.actor === "human") {
-    process7.stdout.write(`  Actor:     human (agent should mark awaiting_human)
+    process8.stdout.write(`  Actor:     human (agent should mark awaiting_human)
 `);
   } else {
-    process7.stdout.write(`  Actor:     ${c.task.actor}
+    process8.stdout.write(`  Actor:     ${c.task.actor}
 `);
   }
   return 0;
@@ -9209,22 +9211,22 @@ function findNextTaskInWorkItem(wi) {
 }
 
 // src/commands/release.ts
-import process8 from "node:process";
+import process9 from "node:process";
 async function runRelease(input) {
   const activityId = input.args[0];
   if (!activityId) {
-    process8.stderr.write("aaw release: missing ACTIVITY_ID\n");
+    process9.stderr.write("aaw release: missing ACTIVITY_ID\n");
     return 2;
   }
   const opts = parseFlags2(input.args.slice(1));
   const backend = new LocalFsBackend(input.config);
   try {
     await backend.releaseActivity(activityId, opts.reason);
-    process8.stdout.write(`Released ${activityId}
+    process9.stdout.write(`Released ${activityId}
 `);
     return 0;
   } catch (err) {
-    process8.stderr.write(`aaw release: ${err.message}
+    process9.stderr.write(`aaw release: ${err.message}
 `);
     return 1;
   }
@@ -9240,12 +9242,12 @@ function parseFlags2(args) {
 }
 
 // src/commands/runner.ts
-import process9 from "node:process";
+import process10 from "node:process";
 var DEFAULT_INTERVAL_SECONDS = 30;
 async function runRunner(input) {
   const sub = input.args[0];
   if (sub !== "start") {
-    process9.stderr.write(
+    process10.stderr.write(
       "aaw runner: expected subcommand 'start' (e.g. `aaw runner start --pool default`)\n"
     );
     return 2;
@@ -9254,7 +9256,7 @@ async function runRunner(input) {
   const pool = opts.pool ?? input.config.tenant;
   const intervalSeconds = opts.interval ?? DEFAULT_INTERVAL_SECONDS;
   const backend = new LocalFsBackend(input.config);
-  process9.stdout.write(
+  process10.stdout.write(
     `aaw runner: polling pool='${pool}' every ${intervalSeconds}s.
 Workspace: ${input.config.workspaceRoot}
 Press Ctrl-C to stop.
@@ -9266,35 +9268,35 @@ Press Ctrl-C to stop.
     if (stopped)
       return;
     stopped = true;
-    process9.stdout.write("\naaw runner: stopping.\n");
+    process10.stdout.write("\naaw runner: stopping.\n");
   };
-  process9.on("SIGINT", stop);
-  process9.on("SIGTERM", stop);
+  process10.on("SIGINT", stop);
+  process10.on("SIGTERM", stop);
   while (!stopped) {
     try {
       const items = await backend.listPoolWork(pool, { claimableOnly: true });
       const claimable = items.flatMap(findClaimableActivities);
       const ts = (/* @__PURE__ */ new Date()).toISOString();
       if (claimable.length === 0) {
-        process9.stdout.write(`[${ts}] no claimable activities
+        process10.stdout.write(`[${ts}] no claimable activities
 `);
       } else {
-        process9.stdout.write(`[${ts}] ${claimable.length} claimable:
+        process10.stdout.write(`[${ts}] ${claimable.length} claimable:
 `);
         for (const c of claimable.slice(0, 10)) {
-          process9.stdout.write(
+          process10.stdout.write(
             `   ${c.workItemId}/${c.activityId} (${c.actor}) \u2014 ${c.title}
 `
           );
         }
         if (claimable.length > 10) {
-          process9.stdout.write(`   \u2026and ${claimable.length - 10} more
+          process10.stdout.write(`   \u2026and ${claimable.length - 10} more
 `);
         }
       }
     } catch (err) {
       const ts = (/* @__PURE__ */ new Date()).toISOString();
-      process9.stderr.write(`[${ts}] poll error: ${err.message}
+      process10.stderr.write(`[${ts}] poll error: ${err.message}
 `);
     }
     if (stopped)
@@ -9338,7 +9340,7 @@ async function sleep(ms, stopped) {
 }
 
 // src/commands/status.ts
-import process10 from "node:process";
+import process11 from "node:process";
 async function runStatus(input) {
   const backend = new LocalFsBackend(input.config);
   const target = input.args[0];
@@ -9356,25 +9358,25 @@ async function runStatus(input) {
     return 1;
   const { initiatives, workItems } = tenantState.data;
   if (initiatives.length === 0 && workItems.length === 0) {
-    process10.stdout.write(
+    process11.stdout.write(
       `No work items or initiatives in ${input.config.workItemsPath}
- (run 'aaw install' if this workspace is not yet configured)
+(run 'aaw install' if this workspace is not yet configured)
 `
     );
     return 0;
   }
   if (initiatives.length > 0) {
-    process10.stdout.write(`Initiatives in ${input.config.initiativesPath}:
+    process11.stdout.write(`Initiatives in ${input.config.initiativesPath}:
 `);
     for (const init of initiatives) {
       const tick = symbol(init.status);
       const wiCount = workItems.filter((w) => w.initiativeId === init.id).length;
-      process10.stdout.write(
+      process11.stdout.write(
         `  ${tick} ${init.id} \u2014 ${init.title} (${init.status}, ${wiCount} WI${wiCount === 1 ? "" : "s"})
 `
       );
     }
-    process10.stdout.write("\n");
+    process11.stdout.write("\n");
   }
   if (workItems.length === 0)
     return 0;
@@ -9386,13 +9388,13 @@ async function runStatus(input) {
     byInit.set(key, list);
   }
   if (initiatives.length > 0) {
-    process10.stdout.write(`Work items in ${input.config.workItemsPath}:
+    process11.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
     for (const init of initiatives) {
       const list = byInit.get(init.id);
       if (!list || list.length === 0)
         continue;
-      process10.stdout.write(`
+      process11.stdout.write(`
   ${init.id}:
 `);
       for (const wi of list) {
@@ -9401,7 +9403,7 @@ async function runStatus(input) {
     }
     const standalone = byInit.get("__standalone");
     if (standalone && standalone.length > 0) {
-      process10.stdout.write(`
+      process11.stdout.write(`
   Standalone:
 `);
       for (const wi of standalone) {
@@ -9409,7 +9411,7 @@ async function runStatus(input) {
       }
     }
   } else {
-    process10.stdout.write(`Work items in ${input.config.workItemsPath}:
+    process11.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
     for (const wi of workItems) {
       renderWorkItemLine(wi, "  ");
@@ -9422,22 +9424,22 @@ async function showWorkItem(backend, workItemId) {
   if (result.kind !== "workItem")
     return 1;
   const wi = result.data;
-  process10.stdout.write(`${wi.id} \u2014 ${wi.title}
+  process11.stdout.write(`${wi.id} \u2014 ${wi.title}
 `);
-  process10.stdout.write(`  type: ${wi.type}, status: ${wi.status}
+  process11.stdout.write(`  type: ${wi.type}, status: ${wi.status}
 `);
-  process10.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
+  process11.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
 `);
-  process10.stdout.write(`  version: ${wi.version}
+  process11.stdout.write(`  version: ${wi.version}
 
 `);
   for (const a of wi.activities) {
     const tick = symbol(a.status);
-    process10.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
+    process11.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
 `);
     for (const t of a.tasks) {
       const ttick = symbol(t.status);
-      process10.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
+      process11.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
 `);
     }
   }
@@ -9448,33 +9450,33 @@ async function showInitiative(backend, initiativeId) {
   if (result.kind !== "initiative")
     return 1;
   const init = result.data;
-  process10.stdout.write(`${init.id} \u2014 ${init.title}
+  process11.stdout.write(`${init.id} \u2014 ${init.title}
 `);
-  process10.stdout.write(`  status: ${init.status}
+  process11.stdout.write(`  status: ${init.status}
 `);
-  process10.stdout.write(
+  process11.stdout.write(
     `  time horizon: ${init.targetStart ?? "?"} \u2013 ${init.targetEnd ?? "?"}
 `
   );
-  process10.stdout.write(`  owner: ${init.owner ?? "none"}
+  process11.stdout.write(`  owner: ${init.owner ?? "none"}
 `);
   if (init.rootWorkItem) {
-    process10.stdout.write(`  root work item: ${init.rootWorkItem}
+    process11.stdout.write(`  root work item: ${init.rootWorkItem}
 `);
   }
-  process10.stdout.write("\n");
+  process11.stdout.write("\n");
   if (init.workItems.length === 0) {
-    process10.stdout.write(
+    process11.stdout.write(
       `  (No work items registered. They link via 'initiative_id' in their progress.yaml.)
 `
     );
     return 0;
   }
-  process10.stdout.write(`  Work items:
+  process11.stdout.write(`  Work items:
 `);
   for (const ref of init.workItems) {
     const tick = symbol(ref.status);
-    process10.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
+    process11.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
 `);
   }
   return 0;
@@ -9482,7 +9484,7 @@ async function showInitiative(backend, initiativeId) {
 function renderWorkItemLine(wi, indent) {
   const tick = symbol(wi.status);
   const counts = activityCounts(wi);
-  process10.stdout.write(
+  process11.stdout.write(
     `${indent}${tick} ${wi.id} \u2014 ${wi.title} (${wi.status}, ${counts})
 `
   );
@@ -9511,7 +9513,7 @@ function symbol(status) {
 // src/commands/verify.ts
 import { mkdir as mkdir5, readFile as readFile7, unlink as unlink2, writeFile as writeFile5 } from "node:fs/promises";
 import path9 from "node:path";
-import process11 from "node:process";
+import process12 from "node:process";
 async function runVerify(input) {
   const checks = [];
   checks.push({
@@ -9551,11 +9553,11 @@ async function runVerify(input) {
     const tick = c.ok ? "\u2713" : "\u2717";
     const line = `  ${tick} ${c.name}${c.detail ? `  \u2014  ${c.detail}` : ""}
 `;
-    process11.stdout.write(line);
+    process12.stdout.write(line);
     if (!c.ok)
       allOk = false;
   }
-  process11.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
+  process12.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
   return allOk ? 0 : 1;
 }
 
@@ -9581,34 +9583,34 @@ Usage:
   aaw --help                          Show this help
 
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
-\`aaw init\` is kept as a compatibility alias for \`aaw install\`.
+'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
-var VERSION = "0.0.0";
+var VERSION = true ? "3.1.0" : "0.0.0-dev";
 function resolveAawRoot2() {
-  const self = fileURLToPath(import.meta.url);
-  const dir = path6.dirname(self);
-  if (path6.basename(dir) === "bin")
-    return path6.resolve(dir, "..");
-  return path6.resolve(dir, "..", "..", "..");
+  const self = fileURLToPath2(import.meta.url);
+  const dir = path10.dirname(self);
+  if (path10.basename(dir) === "bin")
+    return path10.resolve(dir, "..");
+  return path10.resolve(dir, "..", "..", "..");
 }
 async function main(argv) {
   const [command, ...rest] = argv;
   if (!command || command === "--help" || command === "-h" || command === "help") {
-    process12.stdout.write(HELP);
+    process13.stdout.write(HELP);
     return 0;
   }
   if (command === "--version" || command === "-v") {
-    process12.stdout.write(`${VERSION}
+    process13.stdout.write(`${VERSION}
 `);
     return 0;
   }
   if (command === "init") {
-    return runInit({ cwd: process12.cwd(), frameworkRoot: resolveAawRoot2() });
+    return runInit({ cwd: process13.cwd(), frameworkRoot: resolveAawRoot2() });
   }
   if (command === "install") {
     return runInstallCommand({ args: rest });
   }
-  const workspaceRoot = await findWorkspaceRoot(process12.cwd());
+  const workspaceRoot = await findWorkspaceRoot(process13.cwd());
   const config = await loadConfig(workspaceRoot);
   switch (command) {
     case "status":
@@ -9628,21 +9630,21 @@ async function main(argv) {
     case "migrate":
       return runMigrate({ config, args: rest });
     default:
-      process12.stderr.write(`Unknown command: ${command}
+      process13.stderr.write(`Unknown command: ${command}
 
 ${HELP}`);
       return 2;
   }
 }
-main(process12.argv.slice(2)).then(
-  (code) => process12.exit(code),
+main(process13.argv.slice(2)).then(
+  (code) => process13.exit(code),
   (err) => {
-    process12.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
+    process13.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
 `);
-    if (process12.env.AAW_DEBUG) {
-      process12.stderr.write(`${err.stack ?? ""}
+    if (process13.env.AAW_DEBUG) {
+      process13.stderr.write(`${err.stack ?? ""}
 `);
     }
-    process12.exit(1);
+    process13.exit(1);
   }
 );

@@ -13,20 +13,24 @@
  *   - tenant name
  *   - mode (local-fs | cloud)
  *   - work_items_path
- *   - which AI tool shims to wire up
  *
  * Writes:
  *   - .aaw-config.yaml at the workspace root
- *   - tool shims into .github/prompts/, .claude/commands/, .cursor/rules/
  *   - the work_items_path directory (if missing)
+ *
+ * Then hands off to the shared @aaw/installer engine to place the Agent Skills,
+ * so this path and `aaw install --framework` install identically. It used to wire
+ * per-tool command shims here instead, with its own copy of the copy-and-rewrite
+ * machinery and its own module-registry writer; all of that is gone.
  */
 
-import { copyFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { createInterface } from "node:readline/promises";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { runInstall } from "@aaw/installer";
 
 interface InitInput {
   cwd: string;
@@ -45,13 +49,6 @@ interface DetectedEnvironment {
 
 const SUBMODULE_DEFAULT = ".ai-assisted-work";
 const MODULE_ID = "aaw";
-
-interface Rewrite {
-  from: string;
-  to: string;
-}
-
-const TEXT_SHIM_EXT = new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
 
 export async function runInit(input: InitInput): Promise<number> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -113,47 +110,38 @@ export async function runInit(input: InitInput): Promise<number> {
       existingConfig?.initiativesPath ??
       path.join(path.dirname(workItemsPath), "initiatives");
 
-    const detectedTools = {
+    const detectedNames = describeTools({
       copilot: env.hasGitHub,
       cursor: env.hasCursor,
       claude: env.hasClaude,
-    };
-    const detectedNames = describeTools(detectedTools);
-    process.stdout.write(`\nTool shims — detected: ${detectedNames || "none"}\n`);
-    const wireAnswer = (
-      await rl.question(
-        "Wire up shims for the detected tools? [Y/n, or list to override e.g. cursor,claude]: ",
-      )
-    )
-      .trim()
-      .toLowerCase();
-    const tools = resolveTools(wireAnswer, detectedTools);
+    });
+    process.stdout.write(`\nAI tools detected: ${detectedNames || "none"}\n`);
+    process.stdout.write(
+      "Skills install to .agents/skills/, which every supported tool reads.\n" +
+        "Claude Code reads only .claude/skills/, so that is linked at it when detected.\n",
+    );
 
     await mkdir(env.workspaceRoot, { recursive: true });
     process.stdout.write("\n▸ Writing .aaw-config.yaml\n");
     await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
-  await recordSelfModule(env.workspaceRoot, env.aawSourceRoot);
 
     process.stdout.write(`▸ Creating ${workItemsPath}\n`);
     await mkdir(workItemsPath, { recursive: true });
 
-    if (tools.copilot) {
-      process.stdout.write("▸ Wiring GitHub Copilot prompts\n");
-      await wireGitHubCopilot(env);
-    }
-    if (tools.claude) {
-      process.stdout.write("▸ Wiring Claude Code commands\n");
-      await wireClaudeCode(env);
-    }
-    if (tools.cursor) {
-      process.stdout.write("▸ Wiring Cursor commands\n");
-      await wireCursor(env);
-    }
+    // Hand off to the shared engine, so this path and `aaw install --framework`
+    // place skills identically and the module registry is written once, by the
+    // code that owns that format.
+    const result = await runInstall({
+      frameworkRoot: env.aawSourceRoot,
+      cwd: env.workspaceRoot,
+      workspaceRoot: env.workspaceRoot,
+      log: (msg) => process.stdout.write(`${msg}\n`),
+    });
 
     process.stdout.write("\n▸ Verifying\n");
     process.stdout.write("    ✓ config written\n");
     process.stdout.write("    ✓ work_items_path created\n");
-    process.stdout.write("    ✓ shims installed\n");
+    process.stdout.write(`    ✓ ${result.skills.length} skill(s) installed\n`);
 
     const cliPath = toPortableRelativePath(
       env.workspaceRoot,
@@ -236,23 +224,6 @@ interface ToolSelection {
   claude: boolean;
 }
 
-function resolveTools(answer: string, detected: ToolSelection): ToolSelection {
-  // Empty / yes / accept → use the auto-detected set.
-  if (answer === "" || answer === "y" || answer === "yes" || answer === "auto") {
-    return detected;
-  }
-  // Decline → wire up nothing.
-  if (answer === "n" || answer === "no" || answer === "none") {
-    return { copilot: false, cursor: false, claude: false };
-  }
-  // Override list (comma-separated tool names).
-  const parts = answer.split(",").map((s) => s.trim());
-  return {
-    copilot: parts.includes("copilot"),
-    cursor: parts.includes("cursor"),
-    claude: parts.includes("claude"),
-  };
-}
 
 function describeTools(t: ToolSelection): string {
   const names: string[] = [];
@@ -282,23 +253,6 @@ async function writeConfig(
   await writeFile(path.join(root, ".aaw-config.yaml"), yaml, "utf8");
 }
 
-async function recordSelfModule(workspaceRoot: string, sourceRoot: string): Promise<void> {
-  const existing = await readExistingYaml(workspaceRoot);
-  const modulesValue = existing.modules;
-  const modules = modulesValue && typeof modulesValue === "object"
-    ? modulesValue as Record<string, unknown>
-    : {};
-  const currentValue = modules[MODULE_ID];
-  const current = currentValue && typeof currentValue === "object"
-    ? currentValue as Record<string, unknown>
-    : {};
-  modules[MODULE_ID] = {
-    ...current,
-    source_root: toPortableRelativePath(workspaceRoot, sourceRoot),
-  };
-  existing.modules = modules;
-  await writeFile(path.join(workspaceRoot, ".aaw-config.yaml"), stringifyYaml(existing), "utf8");
-}
 
 async function readExistingYaml(workspaceRoot: string): Promise<Record<string, unknown>> {
   const configPath = path.join(workspaceRoot, ".aaw-config.yaml");
@@ -311,57 +265,14 @@ async function readExistingYaml(workspaceRoot: string): Promise<Record<string, u
   }
 }
 
-async function wireGitHubCopilot(env: DetectedEnvironment): Promise<void> {
-  const src = path.join(env.aawSourceRoot, "skills-for-agents", "github", "prompts");
-  const dest = path.join(env.workspaceRoot, ".github", "prompts");
-  await copyDir(src, dest, rewriteFor(env));
-}
 
-async function wireClaudeCode(env: DetectedEnvironment): Promise<void> {
-  const src = path.join(env.aawSourceRoot, "skills-for-agents", "claude", "commands", "aaw");
-  const dest = path.join(env.workspaceRoot, ".claude", "commands", "aaw");
-  await copyDir(src, dest, rewriteFor(env));
-}
 
-async function wireCursor(env: DetectedEnvironment): Promise<void> {
-  const src = path.join(env.aawSourceRoot, "skills-for-agents", "cursor", "commands", "aaw");
-  const dest = path.join(env.workspaceRoot, ".cursor", "commands", "aaw");
-  await copyDir(src, dest, rewriteFor(env));
-}
-
-function rewriteFor(env: DetectedEnvironment): Rewrite | undefined {
-  const actual = toPortableRelativePath(env.workspaceRoot, env.aawSourceRoot);
-  return actual === SUBMODULE_DEFAULT ? undefined : { from: SUBMODULE_DEFAULT, to: actual };
-}
-
-function isTextShim(name: string): boolean {
-  return TEXT_SHIM_EXT.has(path.extname(name).toLowerCase());
-}
 
 function toPortableRelativePath(from: string, to: string): string {
   const rel = path.relative(from, to).split(path.sep).join("/");
   return rel === "" ? "." : rel;
 }
 
-async function copyDir(src: string, dest: string, rewrite?: Rewrite): Promise<void> {
-  if (!(await pathExists(src))) return;
-  await mkdir(dest, { recursive: true });
-  const entries = await readdir(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const from = path.join(src, entry.name);
-    const to = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      await copyDir(from, to, rewrite);
-    } else if (entry.isFile()) {
-      if (rewrite && isTextShim(entry.name)) {
-        const text = await readFile(from, "utf8");
-        await writeFile(to, text.split(rewrite.from).join(rewrite.to), "utf8");
-      } else {
-        await copyFile(from, to);
-      }
-    }
-  }
-}
 
 async function walkUpForGitRoot(start: string): Promise<string> {
   let dir = path.resolve(start);

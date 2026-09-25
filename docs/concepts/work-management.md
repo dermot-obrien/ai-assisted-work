@@ -1,0 +1,816 @@
+# Work Management
+
+## Work Hierarchy
+
+Work is organised into four levels, from strategic to operational:
+
+| Level | Term | Agile Equivalent | Time Horizon | Contains |
+|-------|------|-------------------|--------------|----------|
+| 4 (highest) | **Initiative** | Initiative (Jira Plans, Linear) | Multi-quarter | Work Items |
+| 3 | **Work Item** | Epic | ≤ 1 quarter | Activities |
+| 2 | **Activity** | Story | ≤ 1 sprint (2 weeks) | Tasks |
+| 1 (lowest) | **Task** | Task | ≤ 1 day | — |
+
+**Initiatives** are optional strategic containers that group related Work Items toward a shared goal. Work Items function independently with or without an Initiative parent. See [Initiatives](#initiatives) for details.
+
+## Outcomes (OKRs) — optional layer
+
+An optional, **context-free** outcome layer so work can ladder to measurable goals and a time-box can carry a goal. It is **orthogonal** to the hierarchy (not a fifth level): work items *advance* Key Results — they do not contain them.
+
+| Concept | What it is | Horizon | ID |
+|---|---|---|---|
+| **Objective** | a qualitative outcome to pursue | quarter | `OBJ-{NNN}` |
+| **Key Result** | measurable signal the Objective is being met (2-4 per Objective; leading or lagging) | quarter | `KR-{NNN}` |
+| **Milestone** | a checkpoint toward a Key Result | monthly | `MS-{NNN}` |
+| **Cadence** | a time-box (sprint / iteration / week) carrying a **Goal** | 1 wk - quarter | `SP-{NNN}` |
+
+**Linkage (orthogonal):** Objective -> Key Results. A **Work Item** (or Activity) declares `advances_kr_ids: [KR-...]` — the KRs it moves (many-to-many). A **Cadence** carries a `goal` + `advances_kr_ids`, and pulls specific Activities/Tasks from in-flight Work Items for that period.
+
+So: an **Initiative** (multi-quarter) ladders to several Objectives; an **Epic** (Work Item, <= quarter) advances **one** quarter's KRs; a **sprint/week goal** is a *step that advances* a KR — it is **not** the Objective (keep them distinct).
+
+This layer is **optional and additive** — work items function with or without it, and it carries **no domain/tenant vocabulary** (a host context maps its own Strategic Themes, value areas, etc. onto Objectives/KRs). Records live alongside work items, e.g. `objectives/OBJ-NNN/`. Templates ship with the `/aaw-start-initiative` skill, at `skills/aaw-start-initiative/assets/templates/objective-progress.yaml` and `cadence.yaml`, because an Objective is a strategic container like an Initiative.
+
+## Work Items
+
+A **work item** is a bounded unit of work with a clear outcome or deliverable. A work item has the following characteristics:
+
+> **AI Agents:** Read [agent-boundaries.md](agent-boundaries.md) before working with work items. It contains critical rules about concurrency, lock handling, and boundaries that must not be violated.
+
+## Quick Start
+
+**Creating a new work item:**
+```
+/start-work "Add user authentication to the API"
+```
+
+**Continuing work on an existing item:**
+```
+/progress-work WI-001
+```
+
+**Checking status:**
+```
+/work-status
+```
+
+See [Commands](#commands) for full list.
+
+## Invoking Commands
+
+Commands can be invoked using slash notation:
+
+| Command | Purpose |
+|---------|---------|
+| `/start-initiative` | Create new initiative (strategic container for work items) |
+| `/start-work` | Create new work item (Scoping → Discovery → Planning) |
+| `/progress-work [WI-NNN]` | Execute work item (Implementation phase) |
+| `/work-status [WI-NNN \| IN-NNN]` | Check status of work items or initiatives |
+| `/next-task [WI-NNN]` | Identify next task to work on |
+
+**Note**: These commands map to skills in the `work-management` namespace. The skill names may differ from the slash commands (e.g., `work-management:start-feature` invokes `/start-work`).
+
+---
+
+## External Integration
+
+Work items integrate with external systems for tracking and isolation:
+
+### JIRA Ticket
+
+Before starting a work item, create a JIRA ticket manually:
+
+1. Create a JIRA ticket in the appropriate project
+2. Use the JIRA ticket ID as the work item reference (e.g., `WI-001` maps to `PROJ-123`)
+3. Record the JIRA URL in `progress.yaml` under `artifacts.jira`
+4. Update JIRA status as the work item progresses
+
+**Note:** JIRA ticket creation is a manual step. The work management system does not auto-create tickets.
+
+### Git Branch
+
+Each work item is developed on an isolated branch:
+
+1. **Branch naming**: `wi/{WI-NNN}-{kebab-case-name}` (e.g., `wi/WI-001-user-profile-api`)
+2. **Create branch** before starting execution (Phase 4)
+3. **All changes** for the work item go on this branch
+4. **Record branch** in `progress.yaml` under `artifacts.branch`
+5. **Create PR** when work is complete for review
+
+This isolation ensures:
+- Work items don't interfere with each other
+- Changes can be reviewed as a cohesive unit
+- Rollback is straightforward if needed
+
+### Work Item Location
+
+Work items live at a single configured path. By default, this path is **outside the artefact repo** so work-state never pollutes the artefact repo's history. The path is set in `.aaw-config.yaml` at the workspace root:
+
+```yaml
+# .aaw-config.yaml
+tenant: dermot
+mode: local-fs
+work_items_path: ~/aaw/{tenant}/{repo}/work-items/
+initiatives_path: ~/aaw/{tenant}/{repo}/initiatives/
+```
+
+If a workspace has no config, agents fall back to `./change/work-items/` and `./change/initiatives/` in the artefact repo (legacy default).
+
+There is **one numbering series** for work items (`WI-NNN`) and **one for initiatives** (`IN-NNN`). The deliverables and outputs of a work item can still be committed to the artefact repo as decisions, ADRs, code, or other deliverables — those are produced *by* the work item, not stored *as* it.
+
+#### Publishing a work item as documentation
+
+If you want to ship a specific work item as documentation (e.g. demonstrating a pattern), copy a sanitised snapshot into the artefact repo's `docs/work-items/` directory. This is a deliberate publishing action, not a side effect of where the folder lives.
+
+---
+
+## Core Concepts
+
+A work item has the following characteristics:
+
+- Has a defined scope and completion criteria.
+- Contains multiple **activities**, each with sequential **tasks**.
+- Supports parallel work when activities have no dependencies.
+- Works the same way regardless of who (human or agent) does the work.
+
+## Supported Work Types
+
+| Type | Description | Example Activities |
+|------|-------------|-------------------|
+| **Development** | Software development work | Implement API, Write tests, Deploy service. |
+| **Architecture** | Platform strategy and solution design | Document current state, Evaluate options, Create diagrams. |
+| **Consultancy** | Advisory and analysis work | Stakeholder interviews, Gap analysis, Write recommendations. |
+| **Mixed** | Combination of the above | Research + Design + Implementation. |
+
+## Worker Types
+
+Work items can be progressed in parallel by assigning, locking and progressing activities via:
+
+- **Humans** - Longer assignment lock durations (8h activity, 4h task)
+- **AI Agents** - Shorter lock durations (1h activity, 30m task)
+- **Mixed teams** - Humans and agents working different activities in parallel
+
+## Key Concepts
+
+### Activities
+
+An **activity** is the unit of work assignment. A worker claims and locks an activity and works through its tasks sequentially.
+
+- Tasks within an activity are done in order
+- Tasks have no dependencies outside their activity
+- Multiple workers can work different activities in parallel
+
+**ID Convention (hierarchical, globally unique):**
+
+| Entity | Format | Example |
+|--------|--------|---------|
+| Initiative | `IN-{NNN}` | `IN-001`, `IN-042` |
+| Work Item | `WI-{NNN}` | `WI-001`, `WI-042` |
+| Activity | `{work_item_id}-A{N}` | `WI-001-A1` |
+| Task | `{activity_id}-T{N}` | `WI-001-A1-T1` |
+| Deliverable | `{work_item_id}-D{NN}` | `WI-001-D01` |
+| Blocker | `{work_item_id}-B{N}` | `WI-001-B1` |
+
+### Activity Dependencies
+
+Activities can depend on other activities completing first:
+
+```
+WI-001-A1 (Backend) ──┬──> WI-001-A3 (Integration Tests)
+                      │
+WI-001-A2 (Frontend) ─┘
+
+WI-001-A4 (Documentation) - no dependencies, can run in parallel with all
+```
+
+This enables:
+- **Parallelism**: WI-001-A1 and WI-001-A2 can be worked simultaneously
+- **Ordering**: WI-001-A3 waits for both A1 and A2
+- **Independence**: WI-001-A4 can be done anytime
+
+### Locks and Recovery
+
+**One agent per activity.** This is the fundamental concurrency rule.
+
+- **Activity locks** are stored as separate files in `locks/` directory
+- **Lock files** are created atomically when claiming, deleted when releasing
+- **Locks expire** automatically (1 hour for agents, 8 hours for humans)
+- **Expired locks** can be claimed by any worker for recovery
+- **Task state** is tracked within the activity lock file (for observability, not claiming)
+
+**Critical:** Agents claim activities, not tasks. An agent holding an activity lock works ALL tasks in that activity. No other agent may work any task in that activity until the lock is released or expires. See [agent-boundaries.md](agent-boundaries.md) for detailed rules.
+
+**Writeback Requirement:** Before releasing a lock, agents MUST update `progress.yaml` to reflect completed work. This ensures the next agent can trust the documented state. Releasing a lock without updating progress.yaml corrupts the system for subsequent agents.
+
+### Concurrency Safety
+
+The system uses file-based coordination:
+
+| File | Access Pattern | Safety Mechanism |
+|------|---------------|------------------|
+| `progress.yaml` | Read-modify-write | Version field (optimistic locking) |
+| `changelog.log` | Append-only | Atomic line appends |
+| `locks/*.lock` | Create/delete | Atomic file operations |
+
+**Version Check Protocol:**
+1. Read progress.yaml, note `version`
+2. Do work
+3. Re-read progress.yaml before writing
+4. If version changed: conflict detected, merge or retry
+5. If same: increment version and write
+
+### Scaling Limits
+
+**Recommended: 2-5 workers per work item, maximum 10.**
+
+See [scaling-limits.md](scaling-limits.md) for detailed analysis of structural and technical constraints.
+
+## Work Item Workspace
+
+Each work item gets its own folder as a work item-specific workspace:
+
+```
+WI-{NNN}-{descriptive-name}/
+├── scope.md         # [REQUIRED] Stakeholder-facing specification (summary, intent, acceptance criteria)
+├── plan.md          # [REQUIRED] Activities, tasks, dependencies (lean - references deliverables)
+├── progress.yaml    # [REQUIRED] Source of truth for state tracking (versioned)
+├── deliverables/    # [REQUIRED] Concrete outputs from activities
+│   ├── D01-{name}.md    # Deliverable with ID WI-NNN-D01
+│   ├── D02-{name}.md    # Deliverable with ID WI-NNN-D02
+│   └── ...
+├── locks/           # [REQUIRED] Activity lock files (atomic create/delete)
+│   ├── WI-001-A1.lock
+│   └── WI-001-A2.lock
+├── scope-ai.md      # [RECOMMENDED] AI agent addendum (intent history, rationale)
+├── changes.md       # [OPTIONAL] Files changed summary - can be generated from progress.yaml
+├── changelog.log    # [OPTIONAL] Append-only event log (for multi-agent audit trail)
+├── research.md      # [OPTIONAL] Web + workspace research findings
+├── decisions.md     # [OPTIONAL] Options considered, decisions made (legacy - prefer deliverables/)
+├── notes.md         # [OPTIONAL] Ad-hoc narrative and findings
+└── agents.md        # [OPTIONAL] Work-specific agent instructions
+```
+
+### Document Categories
+
+**Documents an `intervention` requires** (the table below describes a full `WI-NNN/`
+workspace, which only the **intervention** class creates — see
+[work-classification.md](work-classification.md)). A **chore** creates none of these (it's
+a branch + a changelog line); a **change** creates a light `progress.yaml` + brief plan:
+
+| Document | Purpose | Audience | Created In |
+|----------|---------|----------|------------|
+| `scope.md` | Stakeholder-facing specification: summary, intent, acceptance criteria, scope boundaries, context. | Humans + AI | Scoping Phase |
+| `plan.md` | Activities, tasks, dependencies. References deliverables, avoids detailed design content. | Humans + AI | Planning Phase |
+| `progress.yaml` | **Source of truth** for all state tracking. Includes activities, tasks, deliverables, artifacts. | Humans + AI | Planning Phase |
+| `deliverables/` | Concrete outputs from activities (decision docs, specifications, guides). | Humans + AI | Execution Phase |
+
+**Recommended Documents** (create when beneficial):
+
+| Document | Purpose | When to Create |
+|----------|---------|----------------|
+| `scope-ai.md` | AI agent addendum: intent formation history, clarifying Q&A, decision rationale. | Complex work items where intent rationale aids future agents |
+| `changes.md` | Files modified/created + decision summaries. Can be generated from progress.yaml. | When preparing PR or release changelog |
+| `changelog.log` | Append-only event log (JSON Lines) for audit trail. | Multi-agent scenarios or when audit trail is required |
+
+**Why have scope-ai.md?**
+
+- **`scope.md`** is distributed to stakeholders - it should be clean, professional, and focused on WHAT is being delivered
+- **`scope-ai.md`** (optional but recommended) preserves the dialogue and reasoning that led to the scope - this helps AI agents understand WHY certain decisions were made
+- For complex work items, creating scope-ai.md improves continuity across agent sessions
+- For simple work items, scope.md alone is sufficient
+
+### Deliverables
+
+**Every completed activity should produce a deliverable.** A deliverable is:
+
+1. **A file created or modified** (tracked in progress.yaml deliverables section)
+2. **A decision documented** (captured in deliverable document)
+3. **Both**
+
+Even a "decision to do nothing" is a deliverable - document the analysis and rationale. Deliverables are tracked at the activity level, not individual tasks.
+
+**Deliverable ID Convention:**
+
+| Entity | Format | Example |
+|--------|--------|---------|
+| Deliverable | `D{NN}` | `D01`, `D02`, `D03` |
+| Full ID | `{work_item_id}-D{NN}` | `WI-001-D01`, `WI-008-D03` |
+
+**Note:** Either the short ID (`D01`) or full ID (`WI-001-D01`) can be used when referencing deliverables. The short ID is a shorthand for the full ID within the work item context.
+
+**Deliverable Document Structure:**
+
+```markdown
+# D01: {Deliverable Name}
+
+**Deliverable ID**: WI-NNN-D01  
+**Activity**: WI-NNN-A1 (Activity Name)  
+**Tasks**: T1, T2, T3  
+**Status**: Complete | Draft  
+**Date**: YYYY-MM-DD
+
+---
+
+## Decision
+
+{One-line summary of what was decided}
+
+## {Content sections as appropriate}
+
+## Files Created/Modified
+
+| File | Type | Purpose |
+|------|------|---------|
+| `path/to/file` | Created/Modified | Description |
+
+## Verification
+
+- [x] Criteria 1
+- [ ] Criteria 2
+```
+
+**Deliverables vs Changes:**
+
+| Document | Purpose | Scope |
+|----------|---------|-------|
+| `deliverables/D01-*.md` | **What was decided** - detailed analysis, rationale, specifications | Activity-level outputs |
+| `changes.md` | **What files changed** - quick reference for PR review, links to deliverables | All file changes across work item |
+
+**Keep `plan.md` lean:** The plan should list tasks and reference deliverables, not contain detailed design content. Move detailed proposals, options analysis, and specifications into deliverable documents.
+
+**Optional Documents** (created when needed):
+
+| Document | Purpose | Created In |
+|----------|---------|------------|
+| `research.md` | Web sources, workspace findings. | Discovery Phase |
+| `decisions.md` | Options, trade-offs, chosen approach. | Discovery Phase |
+| `notes.md` | Notes, blockers, ad-hoc findings. | Any Phase |
+| `agents.md` | Work-specific agent instructions | Any Phase |
+
+### Changes Document (Optional)
+
+The `changes.md` file is **optional** and can be generated from `progress.yaml` when preparing a PR or release changelog. It provides a human-readable summary of:
+
+- Files modified/created per activity
+- Decision summaries
+- Deliverables produced
+
+**When to create changes.md:**
+- When preparing a PR for review
+- When creating release notes
+- When handing off to stakeholders
+
+**Generating from progress.yaml:**
+
+Since `progress.yaml` is the source of truth and tracks all tasks, deliverables, and file changes, you can generate `changes.md` by:
+1. Reading the deliverables list from progress.yaml
+2. Reading task notes and completed_at timestamps
+3. Reading the artifacts section for file references
+
+This avoids maintaining two places during active work.
+
+### Why This Structure?
+
+- **Separation of concerns**: Research and decisions don't clutter the execution plan.
+- **Concurrency**: `progress.yaml` uses optimistic locking, changelog.log is append-only.
+- **Flexibility**: Simple work items skip research/decisions; complex ones have full trail.
+
+## Work Item Lifecycle
+
+> **Ceremony is set by the work's class.** Before applying the four-phase lifecycle below,
+> classify the work — see **[work-classification.md](work-classification.md)**. The full
+> pipeline (Scoping → Discovery → Planning → Execution with `scope.md`/`plan.md`/
+> `deliverables/`) is the **intervention** path. Most work is lighter: a **chore** is just
+> a branch + a changelog line, a **change** is a brief plan + `progress.yaml`, and an
+> **inquiry** goes to research first. Default to the lightest class; escalate by
+> classification.
+
+Work items progress through four phases. Each phase has a recommended interaction style:
+
+- **Read-only phases** (Scoping, Discovery): Focus on dialogue, research, and analysis before making changes. Use read-only tool modes where available.
+- **Write phases** (Planning, Execution): Create and modify files. Use full tool access.
+
+| Phase | Interaction Style | Purpose |
+|-------|-------------------|---------|
+| 1. Scoping | Read-only → Write | Refine intent, create scope.md |
+| 2. Discovery | Read-only → Write | Research, create research.md & decisions.md |
+| 3. Planning | Write | Create plan.md & progress.yaml |
+| 4. Execution | Write | Implement the plan |
+
+**Note:** The "Read-only → Write" pattern means: gather information and confirm with the user before creating files. Use the most appropriate tool mode for each phase of work.
+
+### Phase 1: Scoping
+
+**Purpose**: Refine user's intent through interactive dialogue.
+
+1. Capture user's initial instruction verbatim (read-only)
+2. Ask clarifying questions about outcomes, constraints, success criteria (read-only)
+3. Confirm understanding with user (read-only)
+4. Create `scope.md` with original + refined instruction (write)
+
+### Phase 2: Discovery
+
+**Purpose**: Research to understand problem space and identify options.
+
+1. Research workspace (documents, code, existing patterns) (read-only)
+2. Research web sources (best practices, libraries, industry approaches) (read-only)
+3. Identify options and trade-offs (read-only)
+4. Present options to user for decision (read-only)
+5. Create `research.md` and `decisions.md` (write, if non-trivial)
+
+**Note**: For simple work items, this phase may be skipped or minimal.
+
+### Phase 3: Planning
+
+**Purpose**: Create execution plan from refined scope and decisions.
+
+1. Design activities (units of work assignment)
+2. Define tasks within each activity
+3. Establish activity dependencies
+4. Create `plan.md` and `progress.yaml`
+5. Present plan for user approval
+
+### Phase 4: Execution
+
+**Purpose**: Implement the plan.
+
+1. Claim available activities
+2. Work through tasks
+3. Update progress.yaml as work completes
+
+### Status Values
+
+| Status | Phase | Description |
+|--------|-------|-------------|
+| `scoping` | 1 | Refining intent with user. |
+| `discovery` | 2 | Researching and gathering options. |
+| `planning` | 3 | Creating execution plan. |
+| `in_progress` | 4 | Execution underway. |
+| `blocked` | - | Waiting on external input/resolution. |
+| `review` | 4 | Work complete, awaiting verification. |
+| `abandoned` | - | Work is abandoned. |
+| `done` | - | Outcome achieved and verified. |
+
+The `scoping`/`discovery`/`planning` statuses apply only to the **intervention** path. A
+**chore** has no tracked work item, so it has no status (it's a branch + changelog); a
+**change** goes straight `planning → in_progress → done`. See
+[work-classification.md](work-classification.md).
+
+## Commands
+
+| Command | Interaction Style | Purpose |
+|---------|-------------------|---------|
+| `/start-initiative` | Read-only → Write | Create initiative (strategic container for work items). |
+| `/start-work` | Read-only → Write | Scoping → Discovery → Planning phases. |
+| `/progress-work [WI-NNN]` | Write | Execution phase (implement the plan). |
+| `/work-status [WI-NNN \| IN-NNN]` | Read-only | Check status of work items or initiatives. |
+| `/next-task [WI-NNN]` | Read-only | Identify the next task to work on. |
+
+### Progress Work Agent
+
+The `/progress-work` command (or agent) is designed to continue implementation after planning is complete. It:
+
+1. **Reads Work Item Context**: Loads scope.md, plan.md, and progress.yaml
+2. **Assesses State**: Checks current status, locks, activity dependencies
+3. **Finds Available Activity**: Identifies activities with no dependencies or all dependencies met
+4. **Claims Activity**: Locks the activity to prevent conflicts
+5. **Works Tasks Sequentially**: Completes each task in order within the activity
+6. **Updates Progress**: Marks tasks and activities complete as it goes
+7. **Verifies**: Ensures all acceptance criteria are met before marking complete
+
+**Key Features**:
+
+- **Parallel-Ready**: Multiple agents can work different activities simultaneously
+- **Resumable**: Any agent session can pick up where another left off
+- **Lock-based**: Activity and task locks prevent conflicts
+- **Progress Tracking**: progress.yaml is the source of truth
+- **Dependency Aware**: Respects activity dependencies from plan.md
+
+**Usage**:
+```
+/progress-work WI-001
+```
+
+or simply:
+
+```
+/progress-work
+```
+
+(Will find the most recent work item automatically)
+
+## Handling Interruptions and Agent Failures
+
+If an agent session ends unexpectedly:
+
+1. Run `/progress-work WI-XXX`
+2. Agent reads progress.yaml to see current state
+3. Finds activity with expired lock (**must verify expiry, not assume**)
+4. Claims the activity (new lock via delete-then-create)
+5. Reviews completed tasks (doesn't redo them)
+6. Continues from last incomplete task
+7. Updates changelog with recovery action
+
+**Critical:** Recovery only applies when a lock is genuinely expired. If the lock file is being modified by another agent, that agent is still active - do not attempt recovery. See [agent-boundaries.md](agent-boundaries.md) for the recovery protocol.
+
+## Parallel Work
+
+Multiple agents can work on the same work item when:
+
+1. **Independent Activities**: Activities with no dependencies between them
+2. **All Dependencies Met**: Activities whose prerequisites are complete
+3. **Not Locked**: Activities not currently held by another agent
+
+Example scenario with 3 workers:
+```
+Worker 1: Claims WI-001-A1, working through tasks
+Worker 2: Claims WI-001-A2 (no dependency on A1)
+Worker 3: Waits - WI-001-A3 depends on A1 and A2
+
+Worker 1: Completes WI-001-A1
+Worker 3: Still waiting - WI-001-A2 not done
+
+Worker 2: Completes WI-001-A2
+Worker 3: Claims WI-001-A3 (both dependencies met)
+```
+
+## Planning for Parallelism
+
+When creating plan.md, structure activities to maximize parallel work:
+
+**Good**: Independent activities that can run in parallel
+```
+WI-001-A1: Backend API      depends_on: []
+WI-001-A2: Frontend UI      depends_on: []
+WI-001-A3: Integration      depends_on: [WI-001-A1, WI-001-A2]
+```
+
+**Less Optimal**: Linear chain that forces sequential work
+```
+WI-001-A1: Backend API      depends_on: []
+WI-001-A2: Frontend UI      depends_on: [WI-001-A1]
+WI-001-A3: Integration      depends_on: [WI-001-A2]
+```
+
+## Work Type Specifics
+
+**All work types** share these requirements:
+
+- **Git branch**: `wi/WI-{NNN}-{kebab-name}` - isolates work from other work items
+- **JIRA ticket**: Created manually before starting, linked in `progress.yaml`
+- **Changes document**: `changes.md` updated as files are modified/created
+- **PR created**: When work is complete, for review before merging
+
+### Development Work
+
+- Commits after each task or logical group
+- Conventional commits: `feat(WI-001): {activity}.{task} - {description}`
+- Artifacts: documents, code, tests, deployment configs
+
+### Architecture Work
+
+- **See [architecture-work.md](architecture-work.md)** for comprehensive guidance
+- Standard deliverables: capabilities, ABBs, operating model, ADRs, roadmap, cost-benefit, executive deck, diagrams
+- Diagrams: Conceptual architecture (ABB-level), context/integration, with companion guide
+- Decision records (ADRs) captured in `05-governance/decisions/`
+- Review checkpoints at key milestones
+- Artifacts: documents, diagrams, specifications, decision records
+
+### Consultancy Work
+
+- Research findings in `research.md`
+- Interview notes and analysis in `notes.md`
+- Final deliverables tracked in `progress.yaml` (`artifacts.deliverables`)
+- Artifacts: working documents, reports, recommendations, presentations
+
+## Templates
+
+Each skill bundles the templates it writes, under `skills/<name>/assets/templates/`:
+
+**Initiative Templates:**
+
+- `initiative-scope.md` - Initiative scope (goals, success criteria, work item list)
+- `initiative-progress.yaml` - Initiative progress tracking (work item references)
+
+**Work Item Templates (Required):**
+
+- `scope.md` - Stakeholder-facing specification (summary, intent, acceptance criteria, scope, context)
+- `plan.md` - Implementation plan with activities
+- `progress.yaml` - Source of truth for state tracking (versioned for concurrency)
+
+**Work Item Templates (Recommended):**
+
+- `scope-ai.md` - AI agent addendum (intent history, decision rationale) - for complex work items
+
+**Work Item Templates (Optional):**
+
+- `changes.md` - Files modified summary - can be generated from progress.yaml when preparing PR
+- `changelog.log` - Append-only event log - for multi-agent scenarios
+- `research.md` - Web and workspace research findings
+- `decisions.md` - Options, trade-offs, decisions
+- `notes.md` - Session logs and ad-hoc findings
+- `agents.md` - Work-specific agent instructions
+
+**Concurrency:**
+
+- `locks/` - Activity lock file examples
+
+## Error Handling
+
+### Missing Required Files
+
+If required files are missing when running `/progress-work`:
+
+| Missing File | Action |
+|--------------|--------|
+| `progress.yaml` | Cannot proceed. Run `/start-work` to create work item properly. |
+| `scope.md` | Cannot proceed. Work item incomplete. Check if scoping phase finished. |
+| `scope-ai.md` | Proceed with caution. Agent may lack context on intent formation and rationale. |
+| `plan.md` | Cannot proceed. Work item in discovery phase. Complete planning first. |
+
+### Malformed progress.yaml
+
+If `progress.yaml` cannot be parsed:
+
+1. Check for YAML syntax errors (indentation, colons, quotes)
+2. Validate against the template structure
+3. If unrecoverable, restore from git history or recreate from `plan.md`
+
+### Lock Conflicts
+
+If lock acquisition fails:
+
+1. **If lock file was modified since you read it**: STOP. Another agent is actively working. Find a different activity.
+2. **If lock exists and is not expired**: STOP. Lock is valid. Find a different activity.
+3. **If lock exists and is expired**: Use delete-then-create pattern (not overwrite). If create fails, another agent claimed it first.
+4. **Never forcefully delete non-expired locks** without user approval.
+5. **Never overwrite lock files** - use atomic create operations only.
+
+See [agent-boundaries.md](agent-boundaries.md) for the lock acquisition decision tree.
+
+### Version Conflicts
+
+If version conflict detected in `progress.yaml`:
+
+1. Re-read the file to see what changed
+2. If changes are compatible: merge and retry with incremented version
+3. If changes conflict: report to user for resolution
+4. Never overwrite without version check
+
+### Work Items Location Discovery
+
+Work items live at the path declared in `.aaw-config.yaml` at the workspace root:
+
+```yaml
+work_items_path: ~/aaw/{tenant}/{repo}/work-items/
+```
+
+If the config is missing, fall back to `./change/work-items/` in the artefact repo.
+
+**Work Item ID format**: `WI-{NNN}` (zero-padded: 001, 002, etc.). One series.
+
+**Folder naming**: `WI-{NNN}-{kebab-case-title}/`.
+
+**Finding the next available ID**: Scan the resolved root for `WI-*/` folders, take the highest number, increment.
+
+## Initiatives
+
+An **initiative** is a strategic container that groups related Work Items toward a shared goal. Initiatives are optional — Work Items function identically with or without a parent Initiative.
+
+### When to Use Initiatives
+
+- When multiple Work Items share a strategic goal spanning more than a quarter
+- When you need to track progress across related Work Items
+- When coordinating work across multiple agents or team members at a strategic level
+
+### Initiative Lifecycle
+
+| State | Description |
+|-------|-------------|
+| `proposed` | Identified, scope being defined. No Work Items yet. |
+| `active` | Work Items being created and/or progressed. |
+| `on_hold` | Paused. Existing Work Items may remain. |
+| `completed` | All Work Items done, outcomes achieved. |
+| `done` | Verified and closed. |
+| `cancelled` | Abandoned. Reason documented. |
+
+### Initiative Workspace
+
+Initiatives have a lightweight workspace compared to Work Items:
+
+```
+IN-{NNN}-{name}/
+├── scope.md          # [REQUIRED] Goals, success criteria, work item list
+├── progress.yaml     # [REQUIRED] Tracks work items and overall status
+└── notes.md          # [OPTIONAL] Strategic notes, decision log
+```
+
+No `plan.md`, `deliverables/`, or `locks/` — planning, deliverables, and concurrency control happen at the Work Item level.
+
+### Initiative ↔ Work Item Relationship
+
+The `initiative_id` field on a Work Item's `progress.yaml` is the **canonical membership indicator** (source of truth). The initiative's `work_items` array is a **convenience cache** maintained by periodic sync.
+
+```yaml
+# In Work Item progress.yaml — SOURCE OF TRUTH for membership
+initiative_id: IN-001    # null = standalone work item
+```
+
+```yaml
+# In Initiative progress.yaml — CONVENIENCE CACHE (synced periodically)
+work_items:
+  - id: WI-005
+    title: "API Redesign"
+    status: in_progress
+    path: "change/work-items/WI-005-api-redesign/"
+
+# Optional: designate a root work item for domain-specific artifacts
+root_work_item: WI-032   # null if not applicable
+```
+
+**Housekeeper sync convention**: Agents performing housekeeping should scan work items for `initiative_id` back-pointers and update the initiative's `work_items` array accordingly. This keeps the cache in sync without requiring real-time updates.
+
+### Root Work Item
+
+An initiative may optionally designate a **root work item** via the `root_work_item` field in its `progress.yaml`. This is useful for domain-specific integrations where one work item holds foundational artifacts (e.g., a research hypothesis DAG, an architecture baseline document). The root work item is a regular work item — it just has a special role within the initiative.
+
+### Initiative Location Discovery
+
+Initiatives live at the path declared in `.aaw-config.yaml` at the workspace root:
+
+```yaml
+initiatives_path: ~/aaw/{tenant}/{repo}/initiatives/
+```
+
+If the config is missing, fall back to `./change/initiatives/` in the artefact repo. Initiative ID format is `IN-{NNN}` — one series, no separate prefix.
+
+### WIP Limits (Recommended)
+
+| Constraint | Recommendation |
+|------------|---------------|
+| Active Initiatives per team | 2-3 maximum |
+| Work Items per Initiative | 2-8 typical, max 12 |
+
+### Initiative Templates
+
+See `./_templates/` for:
+- `initiative-scope.md` - Initiative scope template
+- `initiative-progress.yaml` - Initiative progress tracking template
+
+## Decision Trees
+
+### When to Skip Discovery Phase
+
+```
+START: Is this a simple, well-understood task?
+  |
+  ├─ YES: Does it require research?
+  |   |
+  |   ├─ NO: Does it require choosing between approaches?
+  |   |   |
+  |   |   ├─ NO: → SKIP Discovery (go directly to Planning)
+  |   |   |
+  |   |   └─ YES: → DO Discovery (need decisions.md)
+  |   |
+  |   └─ YES: → DO Discovery (need research.md)
+  |
+  └─ NO: Is the problem space well-documented in workspace?
+      |
+      ├─ YES: Are best practices already established?
+      |   |
+      |   ├─ YES: → SKIP Discovery (use existing patterns)
+      |   |
+      |   └─ NO: → DO Discovery (need to research options)
+      |
+      └─ NO: → DO Discovery (need to understand problem)
+```
+
+**Examples of skipping Discovery:**
+- Bug fix with clear reproduction steps
+- Adding a field to an existing API following established patterns
+- Updating documentation with known information
+
+**Examples requiring Discovery:**
+- Implementing new feature with multiple possible approaches
+- Performance optimization (need to profile first)
+- Integration with unfamiliar external system
+
+### When to Revise vs Create New Work Item
+
+If scope changes after work has started:
+- **Minor changes** (no completed work affected): Update scope.md and plan.md directly
+- **Moderate changes** (<50% completed work affected): Revise scope and replan remaining activities
+- **Major changes** (>50% affected, original intent still valid): Reset remaining activities
+- **Fundamental changes** (original intent no longer valid): Abandon and create a new work item
+
+## Reference
+
+- [agent-boundaries.md](agent-boundaries.md) - **Critical rules for AI agents** (read first)
+- [work-classification.md](work-classification.md) - **Work classes & ceremony** — classify work by certainty × impact × kind (chore / change / intervention / inquiry); ceremony scales with class
+- [scaling-limits.md](scaling-limits.md) - Scaling limits and system constraints
+- the `/aaw-start-initiative` skill - Creating initiatives (strategic containers)
+- the `/aaw-start-work` skill - Creating work items (Scoping → Discovery → Planning)
+- the `/aaw-progress-work` skill - Executing work items (Implementation phase)
+- the `/aaw-work-status` skill - Checking work item and initiative status
+- the `/aaw-next-task` skill - Identifying the next task to work on
+- [architecture-work.md](architecture-work.md) - **Architecture work type guidance** (deliverables, diagrams, ADRs)
+- `skills/<name>/assets/templates/` - template files, bundled with the skill that writes them

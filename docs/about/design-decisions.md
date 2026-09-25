@@ -30,36 +30,53 @@ Keep all agents and templates **completely domain-agnostic**:
 
 ---
 
-## DD-02: Submodule-First Design
+## DD-02: Independent Clone, Installed In
+
+> **Superseded 2026-09.** The original decision was submodule-first. See the revision below.
 
 ### Context
 
-Need to share agents across repositories without duplication.
+Need to share agents across repositories without duplication, in organisations where npm
+registry access is often restricted but git and GitHub access are not.
 
 ### Decision
 
-Design for **Git submodule** usage as primary integration method:
+AAW is an **independent clone**, not a submodule, and installs itself into a workspace:
 
 ```
 domain-project/
-├── .ai-assisted-work/          # Submodule
-│   ├── packages/skills/      # Full instructions
-│   └── skills-for-agents/      # Command wrappers
-└── work/              # Domain work items
+├── .ai-assisted-work/     # Independent clone (or elsewhere on disk)
+│   ├── skills/            # Agent Skills — the maintained definitions
+│   └── packages/          # CLI, installer, protocol
+├── .agents/skills/        # Installed skills (generated)
+└── change/work-items/     # Domain work items
 ```
+
+`aaw install` copies the skills into the workspace. One clone can serve several workspaces;
+each records the source path in its own `.aaw-config.yaml`.
 
 ### Rationale
 
-- Single source of truth
-- Easy updates via submodule pull
-- Clean separation of concerns
-- Version pinning available
+- **The clone is the single source of truth**, and the installed copy is generated. Workspaces
+  should gitignore the installed skills rather than track them, or the same content ends up in
+  several repos and drifts.
+- Submodules coupled the consuming repo's history to AAW's, needed `--init` and `--remote`
+  discipline that teams routinely got wrong, and offered nothing the clone does not.
+- npm git-dependency (`npm i github:dermot-obrien/ai-assisted-work`) works for teams that want
+  it, without needing registry access, because `bin/aaw.js` is a committed bundle.
+
+### Revision history
+
+| Date | Decision |
+|------|----------|
+| 2026-02 | Submodule-first |
+| 2026-09 | Independent clone plus `aaw install`; submodules no longer recommended |
 
 ### Alternatives Considered
 
 | Alternative | Rejected Because |
 |-------------|------------------|
-| Package manager | Overhead for documentation/templates |
+| Git submodule | Couples consuming repo history; error-prone update ritual; no benefit over a clone |
 | Copy-paste | No update path |
 | Monorepo | Too coupled |
 
@@ -147,15 +164,18 @@ Write agent instructions that work with **any AI tool**:
 
 ### Implementation
 
+Originally a canonical instruction file plus a per-tool wrapper. Since 2026-09 the wrappers are
+unnecessary: the Agent Skills format is itself tool-neutral, so one definition is the artefact
+every tool reads. See DD-10.
+
 ```
-packages/skills/
-└── work-management/       # Universal instructions
-    ├── start-work.md
-    └── progress-work.md
-skills-for-agents/
-├── cursor/commands/aaw/   # Cursor wrappers
-├── claude/commands/aaw/   # Claude wrappers
-└── github/skills/aaw/     # GitHub Copilot wrappers
+skills/
+├── aaw-start-work/
+│   ├── SKILL.md            # the definition every tool reads
+│   ├── references/         # loaded on demand
+│   └── assets/templates/
+└── aaw-progress-work/
+    └── ...
 ```
 
 ---
@@ -308,12 +328,75 @@ status: "{STATUS}"
 
 ---
 
+## DD-10: Agent Skills as the Distribution Format
+
+### Context
+
+AAW originally shipped each workflow as a canonical Markdown instruction file plus one thin
+shim per AI tool, because every tool had its own incompatible layout and the only portable
+artefact was a pointer.
+
+Anthropic released the Agent Skills format as an open standard in December 2025. It is now
+stewarded by the Agentic AI Foundation, a Linux Foundation project, and `.agents/skills/` is
+read natively by OpenAI Codex, Cursor, GitHub Copilot, VS Code and Gemini CLI.
+
+### Decision
+
+Ship each workflow as a standalone **Agent Skill**: a directory holding a `SKILL.md` with
+`name` and `description` frontmatter, plus optional `references/`, `scripts/` and `assets/`.
+
+`aaw install` places them at `.agents/skills/<name>/` and links `.claude/skills/<name>` at the
+same directory, because Claude Code reads only `.claude/skills/`.
+
+### Rationale
+
+- **The premise behind the shim is gone.** The portable artefact is now the skill itself.
+- **Shims cost model invocation.** The Claude, Cursor and Copilot shims carried no
+  `description`, so those tools could only run AAW when the user typed the slash command. A
+  skill's description lets an assistant reach for it when a request matches.
+- **Shims defeat progressive disclosure.** A shim points at one large instruction file read
+  whole on every invocation. A skill loads its name and description at startup, its body on
+  activation, and its references only when a branch needs them.
+- **One definition, not five.** Twenty-five hand-maintained shim files became five skills.
+
+### Trade-offs
+
+| Benefit | Trade-off |
+|---------|-----------|
+| One definition for every tool | Claude Code needs a link, since it does not read `.agents/skills/` |
+| Model invocation, not just slash commands | Descriptions must be written carefully, since they are the whole trigger surface |
+| Progressive disclosure | Long procedures must be split into `references/`, which is more authoring work |
+| Self-contained and droppable | Shared templates are bundled per skill, so a few small files are duplicated |
+
+A workspace also configured for Claude Code may list each skill twice in Cursor and Copilot,
+which read both paths. Because the second is a link to the first, both entries are the same
+content.
+
+### Consequences
+
+- The per-tool shims under `skills-for-agents/` and the instruction files under
+  `packages/skills/work-management/` were removed in 3.0.0, and the shim machinery itself in
+  3.1.0 once AI-Assisted Architecture and AI-Assisted Research had both migrated and nothing
+  declared `shims` any more. Gone with it: the `shims` and `source_token` manifest keys, the
+  `source_token` rewrite that existed only to keep shim pointers resolving, and a second copy
+  of the same copy-and-rewrite machinery in the interactive bootstrap.
+- What remains is the install-time sweep that removes shims a framework previously wrote.
+  That is a migration aid rather than shim support, and it can go once no workspace predates
+  the migration. `aaw install` sweeps
+  away shims it previously wrote, since they point at files that no longer exist.
+- The reference documentation that lived alongside those instruction files — concepts,
+  lifecycle, scaling limits, work-type notes, agent boundary rules — moved to `docs/concepts/`
+  rather than being deleted with them.
+- Skills are validated against the spec with `skills-ref validate`.
+
+---
+
 ## Decision Log
 
 | ID | Decision | Date | Status |
 |----|----------|------|--------|
 | DD-01 | Domain-Agnostic Design | 2026-02 | Implemented |
-| DD-02 | Submodule-First | 2026-02 | Implemented |
+| DD-02 | Independent Clone, Installed In | 2026-09 | Implemented (supersedes the 2026-02 submodule-first model) |
 | DD-03 | File-Based Tracking | 2026-02 | Implemented |
 | DD-04 | Single-Responsibility | 2026-02 | Implemented |
 | DD-05 | Tool-Neutral | 2026-02 | Implemented |
@@ -321,3 +404,4 @@ status: "{STATUS}"
 | DD-07 | Permissive Dual Licence (CC BY 4.0 + Apache-2.0) | 2026-05 | Implemented (v2.0; supersedes the v1 AGPL-3.0 + Commercial model) |
 | DD-08 | Contribution Model | 2026-02 | Implemented |
 | DD-09 | Template Extensibility | 2026-02 | Implemented |
+| DD-10 | Agent Skills as the Distribution Format | 2026-09 | Implemented |
