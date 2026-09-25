@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 
 try:
     import tomllib
@@ -58,6 +59,22 @@ def sha256(path: str) -> str:
     return h.hexdigest()
 
 
+def _template_stem(raw: str):
+    """The directory part of a templated path, before its first {placeholder}.
+
+    None when the path carries no placeholder. A binding may be written once and mean a
+    different location per run, `change/planning/{quarter}/{quarter}-calendar.csv` being
+    the case this was added for. Checking such a path for existence is checking a name
+    nothing ever has, so the stable part in front of it is checked instead.
+    """
+    m = re.search(r"\{[A-Za-z_][A-Za-z0-9_]*\}", raw)
+    if not m:
+        return None
+    head = raw[:m.start()]
+    cut = max(head.rfind("/"), head.rfind(os.sep))
+    return head[:cut] if cut > 0 else ""
+
+
 def check_section(values: dict, contract: dict, cfg, where: str) -> tuple:
     """Check one skill's bindings against its declared contract.
 
@@ -81,7 +98,17 @@ def check_section(values: dict, contract: dict, cfg, where: str) -> tuple:
         if typ in PATH_TYPES:
             full = cfg.resolve(str(raw))
             resolved[name] = full
-            if not os.path.exists(full):
+            stem = _template_stem(str(raw))
+            if stem is not None:
+                # A templated path, such as one carrying {quarter}. Only the part before
+                # the first placeholder is a real location, so that is what is checked. The
+                # skill that owns the placeholder is the only thing that can fill it.
+                anchor = cfg.resolve(stem) if stem else cfg.resolve(".")
+                if not os.path.isdir(anchor):
+                    issues.append(Issue("error", where,
+                                        f"'{name}' is a template and the part before its "
+                                        f"first placeholder, {anchor}, does not exist"))
+            elif not os.path.exists(full):
                 issues.append(Issue("error", where,
                                     f"'{name}' points at {full}, which does not exist"))
             elif typ == "dir" and not os.path.isdir(full):
