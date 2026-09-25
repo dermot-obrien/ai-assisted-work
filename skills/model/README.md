@@ -165,6 +165,7 @@ model/
 │   ├── validate.py     rules and severities
 │   ├── sync.py         reconcile a diagram with its document, keeping geometry
 │   ├── render.py       draw.io CLI, with capability probing
+│   ├── animate.py      standalone HTML step-through of the scenarios
 │   └── cli.py
 ├── scripts/pack-repo.py
 └── examples/

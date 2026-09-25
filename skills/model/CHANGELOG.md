@@ -6,8 +6,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semanti
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-25
+
 ### Added
 
+- `animate <doc>`: a step-through animation of a document's scenarios as one standalone HTML file that opens from disk with no server. Each step puts its number on the acting shape, draws an arrow to the target, dims the rest, zooms to the step and shows the narrative with the interface's purpose and spare columns. Names, narratives and interface details come from the document; geometry and each step's endpoints come from the diagram, with positions inside groups and containers made absolute. The structure layer is rendered by draw.io unless `--image` supplies it. It validates first and fails rather than guesses: a step without narrative, an endpoint without a shape, a scenario on one side only, or a rendered view whose proportions differ from the shapes' extent is an error. `--accent`, `--interval` and `--force` adjust it.
 - `render --theme light|dark|auto`, for SVG. `light` is the default.
 
 ### Fixed

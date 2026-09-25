@@ -24,6 +24,7 @@ from . import drawio, markdown, serial, validate as validate_mod, render as rend
 from . import sync as sync_mod
 from . import scan as scan_mod
 from . import bindings as bindings_mod
+from . import animate as animate_mod
 
 MAX_FINDINGS = 200
 
@@ -259,6 +260,22 @@ def cmd_layers(a) -> int:
     return 0
 
 
+def cmd_animate(a) -> int:
+    cfg = config_mod.load(a.config, near=a.doc)
+    try:
+        data = animate_mod.build(a.doc, cfg, diagram_path=a.diagram, image=a.image,
+                                 drawio_bin=a.drawio_bin, force=a.force)
+        r = animate_mod.write(data, a.out or animate_mod.default_out(a.doc),
+                              accent=a.accent, interval=a.interval)
+    except animate_mod.AnimateError as e:
+        return _err(str(e), 1)
+    except SystemExit as e:                      # draw.io missing or failed
+        return _err(str(e), 3)
+    steps = ", ".join(f"{k} {n}" for k, n in r["scenarios"].items())
+    print(f"  {_shown(r['path'])} ({r['bytes'] // 1024} KB; {steps} steps). Opens from disk.")
+    return 0
+
+
 def build_parser():
     p = argparse.ArgumentParser(
         prog="model", description=__doc__,
@@ -339,6 +356,17 @@ def build_parser():
     d.add_argument("--near", help="resolve the binding file from here (default: cwd)")
     d.add_argument("--json", action="store_true")
     d.set_defaults(fn=cmd_doctor)
+
+    an = common(sub.add_parser("animate", help="write a standalone HTML step-through of a document's scenarios"))
+    an.add_argument("doc", help="the .md document; its declared diagram supplies the geometry")
+    an.add_argument("--diagram", help="the .drawio, when the document declares none")
+    an.add_argument("--out", help="default: scenarios.html beside index.md, else <stem>-scenarios.html")
+    an.add_argument("--image", help="a PNG of the structure layer to use instead of rendering one")
+    an.add_argument("--accent", default=animate_mod.DEFAULT_ACCENT, help="#RRGGBB for arrows and badges")
+    an.add_argument("--interval", type=float, default=3.2, help="seconds per step when playing")
+    an.add_argument("--force", action="store_true", help="animate even if validation reports errors")
+    an.add_argument("--drawio-bin", help="path to the draw.io executable")
+    an.set_defaults(fn=cmd_animate)
 
     l = sub.add_parser("layers", help="list a .drawio's layers with their indexes")
     l.add_argument("input")
