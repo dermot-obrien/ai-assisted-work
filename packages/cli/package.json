@@ -1,6 +1,6 @@
 {
   "name": "@aaw/cli",
-  "version": "2.0.0",
+  "version": "3.1.0",
   "description": "AI-Assisted Work CLI: bootstrap, status, claim, and run agent workflows.",
   "private": true,
   "type": "module",
@@ -16,8 +16,8 @@
     "dist/"
   ],
   "dependencies": {
-    "@aaw/installer": "2.0.0",
-    "@aaw/protocol": "2.0.0",
+    "@aaw/installer": "*",
+    "@aaw/protocol": "*",
     "yaml": "^2.4.0"
   },
   "devDependencies": {

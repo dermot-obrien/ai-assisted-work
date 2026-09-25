@@ -7,27 +7,33 @@ How organisations can adopt, customise, and contribute to AI-Assisted Work.
 If you're trying AAW for the first time on a single project, the v2 install path is one command:
 
 ```bash
-git submodule add https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
-git submodule update --init
+git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
+node .ai-assisted-work/bin/aaw.js install
 node .ai-assisted-work/bin/aaw.js init
 ```
 
-Requires Node.js (16+) and git. Works in environments where npm registry access is restricted but git+GitHub access is allowed — the CLI is bundled in the submodule. Cross-platform on Mac, Linux, and Windows.
+Requires Node.js 18+ (20+ recommended) and git. Works in environments where npm registry access is restricted but git and GitHub access are allowed, because `bin/aaw.js` is a committed bundle. Cross-platform on Mac, Linux, and Windows.
 
 For details, see [DEPLOYMENT.md](../../DEPLOYMENT.md).
 
 ## Adoption options
 
-### Option 1: Direct use (submodule)
+### Option 1: Direct use (independent clone)
 
-Each project adds the upstream AAW repo as a Git submodule. Updates via `git submodule update --remote`. Best for teams that want minimal customisation and stay current.
+Clone the upstream AAW repo and run `aaw install` into each workspace. Update with `git pull`
+in the clone, then re-run `aaw install`. Best for teams that want minimal customisation and
+stay current.
+
+AAW is deliberately **not** a submodule: a submodule couples the consuming repo's history to
+AAW's and needs `--init` and `--remote` discipline, for no benefit a clone does not give. See
+DD-02.
 
 ### Option 2: Fork and customise
 
-Fork the AAW repo. Each project uses the fork as its submodule URL. Customisations live on a long-lived branch in the fork; sync from upstream when you want updates.
+Fork the AAW repo and clone the fork. Customisations live on a long-lived branch in the fork; sync from upstream when you want updates.
 
 Best for organisations that need:
-- Custom tool shims (e.g. a non-Anthropic AI assistant)
+- Custom skills for org-internal workflows
 - Org-specific skill content (procurement workflow, compliance steps)
 - Branded variants of the standard templates
 
@@ -41,13 +47,13 @@ Don't fork by editing files in place. Use the **overlay pattern**:
 
 ```
 your-org-aaw-fork/
-├── packages/skills/work-management/   # Upstream — sync with main, don't edit
-├── packages/skills/your-org/          # Your additions, pure markdown
+├── skills/aaw-*/                      # Upstream — sync with main, don't edit
+├── skills/yourorg-*/                  # Your additions, same Agent Skills format
 │   ├── compliance-review.md
 │   ├── procurement-workflow.md
 │   └── _templates/
 └── overlay/                           # Your overrides
-    └── tool-shims/                    # Custom shims for org-internal tools
+    └── templates/                     # Org template overrides
 ```
 
 When you `aaw init` from this fork, the init script copies both the upstream skills AND your overlays, so your additions ship to every adopting project.
@@ -59,7 +65,7 @@ When you `aaw init` from this fork, the init script copies both the upstream ski
 Add organisation-specific fields without breaking the core schema. The work item `progress.yaml` template supports an `org_metadata` extension point:
 
 ```yaml
-# packages/skills/work-management/_templates/progress.yaml (your fork)
+# skills/aaw-start-work/assets/templates/progress.yaml (your fork)
 work_item_id: WI-NNN
 title: "{title}"
 type: development
@@ -78,9 +84,13 @@ The protocol's TypeScript types in `@aaw/protocol` ignore unknown fields (additi
 
 ### Custom skill files
 
-Add new markdown skills under `packages/skills/your-org/`. Reference them from your tool shims (`.github/prompts/yourorg-*.prompt.md`, `.claude/commands/yourorg/*.md`, etc).
+Add a directory under `skills/` holding a `SKILL.md` with `name` and `description` frontmatter,
+plus optional `references/` and `assets/`. Prefix the name so it will not collide, for example
+`yourorg-release-review`.
 
-The shim pattern is identical to the standard ones — a thin wrapper that reads the canonical instruction file from the submodule.
+No per-tool file is needed. The installer picks up every directory under `skills/` that
+contains a `SKILL.md`, and every supported tool reads the result. Validate with
+`skills-ref validate ./skills/yourorg-release-review`.
 
 ## Syncing with upstream
 
@@ -112,7 +122,7 @@ git commit -m "Pin AAW to v2.0.0"
 |--------------|----------|
 | Bug fixes | ✅ Yes |
 | Skill clarifications and additions to the standard set | ✅ if generic |
-| Tool shims for new AI tools | ✅ if the tool is publicly available |
+| Support for new AI tools | ✅ if the tool is publicly available |
 | New backends (e.g. GitHub Projects, Temporal) | ✅ Strongly desired |
 | Org-specific content | ❌ Keep in your fork |
 
@@ -129,9 +139,14 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
 
 Three patterns scale across an organisation:
 
-### Pattern 1: One submodule per project
+### Pattern 1: One clone per project
 
-Each project adds AAW (or your fork) as its own submodule. Simple but each project needs to be updated independently.
+Each project clones AAW (or your fork) into `.ai-assisted-work/` and installs from it. Simple,
+but each project updates independently.
+
+A shared alternative: keep one clone outside your repos and run `aaw install` from it into each
+workspace. Each workspace records the source path in its own `.aaw-config.yaml`, so one pull
+updates the source for all of them.
 
 ### Pattern 2: Shared private intent repo
 
@@ -152,7 +167,8 @@ Once the cloud coordinator ships, individual projects flip `mode: cloud` and the
 
 ### Don't
 
-- ❌ Modify upstream files directly in the submodule — your changes get lost on the next pull
+- ❌ Modify upstream files directly in the clone — your changes get lost on the next pull
+- ❌ Commit the installed `.agents/skills/aaw-*` into the consuming repo — it is generated output and will drift from the clone; gitignore it and re-run `aaw install`
 - ❌ Include org-specific content in upstream contributions
 - ❌ Auto-sync without review — there's no replacement for reading the changelog before bumping
 

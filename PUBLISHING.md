@@ -6,17 +6,17 @@ The Changesets-driven release workflow at `.github/workflows/release.yml` is wir
 
 ### 1. Decide which packages to publish
 
-The three workspace packages are currently `"private": true` in their `package.json` files:
+The workspace packages are currently `"private": true` in their `package.json` files:
 
 ```
 packages/protocol/package.json     "private": true
+packages/installer/package.json    "private": true
 packages/cli/package.json          "private": true
-packages/skills/package.json       "private": true
 ```
 
 This guards against accidental publication. To enable publishing, remove the `"private": true` line from each.
 
-You can do this for all three, or for a subset (e.g. publish `@aaw/cli` and `@aaw/protocol` but keep `@aaw/skills` private if you want to ship skill content via the submodule only).
+You can do this for all of them, or for a subset (e.g. publish `@aaw/cli` and `@aaw/protocol` but keep `@aaw/installer` private). Skills are not an npm package: they ship in the repository under `skills/` and are placed by `aaw install`.
 
 ### 2. Create the npm organisation and token
 

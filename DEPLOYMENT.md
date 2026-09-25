@@ -35,14 +35,12 @@ After `aaw install`:
 ```
 your-repo/
 ├── .ai-assisted-work/                      # Local clone of the AAW repo
-│   ├── packages/skills/work-management/    # Skill markdown (read by AI tools)
+│   ├── skills/                             # Agent Skills — the definitions
 │   ├── packages/cli/                       # CLI source
-│   ├── bin/aaw.js                          # Bundled CLI entry
-│   └── skills-for-agents/                  # Tool shim source
+│   └── bin/aaw.js                          # Bundled CLI entry
 ├── .aaw-config.yaml                        # Workspace config (committed)
-├── .github/prompts/                        # GitHub Copilot shims (if detected)
-├── .cursor/commands/aaw/                   # Cursor shims (if detected)
-├── .claude/commands/aaw/                   # Claude Code shims (if detected)
+├── .agents/skills/aaw-*/                   # Installed skills (generated; gitignore these)
+├── .claude/skills/aaw-*                    # Links to the above, for Claude Code
 └── [your existing project files]           # Untouched
 
 ~/aaw/{tenant}/{repo-name}/
@@ -159,15 +157,21 @@ Lists current work items in the configured path. Empty output means no items yet
 
 ## Tool integration
 
-| Tool | Trigger | Shim location |
-|---|---|---|
-| GitHub Copilot | `/aaw-start-work`, `/aaw-progress-work`, `/aaw-work-status`, `/aaw-next-task`, `/aaw-start-initiative` | `.github/prompts/aaw-*.prompt.md` |
-| Cursor | `/aaw-...` | `.cursor/commands/aaw/*.md` |
-| Claude Code | `/aaw-...` | `.claude/commands/aaw/*.md` |
-| OpenAI Codex | (skill discovery) | `.agents/skills/aaw-*/` (copy from `.ai-assisted-work/skills-for-agents/codex/.agents/`) |
-| Gemini CLI | `/aaw-...` | (copy from `.ai-assisted-work/skills-for-agents/gemini/skills/aaw/`) |
+Every tool reads the same five skills; there is nothing tool-specific to install.
 
-All shims point to the canonical instructions in `.ai-assisted-work/packages/skills/work-management/`. There is one source of truth.
+| Tool | Trigger | Reads |
+|---|---|---|
+| OpenAI Codex | `/aaw-...` | `.agents/skills/` |
+| Cursor | `/aaw-...` | `.agents/skills/` |
+| GitHub Copilot, VS Code | `/aaw-...` | `.agents/skills/` |
+| Gemini CLI | `/aaw-...` | `.agents/skills/` |
+| Claude Code | `/aaw-...` | `.claude/skills/`, linked at `.agents/skills/` |
+
+Claude Code is the only tool that does not read `.agents/skills/`, which is why the installer
+links its directory at the same place rather than copying twice.
+
+The per-tool command shims that preceded this were retired in 3.0.0. `aaw install` removes any
+it previously wrote, since they point at instruction files that no longer exist.
 
 ---
 
@@ -215,7 +219,7 @@ A migration helper is on the roadmap.
 
 ## See also
 
-- [packages/skills/work-management/README.md](packages/skills/work-management/README.md) — concepts, lifecycle, ID conventions
+- [docs/concepts/work-management.md](docs/concepts/work-management.md) — concepts, lifecycle, ID conventions
 - [packages/protocol/README.md](packages/protocol/README.md) — protocol contract used by all backends
 - [docs/integration/index.md](docs/integration/index.md) — tool-specific notes
 - [CHANGELOG.md](CHANGELOG.md) — version history

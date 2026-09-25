@@ -49,10 +49,15 @@ Usage:
   aaw --help                          Show this help
 
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
-`aaw init` is kept as a compatibility alias for `aaw install`.
+'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
 
-const VERSION = "0.0.0";
+/**
+ * Replaced at bundle time by build.mjs with the version from package.json.
+ * The fallback is what you see when running from source rather than the bundle.
+ */
+declare const __AAW_VERSION__: string | undefined;
+const VERSION = typeof __AAW_VERSION__ === "string" ? __AAW_VERSION__ : "0.0.0-dev";
 
 function resolveAawRoot(): string {
   const self = fileURLToPath(import.meta.url);

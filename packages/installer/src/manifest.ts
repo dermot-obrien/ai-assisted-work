@@ -6,7 +6,7 @@
  *
  * Every AAW-family framework (work, architecture, research) ships a
  * `framework.manifest.yaml` at its repo root describing how it is installed:
- * which AI-tool shims to wire, which config files to seed, which data dirs to
+ * which Agent Skills to install, which config files to seed, which data dirs to
  * create, and what language-specific tool setup it needs. The shared engine
  * (engine.ts) reads this manifest so all three frameworks install the same way.
  *
@@ -23,17 +23,27 @@ export const MANIFEST_FILENAME = "framework.manifest.yaml";
 /** Language the framework's tooling runs in. Drives `tool_setup`. */
 export type FrameworkRuntime = "node" | "python";
 
-/** AI tools we can wire command/prompt shims for. */
+/** AI tools we detect in a workspace, to decide what an install needs to place. */
 export type ToolName = "claude" | "cursor" | "copilot" | "gemini";
 
 export const TOOL_NAMES: readonly ToolName[] = ["claude", "cursor", "copilot", "gemini"];
 
-/** One shim wiring: copy `src` (under the framework) → `dest` (under the workspace). */
-export interface ShimMapping {
-  /** Source dir, relative to the framework root. */
+/**
+ * Standalone Agent Skills the framework ships (agentskills.io format).
+ *
+ * A skill is self-contained: a directory with a SKILL.md plus its own references/
+ * and assets/. It carries no pointer back into the framework, which is why the
+ * installer has no path-rewriting step.
+ *
+ * The destination is fixed by convention, not by the manifest:
+ *   - `.agents/skills/<name>/` — read natively by Codex, Cursor, Copilot, VS Code
+ *     and Gemini CLI.
+ *   - `.claude/skills/<name>/` — linked at the above, because Claude Code does not
+ *     read `.agents/skills/`.
+ */
+export interface SkillsMapping {
+  /** Directory of skill folders, relative to the framework root. */
   src: string;
-  /** Destination dir, relative to the workspace root. */
-  dest: string;
 }
 
 /** A config file to seed into the host workspace (idempotent — only if absent). */
@@ -65,24 +75,16 @@ export interface SeedSpec {
 }
 
 export interface FrameworkManifest {
-  /** Short namespace, e.g. "aaw" | "aar" | "aaa". Used for shim dest namespacing + the module registry. */
+  /** Short namespace, e.g. "aaw" | "aar" | "aaa". Used for the module registry and the legacy-shim sweep. */
   id: string;
   name: string;
   version: string;
-  /**
-   * The path string the framework's shim files use to reference their own
-   * source (typically the submodule dir, e.g. ".ai-assisted-work"). When shims
-   * are wired, this token is rewritten to the framework's ACTUAL relative
-   * location, so shims work whether the framework is a git submodule or lives
-   * in node_modules. Omit if shims contain no self-references.
-   */
-  sourceToken?: string;
   /** Framework ids this one depends on (must be installed/present first). */
   depends: string[];
   runtime: FrameworkRuntime;
   toolSetup?: ToolSetup;
-  /** Per-tool shim wiring. Only the tools present here can be wired. */
-  shims: Partial<Record<ToolName, ShimMapping>>;
+  /** Standalone Agent Skills to install. */
+  skills?: SkillsMapping;
   /** Config files to seed (idempotent). */
   config: ConfigSeed[];
   /** Data dirs to create in the workspace (committed homes for generated artefacts). */
@@ -105,23 +107,11 @@ function asStringArray(value: unknown, where: string): string[] {
   return value.map((v, i) => asString(v, `${where}[${i}]`));
 }
 
-function parseShims(value: unknown): Partial<Record<ToolName, ShimMapping>> {
-  if (value === undefined || value === null) return {};
-  if (typeof value !== "object") throw new Error("manifest: shims must be a map");
-  const out: Partial<Record<ToolName, ShimMapping>> = {};
-  for (const tool of TOOL_NAMES) {
-    const entry = (value as Record<string, unknown>)[tool];
-    if (entry === undefined) continue;
-    if (typeof entry !== "object" || entry === null) {
-      throw new Error(`manifest: shims.${tool} must be a {src,dest} map`);
-    }
-    const rec = entry as Record<string, unknown>;
-    out[tool] = {
-      src: asString(rec.src, `shims.${tool}.src`),
-      dest: asString(rec.dest, `shims.${tool}.dest`),
-    };
-  }
-  return out;
+function parseSkills(value: unknown): SkillsMapping | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "object") throw new Error("manifest: skills must be a map");
+  const rec = value as Record<string, unknown>;
+  return { src: asString(rec.src, "skills.src") };
 }
 
 function parseConfig(value: unknown): ConfigSeed[] {
@@ -182,11 +172,10 @@ export function parseManifest(text: string, frameworkRoot: string): FrameworkMan
     id: asString(raw.id, "id"),
     name: asString(raw.name, "name"),
     version: asString(raw.version, "version"),
-    sourceToken: typeof raw.source_token === "string" ? raw.source_token : undefined,
     depends: asStringArray(raw.depends, "depends"),
     runtime,
     toolSetup: parseToolSetup(raw.tool_setup),
-    shims: parseShims(raw.shims),
+    skills: parseSkills(raw.skills),
     config: parseConfig(raw.config),
     dataDirs: asStringArray(raw.data_dirs, "data_dirs"),
     seed: parseSeed(raw.seed),

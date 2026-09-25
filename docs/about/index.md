@@ -7,7 +7,7 @@ Background, vision, and design decisions for the project.
 AI-Assisted Work provides domain-agnostic AI agents for work management and productivity tasks. This project is designed to be:
 
 - **Reusable** across any domain or project type
-- **Embeddable** as a submodule in domain-specific repositories
+- **Embeddable** as an independent clone installed into domain-specific repositories
 - **Customizable** for organizational needs
 - **Community-driven** with contributions welcome
 
@@ -42,7 +42,7 @@ AI-Assisted Work is designed as a **foundation layer**:
 │   │                                                                          │ │
 │   │   Work Management Agents  │  Common Templates                           │ │
 │   │                                                                          │ │
-│   │   (Domain-agnostic foundation - included as submodule)                   │ │
+│   │   (Domain-agnostic foundation - independent clone, installed in)         │ │
 │   └──────────────────────────────────────────────────────────────────────────┘ │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```

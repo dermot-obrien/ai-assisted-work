@@ -83,8 +83,13 @@ export async function runInstallCommand(input: InstallInput): Promise<number> {
     runSeed,
     log: (msg) => process.stdout.write(`${msg}\n`),
   });
+  const skills = result.skills.length > 0 ? `${result.skills.length} skill(s)` : "no skills";
+  const swept =
+    result.removedLegacyShims.length > 0
+      ? `; ${result.removedLegacyShims.length} legacy shim path(s) removed`
+      : "";
   process.stdout.write(
-    `\nDone. ${result.id}@${result.version} — wired: ${result.wired.join(", ") || "none"}.\n`,
+    `\nDone. ${result.id}@${result.version} — ${skills}${swept}.\n`,
   );
   if (result.warnings.length > 0) return 1;
   return 0;
