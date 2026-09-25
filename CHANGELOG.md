@@ -7,6 +7,16 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- **`quarter-planning` no longer ships a directory layout** (skill 3.0.0, breaking). The six
+  path bindings are required and have no default. The defaults were the layout of the
+  workspace the skill was extracted from, which made that one workspace work with no binding
+  at all and every other one read nothing while appearing configured. An unbound run now names
+  the keys it is waiting for and stops, and `--where` prints `NOT DECLARED` against each.
+  A workspace that already declares `[suite.quarter-planning]` is unaffected.
+- `model`'s documentation and tests no longer use one workspace's directory names in their
+  examples of a templated binding.
+
 ### Added
 - **Approval stages in `quarter-planning`** (skill 2.1.0). The validator gains a seventh
   section reporting how far the quarterly WorkPlan, each committed epic and each of its products
