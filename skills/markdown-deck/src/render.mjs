@@ -350,8 +350,16 @@ const MERMAID_SCRIPT = `
 (function () {
   if (!window.mermaid) return;
   mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
-  var run = mermaid.run ? mermaid.run() : Promise.resolve();
-  Promise.resolve(run).then(function () { window.dispatchEvent(new Event('deck:refit')); });
+  // Mermaid sizes boxes from measured text, and text on a hidden slide measures zero, so
+  // every slide is laid out, invisibly, until the diagrams are drawn.
+  var hidden = [].slice.call(document.querySelectorAll('.slide:not(.active)'));
+  hidden.forEach(function (s) { s.classList.add('diagram-measuring'); });
+  var run;
+  try { run = mermaid.run ? mermaid.run() : Promise.resolve(); } catch (e) { run = Promise.reject(e); }
+  Promise.resolve(run).catch(function () {}).then(function () {
+    hidden.forEach(function (s) { s.classList.remove('diagram-measuring'); });
+    window.dispatchEvent(new Event('deck:refit'));
+  });
 })();`;
 
 // Per-slide review comments. Held in the reviewer's browser until they send them; nothing

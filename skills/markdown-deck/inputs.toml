@@ -54,6 +54,12 @@ type = "str"
 required = false
 description = "Subject of the review email; defaults to 'Review: <deck title>'"
 
+[inputs.options.mermaid]
+type = "str"
+required = false
+description = """Where decks load mermaid from: a path to mermaid.min.js, copied beside each deck
+that has a diagram, or a URL. Unset, an installed mermaid is found and copied, else the CDN."""
+
 [inputs.options.registry]
 type = "path"
 required = false

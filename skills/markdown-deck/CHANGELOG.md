@@ -4,6 +4,16 @@
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions are semantic, with the contract defined as: MAJOR for a changed skill `name`, a removed script, a changed CLI interface or a changed output shape; MINOR for new capabilities, themes or tags; PATCH for wording, fixes and documentation.
 
+## [0.4.0] - 2026-09-26
+
+### Added
+
+- Mermaid from a local copy. A deck with a diagram copies `mermaid.min.js` into `assets/` from the nearest installed `mermaid` above the document, or the skill's own, so it draws offline and where the CDN is blocked. The CDN remains the fallback. A `mermaid` binding and `--mermaid` name a file to copy or a URL to load; a named file that is missing is warned about. `findLocalMermaid` and `MERMAID_CDN` are exported.
+
+### Fixed
+
+- Mermaid notes on a slide not yet shown were drawn shorter than their text, so the text ran out of the box. Mermaid sizes boxes from measured text, and text on a hidden slide measures zero; every slide is now laid out invisibly while diagrams are drawn.
+
 ## [0.3.0] - 2026-09-26
 
 ### Added
