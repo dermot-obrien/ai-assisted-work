@@ -12,6 +12,7 @@
 export const COVER_RE = /<!--\s*deck:cover([^>]*?)-->/;
 export const SLIDE_RE = /<!--\s*deck:slide([^>]*?)-->/g;
 export const IMAGE_RE = /<!--\s*deck:image([^>]*?)-->/g;
+export const HTML_RE = /<!--\s*deck:html([^>]*?)-->/g;
 export const INCLUDE_RE = /<!--\s*deck:include([^>]*?)-->/g;
 // A link reference definition: `[label]: url "optional title"`, up to three spaces in.
 const LINK_DEF_RE = /^ {0,3}\[([^\]]+)\]:[ \t]*(\S+)(?:[ \t]+(?:"[^"]*"|'[^']*'|\([^)]*\)))?[ \t]*$/gm;
@@ -68,8 +69,12 @@ function headings(md) {
  * slide exported from another deck, with a title for the index, comments and address.
  * It needs no heading, because the image carries its own.
  *
+ * A deck:html tag is also a whole slide: a self-contained HTML file designed on the
+ * 1920x1080 canvas, for a layout Markdown cannot express. The deck isolates it in a frame.
+ *
  * @returns {({kind: 'content', title: string, label: string, body: string} |
- *            {kind: 'image', title: string, label: string, src: string, header: boolean})[]}
+ *            {kind: 'image', title: string, label: string, src: string, header: boolean} |
+ *            {kind: 'html', title: string, label: string, src: string, header: boolean})[]}
  */
 export function collectSlides(md, { onWarn = () => {} } = {}) {
   const hs = headings(md);
@@ -84,6 +89,19 @@ export function collectSlides(md, { onWarn = () => {} } = {}) {
     slides.push({
       kind: 'image', at: tag.index, title, label: a.label || title, src: a.src,
       header: a.header === 'true',
+    });
+  }
+  for (const tag of md.matchAll(HTML_RE)) {
+    const a = attrs(tag[1]);
+    if (!a.src) {
+      onWarn(`deck:html tag at offset ${tag.index} has no src; skipped`);
+      continue;
+    }
+    const title = a.title || a.label || a.src.split('/').pop().replace(/\.[^.]+$/, '');
+    slides.push({
+      kind: 'html', at: tag.index, title, label: a.label || title, src: a.src,
+      header: a.header === 'true',
+      ...('eyebrow' in a ? { eyebrow: a.eyebrow } : {}),
     });
   }
   for (const tag of md.matchAll(INCLUDE_RE)) {
@@ -182,4 +200,62 @@ export function rewriteImages(body, resolve) {
     const next = resolve(decodeURIComponent(href));
     return next ? `![${alt}](${next}${rest})` : m;
   });
+}
+
+const LOCAL = (href) => href && !/^([a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(href);
+const REMOTE = (href) => /^(https?:)?\/\//i.test(href || '');
+const RESOURCE_ATTR = /(\s(?:src|poster)\s*=\s*)(["'])([^"']*)\2/gi;
+const LINK_HREF = /(\shref\s*=\s*)(["'])([^"']*)\2/i;
+const CSS_URL = /url\(\s*(["']?)([^"')]+)\1\s*\)/gi;
+
+/**
+ * Rewrite the local files that HTML loads through `resolve`, which returns the new href
+ * or null to leave the reference untouched.
+ *
+ * Covers what a browser fetches to draw the content: `src` and `poster` on any tag, the
+ * `href` of a `<link>`, and, with `css`, every CSS `url(...)`. The `href` of an ordinary
+ * link is left alone, because following a link is not loading a resource. Used for raw
+ * media tags in Markdown slides and for whole deck:html slides.
+ */
+export function rewriteResources(html, resolve, { css = false } = {}) {
+  const fix = (href) => {
+    if (!LOCAL(href)) return null;
+    let clean = href;
+    try { clean = decodeURIComponent(href); } catch { /* keep as written */ }
+    return resolve(clean.split(/[?#]/)[0]);
+  };
+  const swap = (m, pre, q, href) => {
+    const next = fix(href);
+    return next ? `${pre}${q}${next}${q}` : m;
+  };
+  let out = html.replace(/<[a-z][^>]*>/gi, (tag) => {
+    const t = tag.replace(RESOURCE_ATTR, swap);
+    return /^<link\b/i.test(t) ? t.replace(LINK_HREF, swap) : t;
+  });
+  if (css) {
+    out = out.replace(CSS_URL, (m, q, href) => {
+      const next = fix(href.trim());
+      return next ? `url(${q}${next}${q})` : m;
+    });
+  }
+  return out;
+}
+
+/**
+ * The resources HTML would fetch from the network: `src`, `poster`, a `<link>` `href`,
+ * CSS `url(...)` and `@import`. A deck is meant to open from disk, so each one is a place
+ * the slide will be incomplete offline. Ordinary links are not included.
+ */
+export function remoteResources(html) {
+  const found = new Set();
+  for (const tag of html.matchAll(/<[a-z][^>]*>/gi)) {
+    for (const m of tag[0].matchAll(RESOURCE_ATTR)) if (REMOTE(m[3])) found.add(m[3]);
+    if (/^<link\b/i.test(tag[0])) {
+      const m = tag[0].match(LINK_HREF);
+      if (m && REMOTE(m[3])) found.add(m[3]);
+    }
+  }
+  for (const m of html.matchAll(CSS_URL)) if (REMOTE(m[2].trim())) found.add(m[2].trim());
+  for (const m of html.matchAll(/@import\s+(["'])([^"']+)\1/gi)) if (REMOTE(m[2])) found.add(m[2]);
+  return [...found];
 }
