@@ -30,7 +30,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ### Fixed
 
-- Reference links rendered as literal brackets, such as `[AIPLAT-48][AIPLAT-48]`. Their definitions usually sit at the foot of the document, outside every slide's section, and each slide is rendered on its own. Every slide now carries the document's link definitions. Found by building the FY27 Q1 plan on a page, the first deck built from a document not written as a reference architecture.
+- Reference links rendered as literal brackets, such as `[PROJ-48][PROJ-48]`. Their definitions usually sit at the foot of the document, outside every slide's section, and each slide is rendered on its own. Every slide now carries the document's link definitions. Found by building the FY27 Q1 plan on a page, the first deck built from a document not written as a reference architecture.
 - Content ran off the bottom of PDF pages. Fitting measured only the slide on screen, and a hidden slide measures zero high, so every other slide reached the PDF unfitted and was cut off. Every slide is now fitted, hidden ones included, and fitted again under the print layout before export.
 - Fitted slides ran into their bottom margin, because the available height was measured including the body's padding.
 - A slide shrunk to fit became a narrow column in the middle of a wide slide. Content is now widened before it is shrunk, and the largest scale that fits is found by search, so a shrunk slide still spans the full width.
