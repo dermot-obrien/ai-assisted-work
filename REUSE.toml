@@ -40,6 +40,11 @@ path = [
   "scripts/**.mjs",
   "packages/protocol/src/**.ts",
   "bin/**.js",
+  # A skill's prose is CC BY 4.0; the code and declarations it ships with are
+  # executable and are licensed the same way as the rest of the tooling.
+  "skills/**/bin/**",
+  "skills/**/src/**",
+  "skills/**/inputs.toml",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Dermot O'Brien"

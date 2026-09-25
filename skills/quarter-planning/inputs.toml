@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# What this skill needs to know about the workspace it is planning. Answer in
+# [suite.quarter-planning] of the workspace's .agents/skill-bindings.toml. Every key is
+# optional; the default is the layout this skill was first written against, so a
+# workspace that happens to match needs no binding at all.
+#
+# Paths resolve against the binding file's own directory, never the working directory,
+# and may carry {quarter}, replaced by the quarter slug, so one binding covers every
+# quarter. Run `quarter.py --quarter <slug> --where` to see what a binding resolves to
+# before reading anything.
+#
+# What is NOT here, deliberately: working days, focus factor, expected absence, points
+# per person-day, capacity totals. Those are not configuration. They change every
+# quarter, they need their reasoning recorded beside them, and an assumption buried in
+# a config file is an assumption nobody argues with. They live as rows in the planning
+# basis register this binding points at, each with the working it came from.
+
+[inputs]
+short_description = "Where this workspace keeps the registers a quarter is planned from"
+
+[inputs.options.basis]
+type = "path"
+required = false
+default = "../change/planning/{quarter}/{quarter}-planning-basis.csv"
+description = """The planning basis: one row per assumption, as parameter, value, unit and
+the reasoning behind it. This is where working_days, usable_fraction,
+person_days_per_point and expected_absence_days_per_person are stated, and where the
+quarter declares the three totals the registers must reproduce."""
+
+[inputs.options.calendar]
+type = "path"
+required = false
+default = "../change/planning/{quarter}/{quarter}-calendar.csv"
+description = """The quarter's periods and their working days. Public holidays and any
+shutdown are whatever the weekdays in the range exceed the working days declared here, so
+a workspace states its own non-working time without this skill knowing any jurisdiction's
+holidays."""
+
+[inputs.options.resourcing]
+type = "path"
+required = false
+default = "../change/planning/{quarter}/{quarter}-resourcing.csv"
+description = """Who is on the quarter: allocation, their own leave in working days, the
+share of their allocation given to each work item, and whether that share counts against
+the capacity being budgeted."""
+
+[inputs.options.sources]
+type = "path"
+required = false
+default = "../change/ai-programme/roadmap/sources"
+description = "The model sources. work_item.yaml and work_plan.yaml are read from here."
+
+[inputs.options.register]
+type = "path"
+required = false
+default = "../governance/deliverables/architecture-deliverables.csv"
+description = """The deliverable type register, for base_story_points per type. This is what
+makes a named product have a size without anyone estimating it again."""
+
+[inputs.options.quarterDir]
+type = "path"
+required = false
+default = "../change/planning/{quarter}"
+description = "The quarter's folder, used to confirm the quarter exists before reading."
+
+[inputs.options.slugPattern]
+type = "str"
+required = false
+default = '^fy(?P<fy>\d{2})-q(?P<q>[1-4])$'
+description = """How a quarter slug is shaped, as a regex with named groups. Write it as a
+TOML literal string, in single quotes, because a regex carries backslashes. The groups
+feed quarterLabel, so a workspace whose quarters are named 2027Q1 or FY27Q1 says so here
+rather than renaming its folders."""
+
+[inputs.options.quarterLabel]
+type = "str"
+required = false
+default = "Q{q}-FY{fy}"
+description = """How the slug's groups compose into the label the model records on a work
+item. Fields are the named groups of slugPattern."""
+
+[inputs.options.tolerance]
+type = "str"
+required = false
+default = "0.05"
+description = """How far two figures may differ before the integrity sections call it a
+disagreement. Points are carried unrounded and compared once, so this absorbs float
+representation, not real drift."""
+
+[inputs.options.playbook]
+type = "path"
+required = false
+description = """The workspace's own planning playbook, if it has one: the document this
+skill's mechanics serve. Named so the skill can point a reader at it instead of describing
+a method the workspace may have decided differently."""
+
+[inputs.options.commands]
+type = "table"
+required = false
+description = """The workspace's own commands, by role, so the skill can tell someone what
+to run without knowing whether this workspace uses npm, make or a script. Roles it names:
+`regenerate` (rebuild the views derived from the model), `check` (fail on prose that
+disagrees with them), `compose` (rebuild the composed model from its sources). Anything
+not set is described rather than commanded."""
