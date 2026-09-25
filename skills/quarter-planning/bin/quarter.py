@@ -13,11 +13,19 @@ budget is a distribution of that capacity rather than a figure derived from its 
   4  Epic budgets    each epic's budget_points must follow from the distribution
   5  Elaboration     each epic's named products, against the budget it was given
   6  Load            each person's owned products, against the capacity they brought
+  7  Approval        how far the plan, each epic and each product have been approved
 
 Levels 1 to 4 are integrity: a disagreement there means the model contradicts itself and the
 run fails. Levels 5 and 6 are subscription: being over is a scoping decision, not a defect,
 so it is reported and the run still passes. That distinction is the whole point of separating
 budget from planned.
+
+Level 7 reads the `approval` field on the WorkPlan, each committed epic and each of its
+products. The stages are ordered, least advanced first, and default to draft, sized,
+validated, approved; the last is approval, and approval is commitment. An approval that
+claims more than the records beneath it support fails the run, because that is the model
+contradicting itself again: an epic further on than its least advanced product, an epic
+approved before the quarter's budget and resourcing are, or an epic sized with nothing named.
 
 Nothing is mastered here, and the capacity arithmetic is not implemented here either: it is
 imported from quarter_capacity.py, which every tool that needs it shares. Sources:
@@ -93,6 +101,72 @@ def table(head, body, foot=None):
     return '\n'.join(out)
 
 
+def stage_of(record, stages):
+    """A record's approval stage. Absent means the first stage, not unknown."""
+    return record.get('approval') or stages[0]
+
+
+def approval_section(q, plan, by_id, committed, integrity_errors):
+    """Level 7: what has been approved, and whether each approval is supported beneath it."""
+    stages = q.bind.approval_stages
+    rank = {s: i for i, s in enumerate(stages)}
+    last = stages[-1]
+
+    def known(where, value):
+        if value not in rank:
+            err('%s records approval %r, which is not one of %s'
+                % (where, value, ', '.join(stages)))
+            return False
+        return True
+
+    plan_stage = stage_of(plan, stages) if plan else None
+    if plan:
+        known('the WorkPlan', plan_stage)
+    print('  Stages, least advanced first: %s. The last is approval, and approval is '
+          'commitment.' % ' > '.join(stages))
+    print('  Quarter budget and resourcing: %s.' % (plan_stage or 'no WorkPlan record'))
+
+    body = []
+    for wid in sorted(committed):
+        item = by_id.get(wid)
+        if not item:
+            continue
+        ep = stage_of(item, stages)
+        ds = item.get('deliverables') or []
+        dstages = [(d.get('id'), stage_of(d, stages)) for d in ds]
+        ok = known(wid, ep)
+        for did, st in dstages:
+            ok = known(did, st) and ok
+        counts = {}
+        for _, st in dstages:
+            counts[st] = counts.get(st, 0) + 1
+        lowest = min(dstages, key=lambda x: rank.get(x[1], -1)) if dstages else None
+        body.append([wid, epic_label(item)[:44], ep, len(ds),
+                     lowest[1] if lowest else 'n/a',
+                     ', '.join('%s %d' % (st, counts[st])
+                               for st in sorted(counts, key=lambda k: rank.get(k, -1)))])
+        if not ok:
+            continue
+        if not ds and rank[ep] > 0:
+            err('%s is recorded %s but names no products, so there is nothing for that stage '
+                'to rest on' % (wid, ep))
+        if lowest and rank[ep] > rank[lowest[1]]:
+            err('%s is recorded %s but its product %s is only %s. An epic cannot be further '
+                'on than its least advanced product' % (wid, ep, lowest[0], lowest[1]))
+        if ep == last and plan_stage != last:
+            err('%s is recorded %s, which is commitment, but the quarter budget and resourcing '
+                'are %s. The budget an epic commits to comes from them, so they are approved '
+                'first' % (wid, ep, plan_stage or 'unrecorded'))
+    print(table(['epic', 'title', 'epic', 'products', 'lowest', 'products by stage'], body))
+    if plan_stage == last and integrity_errors:
+        print('  The quarter budget is recorded %s, but levels 1 to 4 no longer agree, so what '
+              'was approved has moved. Fix them and approve again.' % last)
+    if len(stages) > 1:
+        ready = [r[0] for r in body if r[2] == stages[-2]]
+        if ready:
+            print('  Ready for approval: %s.' % ', '.join(ready))
+
+
 def budget_summary(q, by_id, plan):
     """The top-level budget and the ladder it comes down, and nothing else.
 
@@ -111,8 +185,9 @@ def budget_summary(q, by_id, plan):
 
     print('%s  %s' % (q.fiscal or q.slug, plan['name'] if plan else 'no WorkPlan record'))
     if plan:
-        print('%s to %s, %s' % (plan.get('planned_start'), plan.get('planned_end'),
-                                plan.get('status')))
+        print('%s to %s, %s, approval %s'
+              % (plan.get('planned_start'), plan.get('planned_end'), plan.get('status'),
+                 stage_of(plan, q.bind.approval_stages)))
     print()
     rows = [
         ['working days in the period', '%.0f' % q.working_days,
@@ -223,9 +298,9 @@ def main():
     print('%s  %s' % (q.fiscal or q.slug,
                       plan['name'] if plan else 'no WorkPlan record for this quarter'))
     if plan:
-        print('%s to %s, %s, owned by %s'
+        print('%s to %s, %s, approval %s, owned by %s'
               % (plan.get('planned_start'), plan.get('planned_end'), plan.get('status'),
-                 plan.get('owner') or 'nobody'))
+                 stage_of(plan, bind.approval_stages), plan.get('owner') or 'nobody'))
     else:
         err('no WorkPlan record carries quarter %s, so nothing in the model states which epics '
             'the quarter committed to' % q.fiscal)
@@ -342,6 +417,8 @@ def main():
             err('%s records budget_points %s but no allocation in the resourcing register '
                 'produces it' % (w['id'], w['budget_points']))
 
+    integrity_errors = len(errors)
+
     # ------------------------------------------------------------ 5. the elaboration
     print('\n5. ELABORATION, PRODUCTS AGAINST BUDGET')
     print('  Positive is under budget, negative is over.')
@@ -404,6 +481,10 @@ def main():
                  '%.0f%%' % (100 * loaded / q.capacity) if q.capacity else 'n/a',
                  signed(q.capacity - loaded)]))
 
+    # ---------------------------------------------------------------- 7. the approval
+    print('\n7. APPROVAL')
+    approval_section(q, plan, by_id, committed, integrity_errors)
+
     # ------------------------------------------------------------------------ apply
     if args.apply:
         if not fixes:
@@ -441,7 +522,8 @@ def main():
         for e in errors:
             print('  ERROR %s' % e)
         print('\nintegrity: %d error%s. Levels 1 to 4 must agree before levels 5 and 6 mean '
-              'anything.' % (len(errors), '' if len(errors) == 1 else 's'))
+              'anything, and level 7 must claim no more than the records beneath it.'
+              % (len(errors), '' if len(errors) == 1 else 's'))
         if fixes:
             print('Re-run with --apply to write the derived budget_points onto the epics.')
         return 1

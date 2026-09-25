@@ -43,6 +43,9 @@ DEFAULTS = {
     "quarterLabel": "Q{q}-FY{fy}",
     # Float comparison tolerance for the integrity checks.
     "tolerance": 0.05,
+    # The approval stages a plan, an epic and a product move through, least advanced first.
+    # The last one is approval, and approval is commitment.
+    "approvalStages": "draft,sized,validated,approved",
 }
 
 PATH_KEYS = ("sources", "register", "basis", "calendar", "resourcing", "quarterDir")
@@ -106,6 +109,13 @@ class Bindings:
     def tolerance(self):
         return float(self.values["tolerance"])
 
+    @property
+    def approval_stages(self):
+        """The approval stages in order, from a list or a comma-separated string."""
+        raw = self.values["approvalStages"]
+        items = raw if isinstance(raw, (list, tuple)) else str(raw).split(",")
+        return [str(x).strip() for x in items if str(x).strip()]
+
     def missing(self):
         """Bound paths that do not exist, so a run can say which rather than crash."""
         out = []
@@ -121,4 +131,5 @@ class Bindings:
             p = self.resolve(k)
             lines.append(f"    {k:<11} {p}{'' if os.path.exists(p) else '   MISSING'}")
         lines.append(f"    {'label':<11} {self.label()}")
+        lines.append(f"    {'approval':<11} {' > '.join(self.approval_stages)}")
         return "\n".join(lines)
