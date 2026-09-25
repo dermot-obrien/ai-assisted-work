@@ -6,8 +6,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semanti
 
 ## [Unreleased]
 
+### Added
+
+- `render --theme light|dark|auto`, for SVG. `light` is the default.
+
 ### Fixed
 
+- An SVG from `render` no longer changes with the viewer's colour scheme. draw.io writes light-dark() colours on a transparent background, so an embedded diagram went dark on a dark-mode machine while the page around it stayed light. `render` now passes `--svg-theme` where the installed draw.io accepts it and pins the root element's `color-scheme` afterwards either way, so older builds get the same result, and gives a light SVG a white background unless `--transparent` is set. `render.pin_svg_theme` applies the same fix to an SVG already on disk.
 - `doctor` no longer reports a templated path binding as missing. A binding carrying a `{placeholder}`, such as `planning/{quarter}/basis.csv`, names a different location per run, so the directory in front of the first placeholder is checked and the rest is left to the skill that fills it.
 
 ## [0.2.0] - 2026-09-25

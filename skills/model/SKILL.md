@@ -36,7 +36,7 @@ python bin/model.py validate <file>  [--against OTHER] [--json] [--fail-on error
 python bin/model.py sync <doc> <drawio> [--prune] [--dry-run] [--adopt]
 python bin/model.py rename  <doc> OLD NEW [--drawio FILE] [--dry-run]
 python bin/model.py scan    <folder> [--recursive] [--json] [--fail-on error|warn|never]
-python bin/model.py render  <drawio> --out FILE [--format svg|png|pdf] [--layer NAME ...]
+python bin/model.py render  <drawio> --out FILE [--format svg|png|pdf] [--layer NAME ...] [--theme light|dark|auto]
 python bin/model.py layers  <drawio> [--json]
 ```
 
@@ -115,6 +115,8 @@ python bin/model.py render components.drawio --out scenario-1.svg --layer Struct
 ```
 
 Layers are addressed by name, not index, because indexes shift when someone reorders them. Prefer SVG. The draw.io CLI changes flags between releases, so the skill probes the installed build and passes only what it accepts; if rendering fails, check the draw.io version before suspecting anything else.
+
+An SVG is pinned to the light colour scheme on a white background by default. draw.io on its own writes colours that follow the viewer's system setting on a transparent background, so a diagram embedded in a document or a slide turns dark on a dark-mode machine while the page around it stays light. `--theme dark` pins the dark scheme, `--theme auto` keeps draw.io's behaviour, and `--transparent` keeps the background transparent.
 
 Every render also writes `<image>.render.json` beside the image: the source diagram relative to the image, a SHA-256 of it with line endings normalised, and the layers. A consumer, such as markdown-deck, compares the fingerprint with the diagram as it is now and reports the image as stale when they differ, naming the command that re-renders it. Commit the record with the image.
 
