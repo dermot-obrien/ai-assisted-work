@@ -2,11 +2,11 @@
 name: quarter-planning
 description: Plan and maintain a quarter in two stages, deriving a budget of points from the calendar and the resourcing register, allocating it down to epics, then elaborating deliverables and rolling their sizes up. Frames an epic against its capability lane, names its products from the deliverable register, and interprets the integrity checks. Use when planning or replanning a quarter, reporting or setting a quarter budget, framing or sizing an epic, setting budget_points, naming deliverables on a work item, or reconciling plan documents with the model.
 license: CC-BY-4.0
-compatibility: Python 3.11 or newer, and PyYAML. Reads the planning registers, the model sources and the deliverable register at whatever paths [suite.quarter-planning] in the workspace .agents/skill-bindings.toml declares; assumes no directory layout and no jurisdiction's holidays.
+compatibility: Python 3.11 or newer, and PyYAML. Reads the planning registers, the model sources and the deliverable register at whatever paths [suite.quarter-planning] in the workspace .agents/skill-bindings.toml declares. Those six paths are required and have no default, so the skill carries no directory layout; it assumes no jurisdiction's holidays either.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "2.1.0"
+  version: "3.0.0"
 ---
 
 # Quarter Planning
@@ -18,8 +18,10 @@ Plans a quarter, and keeps the plan honest afterwards. It does not decide scope.
 The model is the source of truth and everything else is derived from it. Never type a figure
 into prose that a script can compute, and never publish a view that cannot be derived.
 
-Each row below is a binding key, not a path. Run `--where` to see where this workspace puts
-them; declare them in `[suite.quarter-planning]` of `.agents/skill-bindings.toml`.
+Each row below is a binding key, not a path. All six are required and none has a default,
+because a default would be whichever workspace this skill was written in. Declare them in
+`[suite.quarter-planning]` of `.agents/skill-bindings.toml`; `--where` shows what they
+resolve to, and names the ones still undeclared, without reading any of them.
 
 | Holds | Binding key | Authoritative for |
 |---|---|---|

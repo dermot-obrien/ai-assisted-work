@@ -43,8 +43,8 @@ class TemplateStem(unittest.TestCase):
 
     def test_directory_before_the_first_placeholder(self):
         self.assertEqual(
-            bindings._template_stem("../change/planning/{quarter}/{quarter}-cal.csv"),
-            "../change/planning")
+            bindings._template_stem("../planning/{quarter}/{quarter}-cal.csv"),
+            "../planning")
 
     def test_placeholder_in_the_leading_segment(self):
         self.assertEqual(bindings._template_stem("{quarter}/x.csv"), "")
