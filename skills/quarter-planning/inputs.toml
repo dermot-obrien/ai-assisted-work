@@ -103,3 +103,12 @@ to run without knowing whether this workspace uses npm, make or a script. Roles 
 `regenerate` (rebuild the views derived from the model), `check` (fail on prose that
 disagrees with them), `compose` (rebuild the composed model from its sources). Anything
 not set is described rather than commanded."""
+
+[inputs.options.approvalStages]
+type = "str"
+required = false
+default = "draft,sized,validated,approved"
+description = """The approval stages a plan, an epic and a product move through, least
+advanced first and comma-separated. Each is recorded in an `approval` field on the model
+record it approves. The last stage is read as approval, and approval is commitment, so a
+workspace that names its stages differently still gets the same rules."""
