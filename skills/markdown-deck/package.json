@@ -1,0 +1,56 @@
+{
+  "name": "markdown-deck",
+  "version": "0.2.0",
+  "description": "Render tagged sections of a Markdown document into HTML slides and a PDF, keeping the Markdown as the only source.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "markdown-deck": "bin/markdown-deck.mjs"
+  },
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./parse": "./src/parse.mjs",
+    "./render": "./src/render.mjs"
+  },
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "skill.json",
+    "bin/",
+    "src/",
+    "themes/",
+    "examples/"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "marked": "^16.4.2"
+  },
+  "peerDependencies": {
+    "pdf-lib": "^1.17.1",
+    "playwright": "^1.61.1"
+  },
+  "peerDependenciesMeta": {
+    "pdf-lib": {
+      "optional": true
+    },
+    "playwright": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "example": "node bin/markdown-deck.mjs build examples/example.md --out .tmp/example --theme default",
+    "test": "node --test \"tests/*.test.mjs\""
+  },
+  "keywords": [
+    "markdown",
+    "slides",
+    "deck",
+    "pdf",
+    "agent-skill"
+  ]
+}

@@ -82,6 +82,8 @@ AAW ships its workflows as standalone [Agent Skills](https://agentskills.io): a 
 holding a `SKILL.md` (YAML frontmatter plus instructions) alongside its `references/` and
 `assets/`. One definition works in every skills-compatible tool.
 
+**Work management**, the framework's own workflows:
+
 | Skill | Location |
 |-------|----------|
 | `/aaw-start-work` | `skills/aaw-start-work/` |
@@ -89,6 +91,19 @@ holding a `SKILL.md` (YAML frontmatter plus instructions) alongside its `referen
 | `/aaw-work-status` | `skills/aaw-work-status/` |
 | `/aaw-next-task` | `skills/aaw-next-task/` |
 | `/aaw-start-initiative` | `skills/aaw-start-initiative/` |
+
+**General tooling**, domain-agnostic and useful on their own. They are not work management,
+but they are the kind of thing every project needs and nothing about them is specific to one:
+
+| Skill | Does |
+|-------|------|
+| `markdown-deck` | Renders tagged sections of a Markdown document into HTML slides and a PDF, keeping the Markdown as the only source |
+| `model` | Treats a diagram and a document as two views of one model of boxes and lines: extract, emit, validate one against the other, render |
+
+Neither carries any organisation's branding. `markdown-deck` ships one brand-free theme and
+takes an organisation's colours as a **palette** in its binding, so the layout stays with the
+skill and the brand stays with the organisation. Both read their repository specifics from
+`.agents/skill-bindings.toml` rather than assuming a layout.
 
 Each carries a `description`, so an assistant can invoke it on its own when a request matches
 rather than only when you type the slash command. The long-form procedure sits in
