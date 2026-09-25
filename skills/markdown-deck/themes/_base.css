@@ -285,7 +285,7 @@ body.presenting .stage { padding: 0; }
 }
 .slide.active { display: flex; }
 /* Laid out but invisible while a hidden slide is measured for fitting. */
-.slide.measuring { display: flex; visibility: hidden; }
+.slide.measuring, .slide.diagram-measuring { display: flex; visibility: hidden; }
 .deck.single { position: static; }
 .deck.single .slide { display: flex; position: relative; }
 

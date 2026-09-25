@@ -34,6 +34,8 @@ Build options:
   --footnote <text>  cover footnote
   --eyebrow <text>   small label on every content slide
   --logo <path>      cover logo, relative to the output directory
+  --mermaid <src>    mermaid.min.js to copy beside the deck, or a URL to load it from.
+                     Default: an installed mermaid if one is found, else the CDN
   --partials         also write slides/*.html fragments
   --thumbnails       slide index shows thumbnails; the default is titles only.
                      Front matter deck_thumbnails: true does the same per document
@@ -134,6 +136,7 @@ async function main() {
     footnote: args.footnote,
     eyebrow: args.eyebrow,
     logo: args.logo,
+    mermaidSrc: args.mermaid,
     partials: Boolean(args.partials),
     thumbnails: args.thumbnails ? true : undefined,
     comments: args.comments ? true : undefined,

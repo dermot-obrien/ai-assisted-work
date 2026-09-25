@@ -24,6 +24,22 @@ const { findPublishedDecks } = createRequire(import.meta.url)('./catalog.cjs');
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const THEMES = path.resolve(HERE, '..', 'themes');
+export const MERMAID_CDN = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
+const MERMAID_FILE = path.join('node_modules', 'mermaid', 'dist', 'mermaid.min.js');
+
+/**
+ * A mermaid installed where the document or this skill can see it: the nearest
+ * node_modules above the document, then the skill's own. Null when there is none.
+ */
+export function findLocalMermaid(fromDir) {
+  for (let dir = path.resolve(fromDir); ; dir = path.dirname(dir)) {
+    const f = path.join(dir, MERMAID_FILE);
+    if (fs.existsSync(f)) return f;
+    if (path.dirname(dir) === dir) break;
+  }
+  const own = path.resolve(HERE, '..', MERMAID_FILE);
+  return fs.existsSync(own) ? own : null;
+}
 
 export function listThemes() {
   return fs.readdirSync(THEMES)
@@ -366,6 +382,25 @@ export function build(input, opts = {}) {
   }
 
   const strict = opts.strictRenders ?? Boolean(process.env.CI);
+
+  // Mermaid, when a slide has a diagram. A deck is meant to open from disk, so a local
+  // copy is preferred and copied beside the deck: the `mermaid` option or binding, a path
+  // or a URL, else an installed mermaid, else the CDN.
+  const needsMermaid = slides.some((s) => (s.bodyHtml || '').includes('class="mermaid"'));
+  const mermaidFor = () => {
+    const named = opts.mermaidSrc ?? repo.mermaid;
+    if (named && /^(https?:)?\/\//i.test(named)) return named;
+    const file = named
+      ? path.resolve(named === repo.mermaid && bound.file ? path.dirname(bound.file) : process.cwd(), named)
+      : findLocalMermaid(srcDir);
+    if (!file || !fs.existsSync(file)) {
+      if (named) onWarn(`mermaid not found at ${named}; loading it from ${MERMAID_CDN}`);
+      return MERMAID_CDN;
+    }
+    fs.mkdirSync(assetsDir, { recursive: true });
+    fs.copyFileSync(file, path.join(assetsDir, 'mermaid.min.js'));
+    return 'assets/mermaid.min.js';
+  };
   if (stale.length && strict) throw new Error(stale.join('\n'));
   for (const m of stale) onWarn(m);
 
@@ -382,7 +417,7 @@ export function build(input, opts = {}) {
         }
       : null,
     slides,
-    mermaidSrc: opts.mermaidSrc || 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js',
+    mermaidSrc: needsMermaid ? mermaidFor() : '',
     // The slide index lists titles unless asked for thumbnails, by option or front matter.
     thumbnails: Boolean(pick(opts.thumbnails, 'deck_thumbnails', 'thumbnails', false)),
     // Per-slide review comments, off unless asked for. The id keys the reviewer's stored
