@@ -19,6 +19,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -560,4 +561,129 @@ export async function installFramework(opts: InstallOptions): Promise<InstallRes
     ranSeed,
     warnings,
   };
+}
+
+// ---------------------------------------------------------------- drift check
+//
+// A skill is mastered in its framework repository and copied into the workspace by
+// install. The copy is writable, so it can be edited in place, and an edit there is
+// lost by the next install without ever having been reviewed. The check below is how
+// a workspace finds that out while the edit still exists.
+
+/** How one skill's installed copy compares with the framework's. */
+export interface SkillDrift {
+  name: string;
+  status: "ok" | "changed" | "missing";
+  /** Paths inside the skill that differ, relative to the skill directory. */
+  files: string[];
+}
+
+export interface CheckResult {
+  id: string;
+  version: string;
+  /** Absolute path of the framework the workspace was compared against. */
+  frameworkRoot: string;
+  skills: SkillDrift[];
+  /** True when every skill is `ok`. */
+  clean: boolean;
+}
+
+/** Every file under `root`, as a path relative to it mapped to its SHA-256. */
+async function digestTree(root: string, prefix = ""): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  let entries;
+  try {
+    entries = await readdir(root, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    const rel = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+    const abs = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      // Bytecode and dependency trees are build output, not the skill. They differ
+      // between the framework checkout and the workspace as a matter of course.
+      if (entry.name === "__pycache__" || entry.name === "node_modules") continue;
+      for (const [k, v] of await digestTree(abs, rel)) out.set(k, v);
+    } else if (entry.isFile()) {
+      out.set(rel, createHash("sha256").update(await readFile(abs)).digest("hex"));
+    }
+  }
+  return out;
+}
+
+/**
+ * Compare a workspace's installed skills with the framework that owns them.
+ *
+ * Reports what differs rather than fixing it: an edit to an installed copy is either
+ * a change that belongs upstream, in which case it should be moved there and released,
+ * or an accident, in which case a reinstall is the fix. Which of the two it is, is not
+ * something this can decide.
+ *
+ * A skill present in the workspace but absent from the framework is not reported: a
+ * workspace installs several frameworks into one directory, so another framework's
+ * skills, and any skill the workspace itself owns, sit beside these.
+ */
+export async function checkSkills(opts: {
+  frameworkRoot: string;
+  workspaceRoot: string;
+}): Promise<CheckResult> {
+  const manifest = await loadManifest(opts.frameworkRoot);
+  const workspaceRoot = path.resolve(opts.workspaceRoot);
+  const result: CheckResult = {
+    id: manifest.id,
+    version: manifest.version,
+    frameworkRoot: manifest.frameworkRoot,
+    skills: [],
+    clean: true,
+  };
+  if (!manifest.skills) return result;
+
+  const srcRoot = path.join(manifest.frameworkRoot, manifest.skills.src);
+  const entries = await readdir(srcRoot, { withFileTypes: true }).catch(() => []);
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const from = path.join(srcRoot, entry.name);
+    if (!(await isSkillDir(from))) continue;
+    const installed = path.join(workspaceRoot, SKILLS_INTEROP_DIR, entry.name);
+    if (!(await pathExists(installed))) {
+      result.skills.push({ name: entry.name, status: "missing", files: [] });
+      continue;
+    }
+    const master = await digestTree(from);
+    const copy = await digestTree(installed);
+    const files: string[] = [];
+    for (const [rel, hash] of master) {
+      if (copy.get(rel) !== hash) files.push(rel);
+    }
+    for (const rel of copy.keys()) {
+      if (!master.has(rel)) files.push(rel);
+    }
+    files.sort();
+    result.skills.push({
+      name: entry.name,
+      status: files.length === 0 ? "ok" : "changed",
+      files,
+    });
+  }
+  result.clean = result.skills.every((s) => s.status === "ok");
+  return result;
+}
+
+/** The frameworks a workspace has installed, from the `.aaw-config.yaml` registry. */
+export async function installedModules(
+  workspaceRoot: string,
+): Promise<Array<{ id: string; sourceRoot: string }>> {
+  const configPath = path.join(workspaceRoot, ".aaw-config.yaml");
+  if (!(await pathExists(configPath))) return [];
+  const doc = parseYaml(await readFile(configPath, "utf8")) as
+    | { modules?: Record<string, { source_root?: string }> }
+    | null;
+  const modules = doc?.modules ?? {};
+  return Object.entries(modules)
+    .filter(([, m]) => typeof m?.source_root === "string")
+    .map(([id, m]) => ({
+      id,
+      sourceRoot: path.resolve(workspaceRoot, m.source_root as string),
+    }));
 }

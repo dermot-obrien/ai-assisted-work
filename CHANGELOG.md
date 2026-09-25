@@ -8,6 +8,14 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **`aaw check-skills`**, which reports installed skills that no longer match the framework
+  that owns them. A skill is mastered in its framework repository and copied into a workspace
+  by install, and the copy is writable, so an edit made there is lost by the next install
+  without ever having been reviewed. With no `--framework` it checks every framework in the
+  workspace's `.aaw-config.yaml` modules registry, each against the `source_root` recorded
+  when it was installed, and exits non-zero on any difference so it can sit beside a
+  workspace's other integrity checks. It reports rather than repairs: an edit to an installed
+  copy either belongs upstream or was an accident, and nothing here can tell which.
 - **Two general tooling skills**, domain-agnostic and usable outside any AAW workspace:
   `markdown-deck` (Markdown to HTML slides and PDF, the Markdown staying the only source) and
   `model` (a diagram and a document as two views of one model of boxes and lines). They are

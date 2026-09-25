@@ -113,17 +113,17 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node, visitor, path11) {
-      const ctrl = callVisitor(key, node, visitor, path11);
+    function visit_(key, node, visitor, path12) {
+      const ctrl = callVisitor(key, node, visitor, path12);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path11, ctrl);
-        return visit_(key, ctrl, visitor, path11);
+        replaceNode(key, path12, ctrl);
+        return visit_(key, ctrl, visitor, path12);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path11 = Object.freeze(path11.concat(node));
+          path12 = Object.freeze(path12.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = visit_(i, node.items[i], visitor, path11);
+            const ci = visit_(i, node.items[i], visitor, path12);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -134,13 +134,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path11 = Object.freeze(path11.concat(node));
-          const ck = visit_("key", node.key, visitor, path11);
+          path12 = Object.freeze(path12.concat(node));
+          const ck = visit_("key", node.key, visitor, path12);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = visit_("value", node.value, visitor, path11);
+          const cv = visit_("value", node.value, visitor, path12);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -161,17 +161,17 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node, visitor, path11) {
-      const ctrl = await callVisitor(key, node, visitor, path11);
+    async function visitAsync_(key, node, visitor, path12) {
+      const ctrl = await callVisitor(key, node, visitor, path12);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path11, ctrl);
-        return visitAsync_(key, ctrl, visitor, path11);
+        replaceNode(key, path12, ctrl);
+        return visitAsync_(key, ctrl, visitor, path12);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path11 = Object.freeze(path11.concat(node));
+          path12 = Object.freeze(path12.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = await visitAsync_(i, node.items[i], visitor, path11);
+            const ci = await visitAsync_(i, node.items[i], visitor, path12);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -182,13 +182,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path11 = Object.freeze(path11.concat(node));
-          const ck = await visitAsync_("key", node.key, visitor, path11);
+          path12 = Object.freeze(path12.concat(node));
+          const ck = await visitAsync_("key", node.key, visitor, path12);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = await visitAsync_("value", node.value, visitor, path11);
+          const cv = await visitAsync_("value", node.value, visitor, path12);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -215,23 +215,23 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node, visitor, path11) {
+    function callVisitor(key, node, visitor, path12) {
       if (typeof visitor === "function")
-        return visitor(key, node, path11);
+        return visitor(key, node, path12);
       if (identity.isMap(node))
-        return visitor.Map?.(key, node, path11);
+        return visitor.Map?.(key, node, path12);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key, node, path11);
+        return visitor.Seq?.(key, node, path12);
       if (identity.isPair(node))
-        return visitor.Pair?.(key, node, path11);
+        return visitor.Pair?.(key, node, path12);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key, node, path11);
+        return visitor.Scalar?.(key, node, path12);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key, node, path11);
+        return visitor.Alias?.(key, node, path12);
       return void 0;
     }
-    function replaceNode(key, path11, node) {
-      const parent = path11[path11.length - 1];
+    function replaceNode(key, path12, node) {
+      const parent = path12[path12.length - 1];
       if (identity.isCollection(parent)) {
         parent.items[key] = node;
       } else if (identity.isPair(parent)) {
@@ -841,10 +841,10 @@ var require_Collection = __commonJS({
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema, path11, value) {
+    function collectionFromPath(schema, path12, value) {
       let v = value;
-      for (let i = path11.length - 1; i >= 0; --i) {
-        const k = path11[i];
+      for (let i = path12.length - 1; i >= 0; --i) {
+        const k = path12[i];
         if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
           const a = [];
           a[k] = v;
@@ -863,7 +863,7 @@ var require_Collection = __commonJS({
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
-    var isEmptyPath = (path11) => path11 == null || typeof path11 === "object" && !!path11[Symbol.iterator]().next().done;
+    var isEmptyPath = (path12) => path12 == null || typeof path12 === "object" && !!path12[Symbol.iterator]().next().done;
     var Collection = class extends Node.NodeBase {
       constructor(type, schema) {
         super(type);
@@ -893,11 +893,11 @@ var require_Collection = __commonJS({
        * be a Pair instance or a `{ key, value }` object, which may not have a key
        * that already exists in the map.
        */
-      addIn(path11, value) {
-        if (isEmptyPath(path11))
+      addIn(path12, value) {
+        if (isEmptyPath(path12))
           this.add(value);
         else {
-          const [key, ...rest] = path11;
+          const [key, ...rest] = path12;
           const node = this.get(key, true);
           if (identity.isCollection(node))
             node.addIn(rest, value);
@@ -911,8 +911,8 @@ var require_Collection = __commonJS({
        * Removes a value from the collection.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path11) {
-        const [key, ...rest] = path11;
+      deleteIn(path12) {
+        const [key, ...rest] = path12;
         if (rest.length === 0)
           return this.delete(key);
         const node = this.get(key, true);
@@ -926,8 +926,8 @@ var require_Collection = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path11, keepScalar) {
-        const [key, ...rest] = path11;
+      getIn(path12, keepScalar) {
+        const [key, ...rest] = path12;
         const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
@@ -945,8 +945,8 @@ var require_Collection = __commonJS({
       /**
        * Checks if the collection includes a value with the key `key`.
        */
-      hasIn(path11) {
-        const [key, ...rest] = path11;
+      hasIn(path12) {
+        const [key, ...rest] = path12;
         if (rest.length === 0)
           return this.has(key);
         const node = this.get(key, true);
@@ -956,8 +956,8 @@ var require_Collection = __commonJS({
        * Sets a value in this collection. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path11, value) {
-        const [key, ...rest] = path11;
+      setIn(path12, value) {
+        const [key, ...rest] = path12;
         if (rest.length === 0) {
           this.set(key, value);
         } else {
@@ -3472,9 +3472,9 @@ var require_Document = __commonJS({
           this.contents.add(value);
       }
       /** Adds a value to the document. */
-      addIn(path11, value) {
+      addIn(path12, value) {
         if (assertCollection(this.contents))
-          this.contents.addIn(path11, value);
+          this.contents.addIn(path12, value);
       }
       /**
        * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
@@ -3549,14 +3549,14 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path11) {
-        if (Collection.isEmptyPath(path11)) {
+      deleteIn(path12) {
+        if (Collection.isEmptyPath(path12)) {
           if (this.contents == null)
             return false;
           this.contents = null;
           return true;
         }
-        return assertCollection(this.contents) ? this.contents.deleteIn(path11) : false;
+        return assertCollection(this.contents) ? this.contents.deleteIn(path12) : false;
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -3571,10 +3571,10 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path11, keepScalar) {
-        if (Collection.isEmptyPath(path11))
+      getIn(path12, keepScalar) {
+        if (Collection.isEmptyPath(path12))
           return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
-        return identity.isCollection(this.contents) ? this.contents.getIn(path11, keepScalar) : void 0;
+        return identity.isCollection(this.contents) ? this.contents.getIn(path12, keepScalar) : void 0;
       }
       /**
        * Checks if the document includes a value with the key `key`.
@@ -3585,10 +3585,10 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value at `path`.
        */
-      hasIn(path11) {
-        if (Collection.isEmptyPath(path11))
+      hasIn(path12) {
+        if (Collection.isEmptyPath(path12))
           return this.contents !== void 0;
-        return identity.isCollection(this.contents) ? this.contents.hasIn(path11) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path12) : false;
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
@@ -3605,13 +3605,13 @@ var require_Document = __commonJS({
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path11, value) {
-        if (Collection.isEmptyPath(path11)) {
+      setIn(path12, value) {
+        if (Collection.isEmptyPath(path12)) {
           this.contents = value;
         } else if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, Array.from(path11), value);
+          this.contents = Collection.collectionFromPath(this.schema, Array.from(path12), value);
         } else if (assertCollection(this.contents)) {
-          this.contents.setIn(path11, value);
+          this.contents.setIn(path12, value);
         }
       }
       /**
@@ -5565,9 +5565,9 @@ var require_cst_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path11) => {
+    visit.itemAtPath = (cst, path12) => {
       let item = cst;
-      for (const [field, index] of path11) {
+      for (const [field, index] of path12) {
         const tok = item?.[field];
         if (tok && "items" in tok) {
           item = tok.items[index];
@@ -5576,23 +5576,23 @@ var require_cst_visit = __commonJS({
       }
       return item;
     };
-    visit.parentCollection = (cst, path11) => {
-      const parent = visit.itemAtPath(cst, path11.slice(0, -1));
-      const field = path11[path11.length - 1][0];
+    visit.parentCollection = (cst, path12) => {
+      const parent = visit.itemAtPath(cst, path12.slice(0, -1));
+      const field = path12[path12.length - 1][0];
       const coll = parent?.[field];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path11, item, visitor) {
-      let ctrl = visitor(item, path11);
+    function _visit(path12, item, visitor) {
+      let ctrl = visitor(item, path12);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field of ["key", "value"]) {
         const token = item[field];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path11.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path12.concat([[field, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -5603,10 +5603,10 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field === "key")
-            ctrl = ctrl(item, path11);
+            ctrl = ctrl(item, path12);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item, path11) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item, path12) : ctrl;
     }
     exports.visit = visit;
   }
@@ -7334,8 +7334,8 @@ var require_dist = __commonJS({
 });
 
 // src/cli.ts
-import process13 from "node:process";
-import path10 from "node:path";
+import process14 from "node:process";
+import path11 from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
 
 // src/config.ts
@@ -8013,6 +8013,7 @@ async function loadManifest(frameworkRoot) {
 // ../installer/dist/engine.js
 var import_yaml4 = __toESM(require_dist(), 1);
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir as mkdir2, readdir as readdir2, readFile as readFile4, rm, stat as stat2, symlink, writeFile as writeFile2 } from "node:fs/promises";
 import path4 from "node:path";
@@ -8396,6 +8397,85 @@ async function installFramework(opts) {
     warnings
   };
 }
+async function digestTree(root, prefix = "") {
+  const out = /* @__PURE__ */ new Map();
+  let entries;
+  try {
+    entries = await readdir2(root, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    const rel = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+    const abs = path4.join(root, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "__pycache__" || entry.name === "node_modules")
+        continue;
+      for (const [k, v] of await digestTree(abs, rel))
+        out.set(k, v);
+    } else if (entry.isFile()) {
+      out.set(rel, createHash("sha256").update(await readFile4(abs)).digest("hex"));
+    }
+  }
+  return out;
+}
+async function checkSkills(opts) {
+  const manifest = await loadManifest(opts.frameworkRoot);
+  const workspaceRoot = path4.resolve(opts.workspaceRoot);
+  const result = {
+    id: manifest.id,
+    version: manifest.version,
+    frameworkRoot: manifest.frameworkRoot,
+    skills: [],
+    clean: true
+  };
+  if (!manifest.skills)
+    return result;
+  const srcRoot = path4.join(manifest.frameworkRoot, manifest.skills.src);
+  const entries = await readdir2(srcRoot, { withFileTypes: true }).catch(() => []);
+  for (const entry of entries) {
+    if (!entry.isDirectory())
+      continue;
+    const from = path4.join(srcRoot, entry.name);
+    if (!await isSkillDir(from))
+      continue;
+    const installed = path4.join(workspaceRoot, SKILLS_INTEROP_DIR, entry.name);
+    if (!await pathExists(installed)) {
+      result.skills.push({ name: entry.name, status: "missing", files: [] });
+      continue;
+    }
+    const master = await digestTree(from);
+    const copy = await digestTree(installed);
+    const files = [];
+    for (const [rel, hash] of master) {
+      if (copy.get(rel) !== hash)
+        files.push(rel);
+    }
+    for (const rel of copy.keys()) {
+      if (!master.has(rel))
+        files.push(rel);
+    }
+    files.sort();
+    result.skills.push({
+      name: entry.name,
+      status: files.length === 0 ? "ok" : "changed",
+      files
+    });
+  }
+  result.clean = result.skills.every((s) => s.status === "ok");
+  return result;
+}
+async function installedModules(workspaceRoot) {
+  const configPath = path4.join(workspaceRoot, ".aaw-config.yaml");
+  if (!await pathExists(configPath))
+    return [];
+  const doc = (0, import_yaml4.parse)(await readFile4(configPath, "utf8"));
+  const modules = doc?.modules ?? {};
+  return Object.entries(modules).filter(([, m]) => typeof m?.source_root === "string").map(([id, m]) => ({
+    id,
+    sourceRoot: path4.resolve(workspaceRoot, m.source_root)
+  }));
+}
 
 // src/commands/init.ts
 var SUBMODULE_DEFAULT = ".ai-assisted-work";
@@ -8594,17 +8674,95 @@ async function pathExists2(p) {
   }
 }
 
-// src/commands/install.ts
+// src/commands/check-skills.ts
 import path6 from "node:path";
 import process5 from "node:process";
+function flag(args, name) {
+  const i = args.indexOf(name);
+  if (i === -1)
+    return void 0;
+  const value = args[i + 1];
+  if (value === void 0 || value.startsWith("--")) {
+    throw new Error(`${name} requires a path argument`);
+  }
+  return path6.resolve(process5.cwd(), value);
+}
+var SHOWN = 10;
+function report(result, workspaceRoot) {
+  const out = (msg) => process5.stdout.write(`${msg}
+`);
+  out(`\u25B8 ${result.id}@${result.version}`);
+  for (const skill of result.skills) {
+    if (skill.status === "ok") {
+      out(`  ok       ${skill.name}`);
+      continue;
+    }
+    if (skill.status === "missing") {
+      out(`  MISSING  ${skill.name} \u2014 not installed in this workspace`);
+      continue;
+    }
+    out(`  CHANGED  ${skill.name} \u2014 ${skill.files.length} file(s) differ`);
+    for (const file of skill.files.slice(0, SHOWN))
+      out(`             ${file}`);
+    if (skill.files.length > SHOWN) {
+      out(`             ... and ${skill.files.length - SHOWN} more`);
+    }
+  }
+  if (!result.clean) {
+    const rel = path6.relative(workspaceRoot, result.frameworkRoot) || result.frameworkRoot;
+    out("");
+    out(`  The installed copy is not what ${rel} holds. An edit made in the workspace`);
+    out("  belongs upstream, so move it to the framework and release it; an edit nobody");
+    out("  meant is undone by installing again.");
+  }
+}
+async function runCheckSkillsCommand(input) {
+  const workspaceRoot = flag(input.args, "--workspace") ?? await findWorkspaceRoot2(process5.cwd());
+  const explicit = flag(input.args, "--framework");
+  const frameworks = explicit ? [{ id: "", sourceRoot: explicit }] : await installedModules(workspaceRoot);
+  if (frameworks.length === 0) {
+    process5.stdout.write(
+      "No frameworks recorded in .aaw-config.yaml, and no --framework given.\n"
+    );
+    return 1;
+  }
+  let clean = true;
+  for (const framework of frameworks) {
+    let result;
+    try {
+      result = await checkSkills({
+        frameworkRoot: framework.sourceRoot,
+        workspaceRoot
+      });
+    } catch {
+      const rel = path6.relative(workspaceRoot, framework.sourceRoot) || framework.sourceRoot;
+      process5.stdout.write(
+        `\u25B8 ${framework.id}: skipped, no framework at ${rel}
+`
+      );
+      continue;
+    }
+    report(result, workspaceRoot);
+    if (!result.clean)
+      clean = false;
+  }
+  process5.stdout.write(
+    clean ? "\nEvery installed skill matches the framework that owns it.\n" : "\nInstalled skills have drifted from their frameworks.\n"
+  );
+  return clean ? 0 : 1;
+}
+
+// src/commands/install.ts
+import path7 from "node:path";
+import process6 from "node:process";
 import { createInterface as createInterface2 } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 function resolveAawRoot() {
   const self = fileURLToPath(import.meta.url);
-  const dir = path6.dirname(self);
-  if (path6.basename(dir) === "bin")
-    return path6.resolve(dir, "..");
-  return path6.resolve(dir, "..", "..", "..");
+  const dir = path7.dirname(self);
+  if (path7.basename(dir) === "bin")
+    return path7.resolve(dir, "..");
+  return path7.resolve(dir, "..", "..", "..");
 }
 function frameworkArg(args) {
   const i = args.indexOf("--framework");
@@ -8614,7 +8772,7 @@ function frameworkArg(args) {
   if (value === void 0 || value.startsWith("--")) {
     throw new Error("--framework requires a path argument");
   }
-  return path6.resolve(process5.cwd(), value);
+  return path7.resolve(process6.cwd(), value);
 }
 function workspaceArg(args) {
   const i = args.indexOf("--workspace");
@@ -8624,26 +8782,26 @@ function workspaceArg(args) {
   if (value === void 0 || value.startsWith("--")) {
     throw new Error("--workspace requires a path argument");
   }
-  return path6.resolve(process5.cwd(), value);
+  return path7.resolve(process6.cwd(), value);
 }
 async function resolveWorkspaceRoot(args) {
   const explicit = workspaceArg(args);
   if (explicit)
     return explicit;
-  const detected = await findWorkspaceRoot2(process5.cwd());
-  if (!process5.stdin.isTTY || !process5.stdout.isTTY)
+  const detected = await findWorkspaceRoot2(process6.cwd());
+  if (!process6.stdin.isTTY || !process6.stdout.isTTY)
     return detected;
-  const rl = createInterface2({ input: process5.stdin, output: process5.stdout });
+  const rl = createInterface2({ input: process6.stdin, output: process6.stdout });
   try {
     const answer = (await rl.question(`Install into workspace [${detected}]: `)).trim();
-    return answer === "" ? detected : path6.resolve(process5.cwd(), answer);
+    return answer === "" ? detected : path7.resolve(process6.cwd(), answer);
   } finally {
     rl.close();
   }
 }
 async function runInstallCommand(input) {
   if (!input.args.includes("--framework")) {
-    return runInit({ cwd: process5.cwd(), frameworkRoot: resolveAawRoot() });
+    return runInit({ cwd: process6.cwd(), frameworkRoot: resolveAawRoot() });
   }
   const noPython = input.args.includes("--no-python");
   const runSeed2 = input.args.includes("--seed");
@@ -8651,16 +8809,16 @@ async function runInstallCommand(input) {
   const workspaceRoot = await resolveWorkspaceRoot(input.args);
   const result = await runInstall({
     frameworkRoot,
-    cwd: process5.cwd(),
+    cwd: process6.cwd(),
     workspaceRoot,
     runPython: noPython ? false : void 0,
     runSeed: runSeed2,
-    log: (msg) => process5.stdout.write(`${msg}
+    log: (msg) => process6.stdout.write(`${msg}
 `)
   });
   const skills = result.skills.length > 0 ? `${result.skills.length} skill(s)` : "no skills";
   const swept = result.removedLegacyShims.length > 0 ? `; ${result.removedLegacyShims.length} legacy shim path(s) removed` : "";
-  process5.stdout.write(
+  process6.stdout.write(
     `
 Done. ${result.id}@${result.version} \u2014 ${skills}${swept}.
 `
@@ -8671,9 +8829,9 @@ Done. ${result.id}@${result.version} \u2014 ${skills}${swept}.
 }
 
 // src/commands/lint.ts
-import process6 from "node:process";
+import process7 from "node:process";
 import { readdir as readdir3 } from "node:fs/promises";
-import path7 from "node:path";
+import path8 from "node:path";
 
 // src/backends/local-fs/validate.ts
 var WORK_ITEM_STATUSES = [
@@ -8809,14 +8967,14 @@ async function runLint(input) {
     issues.push(...detectActivityIssues(wi));
   }
   if (issues.length === 0) {
-    process6.stdout.write("aaw lint: no issues\n");
+    process7.stdout.write("aaw lint: no issues\n");
     return 0;
   }
-  process6.stdout.write(`aaw lint: ${issues.length} issue(s)
+  process7.stdout.write(`aaw lint: ${issues.length} issue(s)
 
 `);
   for (const issue of issues) {
-    process6.stdout.write(`  \u2717 ${issue.path}
+    process7.stdout.write(`  \u2717 ${issue.path}
       ${issue.message}
 
 `);
@@ -8848,7 +9006,7 @@ async function detectDuplicateFolders(root, prefix) {
       issues.push({
         path: id,
         message: `duplicate ID \u2014 ${folders.length} folders share this number:
-` + folders.map((f) => `        ${path7.join(root, f)}`).join("\n")
+` + folders.map((f) => `        ${path8.join(root, f)}`).join("\n")
       });
     }
   }
@@ -8907,28 +9065,28 @@ function detectActivityIssues(wi) {
 
 // src/commands/migrate.ts
 import { copyFile as copyFile2, mkdir as mkdir4, readFile as readFile6, readdir as readdir4, rename, rm as rm2, stat as stat4, writeFile as writeFile4 } from "node:fs/promises";
-import path8 from "node:path";
-import process7 from "node:process";
+import path9 from "node:path";
+import process8 from "node:process";
 async function runMigrate(input) {
   const sub = input.args[0];
   if (sub !== "v1") {
-    process7.stderr.write(
+    process8.stderr.write(
       "aaw migrate: expected 'v1' (e.g. `aaw migrate v1` or `aaw migrate v1 --dry-run`)\n"
     );
     return 2;
   }
   const dryRun = input.args.includes("--dry-run");
   const root = input.config.workspaceRoot;
-  const v1Shared = path8.join(root, "change", "work-items");
-  const v1Private = path8.join(root, "change", "work-items-private");
-  const v1SharedInit = path8.join(root, "change", "initiatives");
-  const v1PrivateInit = path8.join(root, "change", "initiatives-private");
+  const v1Shared = path9.join(root, "change", "work-items");
+  const v1Private = path9.join(root, "change", "work-items-private");
+  const v1SharedInit = path9.join(root, "change", "initiatives");
+  const v1PrivateInit = path9.join(root, "change", "initiatives-private");
   const haveSources = await Promise.all(
     [v1Shared, v1Private, v1SharedInit, v1PrivateInit].map(pathExists3)
   );
   if (!haveSources.some(Boolean)) {
-    process7.stdout.write(
-      `aaw migrate v1: no v1 directories found under ${path8.join(root, "change")}.
+    process8.stdout.write(
+      `aaw migrate v1: no v1 directories found under ${path9.join(root, "change")}.
 Nothing to do.
 `
     );
@@ -8945,36 +9103,36 @@ Nothing to do.
     input.config.initiativesPath
   );
   if (wiPlan.length === 0 && initPlan.length === 0) {
-    process7.stdout.write("aaw migrate v1: no work items or initiatives to migrate.\n");
+    process8.stdout.write("aaw migrate v1: no work items or initiatives to migrate.\n");
     return 0;
   }
-  process7.stdout.write(
+  process8.stdout.write(
     dryRun ? "aaw migrate v1 (dry run) \u2014 would do:\n\n" : "aaw migrate v1 \u2014 moving:\n\n"
   );
   for (const p of [...wiPlan, ...initPlan]) {
     if (p.oldId === p.newId) {
-      process7.stdout.write(`  ${p.oldId}: ${p.fromDir} \u2192 ${p.toDir}
+      process8.stdout.write(`  ${p.oldId}: ${p.fromDir} \u2192 ${p.toDir}
 `);
     } else {
-      process7.stdout.write(`  ${p.oldId} \u2192 ${p.newId}: ${p.fromDir} \u2192 ${p.toDir}
+      process8.stdout.write(`  ${p.oldId} \u2192 ${p.newId}: ${p.fromDir} \u2192 ${p.toDir}
 `);
     }
   }
-  process7.stdout.write("\n");
+  process8.stdout.write("\n");
   if (dryRun) {
-    process7.stdout.write(
+    process8.stdout.write(
       "Dry run complete. Re-run without --dry-run to apply.\nNote: the move uses rename + content rewrite; combine with `git status`\nin the parent repo afterward to commit the result.\n"
     );
     return 0;
   }
   for (const p of [...wiPlan, ...initPlan]) {
-    await mkdir4(path8.dirname(p.toDir), { recursive: true });
+    await mkdir4(path9.dirname(p.toDir), { recursive: true });
     await renameOrCopyAndRemove(p.fromDir, p.toDir);
     if (p.rewrites.size > 0) {
       await rewriteContentInPlace(p.toDir, p.rewrites);
     }
   }
-  process7.stdout.write(
+  process8.stdout.write(
     `Migrated ${wiPlan.length} work item(s) and ${initPlan.length} initiative(s).
 Old paths under change/ may be left empty \u2014 review and remove manually.
 `
@@ -8984,7 +9142,7 @@ Old paths under change/ may be left empty \u2014 review and remove manually.
 async function planWorkItemMoves(v1Shared, v1Private, v2Path) {
   const plan = [];
   const usedIds = /* @__PURE__ */ new Set();
-  const sharedSameAsDest = path8.resolve(v1Shared) === path8.resolve(v2Path);
+  const sharedSameAsDest = path9.resolve(v1Shared) === path9.resolve(v2Path);
   for (const id of await scanIds(v2Path, /^WI-(\d+)/))
     usedIds.add(id);
   if (!sharedSameAsDest) {
@@ -8994,7 +9152,7 @@ async function planWorkItemMoves(v1Shared, v1Private, v2Path) {
         continue;
       const newNum = nextFreeId(usedIds, oldNum);
       usedIds.add(newNum);
-      plan.push(makeMove("WI", oldNum, newNum, path8.join(v1Shared, folder), v2Path));
+      plan.push(makeMove("WI", oldNum, newNum, path9.join(v1Shared, folder), v2Path));
     }
   }
   let nextFresh = 1;
@@ -9008,8 +9166,8 @@ async function planWorkItemMoves(v1Shared, v1Private, v2Path) {
     plan.push({
       oldId: formatId("WIP", oldNum),
       newId: formatId("WI", nextFresh),
-      fromDir: path8.join(v1Private, folder),
-      toDir: path8.join(v2Path, folder.replace(/^WIP-(\d+)/, formatId("WI", nextFresh))),
+      fromDir: path9.join(v1Private, folder),
+      toDir: path9.join(v2Path, folder.replace(/^WIP-(\d+)/, formatId("WI", nextFresh))),
       rewrites: /* @__PURE__ */ new Map([[formatId("WIP", oldNum), formatId("WI", nextFresh)]])
     });
     nextFresh++;
@@ -9019,7 +9177,7 @@ async function planWorkItemMoves(v1Shared, v1Private, v2Path) {
 async function planInitiativeMoves(v1Shared, v1Private, v2Path) {
   const plan = [];
   const usedIds = /* @__PURE__ */ new Set();
-  const sharedSameAsDest = path8.resolve(v1Shared) === path8.resolve(v2Path);
+  const sharedSameAsDest = path9.resolve(v1Shared) === path9.resolve(v2Path);
   for (const id of await scanIds(v2Path, /^IN-(\d+)/))
     usedIds.add(id);
   if (!sharedSameAsDest) {
@@ -9029,7 +9187,7 @@ async function planInitiativeMoves(v1Shared, v1Private, v2Path) {
         continue;
       const newNum = nextFreeId(usedIds, oldNum);
       usedIds.add(newNum);
-      plan.push(makeMove("IN", oldNum, newNum, path8.join(v1Shared, folder), v2Path));
+      plan.push(makeMove("IN", oldNum, newNum, path9.join(v1Shared, folder), v2Path));
     }
   }
   let nextFresh = 1;
@@ -9043,8 +9201,8 @@ async function planInitiativeMoves(v1Shared, v1Private, v2Path) {
     plan.push({
       oldId: formatId("INP", oldNum),
       newId: formatId("IN", nextFresh),
-      fromDir: path8.join(v1Private, folder),
-      toDir: path8.join(v2Path, folder.replace(/^INP-(\d+)/, formatId("IN", nextFresh))),
+      fromDir: path9.join(v1Private, folder),
+      toDir: path9.join(v2Path, folder.replace(/^INP-(\d+)/, formatId("IN", nextFresh))),
       rewrites: /* @__PURE__ */ new Map([[formatId("INP", oldNum), formatId("IN", nextFresh)]])
     });
     nextFresh++;
@@ -9054,7 +9212,7 @@ async function planInitiativeMoves(v1Shared, v1Private, v2Path) {
 function makeMove(prefix, oldNum, newNum, fromDir, v2Path) {
   const oldId = formatId(prefix, oldNum);
   const newId = formatId(prefix, newNum);
-  const folderName = path8.basename(fromDir);
+  const folderName = path9.basename(fromDir);
   const newFolderName = oldNum === newNum ? folderName : folderName.replace(new RegExp(`^${prefix}-(\\d+)`), newId);
   const rewrites = /* @__PURE__ */ new Map();
   if (oldNum !== newNum)
@@ -9063,7 +9221,7 @@ function makeMove(prefix, oldNum, newNum, fromDir, v2Path) {
     oldId,
     newId,
     fromDir,
-    toDir: path8.join(v2Path, newFolderName),
+    toDir: path9.join(v2Path, newFolderName),
     rewrites
   };
 }
@@ -9118,8 +9276,8 @@ async function copyDirRecursive(src, dest) {
   await mkdir4(dest, { recursive: true });
   const entries = await readdir4(src, { withFileTypes: true });
   for (const entry of entries) {
-    const s = path8.join(src, entry.name);
-    const d = path8.join(dest, entry.name);
+    const s = path9.join(src, entry.name);
+    const d = path9.join(dest, entry.name);
     if (entry.isDirectory()) {
       await copyDirRecursive(s, d);
     } else if (entry.isFile()) {
@@ -9130,7 +9288,7 @@ async function copyDirRecursive(src, dest) {
 async function rewriteContentInPlace(dir, rewrites) {
   const entries = await readdir4(dir, { withFileTypes: true });
   for (const entry of entries) {
-    const p = path8.join(dir, entry.name);
+    const p = path9.join(dir, entry.name);
     if (entry.isDirectory()) {
       await rewriteContentInPlace(p, rewrites);
     } else if (entry.isFile() && isTextFile(entry.name)) {
@@ -9157,7 +9315,7 @@ function isTextFile(name) {
 }
 
 // src/commands/next-task.ts
-import process8 from "node:process";
+import process9 from "node:process";
 async function runNextTask(input) {
   const target = input.args[0];
   const backend = new LocalFsBackend(input.config);
@@ -9165,31 +9323,31 @@ async function runNextTask(input) {
   const candidates = items.filter((wi) => target ? wi.id === target : wi.status !== "done" && wi.status !== "abandoned").flatMap(findNextTaskInWorkItem);
   if (candidates.length === 0) {
     if (target) {
-      process8.stdout.write(`No claimable task in ${target}.
+      process9.stdout.write(`No claimable task in ${target}.
 `);
     } else {
-      process8.stdout.write("No claimable task across the workspace.\n");
+      process9.stdout.write("No claimable task across the workspace.\n");
     }
     return 0;
   }
   const c = candidates[0];
-  process8.stdout.write(`Next: ${c.task.id}
+  process9.stdout.write(`Next: ${c.task.id}
 `);
-  process8.stdout.write(`  Work item: ${c.workItem.id} \u2014 ${c.workItem.title}
+  process9.stdout.write(`  Work item: ${c.workItem.id} \u2014 ${c.workItem.title}
 `);
-  process8.stdout.write(`  Activity:  ${c.activity.id} \u2014 ${c.activity.title}
+  process9.stdout.write(`  Activity:  ${c.activity.id} \u2014 ${c.activity.title}
 `);
-  process8.stdout.write(`  Task:      ${c.task.title}
+  process9.stdout.write(`  Task:      ${c.task.title}
 `);
   if (c.activity.dependsOn.length > 0) {
-    process8.stdout.write(`  Activity depends on: ${c.activity.dependsOn.join(", ")}
+    process9.stdout.write(`  Activity depends on: ${c.activity.dependsOn.join(", ")}
 `);
   }
   if (c.task.actor === "human") {
-    process8.stdout.write(`  Actor:     human (agent should mark awaiting_human)
+    process9.stdout.write(`  Actor:     human (agent should mark awaiting_human)
 `);
   } else {
-    process8.stdout.write(`  Actor:     ${c.task.actor}
+    process9.stdout.write(`  Actor:     ${c.task.actor}
 `);
   }
   return 0;
@@ -9211,22 +9369,22 @@ function findNextTaskInWorkItem(wi) {
 }
 
 // src/commands/release.ts
-import process9 from "node:process";
+import process10 from "node:process";
 async function runRelease(input) {
   const activityId = input.args[0];
   if (!activityId) {
-    process9.stderr.write("aaw release: missing ACTIVITY_ID\n");
+    process10.stderr.write("aaw release: missing ACTIVITY_ID\n");
     return 2;
   }
   const opts = parseFlags2(input.args.slice(1));
   const backend = new LocalFsBackend(input.config);
   try {
     await backend.releaseActivity(activityId, opts.reason);
-    process9.stdout.write(`Released ${activityId}
+    process10.stdout.write(`Released ${activityId}
 `);
     return 0;
   } catch (err) {
-    process9.stderr.write(`aaw release: ${err.message}
+    process10.stderr.write(`aaw release: ${err.message}
 `);
     return 1;
   }
@@ -9242,12 +9400,12 @@ function parseFlags2(args) {
 }
 
 // src/commands/runner.ts
-import process10 from "node:process";
+import process11 from "node:process";
 var DEFAULT_INTERVAL_SECONDS = 30;
 async function runRunner(input) {
   const sub = input.args[0];
   if (sub !== "start") {
-    process10.stderr.write(
+    process11.stderr.write(
       "aaw runner: expected subcommand 'start' (e.g. `aaw runner start --pool default`)\n"
     );
     return 2;
@@ -9256,7 +9414,7 @@ async function runRunner(input) {
   const pool = opts.pool ?? input.config.tenant;
   const intervalSeconds = opts.interval ?? DEFAULT_INTERVAL_SECONDS;
   const backend = new LocalFsBackend(input.config);
-  process10.stdout.write(
+  process11.stdout.write(
     `aaw runner: polling pool='${pool}' every ${intervalSeconds}s.
 Workspace: ${input.config.workspaceRoot}
 Press Ctrl-C to stop.
@@ -9268,35 +9426,35 @@ Press Ctrl-C to stop.
     if (stopped)
       return;
     stopped = true;
-    process10.stdout.write("\naaw runner: stopping.\n");
+    process11.stdout.write("\naaw runner: stopping.\n");
   };
-  process10.on("SIGINT", stop);
-  process10.on("SIGTERM", stop);
+  process11.on("SIGINT", stop);
+  process11.on("SIGTERM", stop);
   while (!stopped) {
     try {
       const items = await backend.listPoolWork(pool, { claimableOnly: true });
       const claimable = items.flatMap(findClaimableActivities);
       const ts = (/* @__PURE__ */ new Date()).toISOString();
       if (claimable.length === 0) {
-        process10.stdout.write(`[${ts}] no claimable activities
+        process11.stdout.write(`[${ts}] no claimable activities
 `);
       } else {
-        process10.stdout.write(`[${ts}] ${claimable.length} claimable:
+        process11.stdout.write(`[${ts}] ${claimable.length} claimable:
 `);
         for (const c of claimable.slice(0, 10)) {
-          process10.stdout.write(
+          process11.stdout.write(
             `   ${c.workItemId}/${c.activityId} (${c.actor}) \u2014 ${c.title}
 `
           );
         }
         if (claimable.length > 10) {
-          process10.stdout.write(`   \u2026and ${claimable.length - 10} more
+          process11.stdout.write(`   \u2026and ${claimable.length - 10} more
 `);
         }
       }
     } catch (err) {
       const ts = (/* @__PURE__ */ new Date()).toISOString();
-      process10.stderr.write(`[${ts}] poll error: ${err.message}
+      process11.stderr.write(`[${ts}] poll error: ${err.message}
 `);
     }
     if (stopped)
@@ -9340,7 +9498,7 @@ async function sleep(ms, stopped) {
 }
 
 // src/commands/status.ts
-import process11 from "node:process";
+import process12 from "node:process";
 async function runStatus(input) {
   const backend = new LocalFsBackend(input.config);
   const target = input.args[0];
@@ -9358,7 +9516,7 @@ async function runStatus(input) {
     return 1;
   const { initiatives, workItems } = tenantState.data;
   if (initiatives.length === 0 && workItems.length === 0) {
-    process11.stdout.write(
+    process12.stdout.write(
       `No work items or initiatives in ${input.config.workItemsPath}
 (run 'aaw install' if this workspace is not yet configured)
 `
@@ -9366,17 +9524,17 @@ async function runStatus(input) {
     return 0;
   }
   if (initiatives.length > 0) {
-    process11.stdout.write(`Initiatives in ${input.config.initiativesPath}:
+    process12.stdout.write(`Initiatives in ${input.config.initiativesPath}:
 `);
     for (const init of initiatives) {
       const tick = symbol(init.status);
       const wiCount = workItems.filter((w) => w.initiativeId === init.id).length;
-      process11.stdout.write(
+      process12.stdout.write(
         `  ${tick} ${init.id} \u2014 ${init.title} (${init.status}, ${wiCount} WI${wiCount === 1 ? "" : "s"})
 `
       );
     }
-    process11.stdout.write("\n");
+    process12.stdout.write("\n");
   }
   if (workItems.length === 0)
     return 0;
@@ -9388,13 +9546,13 @@ async function runStatus(input) {
     byInit.set(key, list);
   }
   if (initiatives.length > 0) {
-    process11.stdout.write(`Work items in ${input.config.workItemsPath}:
+    process12.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
     for (const init of initiatives) {
       const list = byInit.get(init.id);
       if (!list || list.length === 0)
         continue;
-      process11.stdout.write(`
+      process12.stdout.write(`
   ${init.id}:
 `);
       for (const wi of list) {
@@ -9403,7 +9561,7 @@ async function runStatus(input) {
     }
     const standalone = byInit.get("__standalone");
     if (standalone && standalone.length > 0) {
-      process11.stdout.write(`
+      process12.stdout.write(`
   Standalone:
 `);
       for (const wi of standalone) {
@@ -9411,7 +9569,7 @@ async function runStatus(input) {
       }
     }
   } else {
-    process11.stdout.write(`Work items in ${input.config.workItemsPath}:
+    process12.stdout.write(`Work items in ${input.config.workItemsPath}:
 `);
     for (const wi of workItems) {
       renderWorkItemLine(wi, "  ");
@@ -9424,22 +9582,22 @@ async function showWorkItem(backend, workItemId) {
   if (result.kind !== "workItem")
     return 1;
   const wi = result.data;
-  process11.stdout.write(`${wi.id} \u2014 ${wi.title}
+  process12.stdout.write(`${wi.id} \u2014 ${wi.title}
 `);
-  process11.stdout.write(`  type: ${wi.type}, status: ${wi.status}
+  process12.stdout.write(`  type: ${wi.type}, status: ${wi.status}
 `);
-  process11.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
+  process12.stdout.write(`  initiative: ${wi.initiativeId ?? "none"}
 `);
-  process11.stdout.write(`  version: ${wi.version}
+  process12.stdout.write(`  version: ${wi.version}
 
 `);
   for (const a of wi.activities) {
     const tick = symbol(a.status);
-    process11.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
+    process12.stdout.write(`  ${tick} ${a.id} \u2014 ${a.title} (${a.status})
 `);
     for (const t of a.tasks) {
       const ttick = symbol(t.status);
-      process11.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
+      process12.stdout.write(`      ${ttick} ${t.id} \u2014 ${t.title}
 `);
     }
   }
@@ -9450,33 +9608,33 @@ async function showInitiative(backend, initiativeId) {
   if (result.kind !== "initiative")
     return 1;
   const init = result.data;
-  process11.stdout.write(`${init.id} \u2014 ${init.title}
+  process12.stdout.write(`${init.id} \u2014 ${init.title}
 `);
-  process11.stdout.write(`  status: ${init.status}
+  process12.stdout.write(`  status: ${init.status}
 `);
-  process11.stdout.write(
+  process12.stdout.write(
     `  time horizon: ${init.targetStart ?? "?"} \u2013 ${init.targetEnd ?? "?"}
 `
   );
-  process11.stdout.write(`  owner: ${init.owner ?? "none"}
+  process12.stdout.write(`  owner: ${init.owner ?? "none"}
 `);
   if (init.rootWorkItem) {
-    process11.stdout.write(`  root work item: ${init.rootWorkItem}
+    process12.stdout.write(`  root work item: ${init.rootWorkItem}
 `);
   }
-  process11.stdout.write("\n");
+  process12.stdout.write("\n");
   if (init.workItems.length === 0) {
-    process11.stdout.write(
+    process12.stdout.write(
       `  (No work items registered. They link via 'initiative_id' in their progress.yaml.)
 `
     );
     return 0;
   }
-  process11.stdout.write(`  Work items:
+  process12.stdout.write(`  Work items:
 `);
   for (const ref of init.workItems) {
     const tick = symbol(ref.status);
-    process11.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
+    process12.stdout.write(`    ${tick} ${ref.id} \u2014 ${ref.title} (${ref.status})
 `);
   }
   return 0;
@@ -9484,7 +9642,7 @@ async function showInitiative(backend, initiativeId) {
 function renderWorkItemLine(wi, indent) {
   const tick = symbol(wi.status);
   const counts = activityCounts(wi);
-  process11.stdout.write(
+  process12.stdout.write(
     `${indent}${tick} ${wi.id} \u2014 ${wi.title} (${wi.status}, ${counts})
 `
   );
@@ -9512,8 +9670,8 @@ function symbol(status) {
 
 // src/commands/verify.ts
 import { mkdir as mkdir5, readFile as readFile7, unlink as unlink2, writeFile as writeFile5 } from "node:fs/promises";
-import path9 from "node:path";
-import process12 from "node:process";
+import path10 from "node:path";
+import process13 from "node:process";
 async function runVerify(input) {
   const checks = [];
   checks.push({
@@ -9523,7 +9681,7 @@ async function runVerify(input) {
   });
   checks.push({ name: "Mode", ok: true, detail: input.config.mode });
   checks.push({ name: "Tenant", ok: true, detail: input.config.tenant });
-  const sentinel = path9.join(input.config.workItemsPath, ".aaw-sentinel");
+  const sentinel = path10.join(input.config.workItemsPath, ".aaw-sentinel");
   let writeOk = false;
   let writeDetail = "";
   try {
@@ -9553,11 +9711,11 @@ async function runVerify(input) {
     const tick = c.ok ? "\u2713" : "\u2717";
     const line = `  ${tick} ${c.name}${c.detail ? `  \u2014  ${c.detail}` : ""}
 `;
-    process12.stdout.write(line);
+    process13.stdout.write(line);
     if (!c.ok)
       allOk = false;
   }
-  process12.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
+  process13.stdout.write(allOk ? "\nAll checks passed.\n" : "\nVerification failed.\n");
   return allOk ? 0 : 1;
 }
 
@@ -9568,6 +9726,8 @@ Usage:
   aaw install                         Bootstrap/install this workspace
   aaw install --workspace PATH        Bootstrap/install another workspace
   aaw install --framework PATH        Install another AAW-family framework
+  aaw check-skills                    Report installed skills that no longer match
+                                      the framework that owns them
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
   aaw next-task [WI-NNN]              Show the next claimable task
   aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
@@ -9585,32 +9745,35 @@ Usage:
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
 'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
-var VERSION = true ? "3.1.0" : "0.0.0-dev";
+var VERSION = true ? "3.2.0" : "0.0.0-dev";
 function resolveAawRoot2() {
   const self = fileURLToPath2(import.meta.url);
-  const dir = path10.dirname(self);
-  if (path10.basename(dir) === "bin")
-    return path10.resolve(dir, "..");
-  return path10.resolve(dir, "..", "..", "..");
+  const dir = path11.dirname(self);
+  if (path11.basename(dir) === "bin")
+    return path11.resolve(dir, "..");
+  return path11.resolve(dir, "..", "..", "..");
 }
 async function main(argv) {
   const [command, ...rest] = argv;
   if (!command || command === "--help" || command === "-h" || command === "help") {
-    process13.stdout.write(HELP);
+    process14.stdout.write(HELP);
     return 0;
   }
   if (command === "--version" || command === "-v") {
-    process13.stdout.write(`${VERSION}
+    process14.stdout.write(`${VERSION}
 `);
     return 0;
   }
   if (command === "init") {
-    return runInit({ cwd: process13.cwd(), frameworkRoot: resolveAawRoot2() });
+    return runInit({ cwd: process14.cwd(), frameworkRoot: resolveAawRoot2() });
   }
   if (command === "install") {
     return runInstallCommand({ args: rest });
   }
-  const workspaceRoot = await findWorkspaceRoot(process13.cwd());
+  if (command === "check-skills") {
+    return runCheckSkillsCommand({ args: rest });
+  }
+  const workspaceRoot = await findWorkspaceRoot(process14.cwd());
   const config = await loadConfig(workspaceRoot);
   switch (command) {
     case "status":
@@ -9630,21 +9793,21 @@ async function main(argv) {
     case "migrate":
       return runMigrate({ config, args: rest });
     default:
-      process13.stderr.write(`Unknown command: ${command}
+      process14.stderr.write(`Unknown command: ${command}
 
 ${HELP}`);
       return 2;
   }
 }
-main(process13.argv.slice(2)).then(
-  (code) => process13.exit(code),
+main(process14.argv.slice(2)).then(
+  (code) => process14.exit(code),
   (err) => {
-    process13.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
+    process14.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}
 `);
-    if (process13.env.AAW_DEBUG) {
-      process13.stderr.write(`${err.stack ?? ""}
+    if (process14.env.AAW_DEBUG) {
+      process14.stderr.write(`${err.stack ?? ""}
 `);
     }
-    process13.exit(1);
+    process14.exit(1);
   }
 );

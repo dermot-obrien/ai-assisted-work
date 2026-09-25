@@ -1,6 +1,6 @@
 {
   "name": "ai-assisted-work",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "AI-Assisted Work (AAW) — domain-agnostic work-management agents + the shared install engine for the AAW framework family.",
   "private": true,
   "type": "module",
