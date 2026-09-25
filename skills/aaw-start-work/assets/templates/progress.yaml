@@ -70,6 +70,9 @@ parent_work_item_id: null     # For an epic, the workstream it belongs to. null 
 initiative_id: null           # Optional parent Initiative ID (e.g., IN-001). null = standalone.
 planning_period: null         # The period this epic lands in, in whatever calendar the
                               # organisation uses (e.g. "Q1-FY27", "2026-H1"). Epic-only.
+advances_kr_ids: []           # Optional OKR layer: the KR-NNN Key Results this work item
+                              # advances. Empty unless the workspace runs objectives; see
+                              # the objective and cadence templates in aaw-start-initiative.
 
 # === TIMESTAMPS ===
 created: "{ISO-8601-timestamp}"

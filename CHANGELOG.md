@@ -7,6 +7,15 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Merged the optional OKR layer from `main` (Objectives, Key Results, Cadence) into the skills
+  rather than losing it with the retired `packages/skills/` tree. `objective-progress.yaml` and
+  `cadence.yaml` now ship with `/aaw-start-initiative`, because an Objective is a strategic
+  container like an Initiative, and the skill documents the layer. The work item templates
+  carry `advances_kr_ids`, which is the source of truth for the link; the Objective's
+  `advanced_by_work_item_ids` is a cache, like the initiative's `work_items` array.
+
+
 ## [3.1.0] - 2026-09-25
 
 Deletes the shim machinery. 3.0.0 removed the shims themselves but kept the code that

@@ -6,12 +6,29 @@ Work is organised into four levels, from strategic to operational:
 
 | Level | Term | Agile Equivalent | Time Horizon | Contains |
 |-------|------|-------------------|--------------|----------|
-| 4 (highest) | **Initiative** | Initiative (Jira Plans, Linear) | Quarter to 1 year | Work Items |
-| 3 | **Work Item** | Epic | 2 weeks to 1 quarter | Activities |
-| 2 | **Activity** | Story | 1 day to 2 weeks | Tasks |
-| 1 (lowest) | **Task** | Sub-task | Less than 1 day | — |
+| 4 (highest) | **Initiative** | Initiative (Jira Plans, Linear) | Multi-quarter | Work Items |
+| 3 | **Work Item** | Epic | ≤ 1 quarter | Activities |
+| 2 | **Activity** | Story | ≤ 1 sprint (2 weeks) | Tasks |
+| 1 (lowest) | **Task** | Task | ≤ 1 day | — |
 
 **Initiatives** are optional strategic containers that group related Work Items toward a shared goal. Work Items function independently with or without an Initiative parent. See [Initiatives](#initiatives) for details.
+
+## Outcomes (OKRs) — optional layer
+
+An optional, **context-free** outcome layer so work can ladder to measurable goals and a time-box can carry a goal. It is **orthogonal** to the hierarchy (not a fifth level): work items *advance* Key Results — they do not contain them.
+
+| Concept | What it is | Horizon | ID |
+|---|---|---|---|
+| **Objective** | a qualitative outcome to pursue | quarter | `OBJ-{NNN}` |
+| **Key Result** | measurable signal the Objective is being met (2-4 per Objective; leading or lagging) | quarter | `KR-{NNN}` |
+| **Milestone** | a checkpoint toward a Key Result | monthly | `MS-{NNN}` |
+| **Cadence** | a time-box (sprint / iteration / week) carrying a **Goal** | 1 wk - quarter | `SP-{NNN}` |
+
+**Linkage (orthogonal):** Objective -> Key Results. A **Work Item** (or Activity) declares `advances_kr_ids: [KR-...]` — the KRs it moves (many-to-many). A **Cadence** carries a `goal` + `advances_kr_ids`, and pulls specific Activities/Tasks from in-flight Work Items for that period.
+
+So: an **Initiative** (multi-quarter) ladders to several Objectives; an **Epic** (Work Item, <= quarter) advances **one** quarter's KRs; a **sprint/week goal** is a *step that advances* a KR — it is **not** the Objective (keep them distinct).
+
+This layer is **optional and additive** — work items function with or without it, and it carries **no domain/tenant vocabulary** (a host context maps its own Strategic Themes, value areas, etc. onto Objectives/KRs). Records live alongside work items, e.g. `objectives/OBJ-NNN/`. Templates ship with the `/aaw-start-initiative` skill, at `skills/aaw-start-initiative/assets/templates/objective-progress.yaml` and `cadence.yaml`, because an Objective is a strategic container like an Initiative.
 
 ## Work Items
 
