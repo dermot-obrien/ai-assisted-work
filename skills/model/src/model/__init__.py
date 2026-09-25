@@ -7,13 +7,13 @@ validates one against another, and renders the diagram.
 
 Nothing here knows what the boxes mean. Domain vocabulary lives in `model.toml`.
 """
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from .schema import Model, Node, Edge, Group, Scenario, Step  # noqa: F401
-from . import config, drawio, markdown, serial, validate, render, sync, scan  # noqa: F401
+from . import config, drawio, markdown, serial, validate, render, sync, scan, animate  # noqa: F401
 
 __all__ = ["Model", "Node", "Edge", "Group", "Scenario", "Step",
-           "config", "drawio", "markdown", "serial", "validate", "render", "sync", "scan",
+           "config", "drawio", "markdown", "serial", "validate", "render", "sync", "scan", "animate",
            "load", "__version__"]
 
 
