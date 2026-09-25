@@ -7,6 +7,45 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-09-25
+
+Deletes the shim machinery. 3.0.0 removed the shims themselves but kept the code that
+installed them, because AI-Assisted Research had not migrated. It has now, so nothing declares
+`shims`, and the machinery goes.
+
+### Removed
+
+- `wireShims`, `ShimMapping`, the `shims` and `source_token` manifest keys, and the
+  `source_token` path rewrite. The rewrite existed to point a shim at wherever the framework
+  actually lived; a skill is self-contained and holds no such pointer, so `copyDir` no longer
+  takes a rewrite argument and no longer special-cases text files.
+- A second, duplicate copy of the same copy-and-rewrite machinery inside the interactive
+  bootstrap (`init.ts`), along with its own module-registry writer.
+- `InstallResult.wired`. `InstallResult.removedLegacyShims` replaces it, reporting what the
+  sweep cleaned rather than what was installed.
+
+A manifest that still declares `shims` or `source_token` installs fine; the keys are ignored.
+
+### Fixed
+
+- **The interactive bootstrap installed no skills at all.** `aaw install` with no
+  `--framework`, which is the documented first-run command, still wired shims from
+  `skills-for-agents/` — deleted in 3.0.0 — and reported "shims installed" regardless, because
+  its copy helper returned silently when the source was missing. A fresh bootstrap produced a
+  config and a work-items directory and nothing else. It now delegates to the shared installer
+  engine, so the bootstrap and `aaw install --framework` place skills identically.
+- The bootstrap's `recordSelfModule` round-tripped `.aaw-config.yaml` through parse and
+  stringify, discarding every comment, the same defect fixed in the engine's `recordModule` in
+  2.1.0. Delegating to the engine removes the duplicate rather than fixing it twice.
+
+### Known limitation
+
+The bootstrap cannot be driven from a pipe: its readline consumes the whole stream and closes,
+so the second prompt throws. That is why the broken shim path above survived — every automated
+test used `--framework`, which takes a different route. Worth restructuring so the first-run
+path is testable.
+
+
 ## [3.0.0] - 2026-09-25
 
 Retires the per-tool command shims. Agent Skills, added in 2.1.0, are now the only

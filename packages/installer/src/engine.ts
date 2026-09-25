@@ -8,8 +8,7 @@
  * AAW-family framework:
  *   1. ensure depended-on frameworks are present
  *   2. install standalone Agent Skills (.agents/skills + a .claude/skills link)
- *   3. wire legacy AI-tool shims, for frameworks that still declare them, and
- *      sweep away shims this framework used to install
+ *   3. sweep away command shims this framework installed before it migrated
  *   4. seed config files (idempotent)
  *   5. ensure data dirs exist
  *   6. run language tool setup (pip for python frameworks)
@@ -68,9 +67,10 @@ export interface InstallOptions {
 export interface InstallResult {
   id: string;
   version: string;
-  wired: ToolName[];
   /** Names of the Agent Skills installed into .agents/skills. */
   skills: string[];
+  /** Legacy shim paths removed from a workspace installed before the migration. */
+  removedLegacyShims: string[];
   seededConfig: string[];
   dataDirs: string[];
   pythonInstalled: boolean;
@@ -87,20 +87,7 @@ async function pathExists(p: string): Promise<boolean> {
   }
 }
 
-/** Token rewrite applied to text shim files so self-references track the real install location. */
-interface Rewrite {
-  from: string;
-  to: string;
-}
-
-const TEXT_SHIM_EXT = new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
-
-function isTextShim(name: string): boolean {
-  // ".prompt.md" → ext ".md"; also treat ".prompt" defensively.
-  return TEXT_SHIM_EXT.has(path.extname(name).toLowerCase());
-}
-
-async function copyDir(src: string, dest: string, rewrite?: Rewrite): Promise<number> {
+async function copyDir(src: string, dest: string): Promise<number> {
   if (!(await pathExists(src))) return 0;
   await mkdir(dest, { recursive: true });
   let count = 0;
@@ -109,14 +96,9 @@ async function copyDir(src: string, dest: string, rewrite?: Rewrite): Promise<nu
     const from = path.join(src, entry.name);
     const to = path.join(dest, entry.name);
     if (entry.isDirectory()) {
-      count += await copyDir(from, to, rewrite);
+      count += await copyDir(from, to);
     } else if (entry.isFile()) {
-      if (rewrite && isTextShim(entry.name)) {
-        const text = await readFile(from, "utf8");
-        await writeFile(to, text.split(rewrite.from).join(rewrite.to), "utf8");
-      } else {
-        await copyFile(from, to);
-      }
+      await copyFile(from, to);
       count += 1;
     }
   }
@@ -142,52 +124,6 @@ export async function detectTools(workspaceRoot: string): Promise<DetectedTools>
     out[tool] = await pathExists(path.join(workspaceRoot, TOOL_DETECT_DIR[tool]));
   }
   return out;
-}
-
-/** Copy each tool's shim dir into the workspace. Returns the tools actually wired. */
-export async function wireShims(
-  opts: InstallOptions,
-  selection: DetectedTools,
-): Promise<ToolName[]> {
-  const { manifest, workspaceRoot } = opts;
-  const log = opts.log ?? noopLog;
-  const wired: ToolName[] = [];
-  // Rewrite the framework's self-reference token to its actual relative location,
-  // so shims resolve whether it's a submodule (".ai-assisted-work") or in node_modules.
-  let rewrite: Rewrite | undefined;
-  if (manifest.sourceToken) {
-    const rel = path.relative(workspaceRoot, manifest.frameworkRoot).split(path.sep).join("/");
-    if (rel.length > 0 && rel !== manifest.sourceToken) {
-      rewrite = { from: manifest.sourceToken, to: rel };
-      log(`  ▸ shim paths: rewriting "${manifest.sourceToken}" → "${rel}"`);
-    }
-  }
-  if (Object.keys(manifest.shims).length > 0) {
-    log(
-      `  ! ${manifest.id}: still ships per-tool command shims, which are deprecated. ` +
-        `Move its workflows to Agent Skills (a 'skills' manifest key); shim support will be removed.`,
-    );
-  }
-  for (const tool of TOOL_NAMES) {
-    const mapping = manifest.shims[tool];
-    if (!mapping || !selection[tool]) continue;
-    const src = path.join(manifest.frameworkRoot, mapping.src);
-    const dest = path.join(workspaceRoot, mapping.dest);
-    // Make install authoritative: clear the framework-owned dest first so shims for
-    // upstream-renamed/removed commands don't linger, and so a submodule→npm move
-    // leaves no stale paths. Guarded to id-namespaced dirs (we own `<tool>/…/<id>`).
-    if (path.basename(dest) === manifest.id && (await pathExists(dest))) {
-      await rm(dest, { recursive: true, force: true });
-    }
-    const n = await copyDir(src, dest, rewrite);
-    if (n > 0) {
-      log(`  ▸ ${tool}: wired ${n} shim file(s) → ${mapping.dest}`);
-      wired.push(tool);
-    } else {
-      log(`  ! ${tool}: shim source missing or empty (${mapping.src})`);
-    }
-  }
-  return wired;
 }
 
 /** Where standalone Agent Skills land. Fixed by convention, not by the manifest. */
@@ -334,16 +270,19 @@ const LEGACY_SHIM_PROMPT_PREFIX: Record<string, string> = {
 };
 
 /**
- * Remove shims this framework installed before it moved to Agent Skills.
+ * Remove command shims this framework installed before it moved to Agent Skills.
  *
- * Runs only when the manifest no longer declares any shim, so a framework that has
- * not migrated is left alone. Returns the paths removed.
+ * A migration aid, not part of installing. Without it an upgraded workspace keeps
+ * .claude/commands/<id> and friends pointing at instruction files that no longer
+ * exist, and the failure surfaces only when somebody types the command.
+ *
+ * Scoped to id-namespaced paths this installer created and owns; nothing outside
+ * `<tool dir>/.../<framework id>` is ever touched. Safe to drop once no workspace
+ * predates the migration.
  */
 export async function removeLegacyShims(opts: InstallOptions): Promise<string[]> {
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
-  if (Object.keys(manifest.shims).length > 0) return [];
-
   const removed: string[] = [];
   for (const rel of LEGACY_SHIM_DESTS[manifest.id] ?? []) {
     const dest = path.join(workspaceRoot, rel);
@@ -594,8 +533,7 @@ export async function installFramework(opts: InstallOptions): Promise<InstallRes
   };
 
   const skills = await wireSkills(opts, selection);
-  await removeLegacyShims(opts);
-  const wired = await wireShims(opts, selection);
+  const removedLegacyShims = await removeLegacyShims(opts);
   const seededConfig = await seedConfig(opts);
   const dataDirs = await ensureDataDirs(opts);
   const pythonInstalled = await runToolSetup(opts, warnings);
@@ -614,8 +552,8 @@ export async function installFramework(opts: InstallOptions): Promise<InstallRes
   return {
     id: manifest.id,
     version: manifest.version,
-    wired,
     skills,
+    removedLegacyShims,
     seededConfig,
     dataDirs,
     pythonInstalled,

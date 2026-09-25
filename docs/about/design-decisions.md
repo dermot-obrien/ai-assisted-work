@@ -375,11 +375,14 @@ content.
 ### Consequences
 
 - The per-tool shims under `skills-for-agents/` and the instruction files under
-  `packages/skills/work-management/` were removed in 3.0.0. The installer still understands
-  the retired `shims` and `source_token` keys so an unmigrated framework keeps installing, and
-  logs a deprecation notice; as of 2026-09-25 no AAW-family framework declares them, since
-  AI-Assisted Architecture and AI-Assisted Research have both migrated, so the keys and the
-  `source_token` rewrite machinery can be deleted whenever convenient. `aaw install` sweeps
+  `packages/skills/work-management/` were removed in 3.0.0, and the shim machinery itself in
+  3.1.0 once AI-Assisted Architecture and AI-Assisted Research had both migrated and nothing
+  declared `shims` any more. Gone with it: the `shims` and `source_token` manifest keys, the
+  `source_token` rewrite that existed only to keep shim pointers resolving, and a second copy
+  of the same copy-and-rewrite machinery in the interactive bootstrap.
+- What remains is the install-time sweep that removes shims a framework previously wrote.
+  That is a migration aid rather than shim support, and it can go once no workspace predates
+  the migration. `aaw install` sweeps
   away shims it previously wrote, since they point at files that no longer exist.
 - The reference documentation that lived alongside those instruction files — concepts,
   lifecycle, scaling limits, work-type notes, agent boundary rules — moved to `docs/concepts/`

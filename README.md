@@ -1,6 +1,6 @@
 # AI Assisted Work
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)](CHANGELOG.md)
 [![Licence: CC BY 4.0](https://img.shields.io/badge/content-CC%20BY%204.0-blue.svg)](LICENSES/CC-BY-4.0.txt)
 [![Licence: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSES/Apache-2.0.txt)
 [![REUSE 3.3](https://img.shields.io/badge/REUSE-3.3-lightgrey.svg)](https://reuse.software/spec-3.3/)
@@ -48,7 +48,7 @@ npm-registry access** (git is enough).
 
 ```bash
 npm i github:dermot-obrien/ai-assisted-work
-npx aaw install       # interactive bootstrap: workspace, tenant, mode, work_items_path, skills
+npx aaw install       # interactive bootstrap: workspace, tenant, mode, work_items_path; then installs the skills
 ```
 
 `bin/aaw.js` is a committed, self-contained bundle, so `npm i` pulls **no** registry
@@ -243,9 +243,8 @@ seeded idempotently), `data_dirs`, `tool_setup.python` (pip), and `seed` (an opt
 Node seeder). Installed modules record their `source_root` in `.aaw-config.yaml`, so
 other frameworks can resolve back to the correct local clone for that workspace.
 
-The engine still understands the retired `shims` and `source_token` keys so an
-AAW-family framework that has not migrated keeps installing, and logs a deprecation
-notice when it sees them.
+The `shims` and `source_token` keys are gone. A manifest that still declares them
+installs fine; they are simply ignored.
 
 ## Contributing
 
