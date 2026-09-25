@@ -4,7 +4,7 @@ description: Treat a diagram and a document as two views of one model of boxes a
 license: Apache-2.0
 compatibility: Python 3.9 or newer; Python 3.11 or newer to read a binding file. Rendering needs draw.io desktop installed (the installed build, not the portable exe). Reading YAML needs PyYAML; writing YAML needs nothing.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
   x-skill-requires: ""
 ---
 
@@ -38,6 +38,7 @@ python bin/model.py rename  <doc> OLD NEW [--drawio FILE] [--dry-run]
 python bin/model.py scan    <folder> [--recursive] [--json] [--fail-on error|warn|never]
 python bin/model.py render  <drawio> --out FILE [--format svg|png|pdf] [--layer NAME ...] [--theme light|dark|auto]
 python bin/model.py layers  <drawio> [--json]
+python bin/model.py animate <doc>    [--out FILE] [--image PNG] [--accent #RRGGBB] [--interval S] [--force]
 ```
 
 `extract`, `emit` and `validate` take any representation and work it out from the extension.
@@ -119,6 +120,18 @@ Layers are addressed by name, not index, because indexes shift when someone reor
 An SVG is pinned to the light colour scheme on a white background by default. draw.io on its own writes colours that follow the viewer's system setting on a transparent background, so a diagram embedded in a document or a slide turns dark on a dark-mode machine while the page around it stays light. `--theme dark` pins the dark scheme, `--theme auto` keeps draw.io's behaviour, and `--transparent` keeps the background transparent.
 
 Every render also writes `<image>.render.json` beside the image: the source diagram relative to the image, a SHA-256 of it with line endings normalised, and the layers. A consumer, such as markdown-deck, compares the fingerprint with the diagram as it is now and reports the image as stale when they differ, naming the command that re-renders it. Commit the record with the image.
+
+### Animating the scenarios
+
+```bash
+python bin/model.py animate index.md
+```
+
+Writes `scenarios.html` beside an `index.md`, or `<stem>-scenarios.html` beside any other document: one self-contained page that opens from disk in any browser, with no server. It steps through each scenario on the structure view: the step's number on the acting shape, an arrow drawn to the target, everything else dimmed, a zoom onto the two shapes, and the narrative with the interface's purpose and spare columns. Arrow keys step, space plays.
+
+The document supplies names, narratives and interface details; the diagram supplies geometry and each step's endpoints. The page draws its own arrows between the shapes' current positions, so after moving shapes, re-run it; there is nothing else to update. Positions inside groups and containers are resolved.
+
+It validates first and stops rather than guesses. A step with no narrative, an endpoint with no shape on the structure layer, a scenario in the document but not on the diagram or the reverse, or a rendered view whose proportions differ from the shapes' extent is an error that names every case. The last usually means an edge label or waypoint lies outside the shapes; a background rectangle enclosing the structure layer, used as a frame, fixes it.
 
 ## Configuration
 
