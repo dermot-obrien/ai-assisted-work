@@ -6,6 +6,7 @@
  *
  * Commands:
  *   aaw install            Bootstrap/install a workspace
+ *   aaw check-skills       Report installed skills that have drifted
  *   aaw status [WI-NNN]    Show pool status, or one work item
  *   aaw verify             Sanity-check the local-fs backend can read+write
  *
@@ -19,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import { findWorkspaceRoot, loadConfig } from "./config.js";
 import { runClaim } from "./commands/claim.js";
 import { runInit } from "./commands/init.js";
+import { runCheckSkillsCommand } from "./commands/check-skills.js";
 import { runInstallCommand } from "./commands/install.js";
 import { runLint } from "./commands/lint.js";
 import { runMigrate } from "./commands/migrate.js";
@@ -34,6 +36,8 @@ Usage:
   aaw install                         Bootstrap/install this workspace
   aaw install --workspace PATH        Bootstrap/install another workspace
   aaw install --framework PATH        Install another AAW-family framework
+  aaw check-skills                    Report installed skills that no longer match
+                                      the framework that owns them
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
   aaw next-task [WI-NNN]              Show the next claimable task
   aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
@@ -84,6 +88,9 @@ async function main(argv: string[]): Promise<number> {
   }
   if (command === "install") {
     return runInstallCommand({ args: rest });
+  }
+  if (command === "check-skills") {
+    return runCheckSkillsCommand({ args: rest });
   }
 
   // Commands that need a workspace + config:

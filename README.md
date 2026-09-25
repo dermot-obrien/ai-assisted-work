@@ -129,6 +129,26 @@ Gemini CLI read natively. Claude Code reads only `.claude/skills/`, so the insta
 directory junction on Windows, which needs neither elevation nor developer mode. Where the
 filesystem refuses both it falls back to a copy and says so.
 
+### Keeping the copy honest
+
+The installed copy is writable, so it can be edited in place, and an edit there is lost by
+the next install without ever having been reviewed. `check-skills` reports that while the
+edit still exists:
+
+```bash
+node .ai-assisted-work/bin/aaw.js check-skills
+```
+
+With no `--framework` it checks every framework in the workspace's `.aaw-config.yaml`
+modules registry, each against the `source_root` recorded when it was installed, and exits
+non-zero on any difference, so a workspace can run it beside its own integrity checks. It
+reports rather than repairs: an edit to an installed copy either belongs upstream, in which
+case move it to the framework and release it, or was an accident, in which case installing
+again undoes it.
+
+A skill the workspace itself owns, or one installed by another framework, is left alone.
+Only the skills this framework ships are compared.
+
 Verify by typing `/` in your assistant: the five `/aaw-*` skills should appear.
 
 Do not commit the installed skills into a consuming repository. They are generated from this

@@ -89,6 +89,16 @@ jobs:
             test -f "$s/SKILL.md" || { echo "::error::$s does not resolve"; exit 1; }
           done
 
+      - name: A fresh install reports no drift
+        run: node "$GITHUB_WORKSPACE/bin/aaw.js" check-skills --workspace /tmp/ws --framework "$GITHUB_WORKSPACE"
+
+      - name: An edited copy is caught
+        run: |
+          echo "# edited in the workspace" >> /tmp/ws/.agents/skills/aaw-start-work/SKILL.md
+          if node "$GITHUB_WORKSPACE/bin/aaw.js" check-skills --workspace /tmp/ws --framework "$GITHUB_WORKSPACE"; then
+            echo "::error::check-skills passed on an edited copy"; exit 1
+          fi
+
   reuse:
     name: REUSE compliance
     runs-on: ubuntu-latest
