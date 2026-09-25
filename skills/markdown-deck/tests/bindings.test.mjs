@@ -22,7 +22,7 @@ feedbackTo  = "${ADDRESS}"
 feedbackSubject = 'Deck review: "please read"'
 
 [suite.markdown-deck.palette]
-deck-bg = "#002F6B"
+deck-bg = "#2C4A6E"
 
 [suite.other]
 theme = "wrong"
@@ -49,7 +49,7 @@ test('reads only its own section, with strings, booleans and comments', () => {
   assert.deepEqual(v, {
     theme: 'default', comments: true, feedbackTo: ADDRESS,
     feedbackSubject: 'Deck review: "please read"',
-    palette: { 'deck-bg': '#002F6B' },
+    palette: { 'deck-bg': '#2C4A6E' },
   });
 });
 
@@ -79,7 +79,7 @@ test('a deck gets the repository default when it says nothing', () => {
   const cfg = config(r.deckHtml);
   assert.equal(cfg.feedback.to, ADDRESS);
   assert.equal(cfg.feedback.subject, 'Deck review: "please read"');
-  assert.match(r.deckHtml, /--deck-bg: #002F6B/, 'the bound palette');
+  assert.match(r.deckHtml, /--deck-bg: #2C4A6E/, 'the bound palette');
 });
 
 test('front matter overrides the repository, and an option overrides both', () => {
@@ -87,7 +87,7 @@ test('front matter overrides the repository, and an option overrides both', () =
   const fm = build(doc, { out: path.join(dir, 'b'), onWarn: () => {} });
   assert.doesNotMatch(fm.deckHtml, /id="deck-config"/, 'deck_comments: false wins over comments = true');
   assert.match(fm.deckHtml, /--deck-bg: #123456/, "the deck's own palette is applied");
-  assert.doesNotMatch(fm.deckHtml, /--deck-bg: #002F6B/, 'deck_palette wins over the bound palette');
+  assert.doesNotMatch(fm.deckHtml, /--deck-bg: #2C4A6E/, 'deck_palette wins over the bound palette');
 
   const on = build(doc, { out: path.join(dir, 'c'), comments: true, onWarn: () => {} });
   assert.equal(config(on.deckHtml).feedback.to, 'someone.else@example.com');

@@ -35,7 +35,7 @@ Rules that matter:
 - An image slide should be a PNG at 1920x1080 or larger in 16:9. The build warns when one is not 16:9, which is letterboxed, or is smaller than 1920x1080, which looks soft when presented. A missing image slide is warned about and skipped.
 - Reference links, `[text][label]` with `[label]: url` at the foot of the document, resolve on every slide. Relative links to other documents are not rewritten, so they only work where the deck sits beside those documents.
 - Local images are copied into the output `assets/` folder and the paths rewritten. A missing image is warned about and left alone rather than failing the build.
-- An image with a `<image>.render.json` record, as `model render` writes, is checked against its diagram. If the diagram changed after the render, the build warns and gives the command that re-renders it; with `CI` set it fails. Re-render rather than suppress it.
+- An image with a `<image>.render.json` record, as `model render` writes, is checked against its diagram. If the diagram changed after the render, the build warns and gives the command that re-renders it; with `CI` set it fails. Re-render rather than suppress it; `--refresh` on `build` re-renders stale images itself, through the model skill, before building.
 - `manifest.json` lists `dependencies`: the documents and images the deck was built from, relative to the workspace root. `publish --graph` prints them for every deck, with anything used by more than one deck, so the reach of a change is visible.
 
 ## Procedure

@@ -17,7 +17,7 @@ import {
 } from './parse.mjs';
 import { makeMarked, renderSlideBody, renderDeck, renderPartial } from './render.mjs';
 import { repoDefaults, workspaceRoot } from './bindings.mjs';
-import { checkRender, staleMessage } from './freshness.mjs';
+import { checkRender, staleMessage, refreshRender } from './freshness.mjs';
 
 const { findPublishedDecks } = createRequire(import.meta.url)('./catalog.cjs');
 
@@ -167,7 +167,10 @@ function checkImage(file, label, onWarn) {
  * @param {object} opts      { out, theme, title, subtitle, date, footnote, eyebrow,
  *                             logo, mermaidSrc, partials, thumbnails, comments,
  *                             feedbackTo, feedbackSubject, deckId, htmlName,
- *                             bindings, strictRenders, root, onWarn }
+ *                             bindings, strictRenders, refresh, root, onWarn, onLog }
+ *
+ * `refresh` re-renders a stale image through the model skill before using it, so a
+ * build picks up a diagram edited since its last render.
  *
  * An image with a render record (see freshness.mjs) whose source has changed since it was
  * rendered is reported. `strictRenders` makes that fail the build; it defaults to on when
@@ -227,7 +230,12 @@ export function build(input, opts = {}) {
       return null;
     }
     if (!images.has(from)) {
-      const check = checkRender(from);
+      let check = checkRender(from);
+      // --refresh re-renders a stale image before it is copied, rather than reporting it.
+      if (check && !check.fresh && opts.refresh) {
+        (opts.onLog || console.log)(`  re-rendering ${path.relative(root, from).split(path.sep).join('/')}`);
+        check = refreshRender(from, check);
+      }
       images.set(from, check);
       if (check && !check.fresh) stale.push(staleMessage(from, check));
     }

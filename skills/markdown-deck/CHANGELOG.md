@@ -8,6 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ### Added
 
+- `build --refresh`, which re-renders any image whose diagram changed since its render, through the sibling model skill, before building. A failed render fails the build.
 - A `pdf` repository default and `deck_pdf` front matter, so `build` exports `deck.pdf` without `--pdf`; `--no-pdf` skips it. `publish` is unaffected. `build()` returns `pdf`, the resolved choice, for callers that export.
 - `deck_eyebrow` front matter, the line above every slide title, falling back to `sidebar_label`; `""` turns it off. `eyebrow="..."` on `deck:slide` or `deck:include` overrides it for one slide. An included source is named by its `deck_eyebrow` first.
 - Stale-render check. An image with a `<image>.render.json` record whose diagram has changed since the render is warned about, with the command that re-renders it, and fails the build when `CI` is set or `strictRenders` is true. `src/freshness.mjs` reads the record; it has no dependency on the renderer.
