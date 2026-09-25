@@ -7898,296 +7898,17 @@ function randomId() {
 }
 
 // src/commands/init.ts
-var import_yaml3 = __toESM(require_dist(), 1);
-import { copyFile, mkdir as mkdir2, readFile as readFile3, readdir as readdir2, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
+var import_yaml5 = __toESM(require_dist(), 1);
+import { mkdir as mkdir3, readFile as readFile5, stat as stat3, writeFile as writeFile3 } from "node:fs/promises";
 import { homedir as homedir2 } from "node:os";
-import path3 from "node:path";
+import path5 from "node:path";
 import process4 from "node:process";
 import { createInterface } from "node:readline/promises";
-var SUBMODULE_DEFAULT = ".ai-assisted-work";
-var MODULE_ID = "aaw";
-var TEXT_SHIM_EXT = /* @__PURE__ */ new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
-async function runInit(input) {
-  const rl = createInterface({ input: process4.stdin, output: process4.stdout });
-  try {
-    const defaultWorkspaceRoot = await walkUpForGitRoot(input.cwd);
-    const workspaceAnswer = (await rl.question(
-      `Install into workspace [${defaultWorkspaceRoot}]: `
-    )).trim();
-    const workspaceRoot = workspaceAnswer === "" ? defaultWorkspaceRoot : path3.resolve(input.cwd, workspaceAnswer);
-    const env = await detect(workspaceRoot, input.frameworkRoot);
-    const existingConfig = await readExistingConfig(env.workspaceRoot);
-    if (existingConfig) {
-      process4.stdout.write("aaw install \u2014 existing workspace detected.\n\n");
-    } else {
-      process4.stdout.write("aaw install \u2014 let's set this up.\n\n");
-    }
-    process4.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
-`);
-    process4.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
-`);
-    process4.stdout.write(
-      `\u25B8 Detected tools: ${[
-        env.hasGitHub && "GitHub Copilot",
-        env.hasCursor && "Cursor",
-        env.hasClaude && "Claude Code"
-      ].filter(Boolean).join(", ") || "none"}
-`
-    );
-    if (existingConfig) {
-      process4.stdout.write(
-        `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
-  Press Enter at each prompt to keep the current value.
-`
-      );
-    }
-    process4.stdout.write("\n");
-    const tenantDefault = existingConfig?.tenant ?? "local";
-    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
-    const modeDefault = existingConfig?.mode ?? "local-fs";
-    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() || modeDefault;
-    if (mode !== "local-fs" && mode !== "cloud") {
-      process4.stderr.write(`Unsupported mode: ${mode}
-`);
-      return 2;
-    }
-    const repoName = path3.basename(env.workspaceRoot);
-    const defaultPath = existingConfig?.workItemsPath ?? path3.join(homedir2(), "aaw", tenant, repoName, "work-items");
-    const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
-    const initiativesPath = existingConfig?.initiativesPath ?? path3.join(path3.dirname(workItemsPath), "initiatives");
-    const detectedTools = {
-      copilot: env.hasGitHub,
-      cursor: env.hasCursor,
-      claude: env.hasClaude
-    };
-    const detectedNames = describeTools(detectedTools);
-    process4.stdout.write(`
-Tool shims \u2014 detected: ${detectedNames || "none"}
-`);
-    const wireAnswer = (await rl.question(
-      "Wire up shims for the detected tools? [Y/n, or list to override e.g. cursor,claude]: "
-    )).trim().toLowerCase();
-    const tools = resolveTools(wireAnswer, detectedTools);
-    await mkdir2(env.workspaceRoot, { recursive: true });
-    process4.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
-    await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
-    await recordSelfModule(env.workspaceRoot, env.aawSourceRoot);
-    process4.stdout.write(`\u25B8 Creating ${workItemsPath}
-`);
-    await mkdir2(workItemsPath, { recursive: true });
-    if (tools.copilot) {
-      process4.stdout.write("\u25B8 Wiring GitHub Copilot prompts\n");
-      await wireGitHubCopilot(env);
-    }
-    if (tools.claude) {
-      process4.stdout.write("\u25B8 Wiring Claude Code commands\n");
-      await wireClaudeCode(env);
-    }
-    if (tools.cursor) {
-      process4.stdout.write("\u25B8 Wiring Cursor commands\n");
-      await wireCursor(env);
-    }
-    process4.stdout.write("\n\u25B8 Verifying\n");
-    process4.stdout.write("    \u2713 config written\n");
-    process4.stdout.write("    \u2713 work_items_path created\n");
-    process4.stdout.write("    \u2713 shims installed\n");
-    const cliPath = toPortableRelativePath(
-      env.workspaceRoot,
-      path3.join(env.aawSourceRoot, "bin", "aaw.js")
-    );
-    process4.stdout.write(
-      `
-Done. Try this in your AI tool:
-    /aaw-start-work add a new feature
-
-Or from the shell:
-    node ${cliPath} status
-
-For shorter commands, set up an alias (one-time):
-  PowerShell ($PROFILE):  function aaw { node "${cliPath}" @args }
-  Bash/Zsh   (~/.bashrc): alias aaw='node ${cliPath}'
-Then: aaw status
-`
-    );
-    return 0;
-  } finally {
-    rl.close();
-  }
-}
-async function detect(workspaceRoot, frameworkRoot) {
-  const isGitRepo = await pathExists(path3.join(workspaceRoot, ".git"));
-  const hasGitHub = await pathExists(path3.join(workspaceRoot, ".github"));
-  const hasCursor = await pathExists(path3.join(workspaceRoot, ".cursor"));
-  const hasClaude = await pathExists(path3.join(workspaceRoot, ".claude"));
-  const localClone = path3.join(workspaceRoot, SUBMODULE_DEFAULT);
-  let aawSourceRoot = frameworkRoot;
-  if (aawSourceRoot.length === 0 && await pathExists(localClone)) {
-    aawSourceRoot = localClone;
-  }
-  if (aawSourceRoot.length === 0) {
-    aawSourceRoot = workspaceRoot;
-  }
-  return {
-    workspaceRoot,
-    isGitRepo,
-    hasGitHub,
-    hasCursor,
-    hasClaude,
-    aawSourceRoot
-  };
-}
-async function readExistingConfig(workspaceRoot) {
-  const configPath = path3.join(workspaceRoot, ".aaw-config.yaml");
-  try {
-    const text = await readFile3(configPath, "utf8");
-    const parsed = (0, import_yaml3.parse)(text);
-    const mode = parsed.mode === "local-fs" || parsed.mode === "cloud" ? parsed.mode : void 0;
-    return {
-      tenant: typeof parsed.tenant === "string" ? parsed.tenant : void 0,
-      mode,
-      workItemsPath: typeof parsed.work_items_path === "string" ? parsed.work_items_path : void 0,
-      initiativesPath: typeof parsed.initiatives_path === "string" ? parsed.initiatives_path : void 0
-    };
-  } catch (err) {
-    if (err.code === "ENOENT")
-      return null;
-    return null;
-  }
-}
-function resolveTools(answer, detected) {
-  if (answer === "" || answer === "y" || answer === "yes" || answer === "auto") {
-    return detected;
-  }
-  if (answer === "n" || answer === "no" || answer === "none") {
-    return { copilot: false, cursor: false, claude: false };
-  }
-  const parts = answer.split(",").map((s) => s.trim());
-  return {
-    copilot: parts.includes("copilot"),
-    cursor: parts.includes("cursor"),
-    claude: parts.includes("claude")
-  };
-}
-function describeTools(t) {
-  const names = [];
-  if (t.copilot)
-    names.push("GitHub Copilot");
-  if (t.cursor)
-    names.push("Cursor");
-  if (t.claude)
-    names.push("Claude Code");
-  return names.join(", ");
-}
-async function writeConfig(root, cfg) {
-  const existing = await readExistingYaml(root);
-  const yaml = (0, import_yaml3.stringify)({
-    ...existing,
-    tenant: cfg.tenant,
-    mode: cfg.mode,
-    work_items_path: cfg.workItemsPath,
-    initiatives_path: cfg.initiativesPath
-  });
-  await writeFile2(path3.join(root, ".aaw-config.yaml"), yaml, "utf8");
-}
-async function recordSelfModule(workspaceRoot, sourceRoot) {
-  const existing = await readExistingYaml(workspaceRoot);
-  const modulesValue = existing.modules;
-  const modules = modulesValue && typeof modulesValue === "object" ? modulesValue : {};
-  const currentValue = modules[MODULE_ID];
-  const current = currentValue && typeof currentValue === "object" ? currentValue : {};
-  modules[MODULE_ID] = {
-    ...current,
-    source_root: toPortableRelativePath(workspaceRoot, sourceRoot)
-  };
-  existing.modules = modules;
-  await writeFile2(path3.join(workspaceRoot, ".aaw-config.yaml"), (0, import_yaml3.stringify)(existing), "utf8");
-}
-async function readExistingYaml(workspaceRoot) {
-  const configPath = path3.join(workspaceRoot, ".aaw-config.yaml");
-  try {
-    const text = await readFile3(configPath, "utf8");
-    const parsed = (0, import_yaml3.parse)(text);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-async function wireGitHubCopilot(env) {
-  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "github", "prompts");
-  const dest = path3.join(env.workspaceRoot, ".github", "prompts");
-  await copyDir(src, dest, rewriteFor(env));
-}
-async function wireClaudeCode(env) {
-  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "claude", "commands", "aaw");
-  const dest = path3.join(env.workspaceRoot, ".claude", "commands", "aaw");
-  await copyDir(src, dest, rewriteFor(env));
-}
-async function wireCursor(env) {
-  const src = path3.join(env.aawSourceRoot, "skills-for-agents", "cursor", "commands", "aaw");
-  const dest = path3.join(env.workspaceRoot, ".cursor", "commands", "aaw");
-  await copyDir(src, dest, rewriteFor(env));
-}
-function rewriteFor(env) {
-  const actual = toPortableRelativePath(env.workspaceRoot, env.aawSourceRoot);
-  return actual === SUBMODULE_DEFAULT ? void 0 : { from: SUBMODULE_DEFAULT, to: actual };
-}
-function isTextShim(name) {
-  return TEXT_SHIM_EXT.has(path3.extname(name).toLowerCase());
-}
-function toPortableRelativePath(from, to) {
-  const rel = path3.relative(from, to).split(path3.sep).join("/");
-  return rel === "" ? "." : rel;
-}
-async function copyDir(src, dest, rewrite) {
-  if (!await pathExists(src))
-    return;
-  await mkdir2(dest, { recursive: true });
-  const entries = await readdir2(src, { withFileTypes: true });
-  for (const entry of entries) {
-    const from = path3.join(src, entry.name);
-    const to = path3.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      await copyDir(from, to, rewrite);
-    } else if (entry.isFile()) {
-      if (rewrite && isTextShim(entry.name)) {
-        const text = await readFile3(from, "utf8");
-        await writeFile2(to, text.split(rewrite.from).join(rewrite.to), "utf8");
-      } else {
-        await copyFile(from, to);
-      }
-    }
-  }
-}
-async function walkUpForGitRoot(start) {
-  let dir = path3.resolve(start);
-  while (true) {
-    if (await pathExists(path3.join(dir, ".git")))
-      return dir;
-    const parent = path3.dirname(dir);
-    if (parent === dir)
-      return path3.resolve(start);
-    dir = parent;
-  }
-}
-async function pathExists(p) {
-  try {
-    await stat2(p);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// src/commands/install.ts
-import path6 from "node:path";
-import process5 from "node:process";
-import { createInterface as createInterface2 } from "node:readline/promises";
-import { fileURLToPath } from "node:url";
 
 // ../installer/dist/manifest.js
-var import_yaml4 = __toESM(require_dist(), 1);
-import { readFile as readFile4 } from "node:fs/promises";
-import path4 from "node:path";
+var import_yaml3 = __toESM(require_dist(), 1);
+import { readFile as readFile3 } from "node:fs/promises";
+import path3 from "node:path";
 var MANIFEST_FILENAME = "framework.manifest.yaml";
 var TOOL_NAMES = ["claude", "cursor", "copilot", "gemini"];
 function asString(value, where) {
@@ -8202,27 +7923,6 @@ function asStringArray(value, where) {
   if (!Array.isArray(value))
     throw new Error(`manifest: ${where} must be a list`);
   return value.map((v, i) => asString(v, `${where}[${i}]`));
-}
-function parseShims(value) {
-  if (value === void 0 || value === null)
-    return {};
-  if (typeof value !== "object")
-    throw new Error("manifest: shims must be a map");
-  const out = {};
-  for (const tool of TOOL_NAMES) {
-    const entry = value[tool];
-    if (entry === void 0)
-      continue;
-    if (typeof entry !== "object" || entry === null) {
-      throw new Error(`manifest: shims.${tool} must be a {src,dest} map`);
-    }
-    const rec = entry;
-    out[tool] = {
-      src: asString(rec.src, `shims.${tool}.src`),
-      dest: asString(rec.dest, `shims.${tool}.dest`)
-    };
-  }
-  return out;
 }
 function parseSkills(value) {
   if (value === void 0 || value === null)
@@ -8282,7 +7982,7 @@ function parseSeed(value) {
   };
 }
 function parseManifest(text, frameworkRoot) {
-  const raw = (0, import_yaml4.parse)(text);
+  const raw = (0, import_yaml3.parse)(text);
   if (raw === null || typeof raw !== "object") {
     throw new Error("manifest: file is empty or not a map");
   }
@@ -8294,11 +7994,9 @@ function parseManifest(text, frameworkRoot) {
     id: asString(raw.id, "id"),
     name: asString(raw.name, "name"),
     version: asString(raw.version, "version"),
-    sourceToken: typeof raw.source_token === "string" ? raw.source_token : void 0,
     depends: asStringArray(raw.depends, "depends"),
     runtime,
     toolSetup: parseToolSetup(raw.tool_setup),
-    shims: parseShims(raw.shims),
     skills: parseSkills(raw.skills),
     config: parseConfig(raw.config),
     dataDirs: asStringArray(raw.data_dirs, "data_dirs"),
@@ -8307,17 +8005,17 @@ function parseManifest(text, frameworkRoot) {
   };
 }
 async function loadManifest(frameworkRoot) {
-  const file = path4.join(frameworkRoot, MANIFEST_FILENAME);
-  const text = await readFile4(file, "utf8");
+  const file = path3.join(frameworkRoot, MANIFEST_FILENAME);
+  const text = await readFile3(file, "utf8");
   return parseManifest(text, frameworkRoot);
 }
 
 // ../installer/dist/engine.js
-var import_yaml5 = __toESM(require_dist(), 1);
+var import_yaml4 = __toESM(require_dist(), 1);
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { copyFile as copyFile2, mkdir as mkdir3, readdir as readdir3, readFile as readFile5, rm, stat as stat3, symlink, writeFile as writeFile3 } from "node:fs/promises";
-import path5 from "node:path";
+import { copyFile, mkdir as mkdir2, readdir as readdir2, readFile as readFile4, rm, stat as stat2, symlink, writeFile as writeFile2 } from "node:fs/promises";
+import path4 from "node:path";
 var noopLog = () => {
 };
 var TOOL_DETECT_DIR = {
@@ -8326,113 +8024,70 @@ var TOOL_DETECT_DIR = {
   copilot: ".github",
   gemini: ".gemini"
 };
-async function pathExists2(p) {
+async function pathExists(p) {
   try {
-    await stat3(p);
+    await stat2(p);
     return true;
   } catch {
     return false;
   }
 }
-var TEXT_SHIM_EXT2 = /* @__PURE__ */ new Set([".md", ".mdc", ".txt", ".yaml", ".yml", ".json", ".prompt"]);
-function isTextShim2(name) {
-  return TEXT_SHIM_EXT2.has(path5.extname(name).toLowerCase());
-}
-async function copyDir2(src, dest, rewrite) {
-  if (!await pathExists2(src))
+async function copyDir(src, dest) {
+  if (!await pathExists(src))
     return 0;
-  await mkdir3(dest, { recursive: true });
+  await mkdir2(dest, { recursive: true });
   let count = 0;
-  const entries = await readdir3(src, { withFileTypes: true });
+  const entries = await readdir2(src, { withFileTypes: true });
   for (const entry of entries) {
-    const from = path5.join(src, entry.name);
-    const to = path5.join(dest, entry.name);
+    const from = path4.join(src, entry.name);
+    const to = path4.join(dest, entry.name);
     if (entry.isDirectory()) {
-      count += await copyDir2(from, to, rewrite);
+      count += await copyDir(from, to);
     } else if (entry.isFile()) {
-      if (rewrite && isTextShim2(entry.name)) {
-        const text = await readFile5(from, "utf8");
-        await writeFile3(to, text.split(rewrite.from).join(rewrite.to), "utf8");
-      } else {
-        await copyFile2(from, to);
-      }
+      await copyFile(from, to);
       count += 1;
     }
   }
   return count;
 }
 async function findWorkspaceRoot2(start) {
-  let dir = path5.resolve(start);
+  let dir = path4.resolve(start);
   for (; ; ) {
     for (const sentinel of [".aaw-config.yaml", ".git"]) {
-      if (await pathExists2(path5.join(dir, sentinel)))
+      if (await pathExists(path4.join(dir, sentinel)))
         return dir;
     }
-    const parent = path5.dirname(dir);
+    const parent = path4.dirname(dir);
     if (parent === dir)
-      return path5.resolve(start);
+      return path4.resolve(start);
     dir = parent;
   }
 }
 async function detectTools(workspaceRoot) {
   const out = { claude: false, cursor: false, copilot: false, gemini: false };
   for (const tool of TOOL_NAMES) {
-    out[tool] = await pathExists2(path5.join(workspaceRoot, TOOL_DETECT_DIR[tool]));
+    out[tool] = await pathExists(path4.join(workspaceRoot, TOOL_DETECT_DIR[tool]));
   }
   return out;
 }
-async function wireShims(opts, selection) {
-  const { manifest, workspaceRoot } = opts;
-  const log = opts.log ?? noopLog;
-  const wired = [];
-  let rewrite;
-  if (manifest.sourceToken) {
-    const rel = path5.relative(workspaceRoot, manifest.frameworkRoot).split(path5.sep).join("/");
-    if (rel.length > 0 && rel !== manifest.sourceToken) {
-      rewrite = { from: manifest.sourceToken, to: rel };
-      log(`  \u25B8 shim paths: rewriting "${manifest.sourceToken}" \u2192 "${rel}"`);
-    }
-  }
-  if (Object.keys(manifest.shims).length > 0) {
-    log(`  ! ${manifest.id}: still ships per-tool command shims, which are deprecated. Move its workflows to Agent Skills (a 'skills' manifest key); shim support will be removed.`);
-  }
-  for (const tool of TOOL_NAMES) {
-    const mapping = manifest.shims[tool];
-    if (!mapping || !selection[tool])
-      continue;
-    const src = path5.join(manifest.frameworkRoot, mapping.src);
-    const dest = path5.join(workspaceRoot, mapping.dest);
-    if (path5.basename(dest) === manifest.id && await pathExists2(dest)) {
-      await rm(dest, { recursive: true, force: true });
-    }
-    const n = await copyDir2(src, dest, rewrite);
-    if (n > 0) {
-      log(`  \u25B8 ${tool}: wired ${n} shim file(s) \u2192 ${mapping.dest}`);
-      wired.push(tool);
-    } else {
-      log(`  ! ${tool}: shim source missing or empty (${mapping.src})`);
-    }
-  }
-  return wired;
-}
-var SKILLS_INTEROP_DIR = path5.join(".agents", "skills");
-var SKILLS_CLAUDE_DIR = path5.join(".claude", "skills");
+var SKILLS_INTEROP_DIR = path4.join(".agents", "skills");
+var SKILLS_CLAUDE_DIR = path4.join(".claude", "skills");
 async function isSkillDir(dir) {
-  return pathExists2(path5.join(dir, "SKILL.md"));
+  return pathExists(path4.join(dir, "SKILL.md"));
 }
 async function linkOrCopyDir(targetPath, linkPath) {
   await rm(linkPath, { recursive: true, force: true });
-  await mkdir3(path5.dirname(linkPath), { recursive: true });
+  await mkdir2(path4.dirname(linkPath), { recursive: true });
   try {
     if (process.platform === "win32") {
       await symlink(targetPath, linkPath, "junction");
     } else {
-      const rel = path5.relative(path5.dirname(linkPath), targetPath);
+      const rel = path4.relative(path4.dirname(linkPath), targetPath);
       await symlink(rel, linkPath, "dir");
     }
     return "link";
   } catch {
-    await copyDir2(targetPath, linkPath);
+    await copyDir(targetPath, linkPath);
     return "copy";
   }
 }
@@ -8441,28 +8096,28 @@ async function wireSkills(opts, selection) {
   const log = opts.log ?? noopLog;
   if (!manifest.skills)
     return [];
-  const srcRoot = path5.join(manifest.frameworkRoot, manifest.skills.src);
-  if (!await pathExists2(srcRoot)) {
+  const srcRoot = path4.join(manifest.frameworkRoot, manifest.skills.src);
+  if (!await pathExists(srcRoot)) {
     log(`  ! skills: source missing (${manifest.skills.src})`);
     return [];
   }
   const installed = [];
   let linked = 0;
   let copied = 0;
-  const entries = await readdir3(srcRoot, { withFileTypes: true });
+  const entries = await readdir2(srcRoot, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory())
       continue;
-    const from = path5.join(srcRoot, entry.name);
+    const from = path4.join(srcRoot, entry.name);
     if (!await isSkillDir(from)) {
       log(`  ! skills: ${entry.name} has no SKILL.md, skipped`);
       continue;
     }
-    const interop = path5.join(workspaceRoot, SKILLS_INTEROP_DIR, entry.name);
+    const interop = path4.join(workspaceRoot, SKILLS_INTEROP_DIR, entry.name);
     await rm(interop, { recursive: true, force: true });
-    await copyDir2(from, interop);
+    await copyDir(from, interop);
     if (selection.claude) {
-      const how = await linkOrCopyDir(interop, path5.join(workspaceRoot, SKILLS_CLAUDE_DIR, entry.name));
+      const how = await linkOrCopyDir(interop, path4.join(workspaceRoot, SKILLS_CLAUDE_DIR, entry.name));
       if (how === "link")
         linked += 1;
       else
@@ -8483,24 +8138,24 @@ async function wireSkills(opts, selection) {
 }
 var LEGACY_SHIM_DESTS = {
   aaw: [
-    path5.join(".claude", "commands", "aaw"),
-    path5.join(".cursor", "commands", "aaw"),
-    path5.join(".cursor", "rules", "aaw"),
-    path5.join(".gemini", "skills", "aaw")
+    path4.join(".claude", "commands", "aaw"),
+    path4.join(".cursor", "commands", "aaw"),
+    path4.join(".cursor", "rules", "aaw"),
+    path4.join(".gemini", "skills", "aaw")
   ],
   aaa: [
-    path5.join(".claude", "commands", "aaa"),
-    path5.join(".cursor", "commands", "aaa"),
-    path5.join(".cursor", "rules", "aaa"),
-    path5.join(".github", "prompts", "aaa"),
-    path5.join(".gemini", "skills", "aaa")
+    path4.join(".claude", "commands", "aaa"),
+    path4.join(".cursor", "commands", "aaa"),
+    path4.join(".cursor", "rules", "aaa"),
+    path4.join(".github", "prompts", "aaa"),
+    path4.join(".gemini", "skills", "aaa")
   ],
   aar: [
-    path5.join(".claude", "commands", "aar"),
-    path5.join(".cursor", "commands", "aar"),
-    path5.join(".cursor", "rules", "aar"),
-    path5.join(".github", "prompts", "aar"),
-    path5.join(".gemini", "skills", "aar")
+    path4.join(".claude", "commands", "aar"),
+    path4.join(".cursor", "commands", "aar"),
+    path4.join(".cursor", "rules", "aar"),
+    path4.join(".github", "prompts", "aar"),
+    path4.join(".gemini", "skills", "aar")
   ]
 };
 var LEGACY_SHIM_PROMPT_PREFIX = {
@@ -8511,24 +8166,22 @@ var LEGACY_SHIM_PROMPT_PREFIX = {
 async function removeLegacyShims(opts) {
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
-  if (Object.keys(manifest.shims).length > 0)
-    return [];
   const removed = [];
   for (const rel of LEGACY_SHIM_DESTS[manifest.id] ?? []) {
-    const dest = path5.join(workspaceRoot, rel);
-    if (await pathExists2(dest)) {
+    const dest = path4.join(workspaceRoot, rel);
+    if (await pathExists(dest)) {
       await rm(dest, { recursive: true, force: true });
       removed.push(rel);
     }
   }
   const prefix = LEGACY_SHIM_PROMPT_PREFIX[manifest.id];
   if (prefix) {
-    const promptsDir = path5.join(workspaceRoot, ".github", "prompts");
-    if (await pathExists2(promptsDir)) {
-      for (const entry of await readdir3(promptsDir)) {
+    const promptsDir = path4.join(workspaceRoot, ".github", "prompts");
+    if (await pathExists(promptsDir)) {
+      for (const entry of await readdir2(promptsDir)) {
         if (entry.startsWith(prefix) && entry.endsWith(".prompt.md")) {
-          await rm(path5.join(promptsDir, entry), { force: true });
-          removed.push(path5.join(".github", "prompts", entry));
+          await rm(path4.join(promptsDir, entry), { force: true });
+          removed.push(path4.join(".github", "prompts", entry));
         }
       }
     }
@@ -8545,18 +8198,18 @@ async function seedConfig(opts) {
   const log = opts.log ?? noopLog;
   const seeded = [];
   for (const cfg of manifest.config) {
-    const dest = path5.join(workspaceRoot, cfg.file);
-    if (await pathExists2(dest)) {
+    const dest = path4.join(workspaceRoot, cfg.file);
+    if (await pathExists(dest)) {
       log(`  = ${cfg.file}: already present, left unchanged`);
       continue;
     }
-    const template = path5.join(manifest.frameworkRoot, cfg.template);
-    if (!await pathExists2(template)) {
+    const template = path4.join(manifest.frameworkRoot, cfg.template);
+    if (!await pathExists(template)) {
       log(`  ! ${cfg.file}: template missing (${cfg.template}), skipped`);
       continue;
     }
-    await mkdir3(path5.dirname(dest), { recursive: true });
-    await copyFile2(template, dest);
+    await mkdir2(path4.dirname(dest), { recursive: true });
+    await copyFile(template, dest);
     log(`  \u25B8 seeded ${cfg.file}`);
     seeded.push(cfg.file);
   }
@@ -8567,8 +8220,8 @@ async function ensureDataDirs(opts) {
   const log = opts.log ?? noopLog;
   const made = [];
   for (const dir of manifest.dataDirs) {
-    const abs = path5.join(workspaceRoot, dir);
-    await mkdir3(abs, { recursive: true });
+    const abs = path4.join(workspaceRoot, dir);
+    await mkdir2(abs, { recursive: true });
     made.push(dir);
     log(`  \u25B8 data dir ${dir}`);
   }
@@ -8592,14 +8245,14 @@ async function runToolSetup(opts, warnings) {
     log("  = python deps: skipped (runPython=false)");
     return false;
   }
-  const reqAbs = path5.join(manifest.frameworkRoot, py.requirements);
-  if (!await pathExists2(reqAbs)) {
+  const reqAbs = path4.join(manifest.frameworkRoot, py.requirements);
+  if (!await pathExists(reqAbs)) {
     warnings.push(`tool_setup.python.requirements not found: ${py.requirements}`);
     return false;
   }
   const python = findPython();
   if (!python) {
-    const msg = `python not found on PATH \u2014 skipped dependency install. Install it later with:  python -m pip install -r ${path5.relative(opts.workspaceRoot, reqAbs)}`;
+    const msg = `python not found on PATH \u2014 skipped dependency install. Install it later with:  python -m pip install -r ${path4.relative(opts.workspaceRoot, reqAbs)}`;
     if (py.optional)
       log(`  = ${msg}`);
     else
@@ -8624,8 +8277,8 @@ async function runSeed(opts, warnings) {
   const log = opts.log ?? noopLog;
   if (!manifest.seed)
     return false;
-  const entry = path5.join(manifest.frameworkRoot, manifest.seed.entry);
-  if (!await pathExists2(entry)) {
+  const entry = path4.join(manifest.frameworkRoot, manifest.seed.entry);
+  if (!await pathExists(entry)) {
     warnings.push(`seed.entry not found: ${manifest.seed.entry}`);
     return false;
   }
@@ -8640,31 +8293,31 @@ async function runSeed(opts, warnings) {
 }
 async function recordModule(opts) {
   const { manifest, workspaceRoot } = opts;
-  const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
+  const configPath = path4.join(workspaceRoot, ".aaw-config.yaml");
   let doc;
-  if (await pathExists2(configPath)) {
-    doc = (0, import_yaml5.parseDocument)(await readFile5(configPath, "utf8"));
+  if (await pathExists(configPath)) {
+    doc = (0, import_yaml4.parseDocument)(await readFile4(configPath, "utf8"));
     if (doc.contents === null)
-      doc = new import_yaml5.Document({});
+      doc = new import_yaml4.Document({});
   } else {
-    doc = new import_yaml5.Document({});
+    doc = new import_yaml4.Document({});
   }
   doc.setIn(["modules", manifest.id], {
     name: manifest.name,
     version: manifest.version,
     runtime: manifest.runtime,
-    source_root: path5.relative(workspaceRoot, manifest.frameworkRoot).split(path5.sep).join("/") || "."
+    source_root: path4.relative(workspaceRoot, manifest.frameworkRoot).split(path4.sep).join("/") || "."
   });
-  await writeFile3(configPath, doc.toString(), "utf8");
+  await writeFile2(configPath, doc.toString(), "utf8");
 }
 async function checkDependencies(opts, warnings) {
   const { manifest, workspaceRoot } = opts;
   if (manifest.depends.length === 0)
     return;
   let recorded = {};
-  const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
-  if (await pathExists2(configPath)) {
-    const parsed = (0, import_yaml5.parse)(await readFile5(configPath, "utf8"));
+  const configPath = path4.join(workspaceRoot, ".aaw-config.yaml");
+  if (await pathExists(configPath)) {
+    const parsed = (0, import_yaml4.parse)(await readFile4(configPath, "utf8"));
     const mods = parsed?.modules;
     if (mods && typeof mods === "object")
       recorded = mods;
@@ -8687,13 +8340,13 @@ function defaultDependencyResolver(workspaceRoot) {
     const dir = CONVENTIONAL_FRAMEWORK_DIRS[id];
     if (dir === void 0)
       return void 0;
-    const abs = path5.join(workspaceRoot, dir);
+    const abs = path4.join(workspaceRoot, dir);
     return existsSync(abs) ? abs : void 0;
   };
 }
 async function runInstall(opts) {
   const manifest = await loadManifest(opts.frameworkRoot);
-  const workspaceRoot = opts.workspaceRoot ? path5.resolve(opts.workspaceRoot) : await findWorkspaceRoot2(opts.cwd);
+  const workspaceRoot = opts.workspaceRoot ? path4.resolve(opts.workspaceRoot) : await findWorkspaceRoot2(opts.cwd);
   return installFramework({
     manifest,
     workspaceRoot,
@@ -8716,8 +8369,7 @@ async function installFramework(opts) {
     ...opts.tools ?? {}
   };
   const skills = await wireSkills(opts, selection);
-  await removeLegacyShims(opts);
-  const wired = await wireShims(opts, selection);
+  const removedLegacyShims = await removeLegacyShims(opts);
   const seededConfig = await seedConfig(opts);
   const dataDirs = await ensureDataDirs(opts);
   const pythonInstalled = await runToolSetup(opts, warnings);
@@ -8735,8 +8387,8 @@ async function installFramework(opts) {
   return {
     id: manifest.id,
     version: manifest.version,
-    wired,
     skills,
+    removedLegacyShims,
     seededConfig,
     dataDirs,
     pythonInstalled,
@@ -8745,7 +8397,208 @@ async function installFramework(opts) {
   };
 }
 
+// src/commands/init.ts
+var SUBMODULE_DEFAULT = ".ai-assisted-work";
+async function runInit(input) {
+  const rl = createInterface({ input: process4.stdin, output: process4.stdout });
+  try {
+    const defaultWorkspaceRoot = await walkUpForGitRoot(input.cwd);
+    const workspaceAnswer = (await rl.question(
+      `Install into workspace [${defaultWorkspaceRoot}]: `
+    )).trim();
+    const workspaceRoot = workspaceAnswer === "" ? defaultWorkspaceRoot : path5.resolve(input.cwd, workspaceAnswer);
+    const env = await detect(workspaceRoot, input.frameworkRoot);
+    const existingConfig = await readExistingConfig(env.workspaceRoot);
+    if (existingConfig) {
+      process4.stdout.write("aaw install \u2014 existing workspace detected.\n\n");
+    } else {
+      process4.stdout.write("aaw install \u2014 let's set this up.\n\n");
+    }
+    process4.stdout.write(`\u25B8 Workspace: ${env.workspaceRoot}
+`);
+    process4.stdout.write(`\u25B8 Git repo: ${env.isGitRepo ? "yes" : "no"}
+`);
+    process4.stdout.write(
+      `\u25B8 Detected tools: ${[
+        env.hasGitHub && "GitHub Copilot",
+        env.hasCursor && "Cursor",
+        env.hasClaude && "Claude Code"
+      ].filter(Boolean).join(", ") || "none"}
+`
+    );
+    if (existingConfig) {
+      process4.stdout.write(
+        `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
+  Press Enter at each prompt to keep the current value.
+`
+      );
+    }
+    process4.stdout.write("\n");
+    const tenantDefault = existingConfig?.tenant ?? "local";
+    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
+    const modeDefault = existingConfig?.mode ?? "local-fs";
+    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() || modeDefault;
+    if (mode !== "local-fs" && mode !== "cloud") {
+      process4.stderr.write(`Unsupported mode: ${mode}
+`);
+      return 2;
+    }
+    const repoName = path5.basename(env.workspaceRoot);
+    const defaultPath = existingConfig?.workItemsPath ?? path5.join(homedir2(), "aaw", tenant, repoName, "work-items");
+    const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
+    const initiativesPath = existingConfig?.initiativesPath ?? path5.join(path5.dirname(workItemsPath), "initiatives");
+    const detectedNames = describeTools({
+      copilot: env.hasGitHub,
+      cursor: env.hasCursor,
+      claude: env.hasClaude
+    });
+    process4.stdout.write(`
+AI tools detected: ${detectedNames || "none"}
+`);
+    process4.stdout.write(
+      "Skills install to .agents/skills/, which every supported tool reads.\nClaude Code reads only .claude/skills/, so that is linked at it when detected.\n"
+    );
+    await mkdir3(env.workspaceRoot, { recursive: true });
+    process4.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
+    await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
+    process4.stdout.write(`\u25B8 Creating ${workItemsPath}
+`);
+    await mkdir3(workItemsPath, { recursive: true });
+    const result = await runInstall({
+      frameworkRoot: env.aawSourceRoot,
+      cwd: env.workspaceRoot,
+      workspaceRoot: env.workspaceRoot,
+      log: (msg) => process4.stdout.write(`${msg}
+`)
+    });
+    process4.stdout.write("\n\u25B8 Verifying\n");
+    process4.stdout.write("    \u2713 config written\n");
+    process4.stdout.write("    \u2713 work_items_path created\n");
+    process4.stdout.write(`    \u2713 ${result.skills.length} skill(s) installed
+`);
+    const cliPath = toPortableRelativePath(
+      env.workspaceRoot,
+      path5.join(env.aawSourceRoot, "bin", "aaw.js")
+    );
+    process4.stdout.write(
+      `
+Done. Try this in your AI tool:
+    /aaw-start-work add a new feature
+
+Or from the shell:
+    node ${cliPath} status
+
+For shorter commands, set up an alias (one-time):
+  PowerShell ($PROFILE):  function aaw { node "${cliPath}" @args }
+  Bash/Zsh   (~/.bashrc): alias aaw='node ${cliPath}'
+Then: aaw status
+`
+    );
+    return 0;
+  } finally {
+    rl.close();
+  }
+}
+async function detect(workspaceRoot, frameworkRoot) {
+  const isGitRepo = await pathExists2(path5.join(workspaceRoot, ".git"));
+  const hasGitHub = await pathExists2(path5.join(workspaceRoot, ".github"));
+  const hasCursor = await pathExists2(path5.join(workspaceRoot, ".cursor"));
+  const hasClaude = await pathExists2(path5.join(workspaceRoot, ".claude"));
+  const localClone = path5.join(workspaceRoot, SUBMODULE_DEFAULT);
+  let aawSourceRoot = frameworkRoot;
+  if (aawSourceRoot.length === 0 && await pathExists2(localClone)) {
+    aawSourceRoot = localClone;
+  }
+  if (aawSourceRoot.length === 0) {
+    aawSourceRoot = workspaceRoot;
+  }
+  return {
+    workspaceRoot,
+    isGitRepo,
+    hasGitHub,
+    hasCursor,
+    hasClaude,
+    aawSourceRoot
+  };
+}
+async function readExistingConfig(workspaceRoot) {
+  const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
+  try {
+    const text = await readFile5(configPath, "utf8");
+    const parsed = (0, import_yaml5.parse)(text);
+    const mode = parsed.mode === "local-fs" || parsed.mode === "cloud" ? parsed.mode : void 0;
+    return {
+      tenant: typeof parsed.tenant === "string" ? parsed.tenant : void 0,
+      mode,
+      workItemsPath: typeof parsed.work_items_path === "string" ? parsed.work_items_path : void 0,
+      initiativesPath: typeof parsed.initiatives_path === "string" ? parsed.initiatives_path : void 0
+    };
+  } catch (err) {
+    if (err.code === "ENOENT")
+      return null;
+    return null;
+  }
+}
+function describeTools(t) {
+  const names = [];
+  if (t.copilot)
+    names.push("GitHub Copilot");
+  if (t.cursor)
+    names.push("Cursor");
+  if (t.claude)
+    names.push("Claude Code");
+  return names.join(", ");
+}
+async function writeConfig(root, cfg) {
+  const existing = await readExistingYaml(root);
+  const yaml = (0, import_yaml5.stringify)({
+    ...existing,
+    tenant: cfg.tenant,
+    mode: cfg.mode,
+    work_items_path: cfg.workItemsPath,
+    initiatives_path: cfg.initiativesPath
+  });
+  await writeFile3(path5.join(root, ".aaw-config.yaml"), yaml, "utf8");
+}
+async function readExistingYaml(workspaceRoot) {
+  const configPath = path5.join(workspaceRoot, ".aaw-config.yaml");
+  try {
+    const text = await readFile5(configPath, "utf8");
+    const parsed = (0, import_yaml5.parse)(text);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function toPortableRelativePath(from, to) {
+  const rel = path5.relative(from, to).split(path5.sep).join("/");
+  return rel === "" ? "." : rel;
+}
+async function walkUpForGitRoot(start) {
+  let dir = path5.resolve(start);
+  while (true) {
+    if (await pathExists2(path5.join(dir, ".git")))
+      return dir;
+    const parent = path5.dirname(dir);
+    if (parent === dir)
+      return path5.resolve(start);
+    dir = parent;
+  }
+}
+async function pathExists2(p) {
+  try {
+    await stat3(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // src/commands/install.ts
+import path6 from "node:path";
+import process5 from "node:process";
+import { createInterface as createInterface2 } from "node:readline/promises";
+import { fileURLToPath } from "node:url";
 function resolveAawRoot() {
   const self = fileURLToPath(import.meta.url);
   const dir = path6.dirname(self);
@@ -8806,9 +8659,10 @@ async function runInstallCommand(input) {
 `)
   });
   const skills = result.skills.length > 0 ? `${result.skills.length} skill(s)` : "no skills";
+  const swept = result.removedLegacyShims.length > 0 ? `; ${result.removedLegacyShims.length} legacy shim path(s) removed` : "";
   process5.stdout.write(
     `
-Done. ${result.id}@${result.version} \u2014 ${skills}; shims wired: ${result.wired.join(", ") || "none"}.
+Done. ${result.id}@${result.version} \u2014 ${skills}${swept}.
 `
   );
   if (result.warnings.length > 0)
@@ -8818,7 +8672,7 @@ Done. ${result.id}@${result.version} \u2014 ${skills}; shims wired: ${result.wir
 
 // src/commands/lint.ts
 import process6 from "node:process";
-import { readdir as readdir4 } from "node:fs/promises";
+import { readdir as readdir3 } from "node:fs/promises";
 import path7 from "node:path";
 
 // src/backends/local-fs/validate.ts
@@ -8974,7 +8828,7 @@ async function detectDuplicateFolders(root, prefix) {
   const re = new RegExp(`^${prefix}-(\\d+)`);
   let entries;
   try {
-    const all = await readdir4(root, { withFileTypes: true });
+    const all = await readdir3(root, { withFileTypes: true });
     entries = all.filter((d) => d.isDirectory()).map((d) => d.name);
   } catch {
     return issues;
@@ -9052,7 +8906,7 @@ function detectActivityIssues(wi) {
 }
 
 // src/commands/migrate.ts
-import { copyFile as copyFile3, mkdir as mkdir4, readFile as readFile6, readdir as readdir5, rename, rm as rm2, stat as stat4, writeFile as writeFile4 } from "node:fs/promises";
+import { copyFile as copyFile2, mkdir as mkdir4, readFile as readFile6, readdir as readdir4, rename, rm as rm2, stat as stat4, writeFile as writeFile4 } from "node:fs/promises";
 import path8 from "node:path";
 import process7 from "node:process";
 async function runMigrate(input) {
@@ -9226,7 +9080,7 @@ async function scanIds(dir, re) {
 }
 async function listFolders(dir, re) {
   try {
-    const all = await readdir5(dir, { withFileTypes: true });
+    const all = await readdir4(dir, { withFileTypes: true });
     return all.filter((d) => d.isDirectory() && re.test(d.name)).map((d) => d.name);
   } catch {
     return [];
@@ -9262,19 +9116,19 @@ async function renameOrCopyAndRemove(from, to) {
 }
 async function copyDirRecursive(src, dest) {
   await mkdir4(dest, { recursive: true });
-  const entries = await readdir5(src, { withFileTypes: true });
+  const entries = await readdir4(src, { withFileTypes: true });
   for (const entry of entries) {
     const s = path8.join(src, entry.name);
     const d = path8.join(dest, entry.name);
     if (entry.isDirectory()) {
       await copyDirRecursive(s, d);
     } else if (entry.isFile()) {
-      await copyFile3(s, d);
+      await copyFile2(s, d);
     }
   }
 }
 async function rewriteContentInPlace(dir, rewrites) {
-  const entries = await readdir5(dir, { withFileTypes: true });
+  const entries = await readdir4(dir, { withFileTypes: true });
   for (const entry of entries) {
     const p = path8.join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -9731,7 +9585,7 @@ Usage:
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
 'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
-var VERSION = true ? "3.0.0" : "0.0.0-dev";
+var VERSION = true ? "3.1.0" : "0.0.0-dev";
 function resolveAawRoot2() {
   const self = fileURLToPath2(import.meta.url);
   const dir = path10.dirname(self);
