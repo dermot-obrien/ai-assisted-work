@@ -354,6 +354,11 @@ body.presenting .stage { padding: 0; }
 .fit pre.code { background: var(--code-bg); color: var(--code-fg); padding: 20px 26px; border-radius: 8px; margin: 0 0 20px; overflow: hidden; }
 .fit pre.code code { background: none; color: inherit; font-size: 22px; line-height: 1.5; padding: 0; }
 .fit pre.mermaid { background: var(--slide-bg); border: 1px solid var(--rule); border-radius: 8px; padding: 22px; margin: 0 0 20px; text-align: center; }
+/* Light notes with dark text. Mermaid sometimes sizes a note narrower than its text, and
+   white text past a dark box vanishes; dark text past a light box still reads. Mermaid
+   scopes its own styles by id, so these need !important to win. */
+.fit pre.mermaid rect.note { fill: var(--accent-wash) !important; stroke: var(--rule) !important; }
+.fit pre.mermaid .noteText, .fit pre.mermaid .noteText > tspan { fill: var(--slide-fg) !important; }
 
 /* Image slide: a finished 16:9 image fills the canvas; any other shape is letterboxed. */
 .slide.image-slide { background: var(--slide-bg); }
