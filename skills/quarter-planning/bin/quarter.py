@@ -28,18 +28,21 @@ contradicting itself again: an epic further on than its least advanced product, 
 approved before the quarter's budget and resourcing are, or an epic sized with nothing named.
 
 Nothing is mastered here, and the capacity arithmetic is not implemented here either: it is
-imported from quarter_capacity.py, which every tool that needs it shares. Sources:
+imported from src/capacity.py, which every tool that needs it shares. What it reads is named
+by binding key, not by path, because where each one lives is the workspace's business and is
+declared in [suite.quarter-planning] of its .agents/skill-bindings.toml:
 
-  change/planning/<quarter>/<quarter>-calendar.csv         the period and its non-working time
-  change/planning/<quarter>/<quarter>-planning-basis.csv   the conversion parameters, and the
-                                                           declared quarter capacity and budget
-  change/planning/<quarter>/<quarter>-resourcing.csv       people, allocation, leave, and the
-                                                           share of each going to each epic
-  change/ai-programme/roadmap/sources/work_item.yaml       budget_points and the named products
-  change/ai-programme/roadmap/sources/work_plan.yaml       which epics the quarter committed to
-  governance/deliverables/architecture-deliverables.csv    base points per product type
+  calendar     the period and its non-working time
+  basis        the conversion parameters, and the declared quarter capacity and budget
+  resourcing   people, allocation, leave, and the share of each going to each epic
+  sources      work_item.yaml, for budget_points and the named products, and work_plan.yaml,
+               for which epics the quarter committed to
+  register     base points per product type
 
-Run:  python tools/scripts/validate-quarter-plan.py [--quarter fy27-q1] [--apply]
+None of those has a default. Run with --where to see what this workspace resolves them to,
+before reading any of them.
+
+Run:  python <skills>/quarter-planning/bin/quarter.py --quarter <slug> [--apply]
 
 --apply writes the derived budget_points onto each epic in work_item.yaml, replacing only
 that one value on that one line, after taking a .bak copy. Use it when the distribution has
@@ -268,6 +271,14 @@ def main():
     if args.where:
         print(bind.describe())
         return 0
+    undeclared = bind.undeclared()
+    if undeclared:
+        sys.stderr.write(
+            'quarter-planning: this workspace has not said where its registers are.\n'
+            'Declare %s in [suite.quarter-planning] of %s.\n'
+            'There is no default: a default would be another workspace\'s layout.\n'
+            % (', '.join(undeclared), bind.file or '.agents/skill-bindings.toml'))
+        return 2
     missing = bind.missing()
     if missing:
         sys.stderr.write(
