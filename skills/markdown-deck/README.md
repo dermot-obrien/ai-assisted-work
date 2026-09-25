@@ -217,7 +217,7 @@ The nearest binding file above the document is used, so a deck built from anywhe
 
 ### Mermaid
 
-A deck with a mermaid diagram needs mermaid in the browser. A deck is meant to open from disk and on networks that block a CDN, so the build copies `mermaid.min.js` into `assets/` from the nearest `node_modules/mermaid` above the document, or the skill's own, and loads it from there. With none installed it loads mermaid from the jsDelivr CDN. The `mermaid` binding, or `--mermaid`, names a file to copy or a URL to load instead; a binding path resolves against the binding file. Diagrams are drawn with every slide laid out invisibly, because mermaid sizes its boxes from measured text and text on a hidden slide measures nothing.
+A deck with a mermaid diagram needs mermaid in the browser. A deck is meant to open from disk and on networks that block a CDN, so the build copies `mermaid.min.js` into `assets/` from the nearest `node_modules/mermaid` above the document, or the skill's own, and loads it from there. With none installed it loads mermaid from the jsDelivr CDN. The `mermaid` binding, or `--mermaid`, names a file to copy or a URL to load instead; a binding path resolves against the binding file. Diagrams are drawn with every slide laid out invisibly, because mermaid sizes its boxes from measured text and text on a hidden slide measures nothing. Notes are drawn as light boxes with dark text from the theme tokens, because mermaid sometimes sizes a note slightly narrower than its text and the overflow must stay readable.
 
 ## Review comments
 
