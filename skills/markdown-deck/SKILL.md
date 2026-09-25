@@ -4,7 +4,7 @@ description: Render tagged sections of a Markdown document into HTML slides and 
 license: Apache-2.0
 compatibility: Node.js 18 or newer. PDF export additionally needs playwright and a Chromium-family browser; on Windows the bundled Edge is used automatically.
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   homepage: https://github.com/OWNER/markdown-deck
   requires-skills: ""
 ---
@@ -94,7 +94,7 @@ Say how many slides were produced, name any section that was skipped and why, an
 
 Write the document first and tag it second. A document written to be a deck reads badly as a document, and the document is the artefact that outlives the meeting.
 
-Prefer tables over bullet lists for anything comparative; the theme styles them for projection. Keep mermaid fences if the host renders them, because the deck loads mermaid on demand and renders them too.
+Prefer tables over bullet lists for anything comparative; the theme styles them for projection. Keep mermaid fences if the host renders them, because the deck renders them too. It copies an installed mermaid beside the deck, so diagrams draw offline; with none installed it loads mermaid from the CDN, and `mermaid` in the repository bindings, or `--mermaid`, names a file or URL instead.
 
 ## Extending
 

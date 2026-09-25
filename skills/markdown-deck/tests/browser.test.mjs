@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { build } from '../src/index.mjs';
+import { build, findLocalMermaid } from '../src/index.mjs';
 import { exportPdf } from '../src/pdf.mjs';
 
 let chromium = null;
@@ -461,4 +461,50 @@ The end.
   const raw = fs.readFileSync(path.join(hdir, 'dist', 'deck.pdf'), 'latin1');
   assert.ok(r.bytes > 0);
   assert.equal((raw.match(/\/Type\s*\/Page\b/g) || []).length, 3);
+});
+
+const mermaidFile = findLocalMermaid(process.cwd());
+test('a diagram on a slide not yet shown is drawn at its real size', {
+  skip: skip() || (!mermaidFile && 'no mermaid installed nearby'),
+}, async () => {
+  const mdir = path.join(dir, 'mermaid');
+  fs.mkdirSync(mdir, { recursive: true });
+  const src = path.join(mdir, 'doc.md');
+  fs.writeFileSync(src, `---
+title: "Diagrams"
+---
+
+# Diagrams
+
+<!-- deck:slide -->
+## First
+
+Nothing to draw.
+
+<!-- deck:slide -->
+## Later
+
+\`\`\`mermaid
+sequenceDiagram
+  participant A as Client
+  participant B as Gateway
+  A->>B: Request
+  Note over B: Validate the audience claim against this gateway
+\`\`\`
+`);
+  build(src, { out: path.join(mdir, 'dist'), theme: 'default', mermaidSrc: mermaidFile, onWarn: () => {} });
+  const page = await open(pathToFileURL(path.join(mdir, 'dist', 'deck.html')).href);
+  await page.waitForFunction(() => document.querySelector('svg .noteText'), null, { timeout: 15000 });
+  await page.evaluate(() => window.__deck.show(1));
+  const r = await page.evaluate(() => {
+    const t = document.querySelector('svg .noteText').getBBox();
+    const b = document.querySelector('svg rect.note').getBBox();
+    return { text: { x: t.x, y: t.y, width: t.width, height: t.height }, box: { x: b.x, y: b.y, width: b.width, height: b.height } };
+  });
+  assert.ok(r.text.width > 100, `note text measured ${r.text.width}px wide`);
+  const bottom = (o) => o.y + o.height;
+  assert.ok(bottom(r.text) <= bottom(r.box) + 1, `note text ends at ${bottom(r.text)}, below its box at ${bottom(r.box)}`);
+  assert.ok(r.box.width + 2 >= r.text.width, `note box ${r.box.width} wide holds text ${r.text.width}`);
+  assert.equal(await page.evaluate(() => document.querySelectorAll('.diagram-measuring').length), 0);
+  await page.close();
 });
