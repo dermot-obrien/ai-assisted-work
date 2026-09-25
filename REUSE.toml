@@ -56,6 +56,7 @@ path = [
   "package-lock.json",
   "**/package.json",
   "**/tsconfig.json",
+  ".changeset/**",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Dermot O'Brien"
