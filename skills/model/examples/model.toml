@@ -1,0 +1,26 @@
+# Declares how this project's documents express a model. Nothing here is built in.
+
+[model]
+node_id_attrs = ["node_id"]
+edge_id_attr  = "edge_id"
+group_attr    = "group"
+kind_attr     = "kind"
+
+[[markdown.tables]]
+section    = "Components"
+entity     = "node"
+id_pattern = "(SVC|EXT)-[0-9]{2}"
+columns    = { id = "Component", label = "Component", group = "Zone" }
+
+[[markdown.tables]]
+section    = "Interfaces"
+entity     = "edge"
+id_pattern = "(IF-[0-9]{2}|SVC-[0-9]{2}|EXT-[0-9]{2})"
+columns    = { id = "Interface", source = "Provider", consumer = "Consumer", target = "Consumer", label = "Purpose" }
+
+[markdown.scenarios]
+section = "Scenarios"
+columns = { step = "Step", actor = "Actor", action = "Action", edge = "Interface", target = "Target" }
+
+[rules]
+node_id_mismatch = "warn"

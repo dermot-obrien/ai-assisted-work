@@ -1,0 +1,33 @@
+/* SPDX-License-Identifier: Apache-2.0
+   Neutral theme. Brand-free, so a published deck carries no organisation's identity
+   unless the author chooses one. Copy this file and change the tokens to make a theme. */
+
+:root {
+  --font-body: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  --deck-bg: #1b2430;
+  --slide-bg: #ffffff;
+  --slide-fg: #1a1a1a;
+  --body: #3a3a3a;
+  --heading: #14507a;
+  --on-heading: #ffffff;
+  --rule: #d4dae1;
+  --row-alt: #f2f5f8;
+
+  --accent: #7aa7c7;
+  --accent-deep: #4a6c85;
+  --accent-wash: #eef3f7;
+
+  --code-bg: #14212b;
+  --code-fg: #d6e6ec;
+  --code-inline-bg: #e8edf2;
+
+  --cover-bg: #14212b;
+  --cover-fg: #ffffff;
+  --cover-accent: #7aa7c7;
+  --cover-muted: rgba(255, 255, 255, .65);
+  --cover-faint: rgba(255, 255, 255, .45);
+
+  --chrome-fg: #ffffff;
+}

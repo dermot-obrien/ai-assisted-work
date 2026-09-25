@@ -1,0 +1,432 @@
+/* SPDX-License-Identifier: Apache-2.0
+   Layout for markdown-deck. Themes supply the tokens; this file never names a colour.
+   Chrome tokens (--index-*, --toolbar-*) are optional and fall back to cover tokens.
+   Slides are a fixed 1920x1080 canvas scaled to fit, which is what makes the output
+   look like a deck rather than a web page, and what makes the PDF deterministic. */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  background: var(--deck-bg);
+  color: var(--slide-fg);
+  font-family: var(--font-body);
+  overflow: hidden;
+  display: flex;
+}
+
+/* ---- Slide index, PowerPoint style: numbered thumbnails down the left ---- */
+.index {
+  display: none;
+  flex: 0 0 var(--index-width, 264px);
+  width: var(--index-width, 264px);
+  height: 100%;
+  flex-direction: column;
+  background: var(--index-bg, var(--cover-bg));
+  color: var(--index-fg, var(--cover-fg));
+  border-right: 1px solid var(--index-rule, rgba(255, 255, 255, .12));
+}
+body.index-open .index { display: flex; }
+body.presenting .index { display: none; }
+.index-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px 12px 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--index-fg, var(--cover-fg));
+}
+.index-title { flex: 1; }
+.index-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 12px 18px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--index-rule, rgba(255, 255, 255, .12));
+}
+.index-count { opacity: .7; }
+.index button {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  color: inherit;
+  background: var(--toolbar-button, rgba(255, 255, 255, .1));
+  border: 1px solid var(--toolbar-rule, rgba(255, 255, 255, .25));
+  border-radius: 5px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.index .thumb { font-size: inherit; background: none; border: 0; padding: 6px 6px 6px 2px; }
+.index button:hover { background: var(--toolbar-hover, rgba(255, 255, 255, .2)); }
+.index button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#index-collapse { font-size: 16px; line-height: 1; padding: 2px 8px 4px; }
+.index-list { list-style: none; overflow-y: auto; flex: 1; padding: 12px 10px 24px; }
+.index-list li { margin: 0 0 2px; }
+body.index-thumbs .index-list li { margin: 0 0 10px; }
+.thumb {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  width: 100%;
+  padding: 6px 6px 6px 2px;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.thumb:hover { background: var(--index-hover, rgba(255, 255, 255, .08)); }
+.thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.thumb .num { grid-row: 1; font-size: 12px; opacity: .75; text-align: right; padding-top: 2px; }
+.thumb .mini {
+  grid-row: 1;
+  grid-column: 2;
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--slide-bg);
+  border: 2px solid transparent;
+  border-radius: 3px;
+}
+.thumb.current .mini { border-color: var(--index-active, var(--accent)); }
+.thumb.current .num { opacity: 1; font-weight: 700; }
+/* Titles only, the default: number and title on one line, the title allowed to wrap. */
+.thumb .mini { display: none; }
+.thumb .cap { grid-row: 1; grid-column: 2; font-size: 13px; line-height: 1.35; opacity: .85; }
+.thumb .num { padding-top: 1px; }
+.index .thumb.current { background: var(--index-hover, rgba(255, 255, 255, .08)); box-shadow: inset 3px 0 0 var(--index-active, var(--accent)); }
+.thumb.current .cap { opacity: 1; font-weight: 700; }
+
+/* Thumbnails, on request: the title moves beneath a live copy of the slide. */
+body.index-thumbs .thumb .mini { display: block; }
+body.index-thumbs .thumb .cap {
+  grid-row: 2;
+  font-size: 12px;
+  line-height: 1.3;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.index-thumbs .index .thumb.current { background: none; box-shadow: none; }
+.thumb-slide {
+  display: flex !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* Comment count beside a slide in the index. */
+.thumb .badge {
+  grid-row: 1;
+  grid-column: 3;
+  align-self: start;
+  min-width: 20px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  background: var(--index-active, var(--accent));
+  color: var(--index-bg, var(--cover-bg));
+}
+.thumb .badge[hidden] { display: none; }
+
+/* ---- Comments: a panel on the right, per slide ---- */
+.comments {
+  display: none;
+  flex: 0 0 var(--comments-width, 340px);
+  width: var(--comments-width, 340px);
+  height: 100%;
+  flex-direction: column;
+  background: var(--slide-bg);
+  color: var(--slide-fg);
+  border-left: 1px solid var(--rule);
+  font-size: 14px;
+}
+body.comments-open .comments { display: flex; }
+body.presenting .comments { display: none; }
+.comments button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--heading);
+  background: var(--slide-bg);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.comments button:hover:not(:disabled) { background: var(--row-alt); }
+.comments button:disabled { opacity: .45; cursor: default; }
+.comments button:focus-visible, .comments textarea:focus-visible, .comments input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+.comments-head { display: flex; align-items: center; padding: 16px 14px 10px 18px; }
+.comments-title { flex: 1; font-weight: 700; font-size: 16px; color: var(--heading); }
+#comments-close { font-size: 16px; line-height: 1; padding: 2px 8px 4px; }
+.review-name input, .comment-form textarea, .comment-edit-box {
+  font: inherit;
+  font-size: 14px;
+  color: var(--slide-fg);
+  background: var(--input-bg, var(--slide-bg));
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 6px 8px;
+  width: 100%;
+  resize: vertical;
+}
+.comments-slide {
+  padding: 10px 18px;
+  font-weight: 700;
+  color: var(--accent-deep);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: var(--row-alt);
+}
+.comment-list { list-style: none; flex: 1; overflow-y: auto; padding: 10px 18px; }
+.comment { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.comment-text { white-space: pre-wrap; line-height: 1.45; color: var(--slide-fg); }
+.comment-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--body); }
+.comment-meta button { padding: 1px 8px; font-size: 12px; }
+.comment-meta button:first-of-type { margin-left: auto; }
+.comment .comment-edit-box { margin-bottom: 6px; }
+.comment > button { margin-right: 6px; }
+.comment-empty { padding: 12px 0; color: var(--body); font-style: italic; }
+.comment-form { display: flex; flex-direction: column; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--rule); }
+.comment-form button { align-self: flex-end; }
+.comments-foot { padding: 12px 18px 16px; border-top: 1px solid var(--rule); background: var(--row-alt); }
+.review-total { font-size: 12px; line-height: 1.4; color: var(--body); margin: 0 0 10px; }
+/* One primary action, sized to be found; everything else is secondary. */
+.comments button.primary, .review-dialog button.primary {
+  background: var(--heading); color: var(--on-heading); border-color: var(--heading); font-weight: 700;
+}
+.comments button.primary:hover:not(:disabled), .review-dialog button.primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+#send-review { display: block; width: 100%; padding: 9px 12px; font-size: 14px; }
+#send-review[hidden], #clear-review[hidden] { display: none; }
+.comments button.link, .review-dialog button.link {
+  background: none; border: 0; padding: 0; color: var(--accent-deep); text-decoration: underline; font-size: 12px;
+}
+#clear-review { margin-top: 8px; }
+.comments-note { min-height: 1em; margin: 8px 0 0; font-size: 12px; color: var(--accent-deep); }
+
+/* The send dialog: name, one send action, fallbacks, then a chance to clear. */
+.review-dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 22px 24px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--slide-bg);
+  color: var(--slide-fg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+}
+.review-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.review-dialog h2 { font-size: 18px; color: var(--heading); margin: 0 0 12px; }
+.review-dialog p { line-height: 1.45; margin: 0 0 12px; }
+.review-summary { color: var(--body); }
+.review-name { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; font-size: 12px; color: var(--body); }
+.review-buttons { display: flex; gap: 8px; margin-bottom: 12px; }
+.review-dialog button {
+  font: inherit; font-size: 13px; color: var(--heading); background: var(--slide-bg);
+  border: 1px solid var(--rule); border-radius: 5px; padding: 6px 12px; cursor: pointer;
+}
+.review-alternatives { font-size: 12px; color: var(--body); margin: 0; }
+#toggle-comments .count:not(:empty) {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--index-active, var(--accent));
+  color: var(--index-bg, var(--cover-bg));
+}
+
+/* ---- Stage: one fixed 1920x1080 canvas, scaled to fit, controls beneath ---- */
+.stage {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 20px 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+body.presenting .stage { padding: 0; }
+.viewport { position: relative; flex: 0 0 auto; overflow: hidden; box-shadow: 0 4px 32px rgba(0, 0, 0, .45); }
+.deck { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+
+.slide {
+  display: none;
+  width: 1920px;
+  height: 1080px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  flex-direction: column;
+  background: var(--slide-bg);
+  overflow: hidden;
+}
+.slide.active { display: flex; }
+/* Laid out but invisible while a hidden slide is measured for fitting. */
+.slide.measuring { display: flex; visibility: hidden; }
+.deck.single { position: static; }
+.deck.single .slide { display: flex; position: relative; }
+
+.slide-header {
+  padding: 52px 88px 26px;
+  border-bottom: 3px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.eyebrow {
+  font-size: 18px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  font-weight: 700;
+}
+.slide-header h1 { font-size: 46px; color: var(--heading); line-height: 1.15; font-weight: 700; }
+
+.slide-body { flex: 1; padding: 30px 88px 52px; overflow: hidden; display: flex; flex-direction: column; }
+.fit { transform-origin: top center; width: 100%; }
+.fit > *:first-child { margin-top: 0; }
+
+.fit p { font-size: 26px; line-height: 1.5; color: var(--body); margin: 0 0 18px; }
+.fit h2 { font-size: 30px; color: var(--heading); margin: 26px 0 12px; font-weight: 700; }
+.fit h3 { font-size: 24px; color: var(--accent-deep); margin: 20px 0 10px; font-weight: 700; }
+.fit ul, .fit ol { margin: 0 0 18px 30px; }
+.fit li { font-size: 24px; line-height: 1.5; color: var(--body); margin: 0 0 8px; }
+.fit img { display: block; max-width: 100%; max-height: 720px; margin: 0 auto; object-fit: contain; }
+/* A slide that is only a diagram gives it the whole body: 1080 less header and padding. */
+.fit > p:only-child > img:only-child { max-height: 820px; }
+.fit strong { color: var(--slide-fg); }
+.fit a { color: var(--heading); text-decoration: underline; }
+
+.fit blockquote {
+  border-left: 6px solid var(--accent);
+  background: var(--accent-wash);
+  padding: 18px 26px;
+  margin: 0 0 20px;
+  font-size: 24px;
+  border-radius: 0 6px 6px 0;
+}
+.fit blockquote p { font-size: 24px; margin: 0 0 8px; }
+.fit blockquote p:last-child { margin: 0; }
+
+.fit table { border-collapse: collapse; width: 100%; margin: 0 0 22px; font-size: 21px; }
+.fit th {
+  background: var(--heading);
+  color: var(--on-heading);
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 700;
+  border: 1px solid var(--heading);
+}
+.fit td { padding: 11px 16px; border: 1px solid var(--rule); color: var(--body); vertical-align: top; background: var(--slide-bg); }
+.fit tr:nth-child(even) td { background: var(--row-alt); }
+
+.fit code {
+  font-family: var(--font-mono);
+  background: var(--code-inline-bg);
+  color: var(--heading);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: .9em;
+}
+.fit pre.code { background: var(--code-bg); color: var(--code-fg); padding: 20px 26px; border-radius: 8px; margin: 0 0 20px; overflow: hidden; }
+.fit pre.code code { background: none; color: inherit; font-size: 22px; line-height: 1.5; padding: 0; }
+.fit pre.mermaid { background: var(--slide-bg); border: 1px solid var(--rule); border-radius: 8px; padding: 22px; margin: 0 0 20px; text-align: center; }
+
+/* Image slide: a finished 16:9 image fills the canvas; any other shape is letterboxed. */
+.slide.image-slide { background: var(--slide-bg); }
+.slide-image { display: block; width: 100%; height: 100%; object-fit: contain; }
+.image-caption {
+  position: absolute;
+  right: 20px;
+  bottom: 14px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 15px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  background: var(--slide-bg);
+  opacity: .9;
+}
+
+/* Cover */
+.slide.cover { background: var(--cover-bg); }
+.cover-wrap { padding: 96px; display: flex; flex-direction: column; height: 100%; width: 100%; }
+.cover-logo { width: 170px; opacity: .9; }
+.grow { flex: 1; }
+.cover-title { font-size: 104px; font-weight: 700; color: var(--cover-fg); letter-spacing: -.025em; line-height: 1.05; margin: 0 0 10px; }
+.cover-sub { font-size: 56px; font-weight: 300; color: var(--cover-accent); line-height: 1.1; margin: 0 0 40px; }
+.cover-date { font-size: 26px; color: var(--cover-muted); margin: 0 0 8px; }
+.cover-foot { font-size: 20px; color: var(--cover-faint); max-width: 1200px; }
+
+/* Presenter notes never render on screen or in the PDF. */
+.notes { display: none; }
+
+.toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 56px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--chrome-fg);
+}
+.toolbar .spacer { flex: 1; }
+.toolbar button {
+  font: inherit;
+  color: inherit;
+  background: var(--toolbar-button, rgba(255, 255, 255, .1));
+  border: 1px solid var(--toolbar-rule, rgba(255, 255, 255, .25));
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.toolbar button:hover:not(:disabled) { background: var(--toolbar-hover, rgba(255, 255, 255, .2)); }
+.toolbar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toolbar button:disabled { opacity: .35; cursor: default; }
+#counter { min-width: 72px; text-align: center; opacity: .85; font-variant-numeric: tabular-nums; }
+body.presenting .toolbar { display: none; }
+
+@media (max-width: 700px) {
+  body.index-open .index { position: fixed; z-index: 2; left: 0; top: 0; box-shadow: 0 0 24px rgba(0, 0, 0, .5); }
+  body.comments-open .comments { position: fixed; z-index: 3; right: 0; top: 0; width: min(340px, 100%); box-shadow: 0 0 24px rgba(0, 0, 0, .5); }
+  .toolbar button { padding: 7px 10px; }
+}
+
+/* Print: no chrome, every slide on its own 16:9 page at exact canvas size. */
+@page { size: 1920px 1080px; margin: 0; }
+@media print {
+  html, body { height: auto; }
+  body { display: block; overflow: visible; background: var(--slide-bg); }
+  .index, .toolbar, .comments { display: none !important; }
+  .stage, .viewport { display: block; position: static; width: auto !important; height: auto !important;
+    padding: 0; overflow: visible; box-shadow: none; }
+  .deck { position: static; width: auto; height: auto; transform: none !important; }
+  .slide { display: flex !important; position: relative; break-after: page; visibility: visible !important; }
+  .slide:last-child { break-after: auto; }
+}

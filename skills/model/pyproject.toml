@@ -1,0 +1,28 @@
+# Optional. A skill is copied, not installed, and bin/model.py runs from a copied
+# directory with nothing on the path. This is here for anyone who does want a real
+# install and a `model` command on PATH.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "model-skill"
+version = "0.2.0"
+description = "One model, several representations: Markdown tables, draw.io, JSON and YAML."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.9"
+dependencies = []
+keywords = ["drawio", "markdown", "model", "diagram", "agent-skill"]
+
+[project.optional-dependencies]
+yaml = ["pyyaml>=6"]
+
+[project.scripts]
+model = "model.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]

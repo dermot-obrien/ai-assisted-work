@@ -7,6 +7,21 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Two general tooling skills**, domain-agnostic and usable outside any AAW workspace:
+  `markdown-deck` (Markdown to HTML slides and PDF, the Markdown staying the only source) and
+  `model` (a diagram and a document as two views of one model of boxes and lines). They are
+  not work management, but they are the kind of thing every project needs and nothing about
+  them is specific to one, which is what makes AAW rather than a domain framework their home.
+- **A configurable palette for `markdown-deck`.** An organisation sets colour tokens in
+  `[suite.markdown-deck.palette]` of its own `.agents/skill-bindings.toml`, overriding
+  whichever theme is chosen, so the skill ships brand-free and the layout stays with the skill
+  while the brand stays with the organisation. A deck overrides the repository palette with
+  `deck_palette`. An unknown token fails the build rather than being silently ignored, because
+  a typo in a colour is otherwise invisible. The binding reader gained one level of sub-table
+  to express it.
+
+
 ### Fixed
 - `npm ci` could not resolve the workspace packages. `packages/cli` pinned `@aaw/installer`
   and `@aaw/protocol` at an exact `2.0.0`, so any version bump sent npm to the public registry
