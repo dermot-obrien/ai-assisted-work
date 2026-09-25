@@ -44,6 +44,8 @@ Build options:
   --deck-id <id>     stable id for stored comments and the permanent URL (deck_id)
   --html-name <f>    file name for the deck (default deck.html; index.html to serve
                      it at its folder's URL)
+  --refresh          re-render any image whose diagram changed since it was rendered
+                     (needs the model skill and draw.io desktop), instead of warning
   --pdf, --no-pdf    export deck.pdf too, or not (needs playwright). Defaults to deck_pdf
                      in front matter, then pdf in [suite.markdown-deck], else off
 
@@ -140,6 +142,7 @@ async function main() {
     deckId: args['deck-id'],
     htmlName: args['html-name'],
     pdf: args['no-pdf'] ? false : (args.pdf ? true : undefined),
+    refresh: Boolean(args.refresh),
     onWarn: (m) => { warnings++; console.error(`  ! ${m}`); },
   });
 

@@ -285,13 +285,13 @@ def write(m: Model, path, cfg, style=None) -> None:
                    f'value="{_esc(sc.key + " " + (sc.name or ""))}" parent="0" visible="0" />')
 
     node_style = style.get("node", "rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;"
-                                   "strokeColor=#33404F;fontSize=14;align=center;verticalAlign=middle;")
+                                   "strokeColor=#3A4654;fontSize=14;align=center;verticalAlign=middle;")
     edge_style = style.get("edge", "edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"
-                                   "fontSize=12;strokeColor=#33404F;")
-    badge_style = style.get("badge", "ellipse;whiteSpace=wrap;html=1;fillColor=#E95160;"
+                                   "fontSize=12;strokeColor=#3A4654;")
+    badge_style = style.get("badge", "ellipse;whiteSpace=wrap;html=1;fillColor=#C25B54;"
                                      "strokeColor=none;fontColor=#FFFFFF;fontSize=14;fontStyle=1;")
     flow_style = style.get("flow", "edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;dashed=1;"
-                                   "strokeWidth=2;strokeColor=#E95160;fontColor=#E95160;fontSize=12;")
+                                   "strokeWidth=2;strokeColor=#C25B54;fontColor=#C25B54;fontSize=12;")
 
     # Structure. id and the identifier attribute are set to the same value on purpose:
     # a copy-pasted shape keeps the attribute and gets a random id, which is how

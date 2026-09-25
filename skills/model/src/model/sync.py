@@ -365,10 +365,10 @@ def _geom_of(entry):
 def _append_overlay(root, sc, cfg, drawn_nodes, wanted, lyr, cell_of=None):
     """Badges and flow arrows over the real shapes, at their real positions."""
     cell_of = cell_of or {}
-    badge_style = cfg.style.get("badge", "ellipse;whiteSpace=wrap;html=1;fillColor=#E95160;"
+    badge_style = cfg.style.get("badge", "ellipse;whiteSpace=wrap;html=1;fillColor=#C25B54;"
                                          "strokeColor=none;fontColor=#FFFFFF;fontStyle=1;")
     flow_style = cfg.style.get("flow", "edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;"
-                                       "dashed=1;strokeWidth=2;strokeColor=#E95160;")
+                                       "dashed=1;strokeWidth=2;strokeColor=#C25B54;")
     used_on = {}
     for st in sc.steps:
         entry = drawn_nodes.get(st.actor)

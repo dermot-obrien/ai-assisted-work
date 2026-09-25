@@ -136,14 +136,14 @@ with the organisation:
 theme = "default"
 
 [suite.markdown-deck.palette]
-heading    = "#143a5a"
-accent     = "#2f8f83"
-cover-bg   = "#0b2438"
+heading  = "#143a5a"
+accent   = "#2f8f83"
+cover-bg = "#0b2438"
 ```
 
-Keys are token names without the `--` prefix. An unknown key fails the build rather than
-being quietly ignored, because a typo in a colour is otherwise invisible. A single deck
-overrides the repository palette with `deck_palette` in its front matter.
+Keys are token names without the `--` prefix. An unknown key fails the build rather than being
+quietly ignored, because a typo in a colour is otherwise invisible. A single deck overrides the
+repository palette with `deck_palette` in its front matter.
 
 ## Layout
 
@@ -249,7 +249,7 @@ The source is named by its `deck_eyebrow`, then its `sidebar_label`, then its `t
 
 ## Stale renders and dependencies
 
-An image rendered from a diagram goes out of date silently when the diagram changes. A renderer that follows the convention leaves `<image>.render.json` beside the image, naming the source and a SHA-256 of it with line endings normalised; the model skill's `render` writes one. When a deck uses an image with a record and the diagram no longer matches, the build warns and prints the command that re-renders it. With `CI` set, or `strictRenders: true`, it fails. An image without a record is not checked.
+An image rendered from a diagram goes out of date silently when the diagram changes. A renderer that follows the convention leaves `<image>.render.json` beside the image, naming the source and a SHA-256 of it with line endings normalised; the model skill's `render` writes one. When a deck uses an image with a record and the diagram no longer matches, the build warns and prints the command that re-renders it. With `CI` set, or `strictRenders: true`, it fails. `build --refresh` (`refresh: true`) re-renders a stale image through the model skill installed beside this one before using it, and fails if the render does. An image without a record is not checked.
 
 Every `manifest.json` lists `dependencies.documents`, the source and every included document, and `dependencies.images`, each with its diagram and a `stale` flag where it has a record. Paths are relative to the workspace root. `markdown-deck publish --graph` prints this for every deck, then every document or diagram used by more than one deck.
 

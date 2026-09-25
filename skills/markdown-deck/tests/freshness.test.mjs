@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { build } from '../src/index.mjs';
-import { fingerprint, checkRender } from '../src/freshness.mjs';
+import { fingerprint, checkRender, refreshRender } from '../src/freshness.mjs';
 import { publishAll, formatGraph } from '../src/publish.mjs';
 
 let root;
@@ -101,4 +101,28 @@ test('publish returns the graph, and formatGraph names shared sources', async ()
   assert.match(text, /image {5}arch\/view\.svg {2}<- arch\/diagram\.drawio/);
   assert.match(text, /Used by more than one deck:[\s\S]*arch\/ref\.md {2}-> (plan, other|other, plan)/);
   assert.doesNotMatch(text, /STALE/);
+});
+
+test('refresh re-renders a stale image through the model skill, then checks it again', () => {
+  const image = path.join(root, 'arch/view.svg');
+  fs.appendFileSync(path.join(root, 'arch/diagram.drawio'), 'x');
+  const stale = checkRender(image);
+  assert.equal(stale.fresh, false);
+  let argv;
+  // A stand-in renderer: records the call and writes a fresh record, as model render does.
+  const run = (_py, args) => {
+    argv = args;
+    record('arch/view.svg', 'diagram.drawio', ['Structure']);
+    return { status: 0 };
+  };
+  assert.equal(refreshRender(image, stale, { run }).fresh, true);
+  assert.match(argv[0], /model[\\/]bin[\\/]model\.py$/);
+  assert.deepEqual(argv.slice(1), ['render', stale.source, '--out', image, '--layer', 'Structure']);
+});
+
+test('a failed refresh throws rather than keeping the old picture', () => {
+  const image = path.join(root, 'arch/view.svg');
+  fs.appendFileSync(path.join(root, 'arch/diagram.drawio'), 'x');
+  const run = () => ({ status: 3, stderr: '  ! draw.io desktop not found.' });
+  assert.throws(() => refreshRender(image, checkRender(image), { run }), /draw\.io desktop not found/);
 });
