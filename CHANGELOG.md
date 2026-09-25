@@ -7,6 +7,20 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- `npm ci` could not resolve the workspace packages. `packages/cli` pinned `@aaw/installer`
+  and `@aaw/protocol` at an exact `2.0.0`, so any version bump sent npm to the public registry
+  for packages that only exist in this repo, and CI died at its first step. Both are now `*`,
+  which always resolves the local workspace and cannot break on the next bump. The lockfile was
+  regenerated and no longer carries the removed `packages/skills`.
+- REUSE compliance checked nothing. `fsfe/reuse-action@v3` bundles a `reuse` predating
+  `REUSE.toml` support, so it saw only the inline SPDX headers: 26 of 110 files covered and
+  CC-BY-4.0 reported as an unused licence. Pinned to `@v6`, which honours the file. `reuse 6.2`
+  now reports 109 of 109 covered and compliant with specification 3.3. `.changeset/` was the
+  one path genuinely uncovered and is now annotated.
+
+  Both failures predate this branch: CI has been red on `main` since at least 2026-06-09.
+
 ### Changed
 - Merged the optional OKR layer from `main` (Objectives, Key Results, Cadence) into the skills
   rather than losing it with the retired `packages/skills/` tree. `objective-progress.yaml` and
