@@ -136,7 +136,7 @@ export function findSection(md, heading) {
 /**
  * Every link reference definition in the document, as Markdown lines.
  *
- * Reference links, `[AIPLAT-47][AIPLAT-47]`, resolve against definitions that usually sit
+ * Reference links, `[PROJ-47][PROJ-47]`, resolve against definitions that usually sit
  * at the foot of the document, outside any slide's section. A slide is rendered on its
  * own, so each one is given the whole set, or the link renders as its literal brackets.
  */
