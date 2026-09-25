@@ -115,6 +115,30 @@ Ready to create work items? Use /aaw-start-work, which will set
 initiative_id: {IN-NNN} on what it creates.
 ```
 
+## Optional: the OKR layer
+
+A workspace may run an outcome layer alongside the hierarchy. It is orthogonal, not a fifth
+level: work items *advance* Key Results, they do not contain them.
+
+| Record | Is | Horizon | ID |
+|--------|----|---------|-----|
+| Objective | A qualitative outcome to pursue | Quarter | `OBJ-NNN` |
+| Key Result | The measurable signal the Objective is being met, two to four per Objective | Quarter | `KR-NNN` |
+| Cadence | A time-box carrying a goal that advances a KR | Week, sprint or iteration | `SP-NNN` |
+
+Create these only when asked. Use `assets/templates/objective-progress.yaml` and
+`assets/templates/cadence.yaml`, and record the link on the work item side: a work item sets
+`advances_kr_ids`, which is the source of truth. The `advanced_by_work_item_ids` array on an
+Objective is a convenience cache and may drift, exactly as the initiative's `work_items` array
+does.
+
+An initiative spans multiple quarters and ladders to several Objectives. An epic advances one
+quarter's KRs. A sprint goal is a step that advances a KR, not the Objective itself; keeping
+those distinct is the whole point of the layer.
+
+The layer is optional and additive, and carries no domain vocabulary. A workspace with no
+objectives works exactly as before.
+
 ## Rules
 
 1. Initiatives are lightweight. No plan, no products, no locks at this level.

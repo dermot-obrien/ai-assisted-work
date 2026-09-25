@@ -1,0 +1,11 @@
+# Cadence (sprint / iteration / week) carrying a Goal — optional OKR layer.
+cadence_id: SP-NNN
+kind: week               # week | sprint | iteration | pi
+start: null
+end: null
+goal: ""                 # the outcome for this time-box (a STEP that advances a KR)
+advances_kr_ids: []      # KR-NNN this goal advances
+pulls_activity_ids: []   # the specific activities/tasks worked this period
+status: planned          # planned | active | done
+outcome: null            # achieved | partial | no  (scored at close)
+notes: null
