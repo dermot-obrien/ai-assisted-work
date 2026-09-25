@@ -4,6 +4,12 @@
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semantic versions, with the contract defined as: MAJOR for a changed skill `name`, a removed command, a changed CLI interface or a changed model schema; MINOR for new commands, adapters or rules; PATCH for wording and fixes.
 
+## [Unreleased]
+
+### Fixed
+
+- `doctor` no longer reports a templated path binding as missing. A binding carrying a `{placeholder}`, such as `change/planning/{quarter}/{quarter}-basis.csv`, names a different location per run, so the directory in front of the first placeholder is checked and the rest is left to the skill that fills it.
+
 ## [0.2.0] - 2026-09-25
 
 Local ids may be plain numbers: `local_pattern = '[0-9]{1,3}'` reads `01 Gateway` as local id `01`. A local id must lead its cell, so a number inside a name is never one, and its draw.io cell id is `local-01`, since draw.io's own cells `0` and `1` would collide with local nodes `0` and `1`. `rename` never touches front matter, checks clashes against the model's identifiers rather than raw text, and replaces a plain-number id only where it leads a table cell. `local_prefix` still works.
