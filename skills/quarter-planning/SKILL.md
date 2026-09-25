@@ -6,7 +6,7 @@ compatibility: Python 3.11 or newer, and PyYAML. Reads the planning registers, t
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # Quarter Planning
@@ -65,7 +65,8 @@ are deferred and cannot load anyone's quarter.
 | `frame EP-NNN` | Frame one epic: lane, criterion, rung movement, products |
 | `size EP-NNN` | Name or revise the products on one epic and set its budget |
 | `budget` | Report the top-level budget and the ladder it comes down, and stop. Read only |
-| `validate` | Validate the whole chain: period, resources, quarter budget, epic budgets, elaboration, load. Read only |
+| `validate` | Validate the whole chain: period, resources, quarter budget, epic budgets, elaboration, load, approval. Read only |
+| `approve <record> <stage>` | Move a WorkPlan, an epic or a product to an approval stage, then validate. Only on the user's say-so |
 | `check` | Run the checks and interpret the output |
 | `reconcile` | Regenerate the derived views, then align the plan documents to them |
 
@@ -103,11 +104,13 @@ One report, read top down, because that is the only direction the arithmetic run
 | 4 Epic budgets | Each epic's budget derived from the distribution, against what the epic records, and who it comes from |
 | 5 Elaboration | Named products against the budget each epic was given |
 | 6 Load | Each person's owned products against the capacity they brought |
+| 7 Approval | How far the plan, each committed epic and each of its products have been approved, and what is ready for approval |
 
 Sections 1 to 4 are integrity. A disagreement there means the model contradicts itself and the
 run exits non-zero, because nothing below it means anything until it is fixed. Sections 5 and
 6 are subscription: over is a scoping decision, not a defect, so they report and the run still
-passes. Positive is under, negative is over, in both.
+passes. Positive is under, negative is over, in both. Section 7 is integrity again, but only
+for claims: an approval the records beneath it do not support fails the run.
 
 `--apply` writes the derived `budget_points` onto the epics when the distribution has moved
 and the recorded budgets are behind it. It takes a `.bak` first and replaces only that one
@@ -127,6 +130,41 @@ What has to be in place before the report means anything:
   in the planning basis. They are checked against the registers, not trusted.
 - `leave_working_days` on each person's rows in the resourcing register. Leave is stated in
   working days and the points deduction is derived, so the two cannot drift.
+
+## Approval stages
+
+A plan is approved in stages, and each stage is recorded on the model record it approves, in an
+`approval` field, never in a register or a document. The same stages apply at every level:
+
+| Stage | Means |
+|---|---|
+| `draft` | Written, not yet checked. The default when the field is absent |
+| `sized` | The size is agreed: for a product its points, for an epic that its products are named and sized |
+| `validated` | Checked and ready for approval |
+| `approved` | Approved, and approval is commitment. Nothing further records commitment |
+
+Where each level records it:
+
+| Level | Record | `approved` means |
+|---|---|---|
+| Quarter budget and resourcing | The quarterly `WorkPlan` | The resourcing, and the budget derived from it, are approved. One mark covers both, because the budget is calculated from the resourcing |
+| Epic | The `WorkItem` | The epic as written is approved: goal, value, dependencies, framing. Its budget needs no mark of its own, because it follows from the approved resourcing |
+| Product | Each entry in the epic's `deliverables` | The product as defined is approved. Distinct from `state`, which tracks the product itself |
+
+Section 7 enforces three rules, each because breaking it means the model contradicts itself:
+
+- An epic is never further on than its least advanced product.
+- An epic is not `approved` until the quarter's `WorkPlan` is, because the budget it commits
+  to comes from the approved resourcing.
+- An epic past `draft` names at least one product.
+
+A workspace with different stage names declares them, least advanced first, as
+`approvalStages` in its binding. The last stage is always read as approval and commitment.
+
+When the resourcing or the distribution changes after the `WorkPlan` is approved, set it back
+to `validated` and approve it again. The report flags an approved plan whose sections 1 to 4
+no longer agree, but it cannot see a change that leaves them agreeing, so this one is a
+discipline, not a check.
 
 ## Status
 
@@ -196,6 +234,10 @@ and the reserve is gone" is a claim, not a figure.
 | `<file>.csv has X; the model gives Y` | A derived view is stale | `commands.regenerate` |
 | `<file>.md says X; the derived view has Y` | Prose has drifted from the model | Fix the prose, never the view |
 | `activity X is assigned but has no estimate` | Warning. Sizing lives on products, not activities | Usually nothing |
+| `X is recorded S but its product Y is only T` | An epic's approval runs ahead of one of its products | Bring the product up, or the epic back |
+| `X is recorded approved, which is commitment, but the quarter budget and resourcing are S` | An epic committed before the budget it commits to | Approve the WorkPlan first, or set the epic back |
+| `X records approval V, which is not one of ...` | A stage the workspace has not declared | Fix the value, or declare the stage in `approvalStages` |
+| `The quarter budget is recorded approved, but levels 1 to 4 no longer agree` | What was approved has moved | Fix sections 1 to 4, then approve again |
 
 ## Failure modes, learned the hard way
 
