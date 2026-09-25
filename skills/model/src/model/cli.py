@@ -122,7 +122,7 @@ def cmd_render(a) -> int:
     try:
         r = render_mod.export(a.input, a.out, fmt=a.format, layers=a.layer or None,
                               scale=a.scale, width=a.width, transparent=a.transparent,
-                              binary=a.drawio_bin, timeout=a.timeout)
+                              binary=a.drawio_bin, timeout=a.timeout, theme=a.theme)
     except SystemExit as e:
         return _err(str(e), 3)
     print(f"  {_shown(r['path'])} ({r['bytes'] // 1024} KB, {r['format']})")
@@ -301,6 +301,8 @@ def build_parser():
     r.add_argument("--scale", type=float)
     r.add_argument("--width", type=int)
     r.add_argument("--transparent", action="store_true")
+    r.add_argument("--theme", default="light", choices=render_mod.THEMES,
+                   help="SVG colour scheme: light (default), dark, or auto to follow the viewer")
     r.add_argument("--drawio-bin", help="path to the draw.io executable")
     r.add_argument("--timeout", type=int, default=120)
     r.set_defaults(fn=cmd_render)
