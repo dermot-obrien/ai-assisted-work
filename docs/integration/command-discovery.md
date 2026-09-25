@@ -16,6 +16,7 @@ Every supported tool then discovers them natively, with no per-tool file to main
 | `aaw-work-status` | `/aaw-work-status` |
 | `aaw-next-task` | `/aaw-next-task` |
 | `aaw-start-initiative` | `/aaw-start-initiative` |
+| `quarter-planning` | `/quarter-planning` |
 
 ## Where each tool looks
 
