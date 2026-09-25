@@ -77,6 +77,34 @@ function imageSlide({ id, eyebrow, title, src, header, caption }) {
 </section>`;
 }
 
+// Keys pressed inside a frame would otherwise stop at the frame, so the deck could not be
+// navigated once a viewer clicked into an HTML slide. Forward them to the deck.
+const FRAME_KEYS = `<script>document.addEventListener('keydown',function(e){try{parent.document.dispatchEvent(`
+  + `new KeyboardEvent('keydown',{key:e.key,bubbles:true}));}catch(x){}});</script>`;
+
+/**
+ * A whole slide from a self-contained HTML file, designed on the 1920x1080 canvas. It is
+ * isolated in a frame, so its styles and scripts cannot reach the deck or other slides;
+ * the deck still provides the index, navigation, comments, thumbnails and PDF. The
+ * frame's relative URLs resolve against the deck, where its files were copied.
+ */
+function htmlSlide({ id, eyebrow, title, html, header }) {
+  const doc = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${FRAME_KEYS}</body>`) : `${html}${FRAME_KEYS}`;
+  const frame = `<iframe class="slide-frame" title="${esc(title)}" srcdoc="${esc(doc)}"></iframe>`;
+  if (header) {
+    return `<section class="slide html-slide with-header" data-slide="${esc(id)}" aria-label="${esc(title)}">
+  <header class="slide-header">
+    ${eyebrow ? `<div class="eyebrow">${esc(eyebrow)}</div>` : ''}
+    <h1>${esc(title)}</h1>
+  </header>
+  <div class="frame-body">${frame}</div>
+</section>`;
+  }
+  return `<section class="slide html-slide" data-slide="${esc(id)}" aria-label="${esc(title)}">
+  ${frame}
+</section>`;
+}
+
 function contentSlide({ id, eyebrow, title, bodyHtml, notes }) {
   return `<section class="slide"${id ? ` data-slide="${esc(id)}"` : ''}>
   <header class="slide-header">
@@ -739,7 +767,9 @@ export function renderDeck(deck) {
   for (const s of deck.slides) {
     body.push(s.kind === 'image'
       ? imageSlide({ id: s.file, eyebrow: deck.eyebrow, title: s.title, src: s.src, header: s.header, caption: s.caption })
-      : contentSlide({ id: s.file, eyebrow: s.eyebrow ?? deck.eyebrow, title: s.title, bodyHtml: s.bodyHtml, notes: s.notes }));
+      : s.kind === 'html'
+        ? htmlSlide({ id: s.file, eyebrow: s.eyebrow ?? deck.eyebrow, title: s.title, html: s.html, header: s.header })
+        : contentSlide({ id: s.file, eyebrow: s.eyebrow ?? deck.eyebrow, title: s.title, bodyHtml: s.bodyHtml, notes: s.notes }));
     captions.push(s.title);
     ids.push(s.file || String(ids.length + 1));
   }
@@ -786,6 +816,8 @@ ${deck.comments ? `<script type="application/json" id="deck-config">${config}</s
 
 /** One slide as a standalone fragment, for hosts that embed partials. */
 export function renderPartial(slide, { css, eyebrow }) {
+  // An HTML slide is already a standalone page.
+  if (slide.kind === 'html') return slide.html;
   return `<style>${css}</style>
 <div class="deck single">
 ${contentSlide({ eyebrow, title: slide.title, bodyHtml: slide.bodyHtml, notes: slide.notes })}

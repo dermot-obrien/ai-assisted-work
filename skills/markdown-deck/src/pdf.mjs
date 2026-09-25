@@ -60,6 +60,22 @@ export async function exportPdf(deckHtmlPath, outPdf, { onLog = console.log } = 
       if (document.fonts && document.fonts.ready) await document.fonts.ready;
       await Promise.all(Array.from(document.images).map((img) => (img.complete ? null
         : new Promise((r) => { img.addEventListener('load', r); img.addEventListener('error', r); }))));
+      // An HTML slide draws inside a frame, which loads after the page. Wait for each
+      // frame and its images too, or the slide prints blank. A frame that never settles is
+      // given ten seconds rather than holding the export.
+      const settle = (f) => new Promise((r) => {
+        const done = () => {
+          const d = f.contentDocument;
+          if (!d) return r();
+          Promise.all(Array.from(d.images).map((img) => (img.complete ? null
+            : new Promise((q) => { img.addEventListener('load', q); img.addEventListener('error', q); }))))
+            .then(() => (d.fonts && d.fonts.ready) || null).then(r, r);
+        };
+        const d = f.contentDocument;
+        if (d && d.readyState === 'complete') done(); else f.addEventListener('load', done);
+        setTimeout(r, 10000);
+      });
+      await Promise.all(Array.from(document.querySelectorAll('iframe')).map(settle));
     });
     // The print stylesheet shows every slide and drops the chrome. Fit again under it,
     // so every page is fitted in the layout that is actually printed.
