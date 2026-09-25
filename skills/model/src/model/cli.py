@@ -94,13 +94,16 @@ def cmd_validate(a) -> int:
             "input": a.input,
             "against": against,
             "summary": primary.summary(),
+            "abstraction": validate_mod.abstraction(primary, cfg),
             "result": validate_mod.worst(findings),
             "counts": {s: sum(1 for f in findings if f.severity == s) for s in ("error", "warn")},
             "findings": [f.to_dict() for f in findings[:MAX_FINDINGS]],
             "truncated": max(0, len(findings) - MAX_FINDINGS),
         }, indent=2))
     else:
-        print(f"  {os.path.basename(a.input)}: {primary.summary()}")
+        level = validate_mod.abstraction(primary, cfg)
+        print(f"  {os.path.basename(a.input)}: {primary.summary()}"
+              + (f"; abstraction {level}" if level else ""))
         for f in findings[:MAX_FINDINGS]:
             print(f"  {f}", file=sys.stderr)
         if len(findings) > MAX_FINDINGS:

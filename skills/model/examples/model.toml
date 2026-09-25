@@ -22,5 +22,12 @@ columns    = { id = "Interface", source = "Provider", consumer = "Consumer", tar
 section = "Scenarios"
 columns = { step = "Step", actor = "Actor", action = "Action", edge = "Interface", target = "Target" }
 
+# Optional. Identifiers are checked against these, and `level` feeds the derived
+# abstraction that `validate` reports: conceptual, logical, physical or mixed.
+# [[catalogues]]
+# path   = "catalogue/services.csv"
+# column = "id"
+# level  = "physical"
+
 [rules]
 node_id_mismatch = "warn"

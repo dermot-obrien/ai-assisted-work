@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semanti
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-26
+
+### Added
+
+- Derived abstraction. `validate` reports whether a model is conceptual, logical, physical or mixed, in its summary line and as `abstraction` in `--json`, computed from the kinds of box and never declared. A catalogue binding may carry `level = "logical"` or `"physical"`; a local id counts as conceptual; a table's optional `kind` column can mark a box `product`, `external`, `context`, `local` or a level outright, and external boxes are ignored. `validate.abstraction`, `validate.node_level` and `validate.catalogue_levels` expose it to library callers. An unknown `level` in the binding is refused.
+
 ## [0.3.0] - 2026-09-25
 
 ### Added

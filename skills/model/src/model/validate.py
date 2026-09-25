@@ -80,6 +80,71 @@ def load_catalogue(cfg):
     return ids, problems
 
 
+def catalogue_levels(cfg) -> dict:
+    """Identifier -> abstraction level, from every catalogue that declares a level.
+
+    Read problems are reported by `catalogue`; here an unreadable catalogue simply
+    contributes nothing.
+    """
+    out = {}
+    for cat in cfg.catalogues:
+        if not cat.level:
+            continue
+        p = cfg.resolve(cat.path)
+        try:
+            with open(p, newline="", encoding="utf-8-sig") as fh:
+                for row in csv.DictReader(fh):
+                    v = (row.get(cat.column) or "").strip()
+                    if v:
+                        out[v] = cat.level
+        except (OSError, UnicodeDecodeError, csv.Error):
+            continue
+    return out
+
+
+def node_level(n, cfg, levels=None):
+    """The abstraction one node contributes: conceptual, logical, physical, None for a
+    node outside the model's scope, or "" when nothing is known about it.
+
+    An explicit kind wins. Otherwise a local identifier is conceptual, and a catalogued
+    one takes its catalogue's level.
+    """
+    from .config import KIND_LEVELS
+    kind = (n.kind or "").strip().lower()
+    if kind in KIND_LEVELS:
+        return KIND_LEVELS[kind]
+    if n.id and cfg.is_local(n.id):
+        return "conceptual"
+    if levels is None:
+        levels = catalogue_levels(cfg)
+    return levels.get(n.id, "")
+
+
+def abstraction(m: Model, cfg) -> str:
+    """How abstract a model is, derived from its nodes and never declared.
+
+    All conceptual is conceptual. Logical nodes, with or without conceptual ones, is
+    logical. All physical is physical. Any other mix, or any node whose level is
+    unknown, is mixed. Nodes outside the model's scope are ignored. A model with no
+    classifiable node returns "".
+    """
+    levels = catalogue_levels(cfg)
+    got = [node_level(n, cfg, levels) for n in m.nodes]
+    got = [g for g in got if g is not None]
+    if not got:
+        return ""
+    s = set(got)
+    if "" in s:
+        return "mixed"
+    if s == {"conceptual"}:
+        return "conceptual"
+    if s <= {"conceptual", "logical"}:
+        return "logical"
+    if s == {"physical"}:
+        return "physical"
+    return "mixed"
+
+
 def structural(m: Model, cfg) -> list:
     """Rules that need only the model itself."""
     out = []
