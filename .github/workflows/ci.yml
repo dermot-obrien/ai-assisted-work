@@ -28,6 +28,20 @@ jobs:
         working-directory: packages/protocol
         run: npx tsc -p tsconfig.json --noEmit
 
+      # The CLI imports @aaw/protocol and @aaw/installer by package name, which
+      # resolve to their dist/ type declarations. Those must be emitted before the
+      # CLI can be typechecked at all, or every import reports TS2307 and the
+      # inferred types collapse to implicit any.
+      - name: Build protocol
+        run: npm run build --workspace @aaw/protocol
+
+      - name: Build installer
+        run: npm run build --workspace @aaw/installer
+
+      - name: Typecheck installer
+        working-directory: packages/installer
+        run: npx tsc -p tsconfig.json --noEmit
+
       - name: Typecheck CLI
         working-directory: packages/cli
         run: npx tsc -p tsconfig.json --noEmit
