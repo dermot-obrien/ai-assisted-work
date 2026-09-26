@@ -207,7 +207,7 @@ class TestCards(Workspace):
         self.assertIn('| Example lane | Process | R1 | R3 | [EP-001](./EP-001.md) |', grid)
         self.assertIn('[WI-002](./WI-002.md)', grid)
         for text in (card, other, grid):
-            self.assertNotIn('—', text)
+            self.assertNotIn(chr(0x2014), text)
 
         code, out = self.run_quarter('--cards', '--check')
         self.assertEqual(code, 0, out)
