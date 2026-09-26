@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.4.1"
+  version: "0.5.0"
 ---
 
 # Thread
@@ -63,7 +63,7 @@ don't nag.
 | `/thread rename <title>` | `rename <id> "<title>"` | Show the new anchor |
 | `/thread describe <text>` | `describe <id> "<text>"` | One-line acknowledgement |
 | `/thread fork` | `fork <id>` | See below |
-| `/thread tree` | `tree` (`--all` to include finished trees, `--mermaid` for a diagram) | Show it as-is, in a code block |
+| `/thread tree` | `tree` (`--all` for finished threads too) | See "Showing the tree" |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
 | `/thread wrap` | See "Wrapping up a chat" | Say whether the chat can be deleted, and ask before closing the thread |
 
@@ -92,6 +92,29 @@ so keep a title to one short line and put the detail in the description.
 
 When a chat's work has clearly moved away from its title, offer one line: "This has become
 <X>; refine the thread? (`/thread refine <text>`)". Offer once, as with opening a thread.
+
+## Showing the tree
+
+`tree` shows only unfinished threads: open (●) and parked (‖). Done and dropped threads are
+hidden, and a closed thread's unfinished branches take its place, so nothing closed appears.
+`tree --all` (`/thread tree --all`, or "show the full tree") shows everything, with
+resolutions. `tree <id>` limits either view to that thread's tree.
+
+**If your environment can render a widget** (an inline visual or HTML widget tool, a canvas,
+or an artifact), render the tree as a hierarchical task tree, not text:
+
+1. Run `tree --json` (plus `--all` or an id if asked). It prints the same view as nested
+   objects: `id`, `title`, `status`, `ctx`, `description`, `outcome`, `notes`, `ago`,
+   `children`.
+2. Draw it as an indented, collapsible task list: one row per thread with a status marker
+   (open, parked, and in `--all` done and dropped), the title, a muted `id · ctx · ago`, and
+   the description, outcome and notes on expand. Expand the roots, and group roots by `ctx`
+   with this project's first. Keep it readable in light and dark themes.
+3. Put nothing else in the widget. Afterwards, say in one line how many threads are open and
+   in which projects.
+
+Otherwise show `tree`'s text output as-is, in a code block. `--mermaid` gives a diagram for
+tools that render Mermaid.
 
 ## Forking to a new chat
 

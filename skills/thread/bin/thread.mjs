@@ -25,7 +25,7 @@ const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
-const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "help"]);
+const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help"]);
 
 function parseArgs(argv) {
   const flags = {};
@@ -291,7 +291,21 @@ function pathTo(nodes, n) {
 
 const isLive = (n) => n.status === "open" || n.status === "parked" || n.children.some(isLive);
 
-function renderForest(roots, { all, focus } = {}) {
+const isUnfinished = (n) => n.status === "open" || n.status === "parked";
+
+/**
+ * What a tree shows: { n, kids } view nodes. By default only unfinished threads (open or
+ * parked); a done or dropped thread is hidden and its unfinished descendants take its
+ * place. `all` shows every thread.
+ */
+function view(roots, { all } = {}) {
+  const keep = (n) => ({ n, kids: all ? n.children.map(keep) : n.children.flatMap(lift) });
+  const lift = (n) => (isUnfinished(n) ? [keep(n)] : n.children.flatMap(lift));
+  const out = all ? roots.map(keep) : roots.flatMap(lift);
+  return out.sort((a, b) => byRecent(a.n, b.n));
+}
+
+function renderForest(views, { focus } = {}) {
   const lines = [];
   const line = (n, prefix, branch) => {
     const tail = [n.ctx, ago(n.lastDeep)].filter(Boolean).join(" · ");
@@ -299,29 +313,29 @@ function renderForest(roots, { all, focus } = {}) {
     const here = focus && n.id === focus ? "   ← here" : "";
     lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${outcome}   ${tail}${here}`);
   };
-  const walk = (n, prefix, branch, childPrefix) => {
+  const walk = ({ n, kids }, prefix, branch, childPrefix) => {
     line(n, prefix, branch);
-    const kids = all ? n.children : n.children.filter(isLive);
     kids.forEach((c, i) => {
       const last = i === kids.length - 1;
       walk(c, prefix + childPrefix, last ? "└─ " : "├─ ", last ? "   " : "│  ");
     });
   };
-  for (const r of roots) walk(r, "", "", "");
+  for (const v of views) walk(v, "", "", "");
   return lines.join("\n");
 }
 
-function renderMermaid(roots) {
+function renderMermaid(views) {
   const out = ["```mermaid", "graph TD"];
   const esc = (s) => s.replace(/"/g, "'");
-  const walk = (n) => {
-    out.push(`  ${n.id.replace("-", "_")}["${MARK[n.status]} ${esc(n.text)}"]:::${n.status}`);
-    for (const c of n.children) {
-      out.push(`  ${n.id.replace("-", "_")} --> ${c.id.replace("-", "_")}`);
+  const key = (n) => n.id.replace("-", "_");
+  const walk = ({ n, kids }) => {
+    out.push(`  ${key(n)}["${MARK[n.status]} ${esc(n.text)}"]:::${n.status}`);
+    for (const c of kids) {
+      out.push(`  ${key(n)} --> ${key(c.n)}`);
       walk(c);
     }
   };
-  roots.forEach(walk);
+  views.forEach(walk);
   out.push(
     "  classDef open fill:#dbeafe,stroke:#2563eb",
     "  classDef parked fill:#fef3c7,stroke:#d97706",
@@ -330,6 +344,24 @@ function renderMermaid(roots) {
     "```",
   );
   return out.join("\n");
+}
+
+/** The same view as nested JSON, for an agent to render as a widget. */
+function renderJson(views) {
+  const walk = ({ n, kids }) => ({
+    id: n.id,
+    title: n.text,
+    status: n.status,
+    ctx: n.ctx,
+    description: n.description,
+    outcome: n.outcome,
+    notes: n.notes.map((x) => x.text),
+    opened: n.opened,
+    last: n.lastDeep,
+    ago: ago(n.lastDeep),
+    children: kids.map(walk),
+  });
+  return JSON.stringify(views.map(walk), null, 2);
 }
 
 const byRecent = (a, b) => (a.lastDeep < b.lastDeep ? 1 : -1);
@@ -510,7 +542,7 @@ const commands = {
     const here = flags.all ? live : live.filter(touchesHere);
     const elsewhere = live.filter((n) => !here.includes(n));
     if (!live.length) return console.log("no open threads.");
-    if (here.length) console.log(renderForest(here, { focus: flags.here }));
+    if (here.length) console.log(renderForest(view(here), { focus: flags.here }));
     else console.log(`no open threads in ${ctx}.`);
     if (elsewhere.length) {
       const where = [...new Set(elsewhere.map((n) => n.ctx))].join(", ");
@@ -520,12 +552,14 @@ const commands = {
   },
 
   tree(pos, flags, nodes) {
+    // Unfinished threads only, unless --all; a closed thread's open branches take its place.
     let roots = [...nodes.values()].filter((n) => !n.parent);
     if (pos[0]) roots = [pathTo(nodes, need(nodes, pos[0]))[0]];
-    else if (!flags.all) roots = roots.filter(isLive);
-    roots.sort(byRecent);
-    if (!roots.length) return console.log("no threads.");
-    console.log(flags.mermaid ? renderMermaid(roots) : renderForest(roots, { all: true, focus: flags.here }));
+    const views = view(roots, { all: flags.all });
+    if (flags.json) return console.log(renderJson(views));
+    if (!views.length) return console.log(flags.all ? "no threads." : "no open threads. (thread tree --all shows finished ones)");
+    const render = flags.mermaid ? renderMermaid : renderForest;
+    console.log(render(views, { focus: flags.here }));
   },
 
   prune(pos, flags, nodes, _status, events) {
@@ -565,7 +599,7 @@ const commands = {
   thread describe <id> "<text>"   a longer description, shown by show and resume
   thread move <id> --parent <id> | --root
   thread fork <id>                header for a handoff to a new chat
-  thread tree [<id>] [--all] [--mermaid]
+  thread tree [<id>] [--all] [--mermaid|--json]  open and parked threads; --all adds finished ones
   thread prune [--days ${PRUNE_DAYS}]      remove finished trees (kept in git history)
   thread init [<git-url>]         clone/seed the store at ${HOME}
   thread sync                     push anything left unpushed
