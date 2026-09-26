@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "bundle": "node build.mjs",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "node --test test/install-non-interactive.test.mjs"
   },
   "files": [
     "dist/"
