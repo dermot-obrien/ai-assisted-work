@@ -56,15 +56,19 @@ don't nag.
 | `/thread <text> --root` | `open "<text>" --tool …` | New top-level thread for this chat |
 | `/thread` | `status` | Show the output as-is: this project's open threads, plus a count elsewhere |
 | `/thread <id>` | `resume <id>` | Show the anchor, path and notes. This chat now follows that id |
-| `/thread done [outcome]` | `done <id> "<outcome>"` | The output names the thread to go back to. This chat now follows that one |
-| `/thread park [why]`, `/thread drop [why]` | `park` / `drop <id> "<why>"` | Same as done |
+| `/thread done [resolution]` | `done <id> "<resolution>"` | The output names the thread to go back to. This chat now follows that one |
+| `/thread park [why]`, `/thread drop [why]` | `park` / `drop <id> "<resolution>"` | Same as done |
 | `/thread note <text>` | `note <id> "<text>"` | One-line acknowledgement |
 | `/thread fork` | `fork <id>` | See below |
 | `/thread tree` | `tree` (`--all` to include finished trees, `--mermaid` for a diagram) | Show it as-is, in a code block |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
 
-If the user writes an outcome in words ("that's done, we went with X"), treat it as
-`/thread done "went with X"`. Keep outcomes to one line.
+Every close carries a one-line resolution, and the script refuses a close without one. It
+is what the tree shows for that thread from then on, so it should let someone who was not in
+the chat see how it ended: what was decided or delivered and where it lives (a PR, a commit, a
+file), or for a park or drop, why it stopped and what would restart it. If the user gives
+none, write it yourself from the conversation. If the user writes an outcome in words
+("that's done, we went with X"), treat it as `/thread done "went with X"`.
 
 ## Forking to a new chat
 
