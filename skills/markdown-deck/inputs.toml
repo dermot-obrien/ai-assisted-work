@@ -12,6 +12,7 @@
 #   feedbackTo         deck_feedback_to
 #   feedbackSubject    deck_feedback_subject
 #   pdf                deck_pdf
+#   tableRows          deck_table_rows
 #
 # Checked by:  python <skills>/model/bin/model.py doctor --skill markdown-deck
 
@@ -42,6 +43,14 @@ required = false
 default = "false"
 description = """true to export deck.pdf whenever `markdown-deck build` runs, unless --no-pdf
 is given. Needs playwright. Does not apply to `publish`, which exports PDFs only with --pdf."""
+
+[inputs.options.tableRows]
+type = "str"
+required = false
+default = "12"
+description = """Rows a table may carry on one slide before it continues on the next slide with
+its header repeated. 0 never splits, leaving a long table to shrink to fit. A slide overrides
+it with table-rows="..." on its deck:slide tag."""
 
 [inputs.options.feedbackTo]
 type = "str"
@@ -74,5 +83,6 @@ description = """Colour tokens overriding whichever theme is chosen, so an organ
 its own palette without a CSS file in the skill. Keys are token names without the `--`
 prefix: font-body, font-mono, deck-bg, slide-bg, slide-fg, body, heading, on-heading, rule,
 row-alt, accent, accent-deep, accent-wash, code-bg, code-fg, code-inline-bg, cover-bg,
-cover-fg, cover-accent, cover-muted, cover-faint, chrome-fg. An unknown key fails the build
+cover-fg, cover-accent, cover-muted, cover-faint, divider-bg, divider-fg, divider-accent,
+divider-muted, chrome-fg. An unknown key fails the build
 rather than being ignored. A deck overrides the repository palette with deck_palette."""

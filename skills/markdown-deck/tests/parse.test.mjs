@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   attrs, slug, collectSlides, collectCover, slideBody, rewriteImages, linkDefinitions,
+  paginateTables,
 } from '../src/parse.mjs';
 
 test('attrs reads quoted key-value pairs', () => {
@@ -93,4 +94,60 @@ test('an image tag without a src is warned about and skipped', () => {
 test('link definitions are collected from anywhere, not from code fences', () => {
   const md = 'See [A][A].\n\n[A]: https://h/a\n  [b c]: ./b.md "title"\n```\n[C]: https://not\n```\n';
   assert.equal(linkDefinitions(md), '[A]: https://h/a\n[b c]: ./b.md "title"');
+});
+
+test('a divider takes the next heading, or stands alone with a title', () => {
+  const md = [
+    '<!-- deck:divider subtitle="How it runs" -->',
+    '## Runtime',
+    '',
+    'Document-only text.',
+    '',
+    '<!-- deck:slide -->',
+    '### Pods',
+    '',
+    'Body.',
+    '',
+    '<!-- deck:divider title="Appendix" eyebrow="Part 3" -->',
+  ].join('\n');
+  const s = collectSlides(md);
+  assert.deepEqual(s.map((x) => [x.kind, x.title]), [['divider', 'Runtime'], ['content', 'Pods'], ['divider', 'Appendix']]);
+  assert.equal(s[0].subtitle, 'How it runs');
+  assert.equal(s[0].body, undefined, 'a divider carries no body');
+  assert.equal(s[2].eyebrow, 'Part 3');
+});
+
+test('a divider with no title and no heading after it is warned about and skipped', () => {
+  const warnings = [];
+  assert.deepEqual(collectSlides('text\n\n<!-- deck:divider -->\n', { onWarn: (m) => warnings.push(m) }), []);
+  assert.equal(warnings.length, 1);
+});
+
+test('deck:slide table-rows is read as a number', () => {
+  const [s] = collectSlides('<!-- deck:slide table-rows="20" -->\n## T\n\nx\n');
+  assert.equal(s.tableRows, 20);
+});
+
+const table = (n) => ['| A | B |', '|---|---|', ...Array.from({ length: n }, (_, i) => `| a${i + 1} | b |`)].join('\n');
+
+test('paginateTables leaves a short table, and anything with limit 0, alone', () => {
+  const body = `Intro.\n\n${table(5)}\n\nAfter.`;
+  assert.deepEqual(paginateTables(body, 12), [body]);
+  assert.deepEqual(paginateTables(`${table(40)}`, 0), [table(40)]);
+});
+
+test('paginateTables spreads a long table evenly and repeats its header', () => {
+  const pages = paginateTables(`Intro.\n\n${table(26)}\n\nAfter.`, 12);
+  assert.equal(pages.length, 3);
+  const rows = pages.map((p) => p.split('\n').filter((l) => /^\| a\d/.test(l)).length);
+  assert.deepEqual(rows, [9, 9, 8]);
+  for (const p of pages) assert.match(p, /^(Intro\.\n\n)?\| A \| B \|\n\|---\|---\|/);
+  assert.match(pages[0], /^Intro\./, 'text before the table stays with its first rows');
+  assert.match(pages[2], /After\.$/, 'text after the table follows its last rows');
+  assert.doesNotMatch(pages[1], /Intro|After/);
+});
+
+test('paginateTables ignores pipes inside a code fence', () => {
+  const body = ['```', table(30), '```'].join('\n');
+  assert.deepEqual(paginateTables(body, 12), [body]);
 });

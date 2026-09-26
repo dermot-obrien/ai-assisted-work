@@ -105,6 +105,22 @@ function htmlSlide({ id, eyebrow, title, html, header }) {
 </section>`;
 }
 
+/**
+ * A section divider: the title of the part that follows, on the cover's ground unless the
+ * theme gives dividers their own. It carries no body, so it never needs fitting.
+ */
+function dividerSlide({ id, eyebrow, title, subtitle }) {
+  return `<section class="slide divider"${id ? ` data-slide="${esc(id)}"` : ''} aria-label="${esc(title)}">
+  <div class="divider-wrap">
+    <div class="grow"></div>
+    ${eyebrow ? `<div class="divider-eyebrow">${esc(eyebrow)}</div>` : ''}
+    <h1 class="divider-title">${esc(title)}</h1>
+    ${subtitle ? `<p class="divider-sub">${esc(subtitle)}</p>` : ''}
+    <div class="grow"></div>
+  </div>
+</section>`;
+}
+
 function contentSlide({ id, eyebrow, title, bodyHtml, notes }) {
   return `<section class="slide"${id ? ` data-slide="${esc(id)}"` : ''}>
   <header class="slide-header">
@@ -777,7 +793,10 @@ export function renderDeck(deck) {
       ? imageSlide({ id: s.file, eyebrow: deck.eyebrow, title: s.title, src: s.src, header: s.header, caption: s.caption })
       : s.kind === 'html'
         ? htmlSlide({ id: s.file, eyebrow: s.eyebrow ?? deck.eyebrow, title: s.title, html: s.html, header: s.header })
-        : contentSlide({ id: s.file, eyebrow: s.eyebrow ?? deck.eyebrow, title: s.title, bodyHtml: s.bodyHtml, notes: s.notes }));
+        : s.kind === 'divider'
+          // A divider's eyebrow is its own, never the deck's, which would repeat the title.
+          ? dividerSlide({ id: s.file, eyebrow: s.eyebrow, title: s.title, subtitle: s.subtitle })
+          : contentSlide({ id: s.file, eyebrow: s.eyebrow ?? deck.eyebrow, title: s.title, bodyHtml: s.bodyHtml, notes: s.notes }));
     captions.push(s.title);
     ids.push(s.file || String(ids.length + 1));
   }
@@ -828,7 +847,7 @@ export function renderPartial(slide, { css, eyebrow }) {
   if (slide.kind === 'html') return slide.html;
   return `<style>${css}</style>
 <div class="deck single">
-${contentSlide({ eyebrow, title: slide.title, bodyHtml: slide.bodyHtml, notes: slide.notes })}
+${slide.kind === 'divider' ? dividerSlide(slide) : contentSlide({ eyebrow, title: slide.title, bodyHtml: slide.bodyHtml, notes: slide.notes })}
 </div>
 `;
 }
