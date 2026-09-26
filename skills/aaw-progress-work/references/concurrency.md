@@ -150,3 +150,10 @@ activities:
 Whoever finishes first can claim A3. Activity dependencies are derived from the product flow,
 so if two activities feed products with no dependency between them, they are genuinely
 parallel.
+
+## Chats, not activities
+
+Locks coordinate workers on a work item's activities. They do not cover several chats acting
+on the same environment (deploying, publishing data, merging a shared branch). For that, the
+`thread` skill names one owning thread per tree of intents; see its section "Many chats, one
+tree".
