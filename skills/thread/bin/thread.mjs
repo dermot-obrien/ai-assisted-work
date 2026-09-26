@@ -341,7 +341,7 @@ function autoPrune() {
 const sortEvents = (evs) =>
   evs.sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : a._file < b._file ? -1 : 1));
 
-/** Replay events into nodes: { id, parent, text, titles[], description, status, ctx, tool, opened, last, notes[], outcome, children[] }. */
+/** Replay events into nodes: { id, parent, text, titles[], description, kind, status, ctx, tool, opened, last, notes[], outcome, children[] }. */
 function buildTree(events) {
   const nodes = new Map();
   for (const ev of events) {
@@ -354,6 +354,7 @@ function buildTree(events) {
           text: ev.text,
           titles: [],
           description: null,
+          kind: ev.kind ?? null,
           status: "open",
           ctx: ev.ctx,
           tool: ev.tool,
@@ -388,6 +389,9 @@ function buildTree(events) {
         break;
       case "describe":
         if (n) Object.assign(n, { description: ev.text || null, last: ev.ts });
+        break;
+      case "kind":
+        if (n) Object.assign(n, { kind: ev.kind || null, last: ev.ts });
         break;
     }
   }
@@ -427,6 +431,15 @@ function ago(ts) {
 }
 
 const anchor = (n) => `🧵 ${n.id} · ${n.text} · ${n.ctx}`;
+const tag = (n) => (n.kind ? ` [${n.kind}]` : "");
+
+/** A kind is one lowercase word, such as feature, bug or question. "none" clears it. */
+function kindArg(raw) {
+  if (raw === undefined || raw === true) return undefined;
+  const k = String(raw).trim().toLowerCase();
+  if (!/^[a-z][a-z0-9-]*$/.test(k)) die(`a kind is one lowercase word, such as feature or bug (got "${raw}")`);
+  return k;
+}
 
 function pathTo(nodes, n) {
   const chain = [];
@@ -456,7 +469,7 @@ function renderForest(views, { focus } = {}) {
     const tail = [n.ctx, ago(n.lastDeep)].filter(Boolean).join(" · ");
     const outcome = n.outcome ? ` — ${n.outcome}` : "";
     const here = focus && n.id === focus ? "   ← here" : "";
-    lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${outcome}   ${tail}${here}`);
+    lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${tag(n)}${outcome}   ${tail}${here}`);
   };
   const walk = ({ n, kids }, prefix, branch, childPrefix) => {
     line(n, prefix, branch);
@@ -497,6 +510,7 @@ function renderJson(views) {
     id: n.id,
     title: n.text,
     status: n.status,
+    kind: n.kind,
     ctx: n.ctx,
     description: n.description,
     outcome: n.outcome,
@@ -531,13 +545,14 @@ brings that thread back: copy its archived events back to their \`src\` paths.
 
 | type | fields |
 |---|---|
-| \`open\` | \`id\` (\`t-\` + 3 base-36 chars, unused), \`parent\` (id or null), \`text\`, \`ctx\` (repo), \`tool\` |
+| \`open\` | \`id\` (\`t-\` + 3 base-36 chars, unused), \`parent\` (id or null), \`text\`, \`ctx\` (repo), \`tool\`, optional \`kind\` |
 | \`close\` | \`id\`, \`status\` (\`done\` \\| \`parked\` \\| \`dropped\`), \`note\` |
 | \`resume\` | \`id\`, \`ctx\` |
 | \`note\` | \`id\`, \`text\` |
 | \`move\` | \`id\`, \`parent\` (id or null) |
 | \`rename\` | \`id\`, \`text\` (the new title; earlier ones stay in the history) |
 | \`describe\` | \`id\`, \`text\` (a longer description; the latest one wins) |
+| \`kind\` | \`id\`, \`kind\` (one lowercase word such as \`feature\`, or null to clear; the latest one wins) |
 
 Every event also carries \`ts\` (ISO-8601 UTC) and \`host\`. The tree is the events replayed in \`ts\` order.
 `;
@@ -573,12 +588,14 @@ const commands = {
     let parent = null;
     if (typeof flags.parent === "string") parent = need(nodes, flags.parent).id;
     // An archived id is still taken: the full tree replays the archive too.
+    const kind = kindArg(flags.kind);
+    if (kind === "none") die("--kind none only makes sense on thread kind; leave --kind off instead");
     const id = newId(new Set([...nodes.keys(), ...readArchive().map((e) => e.id)]));
-    writeEvent({ type: "open", id, parent, text, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL });
+    writeEvent({ type: "open", id, parent, text, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL, ...(kind ? { kind } : {}) });
     commitAndPush(`open ${id}: ${text}`);
     const tree = buildTree(readEvents());
     const n = tree.get(id);
-    console.log(anchor(n));
+    console.log(anchor(n) + tag(n));
     if (parent) console.log(`   under: ${pathTo(tree, n).slice(0, -1).map((p) => `${p.id} ${p.text}`).join(" › ")}`);
   },
 
@@ -596,11 +613,11 @@ const commands = {
     for (const t of n.titles) console.log(`   was: ${t.text}  (until ${ago(t.ts)})`);
     const chain = pathTo(nodes, n);
     if (chain.length > 1) console.log(`   path: ${chain.map((p) => `${p.id} ${p.text}`).join(" › ")}`);
-    console.log(`   ${n.status}, opened ${ago(n.opened)}${n.outcome ? ` — ${n.outcome}` : ""}`);
+    console.log(`   ${n.kind ? `${n.kind}, ` : ""}${n.status}, opened ${ago(n.opened)}${n.outcome ? ` — ${n.outcome}` : ""}`);
     for (const note of n.notes) console.log(`   · ${note.text}  (${ago(note.ts)})`);
     if (n.children.length) {
       console.log("   branches:");
-      for (const c of n.children) console.log(`     ${MARK[c.status]} ${c.id} ${c.text}${c.outcome ? ` — ${c.outcome}` : ""}`);
+      for (const c of n.children) console.log(`     ${MARK[c.status]} ${c.id} ${c.text}${tag(c)}${c.outcome ? ` — ${c.outcome}` : ""}`);
     }
   },
 
@@ -662,6 +679,50 @@ const commands = {
     writeEvent({ type: "note", id: n.id, text });
     commitAndPush(`note ${n.id}`);
     console.log(`noted on ${n.id}`);
+  },
+
+  kind(pos, flags, nodes) {
+    const n = need(nodes, pos[0]);
+    const k = kindArg(pos[1]);
+    if (!k) die(`which kind? e.g. thread kind ${n.id} feature (or none to clear)`);
+    const kind = k === "none" ? null : k;
+    if (kind === n.kind) die(kind ? `${n.id} is already a ${kind}` : `${n.id} has no kind`);
+    writeEvent({ type: "kind", id: n.id, kind });
+    commitAndPush(`kind ${n.id}: ${kind ?? "none"}`);
+    console.log(kind ? `${n.id} is now a ${kind}` : `${n.id} no longer has a kind`);
+  },
+
+  list(pos, flags, nodes) {
+    // A flat list across every tree and project: the threads of one kind, wherever they sit.
+    const kind = kindArg(flags.kind ?? pos[0]);
+    const hits = [...nodes.values()]
+      .filter((n) => (kind ? n.kind === kind : n.kind) && (flags.all || isUnfinished(n)))
+      .sort(byRecent);
+    const up = (n) => pathTo(nodes, n).slice(0, -1);
+    if (flags.json) {
+      const row = (n) => ({
+        id: n.id,
+        title: n.text,
+        kind: n.kind,
+        status: n.status,
+        ctx: n.ctx,
+        description: n.description,
+        outcome: n.outcome,
+        notes: n.notes.map((x) => x.text),
+        path: up(n).map((p) => ({ id: p.id, title: p.text })),
+        opened: n.opened,
+        last: n.lastDeep,
+        ago: ago(n.lastDeep),
+      });
+      return console.log(JSON.stringify(hits.map(row), null, 2));
+    }
+    const what = kind ? `${kind} threads` : "threads with a kind";
+    if (!hits.length) return console.log(flags.all ? `no ${what}.` : `no open ${what}. (--all shows finished ones)`);
+    for (const n of hits) {
+      const outcome = n.outcome ? ` — ${n.outcome}` : "";
+      console.log(`${MARK[n.status]} ${n.id} ${n.text}${kind ? "" : tag(n)}${outcome}   ${n.ctx} · ${ago(n.lastDeep)}`);
+      if (up(n).length) console.log(`     under: ${up(n).map((p) => `${p.id} ${p.text}`).join(" › ")}`);
+    }
   },
 
   move(pos, flags, nodes) {
@@ -740,7 +801,7 @@ const commands = {
     console.log(`thread — a throwaway tree of intents, shared across machines, tools and chats
 
   thread [--all]                  open threads in this project, most recent first (alias: status)
-  thread open "<text>" [--parent <id>] [--tool <name>] [--ctx <name>]
+  thread open "<text>" [--parent <id>] [--kind <kind>] [--tool <name>] [--ctx <name>]
   thread resume <id>              pick a thread back up in this chat
   thread show <id>                one thread: path, notes, branches
   thread done|park|drop <id> "<resolution>"
@@ -749,6 +810,8 @@ const commands = {
   thread rename <id> "<title>"    clarify a title; earlier titles are kept
   thread describe <id> "<text>"   a longer description, shown by show and resume
   thread move <id> --parent <id> | --root
+  thread kind <id> <kind>|none    mark a thread as a feature, bug, question… (one lowercase word)
+  thread list [--kind <kind>] [--all] [--json]  every thread of that kind, across all trees
   thread fork <id>                header for a handoff to a new chat
   thread tree [<id>] [--all] [--mermaid|--json]  open and parked threads; --all (or: tree all)
                                   adds finished ones, archived ones included
@@ -786,7 +849,7 @@ if (cmd === "tree" && pos[0] === "all") {
 }
 const statuses = { done: "done", park: "parked", drop: "dropped" };
 if (!statuses[cmd] && !commands[cmd]) die(`unknown command "${cmd}". Try: thread help`);
-const READ_ONLY = new Set(["status", "show", "fork", "tree", "prune", "sync"]);
+const READ_ONLY = new Set(["status", "show", "fork", "tree", "list", "prune", "sync"]);
 
 ensureStore();
 pull();
@@ -809,7 +872,7 @@ if (wanted.size && restore(wanted, events)) {
 
 let nodes = buildTree(events);
 // Views that read history replay the archive too.
-if (["show", "fork"].includes(cmd) || (cmd === "tree" && (flags.all || (pos[0] && !nodes.has(pos[0]))))) {
+if (["show", "fork"].includes(cmd) || (cmd === "list" && flags.all) || (cmd === "tree" && (flags.all || (pos[0] && !nodes.has(pos[0]))))) {
   nodes = buildTree(mergeEvents(events));
 }
 if (statuses[cmd]) commands.close(pos, flags, nodes, statuses[cmd]);
