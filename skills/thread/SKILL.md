@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Thread
@@ -85,3 +85,59 @@ user. That's what someone switching back from another chat needs.
 The script prints `NOT PUSHED` when it can't reach the remote. The event is kept locally and
 goes up with the next successful command. Tell the user in one line. If there is no store
 at all, it prints how to configure one; relay that. Never edit files in the store by hand.
+
+## Setting up a repo and cloud sessions
+
+Locally nothing is needed beyond a store: the first command clones it to `~/.threads`. A
+cloud session (Claude Code on the web, Cursor cloud agents) starts from a fresh clone of the
+repo, so everything `/thread` needs must be **committed on the branch the session starts
+from**. When asked to set a repo up, or when `/thread` is missing or can't push in the cloud,
+check these in order and fix what's missing.
+
+**In the repo:**
+
+1. **This skill committed at `.claude/skills/thread/`** (`SKILL.md` and `bin/`). Claude Code
+   and Cursor both load skills from there. The AAW installer makes it a link to the installed
+   copy; git stores the real files through it. Without AAW, copy this directory there. If
+   `.claude/` is ignored, un-ignore down to the skill:
+
+   ```gitignore
+   /.claude/*
+   !/.claude/skills/
+   /.claude/skills/*
+   !/.claude/skills/thread/
+   ```
+
+   (A directory pattern like `.claude/skills/` can't be partly un-ignored; replace it with
+   `.claude/skills/*` plus the `!` line.)
+2. **`threads_remote: <store url>` in `.aaw-config.yaml`** at the repo root (a file with
+   just that line is fine), so no environment variables are needed.
+3. **Refresh the committed copy** whenever this skill is updated: re-run the AAW install, or
+   copy it again, then commit.
+
+**Claude Code on the web:**
+
+- **Leave the environment setup script empty.** It runs once per environment, outside the
+  repo; a leftover `git …` line fails with `fatal: not a git repository` and blocks every
+  session.
+- **Allow the store repo** when the first `/thread` asks to add it. The Claude GitHub App
+  must be allowed on that repo.
+- **Skills load at session start.** If `/thread` isn't offered, the skill isn't on the
+  session's branch or was committed after the session started: start a new one.
+
+**Cursor cloud agents** (not yet verified end to end):
+
+- Node 18+ and git are in the default image, so the environment's install step needs nothing
+  for `/thread`. Keep it to toolchain installs.
+- The agent can only push to repos the Cursor GitHub app can reach: grant it the store repo
+  too. Failing that, add a `THREADS_REMOTE` secret (below).
+- Skills load when the agent starts, from the branch it runs on, as for Claude.
+
+**Fallback for either tool:** set `THREADS_REMOTE` as an environment variable or secret. If
+the session can't get write access to the store, use a fine-grained token limited to that
+repo (Contents: read and write):
+`https://x-access-token:<token>@github.com/<owner>/<store>.git`.
+
+**Check it works:** `/thread <id>` of something opened locally shows up in the cloud, and a
+`/thread note` made in the cloud appears locally on the next `/thread`. `NOT PUSHED` means no
+write access; events not pushed are lost when the cloud container ends, so fix access first.
