@@ -118,6 +118,9 @@ Classification is provisional and cheap to revise:
   workspace, attach it to the existing branch. Nothing is lost — the work already exists.
 - **Inquiry → intervention/change** — when research concludes "go ahead," the hypothesis
   spawns a typed delivery item; when it concludes "no," it closes as a recorded lesson.
+- **The experiment is not the inquiry** — once research frames a hypothesis, the experiment
+  that tests it is known work, and AAR opens it as an intervention (or a change). It is never
+  re-triaged as an inquiry, which would hand it back to research.
 
 ---
 

@@ -8,6 +8,12 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- **Inquiry hand-off names the AAR skill that exists** (aaw-start-work 2.3.0). Triage routed
+  an inquiry to `/start-hypothesis`, a command AAR removed when its shims became skills; it
+  now invokes `/aar-start-hypothesis`. A request arriving from `/aar-start-hypothesis` is the
+  experiment for a hypothesis research has already framed, so triage classifies it as an
+  intervention (or a change where the caller says so) and never sends it back to research.
+  The work-classification reference states the same rule under re-triage.
 - **`quarter-planning` report wording** (skill 3.1.0). Calendar periods are called periods,
   not sprints. Out-of-scope capacity is a positive figure in its own column, since it is a
   share of what a person brings rather than a deduction from it. Calendar notes are wrapped

@@ -6,7 +6,7 @@ compatibility: Reads .aaw-config.yaml at the workspace root for work_items_path,
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "2.2.0"
+  version: "2.3.0"
 ---
 
 # Start Work
@@ -35,9 +35,15 @@ and re-triage rules, read [references/work-classification.md](references/work-cl
 | Chore (default) | Branch `chore/{kebab-desc}`, do the work, add a changelog line (patch). | Done. No `WI-NNN/`, no scope, plan or progress file. |
 | Change | Assign `WI-NNN`. Minimal workspace: short `progress.yaml` plus a one-paragraph plan. Branch `wi/WI-NNN-…`. | Skip to Phase 3 (light), then Phase 4. |
 | Intervention | Assign `WI-NNN`. Full workspace. | Continue to Phase 1. |
-| Inquiry | Hand to research: invoke AAR `/start-hypothesis`. | Re-triage the outcome when research concludes, or close it as a lesson. |
+| Inquiry | Hand to research: invoke AAR `/aar-start-hypothesis`. | Re-triage the outcome when research concludes, or close it as a lesson. |
 
 Do not create a work-item folder unless the class is intervention or change.
+
+A request from AAR's `/aar-start-hypothesis` has already been through this triage: the
+inquiry is the hypothesis, and research has framed it. What arrives is the experiment that
+tests it, which is known work. Classify it as an intervention, or a change where the caller
+says so, and never route it back to research, or the two frameworks hand it to each other
+forever.
 
 ## Work item types
 
