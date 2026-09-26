@@ -14,6 +14,7 @@ export const SLIDE_RE = /<!--\s*deck:slide([^>]*?)-->/g;
 export const IMAGE_RE = /<!--\s*deck:image([^>]*?)-->/g;
 export const HTML_RE = /<!--\s*deck:html([^>]*?)-->/g;
 export const INCLUDE_RE = /<!--\s*deck:include([^>]*?)-->/g;
+export const DIVIDER_RE = /<!--\s*deck:divider([^>]*?)-->/g;
 // A link reference definition: `[label]: url "optional title"`, up to three spaces in.
 const LINK_DEF_RE = /^ {0,3}\[([^\]]+)\]:[ \t]*(\S+)(?:[ \t]+(?:"[^"]*"|'[^']*'|\([^)]*\)))?[ \t]*$/gm;
 export const SKIP_RE = /<!--\s*deck:skip\s*-->[\s\S]*?<!--\s*\/deck:skip\s*-->/g;
@@ -72,9 +73,14 @@ function headings(md) {
  * A deck:html tag is also a whole slide: a self-contained HTML file designed on the
  * 1920x1080 canvas, for a layout Markdown cannot express. The deck isolates it in a frame.
  *
+ * A deck:divider tag is a section divider: a title, and optionally a subtitle and an
+ * eyebrow, on the cover's ground. With `title` it stands alone; without one it takes the
+ * NEXT heading's text, and that heading's body stays out of the divider.
+ *
  * @returns {({kind: 'content', title: string, label: string, body: string} |
  *            {kind: 'image', title: string, label: string, src: string, header: boolean} |
- *            {kind: 'html', title: string, label: string, src: string, header: boolean})[]}
+ *            {kind: 'html', title: string, label: string, src: string, header: boolean} |
+ *            {kind: 'divider', title: string, label: string, subtitle: string})[]}
  */
 export function collectSlides(md, { onWarn = () => {} } = {}) {
   const hs = headings(md);
@@ -117,6 +123,19 @@ export function collectSlides(md, { onWarn = () => {} } = {}) {
       ...('eyebrow' in a ? { eyebrow: a.eyebrow } : {}),
     });
   }
+  for (const tag of md.matchAll(DIVIDER_RE)) {
+    const a = attrs(tag[1]);
+    const h = a.title ? null : hs.find((x) => x.start >= tag.index);
+    if (!a.title && !h) {
+      onWarn(`deck:divider tag at offset ${tag.index} has no title and no heading after it; skipped`);
+      continue;
+    }
+    const title = a.title || h.title;
+    slides.push({
+      kind: 'divider', at: tag.index, title, label: a.label || title, subtitle: a.subtitle || '',
+      ...('eyebrow' in a ? { eyebrow: a.eyebrow } : {}),
+    });
+  }
   for (const tag of md.matchAll(SLIDE_RE)) {
     const a = attrs(tag[1]);
     const h = hs.find((x) => x.start >= tag.index);
@@ -130,6 +149,7 @@ export function collectSlides(md, { onWarn = () => {} } = {}) {
       at: tag.index,
       title: a.title || h.title,
       ...('eyebrow' in a ? { eyebrow: a.eyebrow } : {}),
+      ...('table-rows' in a ? { tableRows: Number(a['table-rows']) } : {}),
       label: a.label || h.title,
       body: md.slice(h.end, next ? next.start : md.length),
     });
@@ -167,6 +187,49 @@ export function linkDefinitions(md) {
     LINK_DEF_RE.lastIndex = 0;
   }
   return out.join('\n');
+}
+
+// A GFM table's delimiter row: `|---|:--:|`, with or without the outer pipes.
+const TABLE_DELIM_RE = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
+
+/**
+ * Split a slide body into pages so that no table carries more than `limit` rows on one
+ * page. A long table continues on the next page with its header row repeated, and the
+ * rows are spread evenly, so 26 rows at a limit of 12 become 9, 9 and 8 rather than
+ * 12, 12 and 2. Text before a table stays on the page where the table starts; text after
+ * it follows the last rows.
+ *
+ * A limit of 0, or anything not a positive number, turns splitting off.
+ * @returns {string[]} one body per page; a single page when nothing needs splitting
+ */
+export function paginateTables(body, limit) {
+  if (!(limit > 0)) return [body];
+  const lines = body.split('\n');
+  const pages = [[]];
+  let fenced = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (FENCE_RE.test(line)) fenced = !fenced;
+    const delim = lines[i + 1] ?? '';
+    const isTable = !fenced && line.includes('|') && delim.includes('-')
+      && (delim.includes('|') || line.trim().startsWith('|')) && TABLE_DELIM_RE.test(delim);
+    if (!isTable) {
+      pages[pages.length - 1].push(line);
+      continue;
+    }
+    let j = i + 2;
+    while (j < lines.length && lines[j].trim() && lines[j].includes('|')) j++;
+    const rows = lines.slice(i + 2, j);
+    const count = Math.ceil(rows.length / limit);
+    const size = Math.ceil(rows.length / Math.max(count, 1));
+    for (let k = 0; k === 0 || k * size < rows.length; k++) {
+      if (k > 0) pages.push([]);
+      pages[pages.length - 1].push(line, delim, ...rows.slice(k * size, (k + 1) * size));
+    }
+    i = j - 1;
+  }
+  const out = pages.map((p) => p.join('\n').trim());
+  return out.length > 1 ? out : [body];
 }
 
 /** The cover declaration, or null. */

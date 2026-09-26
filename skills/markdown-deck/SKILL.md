@@ -4,7 +4,7 @@ description: Render tagged sections of a Markdown document into HTML slides and 
 license: Apache-2.0
 compatibility: Node.js 18 or newer. PDF export additionally needs playwright and a Chromium-family browser; on Windows the bundled Edge is used automatically.
 metadata:
-  version: "0.4.1"
+  version: "0.5.0"
   homepage: https://github.com/OWNER/markdown-deck
   requires-skills: ""
 ---
@@ -21,6 +21,7 @@ The document stays the source of truth. Tags are HTML comments, so the file stil
 |---|---|---|
 | `<!-- deck:cover subtitle="..." date="..." footnote="..." -->` | Anywhere, usually after the H1 | Produces the cover slide |
 | `<!-- deck:slide label="..." -->` | Immediately before a heading | That heading's section becomes one slide, running to the next heading of the same or higher level |
+| `<!-- deck:divider subtitle="..." -->` | Immediately before a heading, or anywhere with `title="..."` | A section divider on the cover's ground, titled by the next heading or by `title`. The heading's body stays in the document only. `eyebrow="..."` adds a small line above the title, such as "Part 2" |
 | `<!-- deck:image src="./slide.png" title="..." -->` | On its own line, anywhere | A whole slide from a finished 16:9 image, such as a slide exported from another deck. The title labels it in the index, comments and address; the image is not overdrawn. Add `header="true"` to put the deck's own header above the image instead |
 | `<!-- deck:html src="./slide.html" title="..." -->` | On its own line, anywhere | A whole slide from a self-contained HTML file designed on the 1920x1080 canvas, for a layout Markdown cannot express. It is isolated in a frame, so its styles and scripts cannot reach the deck; the deck still provides the index, navigation, comments and PDF. `header="true"` puts the deck's header above it |
 | `<!-- deck:include src="../other.md" section="Heading" -->` | On its own line, anywhere | A section of another document, rendered live in this deck's theme and headed "From <source>". `deck="<deck_id>"` finds a published deck by id instead of `src`, so moving it does not break the include; `slide="<slide-id>"` takes one of its tagged slides instead of `section`; `title="..."` renames it. A target that cannot be found fails the build |
@@ -33,6 +34,8 @@ Rules that matter:
 - Tag a heading whose section has content. Tagging one whose body is only guidance comments produces an empty slide; the tool warns and skips it.
 - The slide title is the heading text. Override with `title="..."` on the tag.
 - A slide needing more than about twelve lines of body is too dense. Split the section, or move the overflow into `deck:skip`.
+- A table longer than twelve rows continues on the next slide with its header row repeated, titled "Interfaces (1 of 3)" and so on, rows spread evenly. The first slide keeps the section's id. Text before the table stays with its first rows and text after it follows the last. `table-rows="20"` on the `deck:slide` tag changes the limit for that slide, and `table-rows="0"` turns splitting off; `deck_table_rows` and the `tableRows` binding change it for a deck or a repository.
+- Use dividers to mark the parts of a long deck, not before every slide. Tag a heading that groups several tagged slides, such as an H2 whose H3s are slides.
 - An image slide should be a PNG at 1920x1080 or larger in 16:9. The build warns when one is not 16:9, which is letterboxed, or is smaller than 1920x1080, which looks soft when presented. A missing image slide is warned about and skipped.
 - Reference links, `[text][label]` with `[label]: url` at the foot of the document, resolve on every slide. Relative links to other documents are not rewritten, so they only work where the deck sits beside those documents.
 - Local images are copied into the output `assets/` folder and the paths rewritten. A missing image is warned about and left alone rather than failing the build.
@@ -59,7 +62,7 @@ From the skill directory, or anywhere if it is installed globally:
 node bin/markdown-deck.mjs build <input.md> --out <dir> --theme default
 ```
 
-Useful options: `--theme` takes a built-in name or a path to a `.css` file, `--pdf` also exports `deck.pdf` and `--no-pdf` skips it, `--partials` also writes `slides/*.html` fragments for hosts that embed them, and `--eyebrow`, `--subtitle`, `--date`, `--footnote`, `--logo` fill the chrome. The eyebrow, the small line above each slide title, is `deck_eyebrow` in front matter, falling back to `sidebar_label`; `deck_eyebrow: ""` turns it off, and `eyebrow="..."` on a `deck:slide` or `deck:include` tag overrides it for one slide. Run `node bin/markdown-deck.mjs themes` to list themes, and `--help` for everything.
+Useful options: `--theme` takes a built-in name or a path to a `.css` file, `--table-rows <n>` sets the table split, `--pdf` also exports `deck.pdf` and `--no-pdf` skips it, `--partials` also writes `slides/*.html` fragments for hosts that embed them, and `--eyebrow`, `--subtitle`, `--date`, `--footnote`, `--logo` fill the chrome. The eyebrow, the small line above each slide title, is `deck_eyebrow` in front matter, falling back to `sidebar_label`; `deck_eyebrow: ""` turns it off, and `eyebrow="..."` on a `deck:slide` or `deck:include` tag overrides it for one slide. Run `node bin/markdown-deck.mjs themes` to list themes, and `--help` for everything.
 
 First run in a fresh clone needs `npm install` in the skill directory. PDF export additionally needs `npm install playwright`; no browser download is required on Windows because Edge is used through `--channel msedge`, falling back to Chrome then bundled Chromium.
 
@@ -98,4 +101,4 @@ Prefer tables over bullet lists for anything comparative; the theme styles them 
 
 ## Extending
 
-Themes are plain CSS token files in `themes/`. Copy `themes/default.css`, change the custom properties, and pass the path to `--theme`. `themes/_base.css` holds the layout and never names a colour, so a new theme is about thirty lines.
+Themes are plain CSS token files in `themes/`. Copy `themes/default.css`, change the custom properties, and pass the path to `--theme`. Dividers use the cover tokens unless the theme sets `--divider-bg`, `--divider-fg`, `--divider-accent` and `--divider-muted`. `themes/_base.css` holds the layout and never names a colour, so a new theme is about thirty lines.

@@ -37,6 +37,8 @@ Build options:
   --mermaid <src>    mermaid.min.js to copy beside the deck, or a URL to load it from.
                      Default: an installed mermaid if one is found, else the CDN
   --partials         also write slides/*.html fragments
+  --table-rows <n>   rows a table may carry on one slide before it continues on the next,
+                     header repeated (deck_table_rows; default 12; 0 never splits)
   --thumbnails       slide index shows thumbnails; the default is titles only.
                      Front matter deck_thumbnails: true does the same per document
   --comments         add a per-slide comments panel that packages a review for email
@@ -67,6 +69,8 @@ is warned about, and fails the build when CI is set.
 Tags, written as HTML comments so they stay invisible wherever the Markdown renders:
   <!-- deck:cover subtitle="..." -->        the H1 becomes the cover slide
   <!-- deck:slide label="..." -->           the NEXT heading's section becomes a slide
+  <!-- deck:divider subtitle="..." -->      a section divider titled by the NEXT heading,
+                                            or by title="..." where it stands alone
   <!-- deck:skip --> ... <!-- /deck:skip -->  kept in the document, dropped from the slide
   <!-- deck:note --> ... <!-- /deck:note -->  becomes presenter notes
 `;
@@ -144,6 +148,7 @@ async function main() {
     feedbackSubject: args['feedback-subject'],
     deckId: args['deck-id'],
     htmlName: args['html-name'],
+    tableRows: args['table-rows'] !== undefined ? Number(args['table-rows']) : undefined,
     pdf: args['no-pdf'] ? false : (args.pdf ? true : undefined),
     refresh: Boolean(args.refresh),
     onWarn: (m) => { warnings++; console.error(`  ! ${m}`); },

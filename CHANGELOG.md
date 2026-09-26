@@ -35,6 +35,12 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   examples of a templated binding.
 
 ### Added
+- **`markdown-deck` divider slides and long-table splitting** (skill 0.5.0).
+  `<!-- deck:divider -->` makes a section divider on the cover's ground, titled by the next
+  heading or by `title="..."`, with its own `--divider-*` theme tokens. A table longer than
+  twelve rows continues on the next slide with its header repeated instead of shrinking to
+  fit; `table-rows`, `deck_table_rows`, the `tableRows` binding and `--table-rows` change the
+  limit, and `0` turns it off.
 - **`quarter-planning` frames epics on a definition ladder, generates cards, and closes a
   quarter** (skill 3.1.0). Four optional bindings, each opting in to one thing, so a workspace
   that declares none of them validates exactly as before. `ladder` points at a CSV of rungs;
