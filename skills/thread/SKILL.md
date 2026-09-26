@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.4.0"
+  version: "0.4.1"
 ---
 
 # Thread
@@ -65,7 +65,7 @@ don't nag.
 | `/thread fork` | `fork <id>` | See below |
 | `/thread tree` | `tree` (`--all` to include finished trees, `--mermaid` for a diagram) | Show it as-is, in a code block |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
-| `/thread wrap` | See "Wrapping up a chat" | Say whether the chat can be deleted |
+| `/thread wrap` | See "Wrapping up a chat" | Say whether the chat can be deleted, and ask before closing the thread |
 
 Every close carries a one-line resolution, and the script refuses a close without one. It
 is what the tree shows for that thread from then on, so it should let someone who was not in
@@ -107,6 +107,9 @@ line ties the new chat to the same thread. If the new chat is a genuinely new br
 that outlives it, so the chat can be deleted? Treat "can I delete this chat?", "are we done
 here?" and "anything left?" the same way.
 
+It is a question, not an instruction to finish: the user may answer no and carry on in this
+chat under the same thread. So `wrap` never closes the thread by itself.
+
 Nothing should exist only in the chat. Check, in this order, and fix what you can:
 
 1. **Work in progress.** Uncommitted changes, commits not pushed, background tasks or
@@ -121,13 +124,18 @@ Nothing should exist only in the chat. Check, in this order, and fix what you ca
 4. **Loose ends.** Every follow-up becomes a note on this thread's parent or a new child
    thread, with a description that stands on its own. A title alone is not enough to pick
    it up from cold.
-5. **This chat's thread.** Close it with `done` and a resolution. If it is not finished,
-   `park` it with what is left and what would restart it.
+5. **This chat's thread.** Don't close it. Propose how it would close: `done` with a
+   resolution, or, if it isn't finished, `park` with what is left and what would restart it.
+   If the chat has no thread, say so and offer to record one; don't open it unasked.
 
-Then answer in one of two ways. "Yes, you can delete this chat" with a short table of what
+Then answer in one of two ways. "Yes, you can delete this chat once the thread is closed" with a short table of what
 went where. Or "Not yet" with exactly what still needs the user or another chat, such as a PR
 to merge, a question to decide or a task still running. Things waiting on the user outside the
 chat, such as PRs to merge, do not block deletion; name them anyway.
+
+End with one question, for example: "Close t-4k2 as done: <resolution>? Or keep it open?"
+Run `done` or `park` only when the user says yes. If they say no, or just carry on, leave the
+thread open; this chat still follows it.
 
 ## Coming back after a long run
 
