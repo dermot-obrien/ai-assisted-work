@@ -395,6 +395,8 @@ const commands = {
   close(pos, flags, nodes, status) {
     const n = need(nodes, pos[0]);
     const note = pos.slice(1).join(" ").trim() || undefined;
+    // Every close carries a one-line resolution, so the tree says how each thread ended.
+    if (!note) die(`a resolution is required: thread ${{ done: "done", parked: "park", dropped: "drop" }[status]} ${n.id} "<what was decided, delivered, or why it stopped>"`);
     writeEvent({ type: "close", id: n.id, status, note });
     commitAndPush(`${status} ${n.id}${note ? `: ${note}` : ""}`);
     const tree = buildTree(readEvents());
@@ -496,7 +498,7 @@ const commands = {
   thread open "<text>" [--parent <id>] [--tool <name>] [--ctx <name>]
   thread resume <id>              pick a thread back up in this chat
   thread show <id>                one thread: path, notes, branches
-  thread done|park|drop <id> ["<outcome>"]
+  thread done|park|drop <id> "<resolution>"
   thread note <id> "<text>"
   thread move <id> --parent <id> | --root
   thread fork <id>                header for a handoff to a new chat
