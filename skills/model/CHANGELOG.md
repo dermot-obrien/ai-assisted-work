@@ -6,6 +6,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semanti
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-26
+
+### Fixed
+
+- `animate` wrote a different page on every run from the same document and diagram, because it iterated a set of node identifiers and Python randomises string hashing per process. Anything embedding the page, such as a deck slide, changed with it. Nodes are now written in sorted order, and a test runs `animate` under three hash seeds and requires identical bytes.
+
 ## [0.4.0] - 2026-09-26
 
 ### Added

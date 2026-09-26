@@ -200,6 +200,22 @@ class PageTests(Base):
         self.assertTrue(animate.default_out("a/index.md").endswith("scenarios.html"))
         self.assertTrue(animate.default_out("a/view.md").endswith("view-scenarios.html"))
 
+    def test_same_inputs_give_the_same_page(self):
+        # String hashing is randomised per process, so run in separate processes with
+        # different seeds: any iteration over a set would show up as a different page.
+        import subprocess
+        model_py = os.path.join(os.path.dirname(HERE), "bin", "model.py")
+        pages = []
+        for seed in ("1", "2", "3"):
+            out = os.path.join(self.dir, f"page-{seed}.html")
+            env = dict(os.environ, PYTHONHASHSEED=seed)
+            r = subprocess.run([sys.executable, model_py, "animate", self.doc, "--image", self.image,
+                                "--force", "--out", out], capture_output=True, text=True, env=env)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            with open(out, "rb") as fh:
+                pages.append(fh.read())
+        self.assertEqual(len(set(pages)), 1)
+
     def test_cli(self):
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
