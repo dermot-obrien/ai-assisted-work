@@ -18,6 +18,15 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   examples of a templated binding.
 
 ### Added
+- **`aaw install` runs without a terminal.** Installing AAW itself used to open a prompt
+  unconditionally, so a SessionStart hook, CI job or agent failed at the first question
+  ("readline was closed") before writing anything. It now prompts only on a terminal. Without
+  one, or with `--yes` (`-y`, `--non-interactive`), each answer comes from its flag, then the
+  existing `.aaw-config.yaml`, then the default, and one line reports the values used. New
+  flags `--tenant`, `--mode` and `--work-items-path` answer the bootstrap questions, and
+  `--workspace`, which the help already listed, now works for AAW itself too. `aaw init`
+  takes the same flags. An invalid `--mode` still exits 2 without writing. The CLI gains its
+  first tests, run against the bundled `bin/aaw.js` with no terminal attached.
 - **`thread`**, a general tooling skill for keeping thought processes untangled when working
   across many chats, projects, IDEs and machines at once. Each chat is tied to one node in a
   tree of intents: `/thread <text>` records or branches it, `/thread done|park|drop` closes it
