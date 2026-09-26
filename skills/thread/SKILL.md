@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Thread
@@ -79,6 +79,40 @@ line ties the new chat to the same thread. If the new chat is a genuinely new br
 When you finish a long-running task in a chat that has a thread, start your reply with the
 anchor line, then one line of what you did and one line saying what, if anything, needs the
 user. That's what someone switching back from another chat needs.
+
+## Many chats, one tree: one owner for shared actions
+
+Several chats often work under one tree at once: branches of the same goal, in different
+tools or on different machines. Reading, exploring and editing in parallel is fine. Changing
+shared state from more than one chat is not, because each chat acts on what it last saw and
+none of them sees the others.
+
+In each tree, exactly one thread owns the actions that change shared state:
+
+| Owned by one thread per tree | What goes wrong with two |
+|---|---|
+| Deploys, infrastructure applies, and image builds that decide what gets deployed | The environment ends up running code that neither chat tested |
+| Publishing data that people or services read | The last publish wins, silently |
+| Merging into, rebasing or force-pushing a shared branch | One chat's integration undoes or duplicates the other's |
+
+How it works:
+
+- The owner is recorded as a note on the tree's root:
+  `note <root> "owner: t-9c3 (deploys, publishes, merges)"`. If no owner is named, the first
+  chat that needs a shared action records itself. The latest owner note wins.
+- Before a shared action, run `resume <root>` and read the notes. If another thread owns it,
+  do not act. Say in one line which thread owns it, and leave a note on the owner's thread
+  saying what is ready (commit, branch, what to deploy).
+- If the user asks a chat that is not the owner to act anyway, say which thread owns it and
+  act only once they confirm. Then record the new owner on the root.
+- To hand over, the owner notes the new owner on the root, and notes on the new owner's
+  thread what it inherits: anything built but not deployed, and anything half done. A thread
+  that owns shared actions hands over before it is closed, parked or dropped.
+- Each chat works in its own checkout or git worktree. Two chats in one folder overwrite each
+  other's uncommitted edits, and each picks up the other's changes in its commits.
+
+This sits alongside work-item locks (`aaw-progress-work`, `references/concurrency.md`). A lock
+decides who works an activity; the tree's owner decides who changes shared environments.
 
 ## When sync fails
 
