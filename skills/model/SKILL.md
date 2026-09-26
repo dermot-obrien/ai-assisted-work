@@ -4,7 +4,7 @@ description: Treat a diagram and a document as two views of one model of boxes a
 license: Apache-2.0
 compatibility: Python 3.9 or newer; Python 3.11 or newer to read a binding file. Rendering needs draw.io desktop installed (the installed build, not the portable exe). Reading YAML needs PyYAML; writing YAML needs nothing.
 metadata:
-  version: "0.4.0"
+  version: "0.4.1"
   x-skill-requires: ""
 ---
 
