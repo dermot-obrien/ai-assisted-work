@@ -26,8 +26,8 @@ Each committed epic gets one card, `<id>.md`, in this order.
 | Fields | Quarter, capability area (`lane`), approval, threads, and the criteria it advances |
 | Movement | One row per flow: what it does, the rung it starts on and the rung it is committed to reach. A column for the rung reached appears once any is recorded |
 | Deliverables | One row per deliverable: its type, the rung that type evidences from the register's `rung` column, its points, its state and its approval |
-| Features | With the feature layer bound: each feature assigned to the epic, its product, status, WSJF, the stories citing it, and whether it is named as a deliverable. See [features.md](features.md) |
-| Products and platforms supported | With the feature layer bound: the products those features belong to, with each one's platform and team |
+| Feature requests | With the request layer bound: each request the epic takes on, its product, who asked, status, WSJF and the stories citing it. See [feature-requests.md](feature-requests.md) |
+| Products and platforms supported | With the request layer bound: the products those requests are raised against, with each one's platform and team |
 | Capacity | Budget, planned, and the difference, then one sentence: within budget, over by a stated amount, or deferred because no budget was given |
 
 The budget on a card is the one the resourcing register distributes, taken from the same arithmetic the validation uses, so the card and the report cannot disagree. Where the model records a different budget, the card says so and points at the validation.

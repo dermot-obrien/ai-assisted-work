@@ -8,15 +8,17 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
-- **Features in quarter planning** (quarter-planning 3.2.0). An optional feature layer, on
-  when a workspace binds `features` (and optionally `products`). A feature belongs to one
-  product, which a platform team owns. It is assigned to an epic in the feature register,
-  then named on the epic as a `feature` deliverable so its size counts; stories are assigned
-  separately, by work items citing it in the new optional `feature_ids` field of
-  `progress.yaml` (aaw-start-work 2.4.0). Validation gains section 10 (unregistered, unassigned
-  or doubly named features fail; assigned but unplanned, not ready and unscored features
-  warn). Epic cards gain Features and Products and platforms supported sections, and
-  `--backlog` prints each product's features ranked by WSJF with their epic and stories.
+- **Feature requests in quarter planning** (quarter-planning 3.2.0). An optional demand
+  layer, on when a workspace binds `requests` (and optionally `products`). A request is raised
+  against one product, which a platform team owns, and ranked there by WSJF. A request that
+  needs a platform build is taken on by an epic, recorded in the register's `epic` column; the
+  epic, as the SAFe feature, carries the size, and the request adds no points. Stories are
+  assigned separately, by citing requests in the new optional `request_ids` on an activity,
+  read from `progress.yaml` (aaw-start-work 2.4.0) and from `activity.yaml` in the model
+  sources. Validation gains section 10 (a request assigned to an unknown epic, a bad status or
+  score, or a missing or unregistered product fails; not ready, unscored and orphan citations
+  warn). Epic cards gain Feature requests and Products and platforms supported sections, and
+  `--backlog` prints each product's requests ranked by WSJF with their epic and stories.
 
 ### Changed
 - **Epic cards say "Deliverables", not "Products"** (quarter-planning 3.2.0). The section,
