@@ -35,6 +35,15 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   examples of a templated binding.
 
 ### Added
+- **`/thread prune` archives closed threads** (thread 0.6.0). Closed branches (done or
+  dropped, with nothing unfinished under them) move out of the store's `events/` into a new
+  `archive/*.jsonl` file per prune, so the live store only holds what is still in play.
+  `tree` and `status` read the live events; `tree --all` (or `tree all`), `show` and `fork`
+  replay the archives too, so the full tree is unchanged. Resuming or writing to an archived
+  thread restores it. Prune also runs by itself after a write once `events/` holds 200 files
+  or 7 days have passed, archiving branches closed for at least a day
+  (`THREADS_AUTO_PRUNE=0` turns it off). `archive` is an alias. This replaces the old
+  `prune`, which deleted finished roots older than 30 days and left them only in git history.
 - **`markdown-deck` divider slides and long-table splitting** (skill 0.5.0).
   `<!-- deck:divider -->` makes a section divider on the cover's ground, titled by the next
   heading or by `title="..."`, with its own `--divider-*` theme tokens. A table longer than
