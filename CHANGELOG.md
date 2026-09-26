@@ -7,6 +7,15 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Threads carry an optional kind** (thread 0.7.0). `open --kind feature` tags a thread as
+  it is opened, `kind <id> <kind>` tags one afterwards (`none` clears it), and
+  `list --kind <kind>` lists every thread of that kind flat, across all trees and projects,
+  with the path each sits under (`--all` adds closed ones, `--json` for widgets). The skill
+  captures with `/thread feature: <text>`, which records the item without moving the chat off
+  its own thread, and lists with `/thread features`. A new `kind` event type; older copies of
+  the tool ignore it, so stores stay readable by both.
+
 ### Changed
 - **Inquiry hand-off names the AAR skill that exists** (aaw-start-work 2.3.0). Triage routed
   an inquiry to `/start-hypothesis`, a command AAR removed when its shims became skills; it
