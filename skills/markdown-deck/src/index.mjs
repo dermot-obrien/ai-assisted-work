@@ -14,7 +14,7 @@ import matter from 'gray-matter';
 import { createRequire } from 'node:module';
 import {
   collectSlides, collectCover, slideBody, rewriteImages, linkDefinitions, findSection, slug,
-  rewriteResources, remoteResources,
+  rewriteResources, remoteResources, paginateTables,
 } from './parse.mjs';
 import { makeMarked, renderSlideBody, renderDeck, renderPartial } from './render.mjs';
 import { repoDefaults, workspaceRoot } from './bindings.mjs';
@@ -47,6 +47,9 @@ export function listThemes() {
     .map((f) => f.replace(/\.css$/, ''));
 }
 
+/** Rows a table may carry on one slide before it continues on the next. */
+export const DEFAULT_TABLE_ROWS = 12;
+
 /** The tokens a palette may set. Anything else is rejected rather than silently ignored. */
 export const PALETTE_TOKENS = Object.freeze([
   'font-body', 'font-mono',
@@ -54,6 +57,7 @@ export const PALETTE_TOKENS = Object.freeze([
   'accent', 'accent-deep', 'accent-wash',
   'code-bg', 'code-fg', 'code-inline-bg',
   'cover-bg', 'cover-fg', 'cover-accent', 'cover-muted', 'cover-faint',
+  'divider-bg', 'divider-fg', 'divider-accent', 'divider-muted',
   'chrome-fg',
 ]);
 
@@ -186,7 +190,7 @@ function checkImage(file, label, onWarn) {
 /**
  * @param {string} input     path to the tagged Markdown file
  * @param {object} opts      { out, theme, title, subtitle, date, footnote, eyebrow,
- *                             logo, mermaidSrc, partials, thumbnails, comments,
+ *                             logo, mermaidSrc, partials, thumbnails, comments, tableRows,
  *                             feedbackTo, feedbackSubject, deckId, htmlName,
  *                             bindings, strictRenders, refresh, root, onWarn, onLog }
  *
@@ -292,8 +296,36 @@ export function build(input, opts = {}) {
     return file;
   };
   const slides = [];
+  // A table longer than this many rows continues on the next slide, header repeated,
+  // rather than shrinking every row to fit. A slide's table-rows attribute overrides it,
+  // and 0 turns splitting off.
+  const tableRows = Number(pick(opts.tableRows, 'deck_table_rows', 'tableRows', DEFAULT_TABLE_ROWS));
+  // One content slide, or several when a long table is split across pages. The first
+  // page keeps the slide's id, so links to it still land; the rest are numbered on.
+  const pushContent = ({ label, title, limit, body, notes, finish, ...rest }) => {
+    const pages = paginateTables(body, limit ?? tableRows);
+    pages.forEach((page, k) => {
+      const of = pages.length > 1 ? ` (${k + 1} of ${pages.length})` : '';
+      slides.push({
+        kind: 'content',
+        file: uniqueId(k ? `${label} ${k + 1}` : label),
+        label: `${label}${of}`,
+        title: `${title}${of}`,
+        ...rest,
+        notes: k ? [] : notes,
+        bodyHtml: renderSlideBody(finish(page), mdInst),
+      });
+    });
+  };
   const resolveInclude = includer(srcPath, root);
   for (const s of found) {
+    if (s.kind === 'divider') {
+      slides.push({
+        kind: 'divider', file: uniqueId(s.label), label: s.label, title: s.title,
+        subtitle: s.subtitle, ...(s.eyebrow !== undefined ? { eyebrow: s.eyebrow } : {}), notes: [],
+      });
+      continue;
+    }
     if (s.kind === 'include') {
       // A section of another document, rendered here in this deck's theme. The eyebrow
       // names where it came from; links and images resolve from the source.
@@ -317,16 +349,14 @@ export function build(input, opts = {}) {
         });
         continue;
       }
-      slides.push({
-        kind: 'content',
-        file: uniqueId(s.label || inc.title),
+      pushContent({
         label: s.label || inc.title,
         title: s.title || inc.title,
         eyebrow: s.eyebrow ?? `From ${inc.sourceTitle}`,
         source: inc.where,
         notes,
-        bodyHtml: renderSlideBody(
-          `${rewriteImages(stripped, (href) => copyAsset(href, incDir))}\n\n${inc.defs}`, mdInst),
+        body: rewriteImages(stripped, (href) => copyAsset(href, incDir)),
+        finish: (page) => `${page}\n\n${inc.defs}`,
       });
       continue;
     }
@@ -368,16 +398,14 @@ export function build(input, opts = {}) {
       onWarn(`slide "${s.label}" is empty after deck:skip removal; skipped`);
       continue;
     }
-    slides.push({
-      kind: 'content',
-      file: uniqueId(s.label),
+    pushContent({
       label: s.label,
       title: s.title,
+      limit: s.tableRows,
       ...(s.eyebrow !== undefined ? { eyebrow: s.eyebrow } : {}),
       notes,
-      bodyHtml: renderSlideBody(
-        `${rewriteImages(rewriteResources(stripped, (h) => copyAsset(h, srcDir, 'file')), copyAsset)}\n\n${defs}`,
-        mdInst),
+      body: rewriteImages(rewriteResources(stripped, (h) => copyAsset(h, srcDir, 'file')), copyAsset),
+      finish: (page) => `${page}\n\n${defs}`,
     });
   }
 

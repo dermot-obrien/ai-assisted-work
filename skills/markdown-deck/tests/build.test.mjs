@@ -189,3 +189,27 @@ test('the eyebrow comes from deck_eyebrow, can be turned off, and a slide can ov
   const off = write('off.md', DOC.replace('sidebar_label: "Test"', 'sidebar_label: "Test"\ndeck_eyebrow: ""'));
   assert.doesNotMatch(build(off, { out: path.join(dir, 'off'), ...quiet }).deckHtml, /<div class="eyebrow">/);
 });
+
+test('a long table continues on numbered slides; the first keeps the id', () => {
+  const rows = Array.from({ length: 30 }, (_, i) => `| IF-${i + 1} | x |`).join('\n');
+  const src = write('long.md', `# Long\n\n<!-- deck:slide -->\n## Interfaces\n\n| Interface | Purpose |\n|---|---|\n${rows}\n`);
+  const r = build(src, { out: path.join(dir, 'dist'), ...quiet });
+  assert.deepEqual(r.manifest.slides.map((s) => s.file), ['interfaces', 'interfaces-2', 'interfaces-3']);
+  assert.deepEqual(r.manifest.slides.map((s) => s.title),
+    ['Interfaces (1 of 3)', 'Interfaces (2 of 3)', 'Interfaces (3 of 3)']);
+  assert.equal((r.deckHtml.match(/<th>Interface<\/th>/g) || []).length, 3, 'the header repeats on each slide');
+
+  const off = write('off.md', `---\ndeck_table_rows: 0\n---\n${fs.readFileSync(src, 'utf8')}`);
+  assert.equal(build(off, { out: path.join(dir, 'off'), ...quiet }).manifest.slides.length, 1);
+  assert.equal(build(src, { out: path.join(dir, 'opt'), tableRows: 40, ...quiet }).manifest.slides.length, 1);
+});
+
+test('a divider renders on its own ground with no body to fit', () => {
+  const src = write('div.md', '# D\n\n<!-- deck:divider subtitle="What follows" -->\n## Part one\n\nDoc only.\n');
+  const r = build(src, { out: path.join(dir, 'dist'), ...quiet });
+  assert.deepEqual(r.manifest.slides.map((s) => [s.kind, s.file]), [['divider', 'part-one']]);
+  assert.match(r.deckHtml, /<section class="slide divider" data-slide="part-one"/);
+  assert.match(r.deckHtml, /<h1 class="divider-title">Part one<\/h1>/);
+  assert.match(r.deckHtml, /<p class="divider-sub">What follows<\/p>/);
+  assert.doesNotMatch(r.deckHtml, /Doc only/);
+});
