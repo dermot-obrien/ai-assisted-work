@@ -4,8 +4,9 @@
 An epic has two faces, kept apart on purpose. Its folder, under the `epicsDir` binding, is
 written by hand and lives across quarters: framing, scope decisions and discovery. Its card,
 under the `cardsDir` binding, is a view generated for one quarter: the rung movement, the
-products with their types, rungs, points, states and approvals, and budget against planned.
-The card links to the folder and never repeats it.
+deliverables with their types, rungs, points, states and approvals, and budget against planned.
+With the feature layer bound, it also shows the features assigned to the epic and the products
+and platforms they support. The card links to the folder and never repeats it.
 
 The capacity arithmetic is imported from capacity.py rather than recomputed, so a card's
 budget is the figure the validation reports.
@@ -19,6 +20,7 @@ import re
 
 from capacity import base_points, f, product_points
 from planmodel import committed_ids, load_items, load_plan, load_register
+import features as feat_mod
 from report import pts
 
 
@@ -80,7 +82,7 @@ def position(item, n):
     return 10 + (int(m.group(1)) if m else n + 1)
 
 
-def card(item, n, q, bind, label, register, base, cards_dir):
+def card(item, n, q, bind, label, register, base, cards_dir, layer=None):
     ds = item.get('deliverables') or []
     planned = sum(product_points(d, base) for d in ds)
     derived = q.distribution.get(item['id'], 0.0)
@@ -110,7 +112,7 @@ def card(item, n, q, bind, label, register, base, cards_dir):
             for fl in flows]))
     else:
         s.append('No flows are recorded, so the movement is unstated.\n')
-    s.append('\n## Products\n\n')
+    s.append('\n## Deliverables\n\n')
     if ds:
         rows = []
         for d in ds:
@@ -119,19 +121,22 @@ def card(item, n, q, bind, label, register, base, cards_dir):
                          d.get('deliverable_id') or '', (t.get('rung') or '').strip(),
                          pts(product_points(d, base)), d.get('state') or '',
                          d.get('approval') or 'draft'])
-        s.append(md_table(['Product', 'Type', 'Evidences', 'Points', 'State', 'Approval'], rows))
+        s.append(md_table(['Deliverable', 'Type', 'Evidences', 'Points', 'State', 'Approval'],
+                          rows))
     else:
-        s.append('No products are named yet.\n')
+        s.append('No deliverables are named yet.\n')
+    if layer:
+        s.append(features_part(item, bind, *layer))
     s.append('\n## Capacity\n\n')
     s.append(md_table(['Budget', 'Planned', 'Under or over'],
                       [[pts(derived), pts(planned), signed(derived - planned)]]))
     s.append('\n')
     gap = derived - planned
     if not derived:
-        s.append('No budget has been given to this epic, so its products are deferred.\n')
+        s.append('No budget has been given to this epic, so its deliverables are deferred.\n')
     elif gap < -bind.tolerance:
         s.append('Planned is over budget by %s points. Time and cost are fixed, so which '
-                 'products to defer is a scope decision for the owner.\n' % pts(-gap))
+                 'deliverables to defer is a scope decision for the owner.\n' % pts(-gap))
     else:
         s.append('Planned is within budget.\n')
     if recorded is not None and abs(f(recorded) - derived) > bind.tolerance:
@@ -139,6 +144,41 @@ def card(item, n, q, bind, label, register, base, cards_dir):
                  'resourcing. The quarter\'s validation, %s, shows why.\n'
                  % (pts(f(recorded)), check_command(bind, q.slug)))
     return ''.join(s), derived, planned
+
+
+def features_part(item, bind, feats, products, story_map):
+    """The features the epic takes on, and the products and platforms they support."""
+    on = feat_mod.epic_features(item, feats, bind)
+    s = ['\n## Features\n\n']
+    if not on:
+        s.append('No features are assigned to this epic.\n')
+        return ''.join(s)
+    rows, unplanned = [], False
+    for fid, planned in on:
+        r = feats.get(fid, {})
+        score = feat_mod.wsjf(r)
+        title = (r.get('title') or '').strip()
+        unplanned = unplanned or not planned
+        rows.append(['%s %s' % (fid, title) if title else fid,
+                     (r.get('product') or '').strip(), (r.get('status') or '').strip(),
+                     pts(score) if score is not None else '',
+                     ', '.join(x['id'] for x in story_map.get(fid, [])) or 'None yet',
+                     'Yes' if planned else 'No'])
+    s.append(md_table(['Feature', 'Product', 'Status', 'WSJF', 'Stories', 'Planned'], rows))
+    if unplanned:
+        s.append('\nA feature not planned is assigned to this epic in the feature register but '
+                 'not named on it as a `%s` deliverable, so its size is not in the capacity '
+                 'below.\n' % bind.feature_type)
+    s.append('\n## Products and platforms supported\n\n')
+    sup = feat_mod.supported([fid for fid, _ in on], feats, products)
+    if sup:
+        s.append(md_table(['Product', 'Platform', 'Team', 'Features'], [
+            ['%s %s' % (pid, p.get('name')) if p.get('name') else pid,
+             (p.get('platform') or '').strip(), (p.get('team') or '').strip(), ', '.join(fs)]
+            for pid, p, fs in sup]))
+    else:
+        s.append('The assigned features name no product.\n')
+    return ''.join(s)
 
 
 def grid(epics, summary, q, bind, label):
@@ -174,9 +214,12 @@ def build(q, bind, label):
     register = load_register(bind)
     base = base_points(bind)
     cards_dir = bind.resolve('cardsDir')
+    feats = feat_mod.load_features(bind)
+    layer = ((feats, feat_mod.load_products(bind), feat_mod.stories(bind))
+             if feats is not None else None)
     out, summary = {}, []
     for n, e in enumerate(epics):
-        text, b, p = card(e, n, q, bind, label, register, base, cards_dir)
+        text, b, p = card(e, n, q, bind, label, register, base, cards_dir, layer)
         out[os.path.join(cards_dir, '%s.md' % e['id'])] = text
         summary.append((e, b, p))
     out[os.path.join(cards_dir, 'README.md')] = grid(epics, summary, q, bind, label)

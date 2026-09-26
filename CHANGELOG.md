@@ -8,6 +8,22 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Features in quarter planning** (quarter-planning 3.2.0). An optional feature layer, on
+  when a workspace binds `features` (and optionally `products`). A feature belongs to one
+  product, which a platform team owns. It is assigned to an epic in the feature register,
+  then named on the epic as a `feature` deliverable so its size counts; stories are assigned
+  separately, by work items citing it in the new optional `feature_ids` field of
+  `progress.yaml` (aaw-start-work 2.4.0). Validation gains section 10 (unregistered, unassigned
+  or doubly named features fail; assigned but unplanned, not ready and unscored features
+  warn). Epic cards gain Features and Products and platforms supported sections, and
+  `--backlog` prints each product's features ranked by WSJF with their epic and stories.
+
+### Changed
+- **Epic cards say "Deliverables", not "Products"** (quarter-planning 3.2.0). The section,
+  its column and its sentences are renamed so "product" can mean a registered product.
+  Regenerate cards after upgrading; `--cards --check` reports them stale until then.
+
+### Added
 - **Threads carry an optional kind** (thread 0.7.0). `open --kind feature` tags a thread as
   it is opened, `kind <id> <kind>` tags one afterwards (`none` clears it), and
   `list --kind <kind>` lists every thread of that kind flat, across all trees and projects,

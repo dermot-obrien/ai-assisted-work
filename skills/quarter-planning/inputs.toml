@@ -141,3 +141,32 @@ description = """The AAW work items folder. Bound, every <workItemsDir>/*/progre
 work_item_level: epic and a planning_period equal to the quarter's label is read as an epic,
 alongside work_item.yaml. Where both hold the same id, the work_item.yaml record wins and the
 clash is reported."""
+
+[inputs.options.features]
+type = "path"
+required = false
+description = """The feature register, a CSV with at least id, title, product, epic, status
+and the WSJF factors value, time_criticality, risk_reduction and job_size. Bound, it turns on
+the feature layer: section 10 of the validation, the Features and Products and platforms
+supported sections on each epic card, and --backlog. See references/features.md."""
+
+[inputs.options.products]
+type = "path"
+required = false
+description = """The product register, a CSV with at least id, name, platform and team. Read
+with the feature layer, to name each feature's product, the platform offering it and the
+team that owns it, and to check that the product exists."""
+
+[inputs.options.featureType]
+type = "str"
+required = false
+default = "feature"
+description = """The deliverable register type an epic names a feature with. The deliverable's
+name starts with the feature id."""
+
+[inputs.options.featureStatuses]
+type = "str"
+required = false
+default = "analyzing,backlog,implementing,validating,releasing,done,rejected"
+description = """A feature's statuses, least advanced first and comma-separated. The first is
+not yet ready to plan."""

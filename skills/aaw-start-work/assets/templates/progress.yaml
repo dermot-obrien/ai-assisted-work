@@ -73,6 +73,11 @@ planning_period: null         # The period this epic lands in, in whatever calen
 advances_kr_ids: []           # Optional OKR layer: the KR-NNN Key Results this work item
                               # advances. Empty unless the workspace runs objectives; see
                               # the objective and cadence templates in aaw-start-initiative.
+feature_ids: []               # Optional feature layer: the features (e.g. FE-004) this work
+                              # item delivers part of, as a story. The feature is assigned to
+                              # its epic in the workspace's feature register; this field is
+                              # the separate, later assignment of stories to the feature.
+                              # Read by quarter-planning onto epic cards and `--backlog`.
 
 # === QUARTER PLANNING (optional, epic-only) ===
 # Read by the quarter-planning skill, where the workspace binds `workItemsDir`, for an
