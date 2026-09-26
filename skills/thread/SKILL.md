@@ -1,12 +1,12 @@
 ---
 name: thread
-description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, and shows the tree of what is open. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, or is finishing, parking or abandoning something.
+description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, and shows the tree of what is open. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, or asks whether a chat is done and can be deleted (/thread wrap).
 license: CC-BY-4.0
 compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.3.0"
+  version: "0.4.0"
 ---
 
 # Thread
@@ -65,6 +65,7 @@ don't nag.
 | `/thread fork` | `fork <id>` | See below |
 | `/thread tree` | `tree` (`--all` to include finished trees, `--mermaid` for a diagram) | Show it as-is, in a code block |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
+| `/thread wrap` | See "Wrapping up a chat" | Say whether the chat can be deleted |
 
 Every close carries a one-line resolution, and the script refuses a close without one. It
 is what the tree shows for that thread from then on, so it should let someone who was not in
@@ -99,6 +100,34 @@ handoff: the goal, the decisions so far, key facts and file paths, and open ques
 refer to "above". Give it to the user to paste into a new chat. Beginning with the anchor
 line ties the new chat to the same thread. If the new chat is a genuinely new branch,
 `open` a child first and fork that.
+
+## Wrapping up a chat
+
+`/thread wrap` asks one question: is everything in this chat finished or recorded somewhere
+that outlives it, so the chat can be deleted? Treat "can I delete this chat?", "are we done
+here?" and "anything left?" the same way.
+
+Nothing should exist only in the chat. Check, in this order, and fix what you can:
+
+1. **Work in progress.** Uncommitted changes, commits not pushed, background tasks or
+   monitors still running, and PRs this chat opened (their state and checks). Commit and
+   push what belongs to this chat's task. Never commit another chat's edits, merge a PR or
+   delete a branch to make the answer yes; report those instead.
+2. **Shared actions.** If this chat's thread owns deploys, publishes or merges for its tree,
+   hand over first (see "Many chats, one tree").
+3. **Knowledge.** Decisions, facts and gotchas that live only in the conversation go where
+   they belong: the repository (docs, CLAUDE.md, a runbook) if other people or agents need
+   them, the agent's memory if only future sessions do, and a thread note otherwise.
+4. **Loose ends.** Every follow-up becomes a note on this thread's parent or a new child
+   thread, with a description that stands on its own. A title alone is not enough to pick
+   it up from cold.
+5. **This chat's thread.** Close it with `done` and a resolution. If it is not finished,
+   `park` it with what is left and what would restart it.
+
+Then answer in one of two ways. "Yes, you can delete this chat" with a short table of what
+went where. Or "Not yet" with exactly what still needs the user or another chat, such as a PR
+to merge, a question to decide or a task still running. Things waiting on the user outside the
+chat, such as PRs to merge, do not block deletion; name them anyway.
 
 ## Coming back after a long run
 
