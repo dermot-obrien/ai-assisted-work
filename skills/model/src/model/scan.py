@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Find the models in a folder: every document that declares its diagram.
 
-A folder may hold several models side by side, such as a reference architecture and two
+A folder may hold several models side by side, such as an architecture pattern and two
 alternative views of the same space. Each is a document plus the diagram it names, and
 the model is whatever the document's tables say. Nothing is inferred from file names:
 the declaration is what makes a pair a pair.
