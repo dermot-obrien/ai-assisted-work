@@ -1,0 +1,9 @@
+parameter,value,unit,basis
+working_days,60,days,Sixty working days in the example quarter
+usable_fraction,0.5,fraction,Half of a day reaches planned work
+person_days_per_point,1,days,One point is one person-day
+points_at_full_allocation,30,points,Derived: 60 x 0.5 / 1
+expected_absence_days_per_person,0,days,None assumed
+enabler_capacity_points,38.5,points,Declared and checked
+quarter_budget_points,38.5,points,Declared and checked
+unallocated_capacity_points,0,points,Declared and checked

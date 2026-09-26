@@ -1,0 +1,6 @@
+rung,name,description
+R0,Unrecognised,Not in the capability model
+R1,Named,Has an identifier and a purpose
+R2,Bounded,Its building blocks are named
+R3,Decided,Its open questions are settled
+R4,Buildable,Someone could build from it

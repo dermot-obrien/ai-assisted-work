@@ -1,0 +1,24 @@
+schema_version: 3
+version: 1
+work_item_id: WI-002
+title: Second example increment
+type: architecture
+status: planning
+work_item_level: epic
+planning_period: 2027-Q1
+budget_points: 9
+planned_points: 4
+lane: Second lane
+flows:
+  - flow: Serve
+    rung_from: R2
+    rung_to: R3
+approval: draft
+deliverables:
+  - id: WI-002-D1
+    type: logical-pattern
+    name: Example pattern, made logical
+    owner: ana
+    state: planned
+    approval: draft
+activities: []
