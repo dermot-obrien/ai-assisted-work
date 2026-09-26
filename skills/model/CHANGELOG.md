@@ -6,6 +6,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semanti
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-26
+
+### Added
+
+- draw.io desktop is optional. `animate --render auto` (the default) draws on a current view beside the diagram, `<stem>.svg` or `<stem>.png` with a render record matching the diagram, and asks draw.io to render only when there is none; without draw.io it stops and names the file to export and stamp. `--render never` never calls draw.io; `--render always` always does. `--image` accepts an SVG as well as a PNG, and an SVG is embedded as SVG.
+- `stamp <image> --diagram DRAWIO [--layer NAME]` writes the render record for a view exported by hand, from draw.io desktop or online, so it is checked for staleness like a rendered one. `stamp --check <image>` exits 0 when it is current.
+- `drawio` prints where draw.io desktop is, and exits 1 when it is not installed, so a caller can choose between rendering and requiring committed views.
+- `render.available()`, the non-raising form of `find_binary`.
+
 ## [0.4.1] - 2026-09-26
 
 ### Fixed

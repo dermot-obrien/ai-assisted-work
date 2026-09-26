@@ -58,6 +58,15 @@ def find_binary(explicit=None) -> str:
         "    On Windows use the INSTALLED build; the portable exe ignores CLI arguments.")
 
 
+def available(explicit=None):
+    """The draw.io executable, or None. The quiet form of find_binary, for callers that
+    have a way forward without draw.io, such as a committed, stamped view."""
+    try:
+        return find_binary(explicit)
+    except SystemExit:
+        return None
+
+
 def resolve_layers(path, names) -> list:
     """Layer names to document-order indexes, which is what --layers takes."""
     have = layer_names(path)
@@ -222,7 +231,7 @@ def record_path(image) -> str:
     return image + RECORD_SUFFIX
 
 
-def write_record(source, image, layers=None) -> str:
+def write_record(source, image, layers=None, by="model render") -> str:
     import json
     try:
         rel = os.path.relpath(os.path.abspath(source), os.path.dirname(os.path.abspath(image)))
@@ -232,7 +241,7 @@ def write_record(source, image, layers=None) -> str:
         "source": rel.replace(os.sep, "/"),
         "sha256": fingerprint(source),
         "layers": list(layers or []),
-        "note": "Written by model render. A consumer compares sha256 with the source to detect "
+        "note": f"Written by {by}. A consumer compares sha256 with the source to detect "
                 "a stale render. Commit it with the image.",
     }
     p = record_path(os.path.abspath(image))
