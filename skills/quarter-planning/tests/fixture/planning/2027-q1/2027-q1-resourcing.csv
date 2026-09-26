@@ -1,0 +1,5 @@
+stakeholder_id,name,role,allocation_pct,gross_capacity_points,leave_working_days,adjustment_points,capacity_points,work_item_id,share_of_allocation_pct,counts_against_enabler_capacity,adjustment_reason
+ana,Ana Example,Architect,100,30,0,0,30,EP-001,50,yes,
+ana,Ana Example,Architect,100,30,0,0,30,WI-002,30,yes,
+ana,Ana Example,Architect,100,30,0,0,30,RUN,20,no,
+ben,Ben Example,Analyst,50,15,2,-0.5,14.5,EP-001,100,yes,Booked leave
