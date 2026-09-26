@@ -100,6 +100,7 @@ but they are the kind of thing every project needs and nothing about them is spe
 |-------|------|
 | `markdown-deck` | Renders tagged sections of a Markdown document into HTML slides and a PDF, keeping the Markdown as the only source |
 | `model` | Treats a diagram and a document as two views of one model of boxes and lines: extract, emit, validate one against the other, render |
+| `thread` | Keeps thought processes untangled across chats, projects, IDEs and machines: a throwaway tree of intents in a git repo you own, which every tool reads and writes |
 
 Neither carries any organisation's branding. `markdown-deck` ships one brand-free theme and
 takes an organisation's colours as a **palette** in its binding, so the layout stays with the
