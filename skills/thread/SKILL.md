@@ -1,12 +1,12 @@
 ---
 name: thread
-description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks whether a chat is done and can be deleted (/thread wrap), or wants closed threads pruned or archived (/thread prune).
+description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks whether a chat is done and can be deleted (/thread wrap), or wants closed threads pruned or archived (/thread prune). Also captures feature requests, bugs and ideas as tagged threads to come back to (/thread feature: <text>) and lists them across every tree (/thread features).
 license: CC-BY-4.0
 compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.6.0"
+  version: "0.7.0"
 ---
 
 # Thread
@@ -67,6 +67,9 @@ don't nag.
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
 | `/thread prune`, `/thread archive` | `prune` (`--dry-run` to preview, `--days <n>` to keep recent ones) | Show the output as-is. See "Pruning" |
 | `/thread wrap` | See "Wrapping up a chat" | Say whether the chat can be deleted, and ask before closing the thread |
+| `/thread feature: <text>` (or `bug:`, `idea:`, any one word and a colon) | `open "<text>" --kind feature --parent <this chat's id> --tool …` | One line with the new id. This chat keeps following its own thread. See "Capturing by kind" |
+| `/thread kind <id> <kind>` | `kind <id> <kind>` (`none` clears it) | One-line acknowledgement |
+| `/thread features` (or `bugs`, `ideas`), `/thread list <kind>` | `list --kind feature` (`--all` for finished ones too) | Show the output as-is |
 
 Every close carries a one-line resolution, and the script refuses a close without one. It
 is what the tree shows for that thread from then on, so it should let someone who was not in
@@ -93,6 +96,30 @@ so keep a title to one short line and put the detail in the description.
 
 When a chat's work has clearly moved away from its title, offer one line: "This has become
 <X>; refine the thread? (`/thread refine <text>`)". Offer once, as with opening a thread.
+
+## Capturing by kind
+
+Some threads are not work in progress but something to come back to: a feature request, a
+bug, an idea. Give those a kind, one lowercase word, so they can be found later wherever they
+sit in the tree.
+
+- **Capture is a dump, not a switch.** `/thread feature: <text>` records the item and the chat
+  carries on with what it was doing, under its own thread. Put what the user said in the title,
+  and anything else they said about it in the description (`describe`), so it can be picked up
+  cold. Don't ask clarifying questions at capture time.
+- **Where it goes.** Under this chat's thread when the item comes out of this work. If it is
+  plainly unrelated, or the chat has no thread, open it as a root. If the user keeps an inbox
+  thread for that kind in this area (a thread whose description says so), put it there.
+- **Finding them.** `list --kind feature` is flat and crosses every tree and project, with the
+  path each one sits under. It shows open and parked ones; `--all` adds the closed ones with
+  their resolutions. `list --json` gives the same rows for a widget or a script.
+- **Tagging after the fact.** `kind <id> feature` marks an existing thread; `kind <id> none`
+  clears it.
+- **Promoting one.** When the item is written up properly somewhere that outlives the thread (a
+  feature specification, an issue, a work item), follow the workspace's own procedure for that,
+  then close the thread `done` with where it now lives, for example
+  `done t-kus "specified as FE-004: change/features/FE-004-chat-stop.md"`. If it is rejected,
+  `drop` it with why. The thread keeps its kind, so `list --all` still shows it and where it went.
 
 ## Showing the tree
 
