@@ -125,13 +125,27 @@ check these in order and fix what's missing.
 - **Skills load at session start.** If `/thread` isn't offered, the skill isn't on the
   session's branch or was committed after the session started: start a new one.
 
-**Cursor cloud agents** (not yet verified end to end):
+**Cursor Cloud agents** (from Cursor's docs; not yet verified end to end):
 
-- Node 18+ and git are in the default image, so the environment's install step needs nothing
-  for `/thread`. Keep it to toolchain installs.
-- The agent can only push to repos the Cursor GitHub app can reach: grant it the store repo
-  too. Failing that, add a `THREADS_REMOTE` secret (below).
-- Skills load when the agent starts, from the branch it runs on, as for Claude.
+1. **Skill:** Cursor loads project skills from `.agents/skills/`, `.cursor/skills/` and, for
+   compatibility, `.claude/skills/`, so the committed `.claude/skills/thread/` is found in
+   the agent's clone. Don't depend on `.agents/skills/` there: AAW installs it and it is
+   usually gitignored. Cursor's "Sync Skills for Cloud Agents" setting only syncs
+   `~/.cursor/skills/`, so it isn't needed for a committed skill.
+2. **Environment:** the agent runs on an Ubuntu machine with GitHub reachable by default.
+   `/thread` needs only `node` (18+) and `git`. If the environment's `install` command
+   (`.cursor/environment.json` or the dashboard) sets up a toolchain, make sure Node 18+ is
+   in it. Don't clone the store there: `install` runs once per Build, from the project root,
+   and the store is cloned on first use anyway.
+3. **Access to the store repo:** the agent reaches GitHub through the Cursor GitHub app, so
+   give the app read-write access to the store repo as well as the project repo (GitHub →
+   Settings → Applications → Cursor → Repository access). If pushes still fail, go to step 4.
+4. **Secret, when access isn't enough:** on the Cloud Agents dashboard
+   (`cursor.com/dashboard/cloud-agents`) → Secrets, add `THREADS_REMOTE` as a **Runtime
+   Secret**, which is redacted from transcripts and commits, set to the token URL below.
+   Secrets are scoped to the team/workspace, or to one environment. They are injected when
+   an agent starts, so start a new agent after adding one.
+5. **Start the agent on a branch that has the skill,** type `/thread`, and do the check below.
 
 **Fallback for either tool:** set `THREADS_REMOTE` as an environment variable or secret. If
 the session can't get write access to the store, use a fine-grained token limited to that
