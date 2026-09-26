@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Thread
@@ -59,6 +59,9 @@ don't nag.
 | `/thread done [resolution]` | `done <id> "<resolution>"` | The output names the thread to go back to. This chat now follows that one |
 | `/thread park [why]`, `/thread drop [why]` | `park` / `drop <id> "<resolution>"` | Same as done |
 | `/thread note <text>` | `note <id> "<text>"` | One-line acknowledgement |
+| `/thread refine <text>` | `refine <id> "<text>"` | Show the output as-is: the new anchor, description and earlier titles |
+| `/thread rename <title>` | `rename <id> "<title>"` | Show the new anchor |
+| `/thread describe <text>` | `describe <id> "<text>"` | One-line acknowledgement |
 | `/thread fork` | `fork <id>` | See below |
 | `/thread tree` | `tree` (`--all` to include finished trees, `--mermaid` for a diagram) | Show it as-is, in a code block |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
@@ -69,6 +72,25 @@ the chat see how it ended: what was decided or delivered and where it lives (a P
 file), or for a park or drop, why it stopped and what would restart it. If the user gives
 none, write it yourself from the conversation. If the user writes an outcome in words
 ("that's done, we went with X"), treat it as `/thread done "went with X"`.
+
+## Clarifying a thread
+
+A title written in the moment can turn out to be ambiguous, or the work can drift from it.
+Clarify it rather than leaving it to be misread later:
+
+- `refine` takes one string. Its first sentence becomes the title and the rest becomes the
+  description: `refine t-4k2 "Fix the EDGAR retry bug. Daily ingest only; the quarterly
+  backfill is t-9xz."` A sentence ends at a full stop followed by a space or the end of the
+  text, so a version like `v3.2.0` does not split it. Text with no such full stop only
+  renames, and leaves any description as it was.
+- `rename` changes only the title and `describe` sets only the description.
+
+Earlier titles are kept and shown by `show` and `resume`, so a renamed thread still says what
+it was called. The latest description replaces the previous one. The tree shows titles only,
+so keep a title to one short line and put the detail in the description.
+
+When a chat's work has clearly moved away from its title, offer one line: "This has become
+<X>; refine the thread? (`/thread refine <text>`)". Offer once, as with opening a thread.
 
 ## Forking to a new chat
 
