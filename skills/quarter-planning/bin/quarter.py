@@ -14,6 +14,8 @@ budget is a distribution of that capacity rather than a figure derived from its 
   5  Elaboration     each epic's named products, against the budget it was given
   6  Load            each person's owned products, against the capacity they brought
   7  Approval        how far the plan, each epic and each product have been approved
+  8  Framing         each committed epic's lane and flows, on the definition ladder
+  9  Close           what each flow reached and what each product cost, once recorded
 
 Levels 1 to 4 are integrity: a disagreement there means the model contradicts itself and the
 run fails. Levels 5 and 6 are subscription: being over is a scoping decision, not a defect,
@@ -27,6 +29,13 @@ claims more than the records beneath it support fails the run, because that is t
 contradicting itself again: an epic further on than its least advanced product, an epic
 approved before the quarter's budget and resourcing are, or an epic sized with nothing named.
 
+Level 5 also enforces the register: every product is typed from the deliverable register,
+the type is in use where the register has a `used` column, and an explicit `points` carries
+a `points_override_reason`. Level 8 reads each epic's `lane` and `flows`. With a `ladder`
+bound, an unknown rung or a movement down the ladder fails the run, and a missing lane or a
+target rung no product evidences is a warning. Level 9 appears only once `rung_reached` or
+`actual_points` has been recorded, and is read only.
+
 Nothing is mastered here, and the capacity arithmetic is not implemented here either: it is
 imported from src/capacity.py, which every tool that needs it shares. What it reads is named
 by binding key, not by path, because where each one lives is the workspace's business and is
@@ -37,16 +46,23 @@ declared in [suite.quarter-planning] of its .agents/skill-bindings.toml:
   resourcing   people, allocation, leave, and the share of each going to each epic
   sources      work_item.yaml, for budget_points and the named products, and work_plan.yaml,
                for which epics the quarter committed to
-  register     base points per product type
+  register     base points per product type, the `used` flag, and the rung each type evidences
 
-None of those has a default. Run with --where to see what this workspace resolves them to,
+None of those has a default. Optional keys opt in to more: `ladder` for the definition
+ladder, `epicsDir` and `cardsDir` for the epic folders and the generated cards, and
+`workItemsDir` to read epics from AAW work items' progress.yaml as well. Run with --where to see what this workspace resolves them to,
 before reading any of them.
 
 Run:  python <skills>/quarter-planning/bin/quarter.py --quarter <slug> [--apply]
+      python <skills>/quarter-planning/bin/quarter.py --quarter <slug> --cards [--check]
 
 --apply writes the derived budget_points onto each epic in work_item.yaml, replacing only
-that one value on that one line, after taking a .bak copy. Use it when the distribution has
-changed and the recorded budgets are behind it. Everything else is read only.
+that one value on that one line, or inserting the line after the record's id where there is
+none, after taking a .bak copy. Use it when the distribution has changed and the recorded
+budgets are behind it.
+
+--cards writes one card per committed epic and the stage grid to the cardsDir binding, and
+with --check writes nothing and fails if any is stale. Everything else is read only.
 """
 import argparse
 import io
@@ -55,27 +71,26 @@ import re
 import shutil
 import sys
 
-import yaml
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src'))
 from bindings import Bindings  # noqa: E402
 from capacity import Quarter, base_points, f, product_points  # noqa: E402
+import cards as cards_mod  # noqa: E402
+from framing import close_section, framing_section, has_close, register_rules  # noqa: E402
+from planmodel import load_items, load_ladder, load_plan, load_register, work_item_path  # noqa: E402
+from report import deduct, signed, table  # noqa: E402
 
 errors = []
+warnings = []
 
 
 def err(msg):
     errors.append(msg)
 
 
-def signed(x):
-    """One decimal place with an explicit sign, for an over or under figure."""
-    return ('%+.1f' % x) if abs(x) >= 0.05 else '0.0'
-
-
-def deduct(x):
-    """A deduction, shown negative, with no signed zero for the people who have none."""
-    return ('-%.1f' % x) if abs(x) >= 0.05 else '0.0'
+def warn(msg):
+    warnings.append(msg)
+    print('  WARNING %s' % msg)
 
 
 def epic_label(item):
@@ -83,25 +98,6 @@ def epic_label(item):
                 if (r.get('system') or '').lower() == 'jira' and r.get('external_id')), None)
     title = (item.get('title') or '').rstrip('.')
     return '%s %s' % (key, title) if key else title
-
-
-def table(head, body, foot=None):
-    """Plain fixed-width table. Numeric columns right-aligned, text left."""
-    grid = [head] + body + ([foot] if foot else [])
-    width = [max(len(str(r[i])) for r in grid) for i in range(len(head))]
-    numeric = [all(re.match(r'^[-+]?[\d.]+%?$', str(r[i]).strip() or 'x') for r in body)
-               for i in range(len(head))]
-
-    def line(cells):
-        return '  ' + ' '.join(
-            (str(c).rjust(width[i]) if numeric[i] else str(c).ljust(width[i]))
-            for i, c in enumerate(cells)).rstrip()
-
-    rule = '  ' + ' '.join('-' * n for n in width)
-    out = [line(head), rule] + [line(r) for r in body]
-    if foot:
-        out += [rule, line(foot)]
-    return '\n'.join(out)
 
 
 def stage_of(record, stages):
@@ -254,6 +250,84 @@ def budget_summary(q, by_id, plan):
     return 0
 
 
+RECORD = re.compile(r'^(?P<indent>[ ]*)-(?P<gap>[ ]+)id:[ ]*(?P<id>[^#\s]+)[ ]*(#.*)?$')
+
+
+def apply_budgets(text, want):
+    """Write budget_points onto the records named in `want`, by patching text.
+
+    A YAML round trip would drop every comment in the file, so the value is patched in
+    place. A record starts at any `- id: <id>` line at the list's own indentation, the
+    indentation of the first record under `work_item:`, so products nested deeper are never
+    taken for epics. Where a record has no budget_points line, one is inserted after its id
+    line at the record's field indentation. Returns the new text and the ids written.
+    """
+    lines = text.split('\n')
+    top = next((i for i, l in enumerate(lines) if re.match(r'^work_item:\s*(#.*)?$', l)), -1)
+    indent = None
+    for line in lines[top + 1:]:
+        m = RECORD.match(line)
+        if m:
+            indent = m.group('indent')
+            break
+    if indent is None:
+        return text, []
+    written = []
+    i = top + 1
+    while i < len(lines):
+        m = RECORD.match(lines[i])
+        wid = m.group('id').strip('\'"') if m and m.group('indent') == indent else None
+        if wid not in want:
+            i += 1
+            continue
+        field = ' ' * (len(indent) + 1 + len(m.group('gap')))
+        value = round(want[wid] + 1e-9, 2)
+        end = i + 1
+        while end < len(lines):
+            line = lines[end]
+            bare = line.strip()
+            lead = len(line) - len(line.lstrip(' '))
+            if bare and not bare.startswith('#') and lead <= len(indent):
+                break
+            end += 1
+        done = False
+        for j in range(i + 1, end):
+            b = re.match(r'^%sbudget_points:[^#]*?(?P<c>[ ]+#.*)?$' % field, lines[j])
+            if b:
+                lines[j] = '%sbudget_points: %s%s' % (field, value, b.group('c') or '')
+                done = True
+                break
+        if not done:
+            lines.insert(i + 1, '%sbudget_points: %s' % (field, value))
+        written.append(wid)
+        i = end + (0 if done else 1)
+    return '\n'.join(lines), written
+
+
+def cards(q, bind, check):
+    """Write the epic cards and the stage grid, or with check, report which are stale."""
+    if not bind.declared('cardsDir'):
+        sys.stderr.write('quarter-planning: --cards needs to know where the cards go. Declare '
+                         'cardsDir in [suite.quarter-planning] of %s. It may carry {quarter}.\n'
+                         % (bind.file or '.agents/skill-bindings.toml'))
+        return 2
+    files = cards_mod.build(q, bind, q.fiscal)
+    stale = cards_mod.write(files, check=check)
+    shown = [os.path.relpath(p, os.getcwd()) if os.path.splitdrive(p)[0].lower()
+             == os.path.splitdrive(os.getcwd())[0].lower() else p for p in stale]
+    if check:
+        if stale:
+            print('Stale epic cards for %s. Regenerate with %s:\n  %s'
+                  % (q.fiscal, cards_mod.regenerate_command(bind, q.slug), '\n  '.join(shown)))
+            return 1
+        print('Epic cards for %s are current.' % q.fiscal)
+        return 0
+    print('Wrote %d of %d file(s) for %s.' % (len(stale), len(files), q.fiscal))
+    for p in shown:
+        print('  %s' % p)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--quarter', required=True,
@@ -266,7 +340,13 @@ def main():
                     help='print only the top-level budget and the ladder it comes down')
     ap.add_argument('--apply', action='store_true',
                     help='write the derived budget_points onto the epics in work_item.yaml')
+    ap.add_argument('--cards', action='store_true',
+                    help='write the epic cards and the stage grid to the cardsDir binding')
+    ap.add_argument('--check', action='store_true',
+                    help='with --cards, write nothing and exit non-zero if any card is stale')
     args = ap.parse_args()
+    if args.check and not args.cards:
+        ap.error('--check applies to --cards')
     bind = Bindings(args.quarter, start=args.workspace or os.getcwd())
     if args.where:
         print(bind.describe())
@@ -287,21 +367,20 @@ def main():
             '.agents/skill-bindings.toml, or run with --where to see what is looked for.\n'
             % (', '.join(k for k, _ in missing), args.quarter))
         for k, p in missing:
-            sys.stderr.write('  %-11s %s\n' % (k, p))
+            sys.stderr.write('  %-12s %s\n' % (k, p))
         return 2
     if not os.path.isdir(bind.resolve('quarterDir')):
         print('no planning folder for %s' % args.quarter)
         return 2
 
     q = Quarter(args.quarter, bind)
+    if args.cards:
+        return cards(q, bind, args.check)
     basis, people = q.basis, q.people
     base = base_points(bind)
-    items = (yaml.safe_load(io.open(os.path.join(bind.resolve('sources'), 'work_item.yaml'), encoding='utf-8'))
-             or {}).get('work_item') or []
+    items, notes = load_items(bind, q.fiscal)
     by_id = {w['id']: w for w in items}
-    plans = (yaml.safe_load(io.open(os.path.join(bind.resolve('sources'), 'work_plan.yaml'), encoding='utf-8'))
-             or {}).get('work_plan') or []
-    plan = next((p for p in plans if p.get('quarter') == q.fiscal), None)
+    plan = load_plan(bind, q.fiscal)
 
     if args.budget:
         return budget_summary(q, by_id, plan)
@@ -315,6 +394,11 @@ def main():
     else:
         err('no WorkPlan record carries quarter %s, so nothing in the model states which epics '
             'the quarter committed to' % q.fiscal)
+    bridged = sorted(w['id'] for w in items if w.get('_source'))
+    if bridged:
+        print('Read from AAW work items as well as work_item.yaml: %s.' % ', '.join(bridged))
+    for note in notes:
+        warn(note)
 
     # ------------------------------------------------------------------ 1. the period
     print('\n1. PERIOD')
@@ -327,8 +411,8 @@ def main():
             % (basis.get('points_at_full_allocation', 0), q.full))
     print(table(['period', 'dates', 'working days', 'note'],
                 [[r['period_id'], '%s to %s' % (r['start'], r['end']), r['working_days'],
-                  (r.get('note') or '')[:44]] for r in q.calendar]))
-    print('  %d working days across %d sprint%s. Generic non-working time, being public '
+                  r.get('note') or ''] for r in q.calendar], wrap={3: 44}))
+    print('  %d working days across %d period%s. Generic non-working time, being public '
           'holidays and any shutdown, is already netted out%s.'
           % (q.working_days, len(q.sprints), '' if len(q.sprints) == 1 else 's',
              ': ' + ', '.join('%s %s to %s' % (r['period_id'], r['start'], r['end'])
@@ -344,17 +428,19 @@ def main():
         err(issue)
     head = ['person', 'role', 'alloc', 'gross', 'leave', 'absence', 'available',
             'out of scope', 'enabler']
+    print("  Out of scope is the part of available given to work outside the quarter's "
+          'enabler scope. Enabler is available less out of scope.')
     print(table(head,
                 [[people[s]['name'], people[s]['role'], '%.0f%%' % people[s]['alloc'],
                   '%.1f' % people[s]['gross'], deduct(people[s]['leave']),
                   deduct(people[s]['absence']), '%.1f' % people[s]['available'],
-                  deduct(people[s]['out_of_scope']),
+                  '%.1f' % people[s]['out_of_scope'],
                   '%.1f' % people[s]['enabler']] for s in q.order],
                 ['total', '', '', '%.1f' % sum(p['gross'] for p in people.values()),
                  deduct(sum(p['leave'] for p in people.values())),
                  deduct(sum(p['absence'] for p in people.values())),
                  '%.1f' % sum(p['available'] for p in people.values()),
-                 deduct(sum(p['out_of_scope'] for p in people.values())),
+                 '%.1f' % sum(p['out_of_scope'] for p in people.values()),
                  '%.1f' % q.capacity]))
     if q.absence_days:
         print('  Expected absence is %.1f working days per person at full allocation, deducted '
@@ -459,6 +545,16 @@ def main():
               'balance to another lane.' % -gap)
     else:
         print('  Subscribed to budget.')
+    register = load_register(bind)
+    in_scope = [w for w in items
+                if w['id'] in to_epics or w['id'] in committed or w.get('quarter') == q.fiscal]
+    before = len(errors)
+    checked = register_rules(in_scope, register, err)
+    breaches = len(errors) - before
+    print('  Register rules: %d product%s checked against the register, %s.'
+          % (checked, '' if checked == 1 else 's',
+             'none in breach' if not breaches else
+             '%d breach%s, listed below' % (breaches, '' if breaches == 1 else 'es')))
     deferred = [(w['id'], sum(product_points(d, base) for d in (w.get('deliverables') or [])))
                 for w in items
                 if w.get('budget_points') is None and (w.get('deliverables') or [])]
@@ -496,35 +592,40 @@ def main():
     print('\n7. APPROVAL')
     approval_section(q, plan, by_id, committed, integrity_errors)
 
+    # ----------------------------------------------------------------- 8. the framing
+    print('\n8. FRAMING')
+    ladder = load_ladder(bind)
+    epics = [by_id[w] for w in sorted(committed) if w in by_id]
+    framing_section(epics, register, ladder, err, warn)
+
+    # -------------------------------------------------------------------- 9. the close
+    if has_close(epics):
+        print('\n9. CLOSE')
+        close_section(epics, register, base, ladder, err)
+
     # ------------------------------------------------------------------------ apply
     if args.apply:
         if not fixes:
             print('\nnothing to apply: every recorded budget already follows from the '
                   'distribution.')
             return 0
-        path = os.path.join(bind.resolve('sources'), 'work_item.yaml')
+        path = work_item_path(bind)
         shutil.copy2(path, path + '.bak')
-        lines = io.open(path, encoding='utf-8').read().split('\n')
-        want = dict(fixes)
-        written = []
-        for i, line in enumerate(lines):
-            m = re.match(r'^- id: (EP-\d+)\s*$', line)
-            if not m or m.group(1) not in want:
-                continue
-            wid = m.group(1)
-            for j in range(i + 1, len(lines)):
-                if re.match(r'^- id: ', lines[j]):
-                    break
-                if re.match(r'^  budget_points:', lines[j]):
-                    lines[j] = '  budget_points: %s' % round(want[wid] + 1e-9, 2)
-                    written.append(wid)
-                    break
-        io.open(path, 'w', encoding='utf-8', newline='\n').write('\n'.join(lines))
+        text = io.open(path, encoding='utf-8').read()
+        text, written = apply_budgets(text, dict(fixes))
+        io.open(path, 'w', encoding='utf-8', newline='\n').write(text)
         print('\napplied budget_points to %s. Backup at work_item.yaml.bak.'
               % (', '.join(written) if written else 'nothing'))
         for wid, _ in fixes:
-            if wid not in written:
-                print('  %s has no budget_points line to replace; add one by hand' % wid)
+            if wid in written:
+                continue
+            src = by_id.get(wid, {}).get('_source')
+            if src:
+                print('  %s is read from %s, which --apply does not write because a work item '
+                      'is versioned by its own protocol. Set budget_points there by hand'
+                      % (wid, os.path.relpath(src, bind.base)))
+            else:
+                print('  %s has no record in work_item.yaml to write to; add one by hand' % wid)
         print('  Now compose the roadmap, regenerate the derived views, and re-run this check.')
         return 0
 
@@ -533,11 +634,15 @@ def main():
         for e in errors:
             print('  ERROR %s' % e)
         print('\nintegrity: %d error%s. Levels 1 to 4 must agree before levels 5 and 6 mean '
-              'anything, and level 7 must claim no more than the records beneath it.'
+              'anything, every product must be typed from the register, level 7 must claim no '
+              'more than the records beneath it, and the framing must stay on the ladder.'
               % (len(errors), '' if len(errors) == 1 else 's'))
         if fixes:
             print('Re-run with --apply to write the derived budget_points onto the epics.')
         return 1
+    if warnings:
+        print('%d warning%s, listed in the sections above. Warnings do not fail the run.'
+              % (len(warnings), '' if len(warnings) == 1 else 's'))
     print('integrity: the chain closes from the calendar through to the products.')
     return 0
 

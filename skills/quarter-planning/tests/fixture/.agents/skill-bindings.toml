@@ -1,0 +1,18 @@
+bindingsVersion = "1.0"
+
+# A neutral workspace for the quarter-planning tests. Every path resolves against this
+# file's directory.
+
+[suite.quarter-planning]
+sources      = "../planning/model"
+register     = "../registers/deliverable-types.csv"
+basis        = "../planning/{quarter}/{quarter}-planning-basis.csv"
+calendar     = "../planning/{quarter}/{quarter}-calendar.csv"
+resourcing   = "../planning/{quarter}/{quarter}-resourcing.csv"
+quarterDir   = "../planning/{quarter}"
+slugPattern  = '^(?P<y>\d{4})-q(?P<q>[1-4])$'
+quarterLabel = "{y}-Q{q}"
+ladder       = "../registers/ladder.csv"
+epicsDir     = "../epics"
+cardsDir     = "../planning/{quarter}/cards"
+workItemsDir = "../work-items"

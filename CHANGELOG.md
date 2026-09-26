@@ -8,6 +8,18 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- **`quarter-planning` report wording** (skill 3.1.0). Calendar periods are called periods,
+  not sprints. Out-of-scope capacity is a positive figure in its own column, since it is a
+  share of what a person brings rather than a deduction from it. Calendar notes are wrapped
+  instead of cut at 44 characters. `--apply` accepts any id, not only `EP-NNN`, and inserts
+  `budget_points` after the id line where a record has none, instead of skipping it with a
+  note. It still patches text and keeps the `.bak`, because a YAML round trip drops comments.
+- **AAW work items carry optional quarter-planning fields** (aaw-start-work,
+  aaw-progress-work and aaw-work-status 2.2.0). `progress.yaml` gains `budget_points`,
+  `planned_points`, `lane`, `flows`, `home` and an epic `approval`, and each deliverable may
+  carry `owner`, `points` with `points_override_reason`, and `actual_points`. Deliverable
+  approval stages are now draft, sized, validated, approved, the four `quarter-planning`
+  uses. Every addition is optional and existing work items are unaffected.
 - **`/thread tree` shows only unfinished threads** (thread 0.5.0). Done and dropped threads
   are hidden, and a closed thread's open or parked branches take its place; `tree --all` shows
   everything. `/thread` (status) hides closed threads the same way. `tree --json` prints the
@@ -23,6 +35,22 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   examples of a templated binding.
 
 ### Added
+- **`quarter-planning` frames epics on a definition ladder, generates cards, and closes a
+  quarter** (skill 3.1.0). Four optional bindings, each opting in to one thing, so a workspace
+  that declares none of them validates exactly as before. `ladder` points at a CSV of rungs;
+  the new section 8 reads each epic's `lane` and `flows` and fails on a rung the ladder does
+  not name or a movement down it, and warns on a missing lane or a target rung that no product
+  evidences, using an optional `rung` column in the deliverable register. `cardsDir` enables
+  `--cards`, which writes a card per committed epic and the stage grid from the model, with
+  `--cards --check` failing when any is stale. `epicsDir` lets each card link to the epic's
+  hand-written folder, and the skill now documents that split and the folder's outline in
+  `references/epic-cards.md`. `workItemsDir` reads epics from AAW work items'
+  `progress.yaml` alongside `work_item.yaml`, which wins on a clash. Section 5 now enforces
+  the register rules itself: a product typed outside the register, a type not marked used,
+  and an explicit `points` with no reason each fail the run. Recording `rung_reached` and
+  `actual_points` adds section 9, the close, with a recalibration hint per register type.
+  `--where` notes when `slugPattern` is left at its fiscal-year default. The skill gains its
+  first tests, against a neutral fixture workspace, and CI runs them with `model`'s.
 - **`/thread wrap`** (thread 0.4.0) answers "is this chat done, can I delete it?". It checks for
   anything that exists only in the chat (uncommitted or unpushed work, running tasks, open
   PRs, owned deploys, unrecorded decisions and follow-ups), moves each into the repository,

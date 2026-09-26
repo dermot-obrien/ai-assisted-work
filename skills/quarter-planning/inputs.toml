@@ -2,7 +2,7 @@
 #
 # What this skill needs to know about the workspace it is planning. Answer in
 # [suite.quarter-planning] of the workspace's .agents/skill-bindings.toml. The six paths
-# are required and have no default: a default would be whichever workspace this skill was
+# marked required have no default: a default would be whichever workspace this skill was
 # written in, carried around inside it and wrong everywhere else. An unbound run names the
 # keys it is waiting for and stops.
 #
@@ -66,7 +66,8 @@ default = '^fy(?P<fy>\d{2})-q(?P<q>[1-4])$'
 description = """How a quarter slug is shaped, as a regex with named groups. Write it as a
 TOML literal string, in single quotes, because a regex carries backslashes. The groups
 feed quarterLabel, so a workspace whose quarters are named 2027Q1 or FY27Q1 says so here
-rather than renaming its folders."""
+rather than renaming its folders. The default assumes a fiscal year, so `--where` notes
+when a workspace has not declared its own."""
 
 [inputs.options.quarterLabel]
 type = "str"
@@ -96,8 +97,9 @@ required = false
 description = """The workspace's own commands, by role, so the skill can tell someone what
 to run without knowing whether this workspace uses npm, make or a script. Roles it names:
 `regenerate` (rebuild the views derived from the model), `check` (fail on prose that
-disagrees with them), `compose` (rebuild the composed model from its sources). Anything
-not set is described rather than commanded."""
+disagrees with them), `compose` (rebuild the composed model from its sources), `cards`
+(regenerate the epic cards, named in each card's generated-file notice). Anything not set
+is described rather than commanded."""
 
 [inputs.options.approvalStages]
 type = "str"
@@ -107,3 +109,35 @@ description = """The approval stages a plan, an epic and a product move through,
 advanced first and comma-separated. Each is recorded in an `approval` field on the model
 record it approves. The last stage is read as approval, and approval is commitment, so a
 workspace that names its stages differently still gets the same rules."""
+
+[inputs.options.ladder]
+type = "path"
+required = false
+description = """The definition ladder, as a CSV with the columns rung, name and description,
+one row per rung in ascending order, least defined first. Bound, it turns an epic's framing
+into a check: a flow's rung_from and rung_to must be rungs the ladder names, a movement may
+not go down it, and the register's optional `rung` column says which rung each product type
+evidences. Unbound, flows are reported as recorded and nothing is judged."""
+
+[inputs.options.epicsDir]
+type = "path"
+required = false
+description = """The folder holding each epic's own hand-written folder, which lives across
+quarters and holds its framing, scope decisions and discovery. An epic's `home` field names
+its folder under here, and its generated card links to that folder's index.md, or README.md
+where that is what exists."""
+
+[inputs.options.cardsDir]
+type = "path"
+required = false
+description = """Where `--cards` writes the generated epic cards, one <id>.md per committed
+epic, and README.md holding the stage grid. Usually carries {quarter}, because a card is a
+view of one quarter. Written, not read, so it need not exist before the first run."""
+
+[inputs.options.workItemsDir]
+type = "path"
+required = false
+description = """The AAW work items folder. Bound, every <workItemsDir>/*/progress.yaml with
+work_item_level: epic and a planning_period equal to the quarter's label is read as an epic,
+alongside work_item.yaml. Where both hold the same id, the work_item.yaml record wins and the
+clash is reported."""

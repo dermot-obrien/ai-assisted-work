@@ -1,0 +1,47 @@
+# Epics and the products they name. Comments here must survive --apply.
+work_item:
+- id: EP-001
+  title: Example capability increment
+  quarter: 2027-Q1
+  lane: Example lane
+  home: EP-001-example
+  flows:
+  - flow: Intake
+    description: Brings the inputs in
+    rung_from: R0
+    rung_to: R1
+  - flow: Process
+    description: Turns the inputs into results
+    rung_from: R1
+    rung_to: R3
+  advances_criterion_ids: [CR-001]
+  budget_points: 29.5  # derived from the resourcing
+  planned_points: 10
+  approval: draft
+  deliverables:
+  - id: EP-001-D1
+    deliverable_id: capability-area
+    name: Example capability area
+    owner_stakeholder_id: ana
+    state: planned
+    approval: draft
+  - id: EP-001-D2
+    deliverable_id: abb-set
+    name: Example building blocks
+    owner_stakeholder_id: ben
+    state: planned
+    approval: draft
+  - id: EP-001-D3
+    deliverable_id: decision
+    name: Example decision
+    owner_stakeholder_id: ana
+    state: planned
+    approval: draft
+  - id: EP-001-D4
+    deliverable_id: decision
+    name: A smaller example decision
+    points: 1
+    points_override_reason: Most of the evidence already exists
+    owner_stakeholder_id: ben
+    state: planned
+    approval: draft
