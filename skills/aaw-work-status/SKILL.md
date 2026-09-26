@@ -6,7 +6,7 @@ compatibility: Reads .aaw-config.yaml at the workspace root for work_items_path 
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "2.1.0"
+  version: "2.2.0"
 ---
 
 # Work Status
