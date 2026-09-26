@@ -1,12 +1,12 @@
 ---
 name: thread
-description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, and shows the tree of what is open. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, or asks whether a chat is done and can be deleted (/thread wrap).
+description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks whether a chat is done and can be deleted (/thread wrap), or wants closed threads pruned or archived (/thread prune).
 license: CC-BY-4.0
 compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.5.0"
+  version: "0.6.0"
 ---
 
 # Thread
@@ -63,8 +63,9 @@ don't nag.
 | `/thread rename <title>` | `rename <id> "<title>"` | Show the new anchor |
 | `/thread describe <text>` | `describe <id> "<text>"` | One-line acknowledgement |
 | `/thread fork` | `fork <id>` | See below |
-| `/thread tree` | `tree` (`--all` for finished threads too) | See "Showing the tree" |
+| `/thread tree` | `tree` (`--all`, or `tree all`, for finished threads too) | See "Showing the tree" |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
+| `/thread prune`, `/thread archive` | `prune` (`--dry-run` to preview, `--days <n>` to keep recent ones) | Show the output as-is. See "Pruning" |
 | `/thread wrap` | See "Wrapping up a chat" | Say whether the chat can be deleted, and ask before closing the thread |
 
 Every close carries a one-line resolution, and the script refuses a close without one. It
@@ -97,8 +98,8 @@ When a chat's work has clearly moved away from its title, offer one line: "This 
 
 `tree` shows only unfinished threads: open (●) and parked (‖). Done and dropped threads are
 hidden, and a closed thread's unfinished branches take its place, so nothing closed appears.
-`tree --all` (`/thread tree --all`, or "show the full tree") shows everything, with
-resolutions. `tree <id>` limits either view to that thread's tree.
+`tree --all` (`/thread tree --all`, `/thread tree all`, or "show the full tree") shows
+everything, with resolutions, including threads already pruned into the archive. `tree <id>` limits either view to that thread's tree.
 
 **If your environment can render a widget** (an inline visual or HTML widget tool, a canvas,
 or an artifact), render the tree as a hierarchical task tree, not text:
@@ -115,6 +116,32 @@ or an artifact), render the tree as a hierarchical task tree, not text:
 
 Otherwise show `tree`'s text output as-is, in a code block. `--mermaid` gives a diagram for
 tools that render Mermaid.
+
+## Pruning
+
+Every action is one event file in the store, so the live `events/` folder grows with every
+chat. `prune` moves closed branches out of it into a new file under `archive/`, one file per
+prune. A closed branch is a done or dropped thread whose every descendant is also done or
+dropped; parked threads are unfinished and stay. Nothing is lost:
+
+- `tree` and `status` read only the live events, which is what keeps them small.
+- `tree --all`, `show` and `fork` replay the archive files as well, so the full tree and a
+  closed thread's history look exactly as they did before the prune.
+- Resuming, noting, closing or branching under an archived thread brings it (and its path)
+  back into the live events first. So does an event written by another machine for a thread
+  this one archived at the same time, on the next command.
+- Archive files are new files and are never edited, so two machines pruning at once cannot
+  conflict; an event found in two archives is counted once.
+
+It also runs by itself, once a day. Every command that writes (open, note, done, park, drop,
+rename, refine, describe, move, resume) checks whether a prune has run yet today, in the
+machine's local time. If not, it archives every branch closed before today began and prints
+one line saying so; relay that line. So the live store holds the day's events plus whatever
+is still in play, and each day's archive is its own file. New events are filed under
+`events/YYYY-MM-DD/`. `THREADS_AUTO_PRUNE=0` turns the daily prune off.
+
+`/thread prune` does it now, for every closed branch however recent. Run it when the user asks
+to prune, archive or tidy the threads.
 
 ## Forking to a new chat
 
