@@ -211,6 +211,7 @@ feedbackTo = "reviews@example.com"
 | `feedbackTo` | `deck_feedback_to` | `--feedback-to` |
 | `feedbackSubject` | `deck_feedback_subject` | `--feedback-subject` |
 | `pdf` | `deck_pdf` | `--pdf`, `--no-pdf` |
+| `tableRows` | `deck_table_rows` | `--table-rows` |
 | `mermaid` | | `--mermaid` |
 
 The nearest binding file above the document is used, so a deck built from anywhere in the repository gets the same defaults. An address containing an apostrophe needs a double-quoted TOML string, and double quotes in YAML front matter.
@@ -261,6 +262,25 @@ The file is isolated in a frame, so its styles and scripts cannot reach the deck
 The same copying applies to video, audio and their posters written as HTML in an ordinary Markdown slide. Media over 50 MB is warned about.
 
 Keep the document the source of truth: prefer Markdown, and reserve an HTML slide for a slide whose design is the point, because its text is not in the document.
+
+## Section dividers
+
+`<!-- deck:divider -->` before a heading makes a divider slide titled by that heading: the title large on the cover's ground, with nothing else, to mark where one part of a deck ends and the next begins. The heading's own body stays in the document and does not reach the divider. Put the tag before a heading that groups slides, such as an H2 whose H3s are tagged, rather than before every slide.
+
+| Attribute | Meaning |
+|---|---|
+| `title` | The divider's title. With a title the tag stands alone, anywhere, and needs no heading |
+| `subtitle` | A line under the title |
+| `eyebrow` | A small line above the title, such as "Part 2". Dividers never inherit the deck's eyebrow |
+| `label` | The divider's entry in the index, and its id |
+
+A divider uses the cover's colours. A theme or palette gives dividers their own with `--divider-bg`, `--divider-fg`, `--divider-accent` and `--divider-muted`.
+
+## Long tables
+
+A table longer than twelve rows is split rather than shrunk. It continues on the next slide with its header row repeated, and the rows are spread evenly, so 26 rows become 9, 9 and 8 rather than 12, 12 and 2. The slides are titled "Interfaces (1 of 3)", "(2 of 3)" and so on; the first keeps the section's id, `#interfaces`, so links to it still land, and the rest are `#interfaces-2` and `#interfaces-3`. Text before the table stays on the slide where the table starts, text after it follows the last rows, and presenter notes stay on the first slide.
+
+Change the limit for one slide with `table-rows="20"` on its `deck:slide` tag, for a deck with `deck_table_rows` in its front matter, for a repository with `tableRows` in its bindings, or for one build with `--table-rows`. `0` turns splitting off everywhere it is set, leaving a long table to shrink to fit as before. A table inside a code fence is never split.
 
 ## Stale renders and dependencies
 

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0
    Layout for markdown-deck. Themes supply the tokens; this file never names a colour.
-   Chrome tokens (--index-*, --toolbar-*) are optional and fall back to cover tokens.
+   Chrome tokens (--index-*, --toolbar-*) are optional and fall back to cover tokens, and
+   so are divider tokens (--divider-bg, -fg, -accent, -muted).
    Slides are a fixed 1920x1080 canvas scaled to fit, which is what makes the output
    look like a deck rather than a web page, and what makes the PDF deterministic. */
 
@@ -389,6 +390,14 @@ body.presenting .stage { padding: 0; }
 .cover-sub { font-size: 56px; font-weight: 300; color: var(--cover-accent); line-height: 1.1; margin: 0 0 40px; }
 .cover-date { font-size: 26px; color: var(--cover-muted); margin: 0 0 8px; }
 .cover-foot { font-size: 20px; color: var(--cover-faint); max-width: 1200px; }
+
+/* Section divider: the cover's ground unless the theme gives dividers their own. */
+.slide.divider { background: var(--divider-bg, var(--cover-bg)); }
+.divider-wrap { padding: 96px; display: flex; flex-direction: column; height: 100%; width: 100%; }
+.divider-eyebrow { font-size: 24px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--divider-accent, var(--cover-accent)); margin: 0 0 20px; }
+.divider-title { font-size: 88px; font-weight: 700; color: var(--divider-fg, var(--cover-fg)); letter-spacing: -.02em; line-height: 1.05; margin: 0 0 18px; max-width: 1600px; }
+.divider-sub { font-size: 40px; font-weight: 300; color: var(--divider-muted, var(--cover-muted)); line-height: 1.25; max-width: 1500px; }
 
 /* Presenter notes never render on screen or in the PDF. */
 .notes { display: none; }

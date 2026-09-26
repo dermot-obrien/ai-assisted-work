@@ -4,6 +4,17 @@
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions are semantic, with the contract defined as: MAJOR for a changed skill `name`, a removed script, a changed CLI interface or a changed output shape; MINOR for new capabilities, themes or tags; PATCH for wording, fixes and documentation.
 
+## [0.5.0] - 2026-09-26
+
+### Added
+
+- `deck:divider`, a section divider slide. Before a heading it takes the heading's text as its title, and the heading's body stays in the document only; with `title="..."` it stands alone anywhere. `subtitle` and `eyebrow` add a line under and above the title; a divider never inherits the deck's eyebrow. It uses the cover's colours unless a theme or palette sets the new `--divider-bg`, `--divider-fg`, `--divider-accent` and `--divider-muted` tokens.
+- Long tables split across slides. A table longer than twelve rows continues on the next slide with its header row repeated, rows spread evenly, titled "(1 of 3)" and so on. The first slide keeps the section's id; the rest are numbered on. `table-rows` on a `deck:slide` tag, `deck_table_rows`, the `tableRows` binding and `--table-rows` change the limit, and `0` turns splitting off. `paginateTables` is exported from `src/parse.mjs`.
+
+### Changed
+
+- A deck with a table longer than twelve rows now has more slides than before, and their titles carry "(n of m)". Set `tableRows = 0` in the repository's bindings to keep the previous behaviour, where the table shrank to fit.
+
 ## [0.4.1] - 2026-09-26
 
 ### Fixed
