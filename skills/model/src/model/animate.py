@@ -195,8 +195,10 @@ def build(doc_path, cfg, diagram_path=None, image=None, drawio_bin=None, force=F
         return [round((b[0] - x0) * s + ox, 1), round((b[1] - y0) * s + oy, 1),
                 round(b[2] * s, 1), round(b[3] * s, 1)]
 
+    # Sorted, because used_nodes is a set and string hashing is randomised per process:
+    # iterating it directly gives a different page on every run from the same inputs.
     nodes = {}
-    for nid in used_nodes:
+    for nid in sorted(used_nodes):
         n = doc_nodes[nid]
         nodes[nid] = {"box": px(boxes[node_cell[nid]]), "name": n.label or nid}
     edges = {}
