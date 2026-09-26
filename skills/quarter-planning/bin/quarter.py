@@ -77,6 +77,7 @@ from bindings import Bindings  # noqa: E402
 from capacity import Quarter, base_points, f, product_points  # noqa: E402
 import cards as cards_mod  # noqa: E402
 from framing import close_section, framing_section, has_close, register_rules  # noqa: E402
+import features as feat_mod  # noqa: E402
 from planmodel import load_items, load_ladder, load_plan, load_register, work_item_path  # noqa: E402
 from report import deduct, signed, table  # noqa: E402
 
@@ -344,6 +345,9 @@ def main():
                     help='write the epic cards and the stage grid to the cardsDir binding')
     ap.add_argument('--check', action='store_true',
                     help='with --cards, write nothing and exit non-zero if any card is stale')
+    ap.add_argument('--backlog', action='store_true',
+                    help='print each product\'s features ranked by WSJF, with their epic and '
+                         'stories, and stop. Needs the features binding')
     args = ap.parse_args()
     if args.check and not args.cards:
         ap.error('--check applies to --cards')
@@ -372,6 +376,16 @@ def main():
     if not os.path.isdir(bind.resolve('quarterDir')):
         print('no planning folder for %s' % args.quarter)
         return 2
+
+    if args.backlog:
+        feats = feat_mod.load_features(bind)
+        if feats is None:
+            sys.stderr.write('quarter-planning: --backlog reads the feature register. Declare '
+                             'features in [suite.quarter-planning] of %s.\n'
+                             % (bind.file or '.agents/skill-bindings.toml'))
+            return 2
+        print(feat_mod.backlog(feats, feat_mod.load_products(bind), feat_mod.stories(bind), bind))
+        return 0
 
     q = Quarter(args.quarter, bind)
     if args.cards:
@@ -602,6 +616,13 @@ def main():
     if has_close(epics):
         print('\n9. CLOSE')
         close_section(epics, register, base, ladder, err)
+
+    # ----------------------------------------------------------------- 10. the features
+    feats = feat_mod.load_features(bind)
+    if feats is not None:
+        print('\n10. FEATURES')
+        feat_mod.features_section(epics, feats, feat_mod.load_products(bind),
+                                  feat_mod.stories(bind), bind, err, warn)
 
     # ------------------------------------------------------------------------ apply
     if args.apply:

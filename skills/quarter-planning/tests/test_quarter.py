@@ -344,5 +344,117 @@ class TestClose(Workspace):
         self.assertEqual(before, self.read(self.MODEL))
 
 
+class TestFeatures(Workspace):
+    """The optional feature layer: products, features assigned to epics, stories citing them."""
+
+    FEATURES = 'registers/features.csv'
+    PRODUCTS = 'registers/products.csv'
+    HEAD = 'id,title,product,epic,status,value,time_criticality,risk_reduction,job_size\n'
+
+    def setUp(self):
+        super().setUp()
+        self.edit(self.BINDINGS, 'workItemsDir = "../work-items"\n',
+                  'workItemsDir = "../work-items"\nfeatures     = "../registers/features.csv"\n'
+                  'products     = "../registers/products.csv"\n')
+        self.edit('registers/deliverable-types.csv', 'plan-document,',
+                  'feature,Feature specification,R3,1,Yes,One feature of a product\nplan-document,')
+        self.write(self.PRODUCTS, 'id,name,platform,team\n'
+                   'PR-1,Example product,Data platform,Team A\n'
+                   'PR-2,Other product,Experience platform,Team B\n')
+        self.write(self.FEATURES, self.HEAD +
+                   'FT-1,Export results,PR-1,EP-001,backlog,5,2,3,2\n'
+                   'FT-2,Share a view,PR-2,,backlog,8,1,1,5\n')
+        # FT-1 is assigned to EP-001 in the register, and named on it as a deliverable.
+        self.edit(self.MODEL, 'planned_points: 10', 'planned_points: 11')
+        self.edit(self.MODEL, '    points_override_reason: Most of the evidence already exists\n'
+                  '    owner_stakeholder_id: ben\n    state: planned\n    approval: draft\n',
+                  '    points_override_reason: Most of the evidence already exists\n'
+                  '    owner_stakeholder_id: ben\n    state: planned\n    approval: draft\n'
+                  '  - id: EP-001-D5\n    deliverable_id: feature\n'
+                  '    name: FT-1 Export results\n    owner_stakeholder_id: ana\n'
+                  '    state: planned\n    approval: draft\n')
+
+    def test_assigned_and_named_passes(self):
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertIn('10. FEATURES', out)
+        self.assertRegex(out, r'EP-001\s+FT-1\s+PR-1\s+backlog\s+5\.0\s+yes')
+        self.assertNotIn('WARNING', out)
+
+    def test_unbound_layer_is_silent(self):
+        self.edit(self.BINDINGS, 'features     = "../registers/features.csv"\n', '')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn('10. FEATURES', out)
+
+    def test_named_but_not_registered_fails(self):
+        self.edit(self.MODEL, 'name: FT-1 Export results', 'name: FT-9 Something else')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 1, out)
+        self.assertIn('names FT-9, which the feature register does not hold', out)
+
+    def test_named_on_a_different_epic_than_assigned_fails(self):
+        self.edit(self.FEATURES, 'FT-1,Export results,PR-1,EP-001', 'FT-1,Export results,PR-1,WI-002')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 1, out)
+        self.assertIn('FT-1 is named on EP-001 but the feature register assigns it to WI-002', out)
+
+    def test_named_but_not_assigned_fails(self):
+        self.edit(self.FEATURES, 'FT-1,Export results,PR-1,EP-001', 'FT-1,Export results,PR-1,')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 1, out)
+        self.assertIn('assigns it to no epic. Assign it there first', out)
+
+    def test_assigned_but_not_named_warns(self):
+        self.edit(self.FEATURES, 'FT-2,Share a view,PR-2,,', 'FT-2,Share a view,PR-2,EP-001,')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertIn('FT-2 is assigned to EP-001 but not named on it', out)
+
+    def test_not_ready_warns(self):
+        self.edit(self.FEATURES, 'EP-001,backlog', 'EP-001,analyzing')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertIn('FT-1 is named on EP-001 but is analyzing, so it is not ready', out)
+
+    def test_register_rules(self):
+        self.write(self.FEATURES, self.HEAD +
+                   'FT-1,Export results,PR-1,EP-001,backlog,4,2,3,2\n'
+                   'FT-2,Share a view,PR-9,,shipped,8,1,1,5\n'
+                   'FT-3,No product,,,analyzing,,,,\n')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 1, out)
+        self.assertIn('FT-1 scores value 4, which is not on the scale', out)
+        self.assertIn('FT-2 belongs to PR-9, which the product register does not hold', out)
+        self.assertIn('FT-2 has status shipped', out)
+        self.assertIn('FT-3 names no product', out)
+
+    def test_card_shows_features_products_and_platforms(self):
+        self.edit('work-items/WI-002/progress.yaml', 'activities: []',
+                  'feature_ids: [FT-1]\nactivities: []')
+        code, out = self.run_quarter('--cards')
+        self.assertEqual(code, 0, out)
+        text = self.read('planning/2027-q1/cards/EP-001.md')
+        self.assertIn('## Deliverables', text)
+        self.assertNotIn('## Products\n', text)
+        self.assertIn('## Features', text)
+        self.assertIn('| FT-1 Export results | PR-1 | backlog | 5.0 | WI-002 | Yes |', text)
+        self.assertIn('## Products and platforms supported', text)
+        self.assertIn('| PR-1 Example product | Data platform | Team A | FT-1 |', text)
+
+    def test_backlog_ranks_by_wsjf_and_joins_stories(self):
+        self.edit('work-items/WI-002/progress.yaml', 'activities: []',
+                  'feature_ids: [FT-1, FT-7]\nactivities: []')
+        self.write(self.FEATURES, self.HEAD +
+                   'FT-1,Export results,PR-1,EP-001,backlog,5,2,3,2\n'
+                   'FT-3,Import results,PR-1,,backlog,8,8,4,1\n')
+        code, out = self.run_quarter('--backlog')
+        self.assertEqual(code, 0, out)
+        self.assertIn('PR-1 Example product (Data platform, Team A)', out)
+        self.assertLess(out.index('FT-3'), out.index('FT-1'))
+        self.assertRegex(out, r'FT-1\s+Export results\s+backlog\s+5\.0\s+EP-001\s+WI-002')
+        self.assertIn('Cited by work items but not in the feature register: FT-7', out)
+
+
 if __name__ == '__main__':
     unittest.main()
