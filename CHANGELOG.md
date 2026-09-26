@@ -8,6 +8,11 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- **`/thread tree` shows only unfinished threads** (thread 0.5.0). Done and dropped threads
+  are hidden, and a closed thread's open or parked branches take its place; `tree --all` shows
+  everything. `/thread` (status) hides closed threads the same way. `tree --json` prints the
+  view as nested objects, and the skill renders it as a collapsible task tree where the tool
+  can show a widget, falling back to text.
 - **`quarter-planning` no longer ships a directory layout** (skill 3.0.0, breaking). The six
   path bindings are required and have no default. The defaults were the layout of the
   workspace the skill was extracted from, which made that one workspace work with no binding
@@ -21,8 +26,9 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`/thread wrap`** (thread 0.4.0) answers "is this chat done, can I delete it?". It checks for
   anything that exists only in the chat (uncommitted or unpushed work, running tasks, open
   PRs, owned deploys, unrecorded decisions and follow-ups), moves each into the repository,
-  memory or the thread tree, closes the chat's thread with a resolution, and says yes with a
-  table of what went where, or not yet with exactly what is left.
+  memory or the thread tree, and says yes with a table of what went where, or not yet with
+  exactly what is left. It never closes the chat's thread itself (thread 0.4.1): it proposes
+  the resolution and asks, since the user may want to carry on in that chat.
 - **`aaw install` runs without a terminal.** Installing AAW itself used to open a prompt
   unconditionally, so a SessionStart hook, CI job or agent failed at the first question
   ("readline was closed") before writing anything. It now prompts only on a terminal. Without
