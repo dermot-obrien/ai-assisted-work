@@ -10,22 +10,33 @@
  * pull, write and push without ever producing a merge conflict. The tree, and
  * every node's state, is derived by replaying the events in time order.
  *
+ * Closed branches are pruned into archive/, one new JSON Lines file per prune, so the
+ * live events/ folder only holds what is still in play. Archives are never edited
+ * either; `tree --all` and `show` replay them alongside the live events.
+ *
  * Zero dependencies; Node 18+. Run `thread help` for usage.
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, hostname } from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 
 const HOME = process.env.THREADS_HOME || path.join(homedir(), ".threads");
-const PRUNE_DAYS = 30;
+// Automatic prune: after a command that writes, when the live store holds AUTO_EVENTS
+// event files or the last prune was AUTO_DAYS ago, archive branches closed for at least
+// AUTO_GRACE_DAYS. THREADS_AUTO_PRUNE=0 turns it off.
+const num = (v, d) => (v !== undefined && v !== "" && !Number.isNaN(Number(v)) ? Number(v) : d);
+const AUTO_EVENTS = num(process.env.THREADS_PRUNE_EVENTS, 200);
+const AUTO_DAYS = num(process.env.THREADS_PRUNE_DAYS, 7);
+const AUTO_GRACE_DAYS = num(process.env.THREADS_PRUNE_GRACE_DAYS, 1);
+const AUTO_ON = process.env.THREADS_AUTO_PRUNE !== "0";
 const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
-const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help"]);
+const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run"]);
 
 function parseArgs(argv) {
   const flags = {};
@@ -179,7 +190,7 @@ function readEvents() {
     }
   };
   walk(dir);
-  return out.sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : a._file < b._file ? -1 : 1));
+  return sortEvents(out);
 }
 
 function writeEvent(ev) {
@@ -195,6 +206,135 @@ function writeEvent(ev) {
   );
   return full;
 }
+
+// ---------------------------------------------------------------- archive
+
+const ARCHIVE = () => path.join(HOME, "archive");
+const rel = (p) => path.relative(HOME, p).split(path.sep).join("/");
+
+/** Every archived event, each with `_file` set to where it lived in events/. */
+function readArchive() {
+  const dir = ARCHIVE();
+  const out = [];
+  if (!existsSync(dir)) return out;
+  for (const name of readdirSync(dir).filter((f) => f.endsWith(".jsonl")).sort()) {
+    const lines = readFileSync(path.join(dir, name), "utf8").split("\n");
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const { src, ...ev } = JSON.parse(line);
+        out.push({ ...ev, _file: path.join(HOME, src) });
+      } catch {
+        warn(`skipping unreadable line in archive/${name}`);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Live and archived events together. An event can be in both (restored after a prune,
+ * or archived by two machines at once), so they are de-duplicated by original file.
+ */
+function mergeEvents(live) {
+  const seen = new Set(live.map((e) => rel(e._file)));
+  const extra = readArchive().filter((e) => {
+    const k = rel(e._file);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  return sortEvents([...live, ...extra]);
+}
+
+/** Put archived threads (and their branches) back in events/, so they can be worked again. */
+function restore(ids, live) {
+  const all = mergeEvents(live);
+  const full = buildTree(all);
+  const want = new Set();
+  const collect = (n) => {
+    want.add(n.id);
+    n.children.forEach(collect);
+  };
+  for (const id of ids) {
+    if (!full.has(id)) continue;
+    collect(full.get(id));
+    // Its ancestors come back too, without their other branches, so the path stays whole.
+    for (let p = full.get(id).parent; p && full.has(p); p = full.get(p).parent) want.add(p);
+  }
+  let n = 0;
+  for (const ev of all) {
+    if (!want.has(ev.id) || existsSync(ev._file)) continue;
+    const { _file, ...body } = ev;
+    mkdirSync(path.dirname(_file), { recursive: true });
+    writeFileSync(_file, JSON.stringify(body, null, 2) + "\n");
+    n++;
+  }
+  return n;
+}
+
+/**
+ * Closed branches: a thread that is done or dropped, with every thread under it done or
+ * dropped too, whose parent is still in play (or which is a root). Only whole branches
+ * go, so nothing unfinished ever leaves the live store.
+ */
+function closedBranches(nodes, minDays) {
+  const cutoff = Date.now() - minDays * 86400_000;
+  return [...nodes.values()].filter((n) => {
+    if (isLive(n) || Date.parse(n.lastDeep) > cutoff) return false;
+    const p = n.parent ? nodes.get(n.parent) : null;
+    return !p || isLive(p);
+  });
+}
+
+/** Move the given branches' events into one new archive file. Returns what moved. */
+function archiveBranches(branches, events) {
+  const ids = new Set();
+  const collect = (n) => {
+    ids.add(n.id);
+    n.children.forEach(collect);
+  };
+  branches.forEach(collect);
+  const moving = events.filter((e) => ids.has(e.id));
+  if (!moving.length) return null;
+  const ts = new Date().toISOString();
+  const host = hostname().toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 20) || "host";
+  const stamp = ts.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  mkdirSync(ARCHIVE(), { recursive: true });
+  const name = `${stamp}-${host}-${randomBytes(3).toString("hex")}.jsonl`;
+  const body = moving.map(({ _file, ...ev }) => JSON.stringify({ src: rel(_file), ...ev })).join("\n") + "\n";
+  writeFileSync(path.join(ARCHIVE(), name), body);
+  for (const e of moving) rmSync(e._file, { force: true });
+  const readme = path.join(HOME, "README.md");
+  if (!existsSync(readme) || readFileSync(readme, "utf8") !== README) writeFileSync(readme, README);
+  return { file: `archive/${name}`, threads: ids.size, events: moving.length };
+}
+
+/** When the last prune ran, from the newest archive file's name; null if never. */
+function lastPrune() {
+  if (!existsSync(ARCHIVE())) return null;
+  const names = readdirSync(ARCHIVE()).filter((f) => f.endsWith(".jsonl")).sort();
+  const m = names.length && /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/.exec(names[names.length - 1]);
+  return m ? Date.parse(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`) : null;
+}
+
+/** Prune on its own when the live store has grown or it has been a while. */
+function autoPrune() {
+  if (!AUTO_ON) return;
+  const events = readEvents();
+  const last = lastPrune();
+  const due = events.length >= AUTO_EVENTS || last === null || Date.now() - last >= AUTO_DAYS * 86400_000;
+  if (!due) return;
+  const branches = closedBranches(buildTree(events), AUTO_GRACE_DAYS);
+  if (!branches.length) return;
+  const r = archiveBranches(branches, events);
+  if (!r) return;
+  commitAndPush(`prune: archive ${r.threads} closed thread(s) to ${r.file}`);
+  console.log(`(archived ${r.threads} closed thread(s) to ${r.file}; thread tree --all still shows them)`);
+}
+
+const sortEvents = (evs) =>
+  evs.sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : a._file < b._file ? -1 : 1));
 
 /** Replay events into nodes: { id, parent, text, titles[], description, status, ctx, tool, opened, last, notes[], outcome, children[] }. */
 function buildTree(events) {
@@ -375,8 +515,14 @@ Written by the \`thread\` skill (AI-Assisted Work, \`skills/thread\`); nothing h
 
 ## Format (for an agent without the skill)
 
-Each action is one new JSON file, \`events/YYYY-MM/<utc-stamp>-<host>-<6 hex>.json\`. Never edit or
-delete an existing event — write a new one, commit, \`git pull --rebase\`, push.
+Each action is one new JSON file, \`events/YYYY-MM/<utc-stamp>-<host>-<6 hex>.json\`. Never edit an
+existing event: write a new one, commit, \`git pull --rebase\`, push.
+
+\`archive/<utc-stamp>-<host>-<6 hex>.jsonl\` holds closed threads pruned out of \`events/\`, one file
+per prune, one event per line with \`src\` (the path it had under \`events/\`). Archives are never
+edited either. The full tree is \`events/\` and every archive replayed together, de-duplicated by
+\`src\`. A new id must not be used in either. An event in \`events/\` for a thread that was archived
+brings that thread back: copy its archived events back to their \`src\` paths.
 
 | type | fields |
 |---|---|
@@ -421,7 +567,8 @@ const commands = {
     if (!text) die('what are you doing? e.g. thread open "fix ingestion retry bug"');
     let parent = null;
     if (typeof flags.parent === "string") parent = need(nodes, flags.parent).id;
-    const id = newId(nodes);
+    // An archived id is still taken: the full tree replays the archive too.
+    const id = newId(new Set([...nodes.keys(), ...readArchive().map((e) => e.id)]));
     writeEvent({ type: "open", id, parent, text, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL });
     commitAndPush(`open ${id}: ${text}`);
     const tree = buildTree(readEvents());
@@ -563,21 +710,20 @@ const commands = {
   },
 
   prune(pos, flags, nodes, _status, events) {
-    const days = typeof flags.days === "string" ? Number(flags.days) : PRUNE_DAYS;
-    const cutoff = Date.now() - days * 86400_000;
-    const gone = new Set();
-    const collect = (n) => {
-      gone.add(n.id);
-      n.children.forEach(collect);
-    };
-    for (const r of nodes.values()) {
-      if (!r.parent && !isLive(r) && Date.parse(r.lastDeep) < cutoff) collect(r);
+    // Every closed branch by default; --days keeps the ones closed more recently than that.
+    const days = typeof flags.days === "string" ? Number(flags.days) : 0;
+    if (Number.isNaN(days)) die("--days takes a number");
+    const branches = closedBranches(nodes, days);
+    if (!branches.length) return console.log(days ? `nothing closed more than ${days} day(s) ago.` : "nothing closed to archive.");
+    if (flags["dry-run"]) {
+      console.log("would archive:");
+      console.log(renderForest(view(branches, { all: true })));
+      return;
     }
-    if (!gone.size) return console.log(`nothing finished more than ${days} days ago.`);
-    const files = events.filter((e) => gone.has(e.id)).map((e) => path.relative(HOME, e._file));
-    git(["rm", "--quiet", ...files]);
-    commitAndPush(`prune ${gone.size} finished thread(s) older than ${days}d`);
-    console.log(`pruned ${gone.size} thread(s) (still in git history).`);
+    const r = archiveBranches(branches, events);
+    commitAndPush(`prune: archive ${r.threads} closed thread(s) to ${r.file}`);
+    console.log(`archived ${r.threads} closed thread(s) (${r.events} events) to ${r.file}.`);
+    console.log("thread tree --all still shows them, and resuming one brings it back.");
   },
 
   sync() {
@@ -599,8 +745,11 @@ const commands = {
   thread describe <id> "<text>"   a longer description, shown by show and resume
   thread move <id> --parent <id> | --root
   thread fork <id>                header for a handoff to a new chat
-  thread tree [<id>] [--all] [--mermaid|--json]  open and parked threads; --all adds finished ones
-  thread prune [--days ${PRUNE_DAYS}]      remove finished trees (kept in git history)
+  thread tree [<id>] [--all] [--mermaid|--json]  open and parked threads; --all (or: tree all)
+                                  adds finished ones, archived ones included
+  thread prune [--days <n>] [--dry-run]   archive closed branches to a new archive/ file (alias: archive)
+                                  runs by itself after a write once events/ holds ${AUTO_EVENTS}+ files
+                                  or ${AUTO_DAYS} days have passed; THREADS_AUTO_PRUNE=0 turns that off
   thread init [<git-url>]         clone/seed the store at ${HOME}
   thread sync                     push anything left unpushed
 
@@ -625,11 +774,39 @@ if (/^t-[0-9a-z]+$/.test(cmd)) {
   pos.unshift(cmd);
   cmd = "resume";
 }
+if (cmd === "archive") cmd = "prune";
+if (cmd === "tree" && pos[0] === "all") {
+  pos.shift();
+  flags.all = true;
+}
+const statuses = { done: "done", park: "parked", drop: "dropped" };
+if (!statuses[cmd] && !commands[cmd]) die(`unknown command "${cmd}". Try: thread help`);
+const READ_ONLY = new Set(["status", "show", "fork", "tree", "prune", "sync"]);
+
 ensureStore();
 pull();
-const events = readEvents();
-const nodes = buildTree(events);
-const statuses = { done: "done", park: "parked", drop: "dropped" };
+let events = readEvents();
+
+// Bring archived threads back into events/ when they are in play again: an event here for
+// a thread with no open event here (another machine wrote to it while this one archived
+// it), or a thread this command is about to change.
+const opened = new Set(events.filter((e) => e.type === "open").map((e) => e.id));
+const wanted = new Set(events.filter((e) => !opened.has(e.id)).map((e) => e.id));
+if (!READ_ONLY.has(cmd)) {
+  for (const id of [cmd === "open" ? null : pos[0], flags.parent]) {
+    if (typeof id === "string" && /^t-[0-9a-z]+$/.test(id) && !opened.has(id)) wanted.add(id);
+  }
+}
+if (wanted.size && restore(wanted, events)) {
+  commitAndPush(`restore ${[...wanted].join(" ")} from the archive`);
+  events = readEvents();
+}
+
+let nodes = buildTree(events);
+// Views that read history replay the archive too.
+if (["show", "fork"].includes(cmd) || (cmd === "tree" && (flags.all || (pos[0] && !nodes.has(pos[0]))))) {
+  nodes = buildTree(mergeEvents(events));
+}
 if (statuses[cmd]) commands.close(pos, flags, nodes, statuses[cmd]);
-else if (commands[cmd]) commands[cmd](pos, flags, nodes, undefined, events);
-else die(`unknown command "${cmd}". Try: thread help`);
+else commands[cmd](pos, flags, nodes, undefined, events);
+if (!READ_ONLY.has(cmd)) autoPrune();
