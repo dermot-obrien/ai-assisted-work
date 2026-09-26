@@ -18,6 +18,14 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   examples of a templated binding.
 
 ### Added
+- **`thread`**, a general tooling skill for keeping thought processes untangled when working
+  across many chats, projects, IDEs and machines at once. Each chat is tied to one node in a
+  tree of intents: `/thread <text>` records or branches it, `/thread done|park|drop` closes it
+  and points back to the parent, and `/thread` or `/thread tree` shows what's open. The store is a
+  git repo the user owns (`threads_remote:` in `.aaw-config.yaml` or `$THREADS_REMOTE`, cloned to
+  `~/.threads`). Every action writes one new, never-edited event file, so any number of machines
+  and cloud agents can push to it without conflicts. Zero-dependency Node script,
+  `skills/thread/bin/thread.mjs`, also usable directly from a terminal.
 - **Approval stages in `quarter-planning`** (skill 2.1.0). The validator gains a seventh
   section reporting how far the quarterly WorkPlan, each committed epic and each of its products
   have been approved, read from an `approval` field on each model record. Stages default to
