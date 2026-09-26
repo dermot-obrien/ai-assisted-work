@@ -5,8 +5,8 @@ An epic has two faces, kept apart on purpose. Its folder, under the `epicsDir` b
 written by hand and lives across quarters: framing, scope decisions and discovery. Its card,
 under the `cardsDir` binding, is a view generated for one quarter: the rung movement, the
 deliverables with their types, rungs, points, states and approvals, and budget against planned.
-With the feature layer bound, it also shows the features assigned to the epic and the products
-and platforms they support. The card links to the folder and never repeats it.
+With the feature-request layer bound, it also shows the requests the epic takes on and the
+products and platforms they support. The card links to the folder and never repeats it.
 
 The capacity arithmetic is imported from capacity.py rather than recomputed, so a card's
 budget is the figure the validation reports.
@@ -20,7 +20,7 @@ import re
 
 from capacity import base_points, f, product_points
 from planmodel import committed_ids, load_items, load_plan, load_register
-import features as feat_mod
+import feature_requests as req_mod
 from report import pts
 
 
@@ -126,7 +126,7 @@ def card(item, n, q, bind, label, register, base, cards_dir, layer=None):
     else:
         s.append('No deliverables are named yet.\n')
     if layer:
-        s.append(features_part(item, bind, *layer))
+        s.append(requests_part(item, *layer))
     s.append('\n## Capacity\n\n')
     s.append(md_table(['Budget', 'Planned', 'Under or over'],
                       [[pts(derived), pts(planned), signed(derived - planned)]]))
@@ -146,38 +146,33 @@ def card(item, n, q, bind, label, register, base, cards_dir, layer=None):
     return ''.join(s), derived, planned
 
 
-def features_part(item, bind, feats, products, story_map):
-    """The features the epic takes on, and the products and platforms they support."""
-    on = feat_mod.epic_features(item, feats, bind)
-    s = ['\n## Features\n\n']
+def requests_part(item, reqs, products, story_map):
+    """The feature requests the epic takes on, and the products and platforms they support."""
+    on = req_mod.epic_requests(item, reqs)
+    s = ['\n## Feature requests\n\n']
     if not on:
-        s.append('No features are assigned to this epic.\n')
+        s.append('This epic takes on no feature request.\n')
         return ''.join(s)
-    rows, unplanned = [], False
-    for fid, planned in on:
-        r = feats.get(fid, {})
-        score = feat_mod.wsjf(r)
+    rows = []
+    for rid in on:
+        r = reqs[rid]
+        score = req_mod.wsjf(r)
         title = (r.get('title') or '').strip()
-        unplanned = unplanned or not planned
-        rows.append(['%s %s' % (fid, title) if title else fid,
-                     (r.get('product') or '').strip(), (r.get('status') or '').strip(),
+        rows.append(['%s %s' % (rid, title) if title else rid,
+                     (r.get('product') or '').strip(),
+                     (r.get('requested_by') or '').strip(), (r.get('status') or '').strip(),
                      pts(score) if score is not None else '',
-                     ', '.join(x['id'] for x in story_map.get(fid, [])) or 'None yet',
-                     'Yes' if planned else 'No'])
-    s.append(md_table(['Feature', 'Product', 'Status', 'WSJF', 'Stories', 'Planned'], rows))
-    if unplanned:
-        s.append('\nA feature not planned is assigned to this epic in the feature register but '
-                 'not named on it as a `%s` deliverable, so its size is not in the capacity '
-                 'below.\n' % bind.feature_type)
+                     ', '.join(story_map.get(rid, [])) or 'None yet'])
+    s.append(md_table(['Request', 'Product', 'Requested by', 'Status', 'WSJF', 'Stories'], rows))
     s.append('\n## Products and platforms supported\n\n')
-    sup = feat_mod.supported([fid for fid, _ in on], feats, products)
+    sup = req_mod.supported(on, reqs, products)
     if sup:
-        s.append(md_table(['Product', 'Platform', 'Team', 'Features'], [
+        s.append(md_table(['Product', 'Platform', 'Team', 'Requests'], [
             ['%s %s' % (pid, p.get('name')) if p.get('name') else pid,
-             (p.get('platform') or '').strip(), (p.get('team') or '').strip(), ', '.join(fs)]
-            for pid, p, fs in sup]))
+             (p.get('platform') or '').strip(), req_mod.team_of(p), ', '.join(rs)]
+            for pid, p, rs in sup]))
     else:
-        s.append('The assigned features name no product.\n')
+        s.append('The requests name no product.\n')
     return ''.join(s)
 
 
@@ -214,9 +209,9 @@ def build(q, bind, label):
     register = load_register(bind)
     base = base_points(bind)
     cards_dir = bind.resolve('cardsDir')
-    feats = feat_mod.load_features(bind)
-    layer = ((feats, feat_mod.load_products(bind), feat_mod.stories(bind))
-             if feats is not None else None)
+    reqs = req_mod.load_requests(bind)
+    layer = ((reqs, req_mod.load_products(bind), req_mod.stories(bind))
+             if reqs is not None else None)
     out, summary = {}, []
     for n, e in enumerate(epics):
         text, b, p = card(e, n, q, bind, label, register, base, cards_dir, layer)

@@ -1,6 +1,6 @@
 ---
 name: quarter-planning
-description: Plan and maintain a quarter in two stages, deriving a budget of points from the calendar and the resourcing register, allocating it down to epics, then elaborating deliverables and rolling their sizes up. Frames an epic against its capability lane and the definition ladder, names its products from the deliverable register, generates epic cards, and interprets the integrity checks. Optionally plans features of registered products through epics, SAFe-style, ranked by WSJF and joined to the stories that build them. Use when planning or replanning a quarter, reporting or setting a quarter budget, framing or sizing an epic, setting budget_points, naming deliverables on a work item, generating epic cards, closing a quarter, or reconciling plan documents with the model.
+description: Plan and maintain a quarter in two stages, deriving a budget of points from the calendar and the resourcing register, allocating it down to epics, then elaborating deliverables and rolling their sizes up. Frames an epic against its capability lane and the definition ladder, names its products from the deliverable register, generates epic cards, and interprets the integrity checks. Optionally tracks feature requests raised against registered products, ranked by WSJF, taken on by epics and joined to the stories that build them. Use when planning or replanning a quarter, reporting or setting a quarter budget, framing or sizing an epic, setting budget_points, naming deliverables on a work item, generating epic cards, closing a quarter, or reconciling plan documents with the model.
 license: CC-BY-4.0
 compatibility: Python 3.11 or newer, and PyYAML. Reads the planning registers, the model sources and the deliverable register at whatever paths [suite.quarter-planning] in the workspace .agents/skill-bindings.toml declares. Those six paths are required and have no default, so the skill carries no directory layout; it assumes no jurisdiction's holidays either.
 metadata:
@@ -40,9 +40,9 @@ before. Each one opts in to something:
 | `ladder` | Judging each epic's framing against the definition ladder, a CSV of `rung,name,description` in ascending order |
 | `epicsDir` | Linking each generated card to the epic's own hand-written folder |
 | `cardsDir` | `--cards`, which writes the epic cards and the stage grid. May carry `{quarter}` |
-| `workItemsDir` | Reading epics from AAW work items' `progress.yaml` as well as `work_item.yaml`, and the features each work item cites in `feature_ids` |
-| `features` | The feature layer: features of products assigned to epics, section 10 of the validation, features and supported products on the cards, and `--backlog`. See [references/features.md](references/features.md) |
-| `products` | Product names, platforms and teams for the features, and checking each feature's product exists |
+| `workItemsDir` | Reading epics from AAW work items' `progress.yaml` as well as `work_item.yaml`, and the feature requests each story cites in `request_ids` |
+| `requests` | The feature-request layer: requests against products, taken on by epics, section 10 of the validation, requests and supported products on the cards, and `--backlog`. See [references/feature-requests.md](references/feature-requests.md) |
+| `products` | Product names, platforms and teams for the requests, and checking each request's product exists |
 
 Derived, never hand-edited: the epic cards and the stage grid, which this skill generates
 with `--cards`, the capacity-load and epic-load views under the `quarterDir` binding, any
@@ -124,7 +124,7 @@ One report, read top down, because that is the only direction the arithmetic run
 | 7 Approval | How far the plan, each committed epic and each of its products have been approved, and what is ready for approval |
 | 8 Framing | Each committed epic's lane and flows, and whether its products evidence the rungs it commits to |
 | 9 Close | Committed against reached per flow, planned against actual per product, and a recalibration hint per type. Only once recorded |
-| 10 Features | The feature register's rules, and the features each committed epic takes on: assigned, named, ready and scored. Only with `features` bound |
+| 10 Feature requests | The request register's rules, and the requests each committed epic takes on: ready, scored and cited by stories. Only with `requests` bound |
 
 Sections 1 to 4 are integrity. A disagreement there means the model contradicts itself and the
 run exits non-zero, because nothing below it means anything until it is fixed. Sections 5 and
@@ -232,7 +232,7 @@ An epic has two faces, kept apart on purpose.
 | Where | `<epicsDir>/<home>/` | `<cardsDir>/<id>.md` |
 | Written by | Hand | `--cards`, from the model |
 | Lifetime | The epic's whole life, across quarters | One quarter |
-| Holds | Framing, scope decisions, dependencies, what was left out, and discovery | The rung movement, the deliverables with their types, rungs, points, states and approvals, budget against planned, and with the feature layer the features assigned and the products and platforms they support |
+| Holds | Framing, scope decisions, dependencies, what was left out, and discovery | The rung movement, the deliverables with their types, rungs, points, states and approvals, budget against planned, and with the request layer the feature requests taken on and the products and platforms they support |
 
 The folder is where the epic is driven from and where its thinking accumulates. The card is a
 view: every figure about the epic and no prose that was not generated, so it cannot drift from
@@ -248,21 +248,23 @@ the epics table. The second writes nothing and exits non-zero if any file is sta
 sit beside a workspace's other checks. What a card holds, and the recommended outline of an
 epic folder's index page, are in [references/epic-cards.md](references/epic-cards.md).
 
-## Features, products and stories
+## Feature requests, products and stories
 
-With `features` bound, the skill plans a layer above the epic. Consumers use products that
-platform teams offer. A request for something new becomes a feature against one product. A
-quarter takes a feature on by assigning it to an epic in the feature register and naming it
-on the epic as a `feature` deliverable, so its size counts. Stories are assigned separately,
-later: each work item that builds part of a feature cites it in `feature_ids`.
+With `requests` bound, the skill tracks the demand an epic answers. Consumers use products
+that platform teams offer. When a product cannot yet meet a need, the consumer raises a
+feature request against it, and the team ranks it. A request that needs a platform build is
+taken on by an epic: the register's `epic` column records which. The epic is the SAFe
+feature and carries the size through its deliverables; the request adds no points. Stories
+are assigned separately, later: each story that builds part of a request cites it in
+`request_ids`.
 
 ```bash
 python <skills>/quarter-planning/bin/quarter.py --quarter <slug> --backlog
 ```
 
-prints each product's features ranked by WSJF, with the epic and the stories for each. The
+prints each product's requests ranked by WSJF, with the epic and the stories for each. The
 register contracts, the checks and the card sections are in
-[references/features.md](references/features.md).
+[references/feature-requests.md](references/feature-requests.md).
 
 ## Epics from AAW work items
 
