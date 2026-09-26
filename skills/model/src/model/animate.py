@@ -7,7 +7,13 @@ own arrows between the boxes' current positions rather than copying draw.io's ro
 so moving boxes needs nothing but a re-run.
 
 The output opens from disk in any browser: the structure view is embedded as a data
-URI, script and styles are inline, and nothing is fetched. It fails rather than guess:
+URI, script and styles are inline, and nothing is fetched.
+
+The structure view is the only thing draw.io is needed for, and it is optional. A current
+view beside the diagram, `<stem>.svg` or `<stem>.png` with a render record whose
+fingerprint matches the diagram, is used as it is: rendered by `model render`, or exported
+by hand from draw.io desktop or online and recorded with `model stamp`. Only when there is
+no current view is draw.io asked to render one, and only if it is installed. It fails rather than guess:
 a step with no narrative, an endpoint with no geometry, or a scenario present on one
 side only is an error, because a silent gap produces a confident wrong walkthrough.
 """
@@ -99,9 +105,70 @@ def png_size(data: bytes):
     return w, h
 
 
+def _svg_len(v):
+    m = re.match(r"\s*([0-9.]+)\s*(px)?\s*$", v or "")
+    return float(m.group(1)) if m else None
+
+
+def image_info(data: bytes):
+    """(mime, width, height) of a PNG or an SVG structure view."""
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        w, h = png_size(data)
+        return "image/png", w, h
+    head = data[:4096].decode("utf-8", "replace")
+    if "<svg" not in head:
+        raise AnimateError("  ! the structure image is neither a PNG nor an SVG")
+    try:
+        root = ET.fromstring(data)
+    except ET.ParseError as ex:
+        raise AnimateError(f"  ! the structure SVG does not parse: {ex}")
+    vb = (root.get("viewBox") or "").replace(",", " ").split()
+    if len(vb) == 4:
+        w, h = float(vb[2]), float(vb[3])
+    else:
+        w, h = _svg_len(root.get("width")), _svg_len(root.get("height"))
+    if not w or not h:
+        raise AnimateError("  ! the structure SVG states no viewBox or pixel size")
+    return "image/svg+xml", w, h
+
+
+RENDER_MODES = ("auto", "always", "never")
+
+
+def current_view(diagram_path, base_name):
+    """A committed view of the structure layer whose record matches the diagram, or None.
+
+    Looks beside the diagram for `<stem>.svg`, then `<stem>.png`. Returns
+    (path, None) when current, (None, reason) when not."""
+    stem = os.path.splitext(diagram_path)[0]
+    reasons = []
+    for ext in (".svg", ".png"):
+        img = stem + ext
+        if not os.path.exists(img):
+            continue
+        rec = render.check_record(img)
+        name = os.path.basename(img)
+        if rec is None:
+            reasons.append(f"{name} has no render record; record it with `model stamp`")
+            continue
+        fresh, _src, r = rec
+        layers = r.get("layers") or []
+        if layers and layers != [base_name]:
+            reasons.append(f"{name} shows layers {layers}, not only {base_name!r}")
+            continue
+        if not fresh:
+            reasons.append(f"{name} is older than the diagram; re-export it and stamp it")
+            continue
+        return img, None
+    if not reasons:
+        reasons.append(f"no {os.path.basename(stem)}.svg or .png beside the diagram")
+    return None, "; ".join(reasons)
+
+
 # ------------------------------------------------------------------ assembly
 
-def build(doc_path, cfg, diagram_path=None, image=None, drawio_bin=None, force=False):
+def build(doc_path, cfg, diagram_path=None, image=None, drawio_bin=None, force=False,
+          render_mode="auto"):
     """Everything the page needs, as a dict. Raises AnimateError listing every problem."""
     doc = markdown.read(doc_path, cfg)
     if not diagram_path:
@@ -168,17 +235,31 @@ def build(doc_path, cfg, diagram_path=None, image=None, drawio_bin=None, force=F
     if problems:
         raise AnimateError("  ! cannot animate:\n" + "\n".join(problems))
 
-    # The structure view, rendered unless one is supplied.
+    # The structure view: one supplied, else a current committed view, else a render.
+    if render_mode not in RENDER_MODES:
+        raise AnimateError(f"  ! render mode must be one of {RENDER_MODES}, not {render_mode!r}")
+    if not image and render_mode != "always":
+        image, why = current_view(diagram_path, base_name)
+        if not image and render_mode == "never":
+            raise AnimateError(f"  ! no current view of the {base_name!r} layer: {why}")
+        if not image and not render.available(drawio_bin):
+            stem = os.path.splitext(os.path.basename(diagram_path))[0]
+            raise AnimateError(
+                f"  ! no current view of the {base_name!r} layer ({why}), and draw.io desktop "
+                f"is not installed to render one. Export only that layer to {stem}.svg, from "
+                f"draw.io desktop or online, then record it:\n"
+                f"    model stamp {stem}.svg --diagram {os.path.basename(diagram_path)} "
+                f"--layer \"{base_name}\"")
     if image:
         with open(image, "rb") as fh:
-            png = fh.read()
+            view = fh.read()
     else:
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "structure.png")
             render.export(diagram_path, out, fmt="png", layers=[base_name], binary=drawio_bin)
             with open(out, "rb") as fh:
-                png = fh.read()
-    W, H = png_size(png)
+                view = fh.read()
+    mime, W, H = image_info(view)
 
     x0, y0, x1, y1 = bounds(boxes)
     bw, bh = max(x1 - x0, 1), max(y1 - y0, 1)
@@ -210,8 +291,8 @@ def build(doc_path, cfg, diagram_path=None, image=None, drawio_bin=None, force=F
                                      "details": [[k.replace("_", " ").capitalize(), v]
                                                  for k, v in e.attrs.items()][:3]}
     return {"title": doc.name or os.path.basename(doc_path), "size": [W, H], "nodes": nodes,
-            "edges": edges, "scenarios": scenarios,
-            "png": base64.b64encode(png).decode("ascii")}
+            "edges": edges, "scenarios": scenarios, "mime": mime,
+            "image": base64.b64encode(view).decode("ascii")}
 
 
 def default_out(doc_path):
@@ -223,12 +304,13 @@ def default_out(doc_path):
 def write(data, out, accent=DEFAULT_ACCENT, interval=3.2):
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}", accent or ""):
         raise AnimateError(f"  ! --accent must be a #RRGGBB colour, not {accent!r}")
-    png = data.pop("png")
+    img = data.pop("image")
+    mime = data.pop("mime", "image/png")
     store = "model-animate:" + re.sub(r"[^a-z0-9]+", "-", data["title"].lower()).strip("-")
     html = (_TEMPLATE
             .replace("__TITLE__", _esc(data["title"]))
             .replace("__ACCENT__", accent)
-            .replace("__PNG__", png)
+            .replace("__MIME__", mime).replace("__IMG__", img)
             .replace("__W__", str(data["size"][0])).replace("__H__", str(data["size"][1]))
             .replace("__DATA__", json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
             .replace("__STORE__", json.dumps(store))
@@ -301,7 +383,7 @@ ol li button[aria-current="step"] .k,ol li.done .k{background:var(--accent);colo
   <section class="stage">
     <div class="canvas" id="canvas">
       <div class="world" id="world">
-        <img alt="Structure view" src="data:image/png;base64,__PNG__">
+        <img alt="Structure view" src="data:__MIME__;base64,__IMG__">
         <svg id="ov" viewBox="0 0 __W__ __H__" aria-hidden="true">
           <defs>
             <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="__ACCENT__"/></marker>

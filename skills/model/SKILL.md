@@ -4,7 +4,7 @@ description: Treat a diagram and a document as two views of one model of boxes a
 license: Apache-2.0
 compatibility: Python 3.9 or newer; Python 3.11 or newer to read a binding file. Rendering needs draw.io desktop installed (the installed build, not the portable exe). Reading YAML needs PyYAML; writing YAML needs nothing.
 metadata:
-  version: "0.4.1"
+  version: "0.5.0"
   x-skill-requires: ""
 ---
 
@@ -38,7 +38,9 @@ python bin/model.py rename  <doc> OLD NEW [--drawio FILE] [--dry-run]
 python bin/model.py scan    <folder> [--recursive] [--json] [--fail-on error|warn|never]
 python bin/model.py render  <drawio> --out FILE [--format svg|png|pdf] [--layer NAME ...] [--theme light|dark|auto]
 python bin/model.py layers  <drawio> [--json]
-python bin/model.py animate <doc>    [--out FILE] [--image PNG] [--accent #RRGGBB] [--interval S] [--force]
+python bin/model.py animate <doc>    [--out FILE] [--image PNG|SVG] [--render auto|always|never] [--accent #RRGGBB] [--interval S] [--force]
+python bin/model.py stamp   <image>  --diagram DRAWIO [--layer NAME ...] | --check
+python bin/model.py drawio           # where draw.io desktop is; exit 1 if it is not installed
 ```
 
 `extract`, `emit` and `validate` take any representation and work it out from the extension.
@@ -145,7 +147,24 @@ Writes `scenarios.html` beside an `index.md`, or `<stem>-scenarios.html` beside 
 
 The document supplies names, narratives and interface details; the diagram supplies geometry and each step's endpoints. The page draws its own arrows between the shapes' current positions, so after moving shapes, re-run it; there is nothing else to update. Positions inside groups and containers are resolved.
 
+The structure view it draws on is the one thing draw.io is needed for, and draw.io is optional. With `--render auto`, the default, it uses a current view beside the diagram, `<stem>.svg` or else `<stem>.png`, whose render record matches the diagram; only when there is none does it ask draw.io desktop to render one, and if draw.io is not installed it stops and says which file to export and stamp. `--render never` never calls draw.io, for a build machine without it; `--render always` renders regardless. Drawing on a committed view also makes the page identical from run to run, where a fresh render can differ by a pixel.
+
 It validates first and stops rather than guesses. A step with no narrative, an endpoint with no shape on the structure layer, a scenario in the document but not on the diagram or the reverse, or a rendered view whose proportions differ from the shapes' extent is an error that names every case. The last usually means an edge label or waypoint lies outside the shapes; a background rectangle enclosing the structure layer, used as a frame, fixes it.
+
+### Working without draw.io desktop
+
+Rendering needs draw.io desktop; nothing else does. Where it is not installed, the views are exported by hand, from draw.io desktop or from draw.io online, and committed beside their diagrams:
+
+1. Open the `.drawio`, show only the structure layer (the first, usually named Structure), and export it as SVG to `<stem>.svg` beside the diagram, the name `render` would give it.
+2. Record what it shows, so it is checked like a rendered view from then on:
+
+   ```bash
+   python bin/model.py stamp components.svg --diagram components.drawio --layer Structure
+   ```
+
+3. Commit the diagram, the SVG and its `.render.json` together.
+
+`stamp --check <image>` exits 0 when the record still matches the diagram, so a build can refuse a view that was not re-exported after the diagram changed. markdown-deck reads the same record, warning on a stale image and failing under `CI`.
 
 ## Configuration
 

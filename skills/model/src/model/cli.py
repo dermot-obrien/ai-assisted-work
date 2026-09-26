@@ -267,7 +267,7 @@ def cmd_animate(a) -> int:
     cfg = config_mod.load(a.config, near=a.doc)
     try:
         data = animate_mod.build(a.doc, cfg, diagram_path=a.diagram, image=a.image,
-                                 drawio_bin=a.drawio_bin, force=a.force)
+                                 drawio_bin=a.drawio_bin, force=a.force, render_mode=a.render)
         r = animate_mod.write(data, a.out or animate_mod.default_out(a.doc),
                               accent=a.accent, interval=a.interval)
     except animate_mod.AnimateError as e:
@@ -276,6 +276,46 @@ def cmd_animate(a) -> int:
         return _err(str(e), 3)
     steps = ", ".join(f"{k} {n}" for k, n in r["scenarios"].items())
     print(f"  {_shown(r['path'])} ({r['bytes'] // 1024} KB; {steps} steps). Opens from disk.")
+    return 0
+
+
+def cmd_stamp(a) -> int:
+    """Record, or check, a view's fingerprint against the diagram it shows.
+
+    `model render` writes the record itself. An image exported by hand, from draw.io
+    desktop or online, has none, so nothing can tell when it goes stale; stamping it
+    writes the same record, and from then on it is checked like any rendered view."""
+    if a.check:
+        rec = render_mod.check_record(a.image)
+        if rec is None:
+            print(f"  none   {_shown(a.image)}: no render record")
+            return 1
+        fresh, src, r = rec
+        state = "current" if fresh else "stale"
+        print(f"  {state:<8}{_shown(a.image)} <- {_shown(src)} {r.get('layers') or ''}")
+        return 0 if fresh else 1
+    if not a.diagram:
+        return _err("  ! --diagram is required to stamp; --check verifies an existing record", 2)
+    for f in (a.image, a.diagram):
+        if not os.path.exists(f):
+            return _err(f"  ! {f}: not found", 2)
+    if a.layer:
+        known = [n for n in drawio.layer_names(a.diagram)]
+        missing = [x for x in a.layer if x not in known]
+        if missing:
+            return _err(f"  ! {a.diagram} has no layer {missing}; it has {known}", 2)
+    p = render_mod.write_record(a.diagram, a.image, layers=a.layer, by="model stamp")
+    print(f"  {_shown(p)} (render record for a hand export; commit it with the image)")
+    return 0
+
+
+def cmd_drawio(a) -> int:
+    """Where draw.io desktop is, or exit 1 if it is not installed."""
+    exe = render_mod.available(a.drawio_bin)
+    if not exe:
+        print("  draw.io desktop not found; views must be exported by hand and stamped")
+        return 1
+    print(f"  {exe}")
     return 0
 
 
@@ -364,12 +404,26 @@ def build_parser():
     an.add_argument("doc", help="the .md document; its declared diagram supplies the geometry")
     an.add_argument("--diagram", help="the .drawio, when the document declares none")
     an.add_argument("--out", help="default: scenarios.html beside index.md, else <stem>-scenarios.html")
-    an.add_argument("--image", help="a PNG of the structure layer to use instead of rendering one")
+    an.add_argument("--image", help="a PNG or SVG of the structure layer to use as it is")
+    an.add_argument("--render", default="auto", choices=animate_mod.RENDER_MODES,
+                    help="auto (default): use the current view beside the diagram, else render one "
+                         "if draw.io is installed; never: the current view or fail; always: render")
     an.add_argument("--accent", default=animate_mod.DEFAULT_ACCENT, help="#RRGGBB for arrows and badges")
     an.add_argument("--interval", type=float, default=3.2, help="seconds per step when playing")
     an.add_argument("--force", action="store_true", help="animate even if validation reports errors")
     an.add_argument("--drawio-bin", help="path to the draw.io executable")
     an.set_defaults(fn=cmd_animate)
+
+    st = sub.add_parser("stamp", help="record a hand-exported view against its diagram, or --check one")
+    st.add_argument("image", help="the exported .svg or .png")
+    st.add_argument("--diagram", help="the .drawio it shows")
+    st.add_argument("--layer", action="append", help="layer name the image shows; repeatable")
+    st.add_argument("--check", action="store_true", help="exit 0 if the record matches the diagram")
+    st.set_defaults(fn=cmd_stamp)
+
+    dw = sub.add_parser("drawio", help="say where draw.io desktop is; exit 1 if it is not installed")
+    dw.add_argument("--drawio-bin", help="path to the draw.io executable")
+    dw.set_defaults(fn=cmd_drawio)
 
     l = sub.add_parser("layers", help="list a .drawio's layers with their indexes")
     l.add_argument("input")
