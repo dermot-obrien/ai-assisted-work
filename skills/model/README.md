@@ -6,7 +6,7 @@ An agent skill that treats a diagram and a document as two views of one model of
 
 Extract a model from Markdown tables, a draw.io file, JSON or YAML. Emit it to any of those. Validate one representation against another. Render draw.io layers to SVG, PNG or PDF.
 
-Nothing in the skill knows what the boxes mean. A reference architecture, a network topology, a process flow and a data lineage are the same shape, so domain vocabulary lives in a `model.toml` in your project.
+Nothing in the skill knows what the boxes mean. An architecture pattern, a network topology, a process flow and a data lineage are the same shape, so domain vocabulary lives in a `model.toml` in your project.
 
 Standalone: pure Python standard library, no dependency on any host repository, and no installation required.
 
@@ -113,7 +113,7 @@ Relative paths anchor to the directory holding the binding file, never the worki
 
 ```bash
 python bin/model.py doctor                                 # this skill's bindings
-python bin/model.py doctor --skill reference-architecture  # a sibling's contract
+python bin/model.py doctor --skill pattern  # a sibling's contract
 ```
 
 A sibling skill declares what it needs in an `inputs.toml` beside its SKILL.md, and the repository answers in `[suite.<name>]`. That is how a skill with no runtime of its own gets its bindings resolved and checked: it borrows this one. It matters because agents skip preconditions often enough to measure, and a broken path reference inside a SKILL.md raises nothing at all.

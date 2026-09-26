@@ -12,7 +12,7 @@ metadata:
 
 One model, several representations. Markdown tables, a draw.io diagram, JSON and YAML are projections of the same boxes and lines, and this skill moves between them and checks that they agree.
 
-Nothing here knows what the boxes mean. A reference architecture, a network topology, a process flow and a data lineage are all the same shape. Domain vocabulary lives in the project's binding file, never in the skill.
+Nothing here knows what the boxes mean. An architecture pattern, a network topology, a process flow and a data lineage are all the same shape. Domain vocabulary lives in the project's binding file, never in the skill.
 
 ## Which representation owns what
 
@@ -47,7 +47,7 @@ Exit codes: 0 success, 1 validation failed at or above the threshold, 2 usage or
 
 ## Several models in one folder
 
-A document declares its diagram in front matter. That declaration is what makes the two a pair, so a folder can hold several models side by side, such as a reference architecture and two alternative views of the same space:
+A document declares its diagram in front matter. That declaration is what makes the two a pair, so a folder can hold several models side by side, such as a pattern and two alternative views of the same space:
 
 ```yaml
 model:
@@ -89,7 +89,7 @@ How abstract a model is follows from its boxes, so `validate` reports it rather 
 | Nothing | Its kind is `external` or `context`: outside the model's scope, shown for context |
 | Unknown | None of the above, for example a catalogue declared without a level |
 
-The model is then conceptual if every counted box is conceptual, logical if the boxes are logical with or without conceptual ones, physical if every box is physical, and mixed otherwise, including when any box is unknown. A kind comes from a table's `kind` column, when the binding maps one, and wins over the identifier. The levels are generic: they say nothing about what the model is for, which is why one model of boxes, lines and walkthroughs can serve as a single-problem pattern and as a whole-scope reference architecture alike, with any mix of boxes in either.
+The model is then conceptual if every counted box is conceptual, logical if the boxes are logical with or without conceptual ones, physical if every box is physical, and mixed otherwise, including when any box is unknown. A kind comes from a table's `kind` column, when the binding maps one, and wins over the identifier. The levels are generic: they say nothing about what the model is for, which is why one model of boxes, lines and walkthroughs can serve as an architecture pattern at any scope, from one problem to a whole domain, with any mix of boxes in either.
 
 ## Bringing a hand-drawn diagram into a model
 

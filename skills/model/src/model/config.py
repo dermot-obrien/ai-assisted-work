@@ -3,7 +3,7 @@
 
 Everything domain-specific lives here rather than in code. Identifier patterns, table
 headings, column names, catalogue files and rule severities are all declared, which is
-what lets the same tool serve a reference architecture, a network topology or a process
+what lets the same tool serve an architecture pattern, a network topology or a process
 flow without knowing which it is looking at.
 
 The defaults are deliberately conventional, so a document that uses obvious headings

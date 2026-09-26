@@ -3,7 +3,7 @@
 
 Deliberately generic. There is no architecture vocabulary here, because anything that
 can be drawn as boxes and lines fits this shape: a network topology, a process flow, a
-data lineage, an org chart. A reference architecture is one subclass of it.
+data lineage, an org chart. An architecture pattern is one use of it.
 
 Domain meaning lives in `attrs` and in the consuming project's config, never in this
 module. That is what lets the skill be published without dragging an ontology along.
