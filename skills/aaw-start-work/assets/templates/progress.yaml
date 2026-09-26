@@ -196,7 +196,7 @@ activities:
                                # activity contributes to. An activity that produces
                                # nothing is invalid - split it, fold it into another,
                                # or name the product it was really for.
-    request_ids: []            # Optional feature-request layer: the requests (e.g. FR-004)
+    request_ids: []            # Optional feature-request layer: the requests (e.g. FRQ-004)
                                # this story builds part of. A request is assigned to its
                                # epic in the workspace's request register first; stories
                                # cite it here, separately. Read by quarter-planning.
