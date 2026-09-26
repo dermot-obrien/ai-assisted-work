@@ -18,6 +18,11 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   examples of a templated binding.
 
 ### Added
+- **`/thread wrap`** (thread 0.4.0) answers "is this chat done, can I delete it?". It checks for
+  anything that exists only in the chat (uncommitted or unpushed work, running tasks, open
+  PRs, owned deploys, unrecorded decisions and follow-ups), moves each into the repository,
+  memory or the thread tree, closes the chat's thread with a resolution, and says yes with a
+  table of what went where, or not yet with exactly what is left.
 - **`aaw install` runs without a terminal.** Installing AAW itself used to open a prompt
   unconditionally, so a SessionStart hook, CI job or agent failed at the first question
   ("readline was closed") before writing anything. It now prompts only on a terminal. Without
