@@ -112,6 +112,11 @@ How it works:
 - To hand over, the owner notes the new owner on the root, and notes on the new owner's
   thread what it inherits: anything built but not deployed, and anything half done. A thread
   that owns shared actions hands over before it is closed, parked or dropped.
+- Make the owner visible where the chat list is. In a tool that can rename chats, the owning
+  chat's title starts with `main · `, for example `main · earnings lab`. Only the owner uses
+  the prefix. On handover the old owner drops it and the new owner adds it. In a tool that
+  cannot rename chats, the owner puts `main` after the anchor line when it records ownership,
+  so scrolling up shows it.
 - Each chat works in its own checkout or git worktree. Two chats in one folder overwrite each
   other's uncommitted edits, and each picks up the other's changes in its commits.
 
