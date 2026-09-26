@@ -133,11 +133,12 @@ dropped; parked threads are unfinished and stay. Nothing is lost:
 - Archive files are new files and are never edited, so two machines pruning at once cannot
   conflict; an event found in two archives is counted once.
 
-It also runs by itself. After a command that writes, if the live store holds 200 or more
-event files or 7 days have passed since the last prune, branches closed for at least a day
-are archived and the command prints one line saying so. Relay that line. The environment
-variables `THREADS_PRUNE_EVENTS`, `THREADS_PRUNE_DAYS` and `THREADS_PRUNE_GRACE_DAYS` change
-the thresholds and `THREADS_AUTO_PRUNE=0` turns it off.
+It also runs by itself, once a day. Every command that writes (open, note, done, park, drop,
+rename, refine, describe, move, resume) checks whether a prune has run yet today, in the
+machine's local time. If not, it archives every branch closed before today began and prints
+one line saying so; relay that line. So the live store holds the day's events plus whatever
+is still in play, and each day's archive is its own file. New events are filed under
+`events/YYYY-MM-DD/`. `THREADS_AUTO_PRUNE=0` turns the daily prune off.
 
 `/thread prune` does it now, for every closed branch however recent. Run it when the user asks
 to prune, archive or tidy the threads.

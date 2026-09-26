@@ -40,9 +40,10 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `archive/*.jsonl` file per prune, so the live store only holds what is still in play.
   `tree` and `status` read the live events; `tree --all` (or `tree all`), `show` and `fork`
   replay the archives too, so the full tree is unchanged. Resuming or writing to an archived
-  thread restores it. Prune also runs by itself after a write once `events/` holds 200 files
-  or 7 days have passed, archiving branches closed for at least a day
-  (`THREADS_AUTO_PRUNE=0` turns it off). `archive` is an alias. This replaces the old
+  thread restores it. Prune also runs by itself on the first write of each day, archiving
+  every branch closed before that day began, and new events are filed by day under
+  `events/YYYY-MM-DD/` (`THREADS_AUTO_PRUNE=0` turns the daily prune off). `archive` is an
+  alias. This replaces the old
   `prune`, which deleted finished roots older than 30 days and left them only in git history.
 - **`markdown-deck` divider slides and long-table splitting** (skill 0.5.0).
   `<!-- deck:divider -->` makes a section divider on the cover's ground, titled by the next

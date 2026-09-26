@@ -24,13 +24,9 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 
 const HOME = process.env.THREADS_HOME || path.join(homedir(), ".threads");
-// Automatic prune: after a command that writes, when the live store holds AUTO_EVENTS
-// event files or the last prune was AUTO_DAYS ago, archive branches closed for at least
-// AUTO_GRACE_DAYS. THREADS_AUTO_PRUNE=0 turns it off.
-const num = (v, d) => (v !== undefined && v !== "" && !Number.isNaN(Number(v)) ? Number(v) : d);
-const AUTO_EVENTS = num(process.env.THREADS_PRUNE_EVENTS, 200);
-const AUTO_DAYS = num(process.env.THREADS_PRUNE_DAYS, 7);
-const AUTO_GRACE_DAYS = num(process.env.THREADS_PRUNE_GRACE_DAYS, 1);
+// Automatic prune: the first write of a new day archives every branch closed before that
+// day began, so events/ holds the day's events and whatever is still in play. Days are
+// the machine's local days. THREADS_AUTO_PRUNE=0 turns it off.
 const AUTO_ON = process.env.THREADS_AUTO_PRUNE !== "0";
 const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
@@ -197,7 +193,7 @@ function writeEvent(ev) {
   const ts = new Date().toISOString();
   const host = hostname().toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 20) || "host";
   const stamp = ts.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
-  const dir = path.join(HOME, "events", ts.slice(0, 7));
+  const dir = path.join(HOME, "events", localDay());
   mkdirSync(dir, { recursive: true });
   const full = { ts, host, ...ev };
   writeFileSync(
@@ -208,6 +204,16 @@ function writeEvent(ev) {
 }
 
 // ---------------------------------------------------------------- archive
+
+/** Midnight at the start of today, local time, as epoch ms. */
+const startOfToday = () => new Date().setHours(0, 0, 0, 0);
+
+/** Today's local date, YYYY-MM-DD: the folder a new event goes in. */
+function localDay() {
+  const d = new Date();
+  const pad = (x) => String(x).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 const ARCHIVE = () => path.join(HOME, "archive");
 const rel = (p) => path.relative(HOME, p).split(path.sep).join("/");
@@ -278,8 +284,7 @@ function restore(ids, live) {
  * dropped too, whose parent is still in play (or which is a root). Only whole branches
  * go, so nothing unfinished ever leaves the live store.
  */
-function closedBranches(nodes, minDays) {
-  const cutoff = Date.now() - minDays * 86400_000;
+function closedBranches(nodes, cutoff) {
   return [...nodes.values()].filter((n) => {
     if (isLive(n) || Date.parse(n.lastDeep) > cutoff) return false;
     const p = n.parent ? nodes.get(n.parent) : null;
@@ -318,14 +323,14 @@ function lastPrune() {
   return m ? Date.parse(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`) : null;
 }
 
-/** Prune on its own when the live store has grown or it has been a while. */
+/** Prune on its own at the first write of a new day. */
 function autoPrune() {
   if (!AUTO_ON) return;
-  const events = readEvents();
+  const today = startOfToday();
   const last = lastPrune();
-  const due = events.length >= AUTO_EVENTS || last === null || Date.now() - last >= AUTO_DAYS * 86400_000;
-  if (!due) return;
-  const branches = closedBranches(buildTree(events), AUTO_GRACE_DAYS);
+  if (last !== null && last >= today) return;
+  const events = readEvents();
+  const branches = closedBranches(buildTree(events), today);
   if (!branches.length) return;
   const r = archiveBranches(branches, events);
   if (!r) return;
@@ -515,7 +520,7 @@ Written by the \`thread\` skill (AI-Assisted Work, \`skills/thread\`); nothing h
 
 ## Format (for an agent without the skill)
 
-Each action is one new JSON file, \`events/YYYY-MM/<utc-stamp>-<host>-<6 hex>.json\`. Never edit an
+Each action is one new JSON file, \`events/YYYY-MM-DD/<utc-stamp>-<host>-<6 hex>.json\`. Never edit an
 existing event: write a new one, commit, \`git pull --rebase\`, push.
 
 \`archive/<utc-stamp>-<host>-<6 hex>.jsonl\` holds closed threads pruned out of \`events/\`, one file
@@ -713,7 +718,7 @@ const commands = {
     // Every closed branch by default; --days keeps the ones closed more recently than that.
     const days = typeof flags.days === "string" ? Number(flags.days) : 0;
     if (Number.isNaN(days)) die("--days takes a number");
-    const branches = closedBranches(nodes, days);
+    const branches = closedBranches(nodes, Date.now() - days * 86400_000);
     if (!branches.length) return console.log(days ? `nothing closed more than ${days} day(s) ago.` : "nothing closed to archive.");
     if (flags["dry-run"]) {
       console.log("would archive:");
@@ -748,8 +753,8 @@ const commands = {
   thread tree [<id>] [--all] [--mermaid|--json]  open and parked threads; --all (or: tree all)
                                   adds finished ones, archived ones included
   thread prune [--days <n>] [--dry-run]   archive closed branches to a new archive/ file (alias: archive)
-                                  runs by itself after a write once events/ holds ${AUTO_EVENTS}+ files
-                                  or ${AUTO_DAYS} days have passed; THREADS_AUTO_PRUNE=0 turns that off
+                                  runs by itself on the first write of a new day, archiving what
+                                  closed before today; THREADS_AUTO_PRUNE=0 turns that off
   thread init [<git-url>]         clone/seed the store at ${HOME}
   thread sync                     push anything left unpushed
 
