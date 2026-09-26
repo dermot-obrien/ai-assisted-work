@@ -214,8 +214,11 @@ check these in order and fix what's missing.
 - **Leave the environment setup script empty.** It runs once per environment, outside the
   repo; a leftover `git …` line fails with `fatal: not a git repository` and blocks every
   session.
-- **Allow the store repo** when the first `/thread` asks to add it. The Claude GitHub App
-  must be allowed on that repo.
+- **Give the session the store repo.** A private store needs credentials to clone as well
+  as to push. The first `/thread` may ask to add the repo; allow it. It may not ask, and the
+  clone fails with `could not read Username`: attach the store repo with push access, or
+  select it as a repository when starting the session. The Claude GitHub App must be allowed
+  on that repo.
 - **Skills load at session start.** If `/thread` isn't offered, the skill isn't on the
   session's branch or was committed after the session started: start a new one.
 
