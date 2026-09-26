@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * `aaw install [--framework <path>] [--workspace <path>] [--no-python]` —
+ * `aaw install [--framework <path>] [--workspace <path>] [--no-python] [--yes]` —
  * install entrypoint. With no `--framework`, installs AAW itself into this
- * workspace via the interactive bootstrap flow. With `--framework <path>`,
+ * workspace via the bootstrap flow, which prompts on a terminal and takes its
+ * answers from flags (`--tenant`, `--mode`, `--work-items-path`), the existing
+ * config or defaults otherwise. With `--framework <path>`,
  * installs ANY AAW-family framework from its manifest — this is how AAR/AAA
  * delegate here (they ship a tiny launcher), so all three install through the
  * one shared @aaw/installer engine.
@@ -15,7 +17,7 @@ import process from "node:process";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { findWorkspaceRoot, runInstall } from "@aaw/installer";
-import { runInit } from "./init.js";
+import { type InitAnswers, runInit } from "./init.js";
 
 interface InstallInput {
   args: string[];
@@ -40,14 +42,43 @@ function frameworkArg(args: string[]): string | undefined {
   return path.resolve(process.cwd(), value);
 }
 
-function workspaceArg(args: string[]): string | undefined {
-  const i = args.indexOf("--workspace");
+/** Read `--<name> <value>` if present. */
+function valueArg(args: string[], name: string): string | undefined {
+  const i = args.indexOf(`--${name}`);
   if (i === -1) return undefined;
   const value = args[i + 1];
   if (value === undefined || value.startsWith("--")) {
-    throw new Error("--workspace requires a path argument");
+    throw new Error(`--${name} requires a value`);
   }
-  return path.resolve(process.cwd(), value);
+  return value;
+}
+
+function workspaceArg(args: string[]): string | undefined {
+  const value = valueArg(args, "workspace");
+  return value === undefined ? undefined : path.resolve(process.cwd(), value);
+}
+
+/** `--yes` (or `-y`, `--non-interactive`): never prompt; keep existing values or defaults. */
+function assumeYes(args: string[]): boolean {
+  return args.includes("--yes") || args.includes("-y") || args.includes("--non-interactive");
+}
+
+/** Prompt only on a terminal, and never under --yes. */
+function isInteractive(args: string[]): boolean {
+  return !assumeYes(args) && Boolean(process.stdin.isTTY && process.stdout.isTTY);
+}
+
+/** Options for installing AAW itself (`aaw install` and its alias `aaw init`). */
+export function initOptionsFromArgs(args: string[]): { answers: InitAnswers; interactive: boolean } {
+  return {
+    answers: {
+      workspace: valueArg(args, "workspace"),
+      tenant: valueArg(args, "tenant"),
+      mode: valueArg(args, "mode"),
+      workItemsPath: valueArg(args, "work-items-path"),
+    },
+    interactive: isInteractive(args),
+  };
 }
 
 async function resolveWorkspaceRoot(args: string[]): Promise<string> {
@@ -55,7 +86,7 @@ async function resolveWorkspaceRoot(args: string[]): Promise<string> {
   if (explicit) return explicit;
 
   const detected = await findWorkspaceRoot(process.cwd());
-  if (!process.stdin.isTTY || !process.stdout.isTTY) return detected;
+  if (!isInteractive(args)) return detected;
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
@@ -68,7 +99,11 @@ async function resolveWorkspaceRoot(args: string[]): Promise<string> {
 
 export async function runInstallCommand(input: InstallInput): Promise<number> {
   if (!input.args.includes("--framework")) {
-    return runInit({ cwd: process.cwd(), frameworkRoot: resolveAawRoot() });
+    return runInit({
+      cwd: process.cwd(),
+      frameworkRoot: resolveAawRoot(),
+      ...initOptionsFromArgs(input.args),
+    });
   }
 
   const noPython = input.args.includes("--no-python");

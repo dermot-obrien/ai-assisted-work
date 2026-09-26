@@ -21,7 +21,7 @@ import { findWorkspaceRoot, loadConfig } from "./config.js";
 import { runClaim } from "./commands/claim.js";
 import { runInit } from "./commands/init.js";
 import { runCheckSkillsCommand } from "./commands/check-skills.js";
-import { runInstallCommand } from "./commands/install.js";
+import { initOptionsFromArgs, runInstallCommand } from "./commands/install.js";
 import { runLint } from "./commands/lint.js";
 import { runMigrate } from "./commands/migrate.js";
 import { runNextTask } from "./commands/next-task.js";
@@ -36,6 +36,10 @@ Usage:
   aaw install                         Bootstrap/install this workspace
   aaw install --workspace PATH        Bootstrap/install another workspace
   aaw install --framework PATH        Install another AAW-family framework
+  aaw install --yes                   Never prompt: keep existing values or defaults
+                                      (automatic when there is no terminal)
+  aaw install --tenant NAME --mode local-fs|cloud --work-items-path PATH
+                                      Answer the bootstrap questions as flags
   aaw check-skills                    Report installed skills that no longer match
                                       the framework that owns them
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
@@ -84,7 +88,11 @@ async function main(argv: string[]): Promise<number> {
 
   // Commands that don't need an existing config:
   if (command === "init") {
-    return runInit({ cwd: process.cwd(), frameworkRoot: resolveAawRoot() });
+    return runInit({
+      cwd: process.cwd(),
+      frameworkRoot: resolveAawRoot(),
+      ...initOptionsFromArgs(rest),
+    });
   }
   if (command === "install") {
     return runInstallCommand({ args: rest });

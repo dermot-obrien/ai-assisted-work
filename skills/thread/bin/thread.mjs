@@ -196,7 +196,7 @@ function writeEvent(ev) {
   return full;
 }
 
-/** Replay events into nodes: { id, parent, text, status, ctx, tool, opened, last, notes[], outcome, children[] }. */
+/** Replay events into nodes: { id, parent, text, titles[], description, status, ctx, tool, opened, last, notes[], outcome, children[] }. */
 function buildTree(events) {
   const nodes = new Map();
   for (const ev of events) {
@@ -207,6 +207,8 @@ function buildTree(events) {
           id: ev.id,
           parent: ev.parent ?? null,
           text: ev.text,
+          titles: [],
+          description: null,
           status: "open",
           ctx: ev.ctx,
           tool: ev.tool,
@@ -231,6 +233,16 @@ function buildTree(events) {
         break;
       case "move":
         if (n) Object.assign(n, { parent: ev.parent ?? null, last: ev.ts });
+        break;
+      case "rename":
+        // Earlier titles are kept, so a clarified thread still shows what it was called.
+        if (n && ev.text && ev.text !== n.text) {
+          n.titles.push({ ts: ev.ts, text: n.text });
+          Object.assign(n, { text: ev.text, last: ev.ts });
+        }
+        break;
+      case "describe":
+        if (n) Object.assign(n, { description: ev.text || null, last: ev.ts });
         break;
     }
   }
@@ -341,9 +353,23 @@ delete an existing event — write a new one, commit, \`git pull --rebase\`, pus
 | \`resume\` | \`id\`, \`ctx\` |
 | \`note\` | \`id\`, \`text\` |
 | \`move\` | \`id\`, \`parent\` (id or null) |
+| \`rename\` | \`id\`, \`text\` (the new title; earlier ones stay in the history) |
+| \`describe\` | \`id\`, \`text\` (a longer description; the latest one wins) |
 
 Every event also carries \`ts\` (ISO-8601 UTC) and \`host\`. The tree is the events replayed in \`ts\` order.
 `;
+
+/**
+ * The refine convention: the first sentence is the title and the rest is the description.
+ * A sentence ends at a full stop followed by a space or the end of the text, so "v3.2.0"
+ * does not split. Text with no such full stop is only a title.
+ */
+function splitRefinement(raw) {
+  const text = raw.trim();
+  const m = /^(.*?)\.(?:\s+([\s\S]*))?$/.exec(text);
+  if (!m) return { title: text, description: null };
+  return { title: m[1].trim(), description: (m[2] || "").trim() || null };
+}
 
 const commands = {
   init(pos) {
@@ -382,6 +408,8 @@ const commands = {
   show(pos, flags, nodes) {
     const n = need(nodes, pos[0]);
     console.log(anchor(n));
+    if (n.description) console.log(`   ${n.description}`);
+    for (const t of n.titles) console.log(`   was: ${t.text}  (until ${ago(t.ts)})`);
     const chain = pathTo(nodes, n);
     if (chain.length > 1) console.log(`   path: ${chain.map((p) => `${p.id} ${p.text}`).join(" › ")}`);
     console.log(`   ${n.status}, opened ${ago(n.opened)}${n.outcome ? ` — ${n.outcome}` : ""}`);
@@ -395,6 +423,8 @@ const commands = {
   close(pos, flags, nodes, status) {
     const n = need(nodes, pos[0]);
     const note = pos.slice(1).join(" ").trim() || undefined;
+    // Every close carries a one-line resolution, so the tree says how each thread ended.
+    if (!note) die(`a resolution is required: thread ${{ done: "done", parked: "park", dropped: "drop" }[status]} ${n.id} "<what was decided, delivered, or why it stopped>"`);
     writeEvent({ type: "close", id: n.id, status, note });
     commitAndPush(`${status} ${n.id}${note ? `: ${note}` : ""}`);
     const tree = buildTree(readEvents());
@@ -407,6 +437,38 @@ const commands = {
       const rest = up.children.filter((c) => c.status === "open" || c.status === "parked");
       if (rest.length) console.log(`   still under it: ${rest.map((c) => `${MARK[c.status]} ${c.id} ${c.text}`).join(" · ")}`);
     } else console.log("that was a root — nothing above it is open.");
+  },
+
+  refine(pos, flags, nodes) {
+    const n = need(nodes, pos[0]);
+    const { title, description } = splitRefinement(pos.slice(1).join(" "));
+    if (!title) die(`refine it how? e.g. thread refine ${n.id} "Fix the EDGAR retry bug. Daily ingest only; the backfill is t-xyz."`);
+    const renamed = title !== n.text;
+    if (!renamed && !description) die(`${n.id} is already called that`);
+    if (renamed) writeEvent({ type: "rename", id: n.id, text: title });
+    if (description) writeEvent({ type: "describe", id: n.id, text: description });
+    commitAndPush(`refine ${n.id}: ${title}`);
+    commands.show([n.id], flags, buildTree(readEvents()));
+  },
+
+  rename(pos, flags, nodes) {
+    const n = need(nodes, pos[0]);
+    const text = pos.slice(1).join(" ").trim();
+    if (!text) die(`the new title? e.g. thread rename ${n.id} "fix ingestion retry bug in the EDGAR crawler"`);
+    if (text === n.text) die(`${n.id} is already called that`);
+    writeEvent({ type: "rename", id: n.id, text });
+    commitAndPush(`rename ${n.id}: ${text}`);
+    console.log(anchor(buildTree(readEvents()).get(n.id)));
+    console.log(`   was: ${n.text}`);
+  },
+
+  describe(pos, flags, nodes) {
+    const n = need(nodes, pos[0]);
+    const text = pos.slice(1).join(" ").trim();
+    if (!text) die(`describe it how? e.g. thread describe ${n.id} "what this covers, and what it does not"`);
+    writeEvent({ type: "describe", id: n.id, text });
+    commitAndPush(`describe ${n.id}`);
+    console.log(`described ${n.id}`);
   },
 
   note(pos, flags, nodes) {
@@ -496,8 +558,11 @@ const commands = {
   thread open "<text>" [--parent <id>] [--tool <name>] [--ctx <name>]
   thread resume <id>              pick a thread back up in this chat
   thread show <id>                one thread: path, notes, branches
-  thread done|park|drop <id> ["<outcome>"]
+  thread done|park|drop <id> "<resolution>"
   thread note <id> "<text>"
+  thread refine <id> "<Title. Description>"  first sentence renames, the rest describes
+  thread rename <id> "<title>"    clarify a title; earlier titles are kept
+  thread describe <id> "<text>"   a longer description, shown by show and resume
   thread move <id> --parent <id> | --root
   thread fork <id>                header for a handoff to a new chat
   thread tree [<id>] [--all] [--mermaid]
