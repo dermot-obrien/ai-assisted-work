@@ -48,7 +48,7 @@ npm-registry access** (git is enough).
 
 ```bash
 npm i github:dermot-obrien/ai-assisted-work
-npx aaw install       # interactive bootstrap: workspace, tenant, mode, work_items_path; then installs the skills
+npx aaw install       # bootstrap: workspace, tenant, mode, work_items_path (prompts in a terminal); then installs the skills
 ```
 
 `bin/aaw.js` is a committed, self-contained bundle, so `npm i` pulls **no** registry
@@ -66,7 +66,25 @@ npm registry is restricted but git+GitHub access is allowed — the bundled CLI 
 the repository. Cross-platform on macOS, Linux, and Windows. See
 [DEPLOYMENT.md](DEPLOYMENT.md).
 
+### Without a terminal: hooks, CI and agents
+
+`aaw install` prompts only when it runs in a terminal. Without one it asks nothing: each
+answer comes from its flag, then the existing `.aaw-config.yaml`, then the default, and it
+prints one line with the values it used. `--yes` does the same in a terminal.
+
+```bash
+npx aaw install --yes                                   # keep the existing config, or take the defaults
+npx aaw install --yes --tenant acme --mode local-fs --work-items-path ~/aaw/acme/repo/work-items
+node .ai-assisted-work/bin/aaw.js install --yes         # the same, from a local clone
+```
+
+Use `--yes` in anything scripted, such as a SessionStart hook or a setup script, so it never
+depends on whether a terminal happens to be attached.
+
+### Choosing the workspace
+
 `aaw install` asks which workspace to install into and defaults to the current workspace.
+`--workspace <path>` answers that without asking.
 You can keep one local AAW clone outside your repos and install it into multiple
 workspaces; each workspace stores the relative source path in `.aaw-config.yaml` so the
 generated shims keep resolving back to the correct AAW clone.
