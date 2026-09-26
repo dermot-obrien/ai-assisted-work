@@ -7,7 +7,7 @@ validates one against another, and renders the diagram.
 
 Nothing here knows what the boxes mean. Domain vocabulary lives in `model.toml`.
 """
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 from .schema import Model, Node, Edge, Group, Scenario, Step  # noqa: F401
 from . import config, drawio, markdown, serial, validate, render, sync, scan, animate  # noqa: F401
