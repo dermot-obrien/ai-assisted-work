@@ -8480,13 +8480,22 @@ async function installedModules(workspaceRoot) {
 // src/commands/init.ts
 var SUBMODULE_DEFAULT = ".ai-assisted-work";
 async function runInit(input) {
-  const rl = createInterface({ input: process4.stdin, output: process4.stdout });
+  const answers = input.answers ?? {};
+  const interactive = input.interactive ?? Boolean(process4.stdin.isTTY && process4.stdout.isTTY);
+  const rl = interactive ? createInterface({ input: process4.stdin, output: process4.stdout }) : null;
+  const ask = async (prompt, fallback, given) => {
+    if (given !== void 0 && given !== "")
+      return given;
+    if (!rl)
+      return fallback;
+    return (await rl.question(`${prompt} [${fallback}]: `)).trim() || fallback;
+  };
   try {
     const defaultWorkspaceRoot = await walkUpForGitRoot(input.cwd);
-    const workspaceAnswer = (await rl.question(
-      `Install into workspace [${defaultWorkspaceRoot}]: `
-    )).trim();
-    const workspaceRoot = workspaceAnswer === "" ? defaultWorkspaceRoot : path5.resolve(input.cwd, workspaceAnswer);
+    const workspaceRoot = path5.resolve(
+      input.cwd,
+      await ask("Install into workspace", defaultWorkspaceRoot, answers.workspace)
+    );
     const env = await detect(workspaceRoot, input.frameworkRoot);
     const existingConfig = await readExistingConfig(env.workspaceRoot);
     if (existingConfig) {
@@ -8506,7 +8515,7 @@ async function runInit(input) {
       ].filter(Boolean).join(", ") || "none"}
 `
     );
-    if (existingConfig) {
+    if (existingConfig && rl) {
       process4.stdout.write(
         `\u25B8 Found existing .aaw-config.yaml \u2014 its values are pre-filled below.
   Press Enter at each prompt to keep the current value.
@@ -8514,10 +8523,12 @@ async function runInit(input) {
       );
     }
     process4.stdout.write("\n");
-    const tenantDefault = existingConfig?.tenant ?? "local";
-    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() || tenantDefault;
-    const modeDefault = existingConfig?.mode ?? "local-fs";
-    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() || modeDefault;
+    const tenant = await ask("Tenant name", existingConfig?.tenant ?? "local", answers.tenant);
+    const mode = await ask(
+      "Mode (local-fs/cloud)",
+      existingConfig?.mode ?? "local-fs",
+      answers.mode
+    );
     if (mode !== "local-fs" && mode !== "cloud") {
       process4.stderr.write(`Unsupported mode: ${mode}
 `);
@@ -8525,8 +8536,14 @@ async function runInit(input) {
     }
     const repoName = path5.basename(env.workspaceRoot);
     const defaultPath = existingConfig?.workItemsPath ?? path5.join(homedir2(), "aaw", tenant, repoName, "work-items");
-    const workItemsPath = (await rl.question(`work_items_path [${defaultPath}]: `)).trim() || defaultPath;
+    const workItemsPath = await ask("work_items_path", defaultPath, answers.workItemsPath);
     const initiativesPath = existingConfig?.initiativesPath ?? path5.join(path5.dirname(workItemsPath), "initiatives");
+    if (!rl) {
+      process4.stdout.write(
+        `\u25B8 Non-interactive: tenant=${tenant}, mode=${mode}, work_items_path=${workItemsPath}
+`
+      );
+    }
     const detectedNames = describeTools({
       copilot: env.hasGitHub,
       cursor: env.hasCursor,
@@ -8576,7 +8593,7 @@ Then: aaw status
     );
     return 0;
   } finally {
-    rl.close();
+    rl?.close();
   }
 }
 async function detect(workspaceRoot, frameworkRoot) {
@@ -8774,22 +8791,43 @@ function frameworkArg(args) {
   }
   return path7.resolve(process6.cwd(), value);
 }
-function workspaceArg(args) {
-  const i = args.indexOf("--workspace");
+function valueArg(args, name) {
+  const i = args.indexOf(`--${name}`);
   if (i === -1)
     return void 0;
   const value = args[i + 1];
   if (value === void 0 || value.startsWith("--")) {
-    throw new Error("--workspace requires a path argument");
+    throw new Error(`--${name} requires a value`);
   }
-  return path7.resolve(process6.cwd(), value);
+  return value;
+}
+function workspaceArg(args) {
+  const value = valueArg(args, "workspace");
+  return value === void 0 ? void 0 : path7.resolve(process6.cwd(), value);
+}
+function assumeYes(args) {
+  return args.includes("--yes") || args.includes("-y") || args.includes("--non-interactive");
+}
+function isInteractive(args) {
+  return !assumeYes(args) && Boolean(process6.stdin.isTTY && process6.stdout.isTTY);
+}
+function initOptionsFromArgs(args) {
+  return {
+    answers: {
+      workspace: valueArg(args, "workspace"),
+      tenant: valueArg(args, "tenant"),
+      mode: valueArg(args, "mode"),
+      workItemsPath: valueArg(args, "work-items-path")
+    },
+    interactive: isInteractive(args)
+  };
 }
 async function resolveWorkspaceRoot(args) {
   const explicit = workspaceArg(args);
   if (explicit)
     return explicit;
   const detected = await findWorkspaceRoot2(process6.cwd());
-  if (!process6.stdin.isTTY || !process6.stdout.isTTY)
+  if (!isInteractive(args))
     return detected;
   const rl = createInterface2({ input: process6.stdin, output: process6.stdout });
   try {
@@ -8801,7 +8839,11 @@ async function resolveWorkspaceRoot(args) {
 }
 async function runInstallCommand(input) {
   if (!input.args.includes("--framework")) {
-    return runInit({ cwd: process6.cwd(), frameworkRoot: resolveAawRoot() });
+    return runInit({
+      cwd: process6.cwd(),
+      frameworkRoot: resolveAawRoot(),
+      ...initOptionsFromArgs(input.args)
+    });
   }
   const noPython = input.args.includes("--no-python");
   const runSeed2 = input.args.includes("--seed");
@@ -9726,6 +9768,10 @@ Usage:
   aaw install                         Bootstrap/install this workspace
   aaw install --workspace PATH        Bootstrap/install another workspace
   aaw install --framework PATH        Install another AAW-family framework
+  aaw install --yes                   Never prompt: keep existing values or defaults
+                                      (automatic when there is no terminal)
+  aaw install --tenant NAME --mode local-fs|cloud --work-items-path PATH
+                                      Answer the bootstrap questions as flags
   aaw check-skills                    Report installed skills that no longer match
                                       the framework that owns them
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
@@ -9765,7 +9811,11 @@ async function main(argv) {
     return 0;
   }
   if (command === "init") {
-    return runInit({ cwd: process14.cwd(), frameworkRoot: resolveAawRoot2() });
+    return runInit({
+      cwd: process14.cwd(),
+      frameworkRoot: resolveAawRoot2(),
+      ...initOptionsFromArgs(rest)
+    });
   }
   if (command === "install") {
     return runInstallCommand({ args: rest });

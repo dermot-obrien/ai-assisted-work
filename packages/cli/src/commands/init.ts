@@ -14,6 +14,10 @@
  *   - mode (local-fs | cloud)
  *   - work_items_path
  *
+ * A value given as a flag is not asked for. Without a terminal (a hook, CI, an
+ * agent), or with --yes, nothing is asked: each value comes from its flag, then
+ * the existing .aaw-config.yaml, then the default shown in brackets.
+ *
  * Writes:
  *   - .aaw-config.yaml at the workspace root
  *   - the work_items_path directory (if missing)
@@ -32,10 +36,23 @@ import { createInterface } from "node:readline/promises";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { runInstall } from "@aaw/installer";
 
+/** Answers supplied up front, as flags. A supplied answer is never prompted for. */
+export interface InitAnswers {
+  workspace?: string;
+  tenant?: string;
+  mode?: string;
+  workItemsPath?: string;
+}
+
 interface InitInput {
   cwd: string;
   frameworkRoot: string;
+  answers?: InitAnswers;
+  /** Prompt for missing answers. Defaults to true only when stdin and stdout are terminals. */
+  interactive?: boolean;
 }
+
+type Asker = (prompt: string, fallback: string, given: string | undefined) => Promise<string>;
 
 interface DetectedEnvironment {
   workspaceRoot: string;
@@ -51,15 +68,25 @@ const SUBMODULE_DEFAULT = ".ai-assisted-work";
 const MODULE_ID = "aaw";
 
 export async function runInit(input: InitInput): Promise<number> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const answers = input.answers ?? {};
+  const interactive =
+    input.interactive ?? Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  // No readline at all when not interactive: without a terminal it would close on
+  // the first question and abort the install.
+  const rl = interactive
+    ? createInterface({ input: process.stdin, output: process.stdout })
+    : null;
+  const ask: Asker = async (prompt, fallback, given) => {
+    if (given !== undefined && given !== "") return given;
+    if (!rl) return fallback;
+    return (await rl.question(`${prompt} [${fallback}]: `)).trim() || fallback;
+  };
   try {
     const defaultWorkspaceRoot = await walkUpForGitRoot(input.cwd);
-    const workspaceAnswer = (await rl.question(
-      `Install into workspace [${defaultWorkspaceRoot}]: `,
-    )).trim();
-    const workspaceRoot = workspaceAnswer === ""
-      ? defaultWorkspaceRoot
-      : path.resolve(input.cwd, workspaceAnswer);
+    const workspaceRoot = path.resolve(
+      input.cwd,
+      await ask("Install into workspace", defaultWorkspaceRoot, answers.workspace),
+    );
 
     const env = await detect(workspaceRoot, input.frameworkRoot);
     const existingConfig = await readExistingConfig(env.workspaceRoot);
@@ -80,7 +107,7 @@ export async function runInit(input: InitInput): Promise<number> {
         .filter(Boolean)
         .join(", ") || "none"}\n`,
     );
-    if (existingConfig) {
+    if (existingConfig && rl) {
       process.stdout.write(
         `▸ Found existing .aaw-config.yaml — its values are pre-filled below.\n` +
           `  Press Enter at each prompt to keep the current value.\n`,
@@ -88,12 +115,12 @@ export async function runInit(input: InitInput): Promise<number> {
     }
     process.stdout.write("\n");
 
-    const tenantDefault = existingConfig?.tenant ?? "local";
-    const tenant = (await rl.question(`Tenant name [${tenantDefault}]: `)).trim() ||
-      tenantDefault;
-    const modeDefault = existingConfig?.mode ?? "local-fs";
-    const mode = (await rl.question(`Mode (local-fs/cloud) [${modeDefault}]: `)).trim() ||
-      modeDefault;
+    const tenant = await ask("Tenant name", existingConfig?.tenant ?? "local", answers.tenant);
+    const mode = await ask(
+      "Mode (local-fs/cloud)",
+      existingConfig?.mode ?? "local-fs",
+      answers.mode,
+    );
     if (mode !== "local-fs" && mode !== "cloud") {
       process.stderr.write(`Unsupported mode: ${mode}\n`);
       return 2;
@@ -103,12 +130,16 @@ export async function runInit(input: InitInput): Promise<number> {
     const defaultPath =
       existingConfig?.workItemsPath ??
       path.join(homedir(), "aaw", tenant, repoName, "work-items");
-    const workItemsPath =
-      (await rl.question(`work_items_path [${defaultPath}]: `)).trim() ||
-      defaultPath;
+    const workItemsPath = await ask("work_items_path", defaultPath, answers.workItemsPath);
     const initiativesPath =
       existingConfig?.initiativesPath ??
       path.join(path.dirname(workItemsPath), "initiatives");
+
+    if (!rl) {
+      process.stdout.write(
+        `▸ Non-interactive: tenant=${tenant}, mode=${mode}, work_items_path=${workItemsPath}\n`,
+      );
+    }
 
     const detectedNames = describeTools({
       copilot: env.hasGitHub,
@@ -158,7 +189,7 @@ export async function runInit(input: InitInput): Promise<number> {
     );
     return 0;
   } finally {
-    rl.close();
+    rl?.close();
   }
 }
 
