@@ -40,6 +40,17 @@ NAMES = (os.path.join(".agents", "skill-bindings.toml"), "skill-bindings.toml")
 # had not bound yet would read nothing rather than be told what it has not said.
 PATH_KEYS = ("sources", "register", "basis", "calendar", "resourcing", "quarterDir")
 
+# Paths a workspace may declare to opt in to more. Each is optional, and a workspace that
+# declares none of them validates exactly as before.
+#   ladder        the definition ladder, a CSV of rung,name,description in ascending order
+#   epicsDir      the folder holding each epic's hand-written home folder
+#   cardsDir      where the generated epic cards and the stage grid are written
+#   workItemsDir  AAW work items, read for epics whose progress.yaml names this quarter
+OPTIONAL_PATH_KEYS = ("ladder", "epicsDir", "cardsDir", "workItemsDir")
+
+# Optional paths that are written rather than read, so their absence is not a fault.
+WRITTEN_KEYS = ("cardsDir",)
+
 # What does have a default is convention rather than location, and is the same question
 # every workspace answers the same way until it doesn't.
 DEFAULTS = {
@@ -86,9 +97,12 @@ class Bindings:
         self.quarter = quarter
         self.file = find_bindings(start or os.getcwd())
         values = dict(DEFAULTS)
+        self.declared_keys = set()
         if self.file and tomllib:
             with open(self.file, "rb") as fh:
-                values.update(_section(tomllib.load(fh)))
+                section = _section(tomllib.load(fh))
+            self.declared_keys = set(section)
+            values.update(section)
         elif self.file and not tomllib:
             sys.stderr.write(
                 "quarter-planning: Python 3.11 or newer is needed to read "
@@ -109,6 +123,22 @@ class Bindings:
                 % (key, self.file or ".agents/skill-bindings.toml"))
         raw = str(raw).replace("{quarter}", self.quarter)
         return os.path.normpath(os.path.join(self.base, raw))
+
+    def declared(self, key):
+        """Whether the workspace states this key itself, rather than taking a default."""
+        return key in self.declared_keys and str(self.values.get(key) or "").strip() != ""
+
+    def optional(self, key):
+        """An optional bound path, resolved, or None when the workspace has not declared it."""
+        return self.resolve(key) if self.declared(key) else None
+
+    def command(self, role):
+        """The workspace's own command for a role, from the commands table, or None."""
+        table = self.values.get("commands")
+        if isinstance(table, dict):
+            value = table.get(role)
+            return str(value).strip() if value else None
+        return None
 
     def label(self):
         """The quarter label the model records, e.g. Q1-FY27 for fy27-q1."""
@@ -138,6 +168,12 @@ class Bindings:
             p = self.resolve(k)
             if not os.path.exists(p):
                 out.append((k, p))
+        for k in OPTIONAL_PATH_KEYS:
+            if k in WRITTEN_KEYS or not self.declared(k):
+                continue
+            p = self.resolve(k)
+            if not os.path.exists(p):
+                out.append((k, p))
         return out
 
     def describe(self):
@@ -145,10 +181,21 @@ class Bindings:
         undeclared = set(self.undeclared())
         for k in PATH_KEYS:
             if k in undeclared:
-                lines.append(f"    {k:<11} NOT DECLARED")
+                lines.append(f"    {k:<12} NOT DECLARED")
                 continue
             p = self.resolve(k)
-            lines.append(f"    {k:<11} {p}{'' if os.path.exists(p) else '   MISSING'}")
-        lines.append(f"    {'label':<11} {self.label()}")
-        lines.append(f"    {'approval':<11} {' > '.join(self.approval_stages)}")
+            lines.append(f"    {k:<12} {p}{'' if os.path.exists(p) else '   MISSING'}")
+        for k in OPTIONAL_PATH_KEYS:
+            if not self.declared(k):
+                lines.append(f"    {k:<12} not declared (optional)")
+                continue
+            p = self.resolve(k)
+            gone = not os.path.exists(p)
+            flag = ("   not yet written" if k in WRITTEN_KEYS else "   MISSING") if gone else ""
+            lines.append(f"    {k:<12} {p}{flag}")
+        lines.append(f"    {'label':<12} {self.label()}")
+        if not self.declared("slugPattern"):
+            lines.append("  note: slugPattern is not declared, so the fiscal-year default "
+                         f"{DEFAULTS['slugPattern']} is in use.")
+        lines.append(f"    {'approval':<12} {' > '.join(self.approval_stages)}")
         return "\n".join(lines)

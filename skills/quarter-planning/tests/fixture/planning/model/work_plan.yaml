@@ -1,0 +1,14 @@
+# Quarterly work plans.
+work_plan:
+- id: WP-2027-Q1
+  name: Example plan, 2027-Q1
+  plan_type: quarterly
+  quarter: 2027-Q1
+  planned_start: 2027-01-01
+  planned_end: 2027-03-31
+  status: planned
+  owner: ana
+  approval: draft
+  work_item_ids:
+  - EP-001
+  - WI-002

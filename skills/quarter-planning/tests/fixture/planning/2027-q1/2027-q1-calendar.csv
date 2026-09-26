@@ -1,0 +1,4 @@
+period_id,type,start,end,working_days,note
+2027-01,month,2027-01-01,2027-01-31,20,New Year's Day Friday 1 January
+2027-02,month,2027-02-01,2027-02-28,20,
+2027-03,month,2027-03-01,2027-03-31,20,A long note that runs well past forty-four characters so the report has to wrap it rather than cut it off at the end

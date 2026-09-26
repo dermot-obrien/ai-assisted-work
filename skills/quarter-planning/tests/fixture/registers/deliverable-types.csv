@@ -1,0 +1,7 @@
+id,name,rung,base_story_points,used,description
+capability-area,Capability area,R1,3,Yes,A capability area and its flows
+abb-set,Building block set,R2,4,Yes,The building blocks a capability needs
+decision,Decision record,R3,2,Yes,A decision settling one open question
+logical-pattern,Logical pattern,R3,4,Yes,A pattern whose every box is a building block
+plan-document,Plan document,,1,Yes,The quarter's plan
+old-type,Retired type,R2,2,No,A type no longer in use
