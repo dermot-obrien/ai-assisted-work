@@ -74,6 +74,27 @@ advances_kr_ids: []           # Optional OKR layer: the KR-NNN Key Results this 
                               # advances. Empty unless the workspace runs objectives; see
                               # the objective and cadence templates in aaw-start-initiative.
 
+# === QUARTER PLANNING (optional, epic-only) ===
+# Read by the quarter-planning skill, where the workspace binds `workItemsDir`, for an
+# epic whose planning_period is the quarter being planned. Every field is optional; leave
+# them out where the workspace does not plan by quarter.
+budget_points: null           # Capacity this epic may spend, derived from the quarter's
+                              # resourcing register. Set by planning, never estimated here.
+planned_points: null          # The sum of the deliverables' sizes. Compared with the
+                              # budget, never reconciled to it.
+lane: null                    # The capability area this epic advances. One per epic.
+flows: []                     # The rung movement per flow, on the workspace's definition
+                              # ladder. One entry per flow:
+                              # - flow: "{Flow name}"
+                              #   description: "{What the flow does}"
+                              #   rung_from: R0
+                              #   rung_to: R1
+                              #   rung_reached: null   # Recorded when the quarter closes
+home: null                    # The epic's own hand-written folder, by name, under the
+                              # workspace's epics folder
+approval: draft               # draft | sized | validated | approved. The epic as written.
+                              # Approved is commitment.
+
 # === TIMESTAMPS ===
 created: "{ISO-8601-timestamp}"
 updated: "{ISO-8601-timestamp}"
@@ -118,7 +139,13 @@ deliverables:
                                # Tracks the PRODUCT. Distinct from the status of the
                                # activities producing it: all activities can be
                                # complete while the product sits in review.
-    approval: draft            # draft | validated | approved
+    owner: null                # Optional. Who produces it, for loading their capacity.
+    points: null               # Optional. Omitted means the type's base points from the
+                               # register. Set only to override, with a reason.
+    points_override_reason: null
+    actual_points: null        # Optional. What it actually took, recorded at quarter
+                               # close so the register's sizes can be recalibrated.
+    approval: draft            # draft | sized | validated | approved
                                # Tracks this PLANNING RECORD: whether the deliverable
                                # as defined has been agreed. Keeping the two apart is
                                # what distinguishes a draft plan for a finished product

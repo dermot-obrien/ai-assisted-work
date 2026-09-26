@@ -38,6 +38,7 @@ Two independent axes on each entry in the `deliverables:` block. Report both.
 | `approval` | Meaning |
 |------------|---------|
 | `draft` | The planning record itself is not yet agreed |
+| `sized` | Its size is agreed |
 | `validated` | The definition has been checked |
 | `approved` | The definition has been signed off |
 

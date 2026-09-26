@@ -84,7 +84,11 @@ quality criteria consistent across work items instead of re-argued each time.
 | `quality_criteria` | Testable statements a reviewer can check, not aspirations. Inherited from `type` where a register is configured |
 | `approver` | Who accepts it. Inherited from `type` where a register is configured. Null means the work item owner |
 | `state` | `planned`, `drafted`, `in_review`, `accepted`. Tracks the product |
-| `approval` | `draft`, `validated`, `approved`. Tracks the planning record |
+| `approval` | `draft`, `sized`, `validated`, `approved`. Tracks the planning record |
+| `owner` | Optional. Who produces it, where capacity is planned per person |
+| `points` | Optional. Omitted means the type's base points from the register. Set only to override |
+| `points_override_reason` | Required whenever `points` is set |
+| `actual_points` | Optional. What it took, recorded when the planning period closes |
 
 Keep `state` and `approval` apart. `state` is the thing; `approval` is the plan for the thing.
 That is what distinguishes a draft plan for a finished product from an approved plan for one
@@ -143,6 +147,11 @@ From `assets/templates/progress.yaml`:
    `state: planned`
 4. Populate the `activities` array from `plan.md`, each with its `produces`
 5. Set `artifacts.jira` to the URL captured in Scoping, or null if skipped
+6. Where the workspace plans by quarter with `quarter-planning`, and binds `workItemsDir` so
+   that skill reads this file, fill the optional quarter-planning block on an epic: `lane`,
+   `flows` with their rung movement, `home` and `approval`. Leave `budget_points` to the
+   quarter's planning, which derives it, and `planned_points` to the sum of the products.
+   Records in the workspace's composed `work_item.yaml` win over this file on the same id
 
 ## Step 3.8: Initialise changes.md
 
