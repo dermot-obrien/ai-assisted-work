@@ -4,6 +4,12 @@
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions are semantic, with the contract defined as: MAJOR for a changed skill `name`, a removed script, a changed CLI interface or a changed output shape; MINOR for new capabilities, themes or tags; PATCH for wording, fixes and documentation.
 
+## [0.5.1] - 2026-09-27
+
+### Fixed
+
+- A `deck:skip` block now keeps every tag inside it off the deck. Before, it only stripped text from a slide's body, so a skip around a whole section or appendix still produced its dividers, slides, images, HTML slides and includes. Headings inside a skip block still end the section before it, as they do in the document.
+
 ## [0.5.0] - 2026-09-26
 
 ### Added
