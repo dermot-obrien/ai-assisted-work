@@ -25,7 +25,9 @@ Each committed epic gets one card, `<id>.md`, in this order.
 | Opening line | The epic's title, a relative link to its folder, or a plain statement that no home is recorded, or that one is recorded but cannot be found |
 | Fields | Quarter, capability area (`lane`), approval, threads, and the criteria it advances |
 | Movement | One row per flow: what it does, the rung it starts on and the rung it is committed to reach. A column for the rung reached appears once any is recorded |
-| Products | One row per product: its type, the rung that type evidences from the register's `rung` column, its points, its state and its approval |
+| Deliverables | One row per deliverable: its type, the rung that type evidences from the register's `rung` column, its points, its state and its approval |
+| Feature requests | With the request layer bound: each request the epic takes on, its product, who asked, status, WSJF and the stories citing it. See [feature-requests.md](feature-requests.md) |
+| Products and platforms supported | With the request layer bound: the products those requests are raised against, with each one's platform and team |
 | Capacity | Budget, planned, and the difference, then one sentence: within budget, over by a stated amount, or deferred because no budget was given |
 
 The budget on a card is the one the resourcing register distributes, taken from the same arithmetic the validation uses, so the card and the report cannot disagree. Where the model records a different budget, the card says so and points at the validation.
@@ -45,7 +47,7 @@ The folder's `index.md` is the epic's home page. The outline below keeps the arg
 | Why now | The demand or criterion the movement serves, or the assumption standing in for one |
 | Where it starts | The evidence that already exists, and which rung each piece would count toward |
 | End of quarter | What will be true that is not true now, stated so that it can be checked |
-| Products | Which part of the work each product belongs to, and what is produced elsewhere. The products themselves, with their sizes, are on the card |
+| Deliverables | Which part of the work each deliverable belongs to, and what is produced elsewhere. The deliverables themselves, with their sizes, are on the card |
 | Dependencies | What must happen elsewhere, and who owns it |
 | Scope decisions | Each decision to defer or cut, with its reason and its date |
 | Not this quarter | What was considered and left out, and what would bring it in |

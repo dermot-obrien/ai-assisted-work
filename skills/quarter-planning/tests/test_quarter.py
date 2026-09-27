@@ -344,5 +344,109 @@ class TestClose(Workspace):
         self.assertEqual(before, self.read(self.MODEL))
 
 
+class TestFeatureRequests(Workspace):
+    """The optional feature-request layer: products, requests taken on by epics, stories."""
+
+    REQUESTS = 'registers/feature-requests.csv'
+    PRODUCTS = 'registers/products.csv'
+    HEAD = ('id,title,product,epic,status,requested_by,value,time_criticality,risk_reduction,'
+            'job_size\n')
+
+    def setUp(self):
+        super().setUp()
+        self.edit(self.BINDINGS, 'workItemsDir = "../work-items"\n',
+                  'workItemsDir = "../work-items"\nrequests     = "../registers/feature-requests.csv"\n'
+                  'products     = "../registers/products.csv"\n')
+        self.write(self.PRODUCTS, 'id,name,platform,team\n'
+                   'PR-1,Example product,Data platform,Team A\n'
+                   'PR-2,Other product,Experience platform,\n')
+        self.write(self.REQUESTS, self.HEAD +
+                   'FR-1,Export results,PR-1,EP-001,backlog,UC-1,5,2,3,2\n'
+                   'FR-2,Share a view,PR-2,,backlog,UC-2,8,1,1,5\n')
+
+    def test_request_taken_on_by_an_epic_passes(self):
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertIn('10. FEATURE REQUESTS', out)
+        self.assertRegex(out, r'EP-001\s+FR-1\s+PR-1\s+backlog\s+5\.0\s+0')
+        self.assertNotIn('WARNING', out)
+
+    def test_a_request_adds_no_points(self):
+        # The epic's size is its deliverables; the fixture's planned_points still hold.
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertIn('integrity: the chain closes', out)
+
+    def test_unbound_layer_is_silent(self):
+        self.edit(self.BINDINGS, 'requests     = "../registers/feature-requests.csv"\n', '')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn('10. FEATURE REQUESTS', out)
+
+    def test_unknown_epic_fails(self):
+        self.edit(self.REQUESTS, 'FR-1,Export results,PR-1,EP-001', 'FR-1,Export results,PR-1,EP-009')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 1, out)
+        self.assertIn('FR-1 is assigned to EP-009, which the planning model does not hold', out)
+
+    def test_not_ready_warns(self):
+        self.edit(self.REQUESTS, 'EP-001,backlog', 'EP-001,analyzing')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertIn('FR-1 is assigned to EP-001 but is analyzing, so it is not ready', out)
+
+    def test_register_rules(self):
+        self.write(self.REQUESTS, self.HEAD +
+                   'FR-1,Export results,PR-1,EP-001,backlog,,4,2,3,2\n'
+                   'FR-2,Share a view,PR-9,,shipped,,8,1,1,5\n'
+                   'FR-3,No product,,,analyzing,,,,,\n')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 1, out)
+        self.assertIn('FR-1 scores value 4, which is not on the scale', out)
+        self.assertIn('FR-2 is raised against PR-9, which the product register does not hold', out)
+        self.assertIn('FR-2 has status shipped', out)
+        self.assertIn('FR-3 names no product', out)
+
+    def test_story_citing_an_unknown_request_warns(self):
+        self.edit('work-items/WI-002/progress.yaml', 'activities: []',
+                  'activities:\n  - id: WI-002-A1\n    produces: WI-002-D1\n'
+                  '    request_ids: [FR-7]\n')
+        code, out = self.run_quarter()
+        self.assertEqual(code, 0, out)
+        self.assertIn('FR-7 is cited by WI-002-A1 but the request register does not hold it', out)
+
+    def test_card_shows_requests_products_and_platforms(self):
+        self.edit('work-items/WI-002/progress.yaml', 'activities: []',
+                  'activities:\n  - id: WI-002-A1\n    produces: WI-002-D1\n'
+                  '    request_ids: [FR-1]\n')
+        code, out = self.run_quarter('--cards')
+        self.assertEqual(code, 0, out)
+        text = self.read('planning/2027-q1/cards/EP-001.md')
+        self.assertIn('## Deliverables', text)
+        self.assertNotIn('## Products\n', text)
+        self.assertIn('## Feature requests', text)
+        self.assertIn('| FR-1 Export results | PR-1 | UC-1 | backlog | 5.0 | WI-002-A1 |', text)
+        self.assertIn('## Products and platforms supported', text)
+        self.assertIn('| PR-1 Example product | Data platform | Team A | FR-1 |', text)
+        other = self.read('planning/2027-q1/cards/WI-002.md')
+        self.assertIn('This epic takes on no feature request.', other)
+
+    def test_stories_from_activity_yaml(self):
+        self.write('planning/model/activity.yaml',
+                   'activity:\n- id: EP-001-A1\n  work_item_id: EP-001\n  request_ids: [FR-1]\n')
+        code, out = self.run_quarter('--backlog')
+        self.assertEqual(code, 0, out)
+        self.assertRegex(out, r'FR-1\s+Export results\s+backlog\s+5\.0\s+EP-001\s+EP-001-A1')
+
+    def test_backlog_ranks_by_wsjf(self):
+        self.write(self.REQUESTS, self.HEAD +
+                   'FR-1,Export results,PR-1,EP-001,backlog,,5,2,3,2\n'
+                   'FR-3,Import results,PR-1,,backlog,,8,8,4,1\n')
+        code, out = self.run_quarter('--backlog')
+        self.assertEqual(code, 0, out)
+        self.assertIn('PR-1 Example product (Data platform, Team A)', out)
+        self.assertLess(out.index('FR-3'), out.index('FR-1'))
+
+
 if __name__ == '__main__':
     unittest.main()
