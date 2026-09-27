@@ -123,6 +123,28 @@ test('a divider with no title and no heading after it is warned about and skippe
   assert.equal(warnings.length, 1);
 });
 
+test('a skip block around a whole section keeps every tag inside it off the deck', () => {
+  const md = [
+    '<!-- deck:slide -->', '## Kept', '', 'shown', '',
+    '<!-- deck:skip -->', '',
+    '<!-- deck:divider eyebrow="Appendix" -->', '## Detail', '', 'working',
+    '<!-- deck:slide -->', '### Inner', '', 'x',
+    '<!-- deck:include src="./other.md" slide="basis" -->',
+    '<!-- deck:image src="./a.png" title="A" -->',
+    '<!-- deck:html src="./a.html" title="H" -->', '',
+    '<!-- /deck:skip -->', '',
+    '<!-- deck:include deck="other" slide="view" title="After" -->',
+  ].join('\n');
+  const s = collectSlides(md);
+  assert.deepEqual(s.map((x) => [x.kind, x.title]), [['content', 'Kept'], ['include', 'After']]);
+  assert.equal(slideBody(s[0].body).body, 'shown', 'the skipped section does not run into the slide before it');
+});
+
+test('a skip block inside a slide still leaves the slide in place', () => {
+  const [s] = collectSlides('<!-- deck:slide -->\n## T\n\nshown\n<!-- deck:skip -->\ndoc only\n<!-- /deck:skip -->\n');
+  assert.equal(slideBody(s.body).body, 'shown');
+});
+
 test('deck:slide table-rows is read as a number', () => {
   const [s] = collectSlides('<!-- deck:slide table-rows="20" -->\n## T\n\nx\n');
   assert.equal(s.tableRows, 20);
