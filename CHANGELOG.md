@@ -8,6 +8,24 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Feature requests in quarter planning** (quarter-planning 3.2.0). An optional demand
+  layer, on when a workspace binds `requests` (and optionally `products`). A request is raised
+  against one product, which a platform team owns, and ranked there by WSJF. A request that
+  needs a platform build is taken on by an epic, recorded in the register's `epic` column; the
+  epic, as the SAFe feature, carries the size, and the request adds no points. Stories are
+  assigned separately, by citing requests in the new optional `request_ids` on an activity,
+  read from `progress.yaml` (aaw-start-work 2.4.0) and from `activity.yaml` in the model
+  sources. Validation gains section 10 (a request assigned to an unknown epic, a bad status or
+  score, or a missing or unregistered product fails; not ready, unscored and orphan citations
+  warn). Epic cards gain Feature requests and Products and platforms supported sections, and
+  `--backlog` prints each product's requests ranked by WSJF with their epic and stories.
+
+### Changed
+- **Epic cards say "Deliverables", not "Products"** (quarter-planning 3.2.0). The section,
+  its column and its sentences are renamed so "product" can mean a registered product.
+  Regenerate cards after upgrading; `--cards --check` reports them stale until then.
+
+### Added
 - **Threads carry an optional kind** (thread 0.7.0). `open --kind feature` tags a thread as
   it is opened, `kind <id> <kind>` tags one afterwards (`none` clears it), and
   `list --kind <kind>` lists every thread of that kind flat, across all trees and projects,

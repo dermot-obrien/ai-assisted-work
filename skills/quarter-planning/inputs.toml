@@ -141,3 +141,26 @@ description = """The AAW work items folder. Bound, every <workItemsDir>/*/progre
 work_item_level: epic and a planning_period equal to the quarter's label is read as an epic,
 alongside work_item.yaml. Where both hold the same id, the work_item.yaml record wins and the
 clash is reported."""
+
+[inputs.options.requests]
+type = "path"
+required = false
+description = """The feature-request register, a CSV with at least id, title, product, epic,
+status, requested_by and the WSJF factors value, time_criticality, risk_reduction and
+job_size. Bound, it turns on the request layer: section 10 of the validation, the Feature
+requests and Products and platforms supported sections on each epic card, and --backlog. See
+references/feature-requests.md."""
+
+[inputs.options.products]
+type = "path"
+required = false
+description = """The product register, a CSV with at least id, name, platform and team (owner
+is read where there is no team). Read with the request layer, to name each request's product,
+the platform offering it and the team that owns it, and to check that the product exists."""
+
+[inputs.options.requestStatuses]
+type = "str"
+required = false
+default = "analyzing,backlog,implementing,validating,releasing,done,rejected"
+description = """A feature request's statuses, least advanced first and comma-separated. The
+first is not yet ready to build."""

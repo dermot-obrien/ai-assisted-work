@@ -45,8 +45,11 @@ PATH_KEYS = ("sources", "register", "basis", "calendar", "resourcing", "quarterD
 #   ladder        the definition ladder, a CSV of rung,name,description in ascending order
 #   epicsDir      the folder holding each epic's hand-written home folder
 #   cardsDir      where the generated epic cards and the stage grid are written
-#   workItemsDir  AAW work items, read for epics whose progress.yaml names this quarter
-OPTIONAL_PATH_KEYS = ("ladder", "epicsDir", "cardsDir", "workItemsDir")
+#   workItemsDir  AAW work items, read for epics whose progress.yaml names this quarter, and
+#                 for the requests each story cites
+#   requests      the feature-request register: the demand layer, see src/requests.py
+#   products      the product register the requests are raised against
+OPTIONAL_PATH_KEYS = ("ladder", "epicsDir", "cardsDir", "workItemsDir", "requests", "products")
 
 # Optional paths that are written rather than read, so their absence is not a fault.
 WRITTEN_KEYS = ("cardsDir",)
@@ -62,6 +65,8 @@ DEFAULTS = {
     # The approval stages a plan, an epic and a product move through, least advanced first.
     # The last one is approval, and approval is commitment.
     "approvalStages": "draft,sized,validated,approved",
+    # A feature request's statuses, least advanced first. The first is not yet ready to build.
+    "requestStatuses": "analyzing,backlog,implementing,validating,releasing,done,rejected",
 }
 
 
@@ -155,6 +160,12 @@ class Bindings:
     def approval_stages(self):
         """The approval stages in order, from a list or a comma-separated string."""
         raw = self.values["approvalStages"]
+        items = raw if isinstance(raw, (list, tuple)) else str(raw).split(",")
+        return [str(x).strip() for x in items if str(x).strip()]
+
+    @property
+    def request_statuses(self):
+        raw = self.values["requestStatuses"]
         items = raw if isinstance(raw, (list, tuple)) else str(raw).split(",")
         return [str(x).strip() for x in items if str(x).strip()]
 
