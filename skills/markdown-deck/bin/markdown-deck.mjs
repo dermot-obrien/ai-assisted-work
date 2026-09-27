@@ -71,7 +71,7 @@ Tags, written as HTML comments so they stay invisible wherever the Markdown rend
   <!-- deck:slide label="..." -->           the NEXT heading's section becomes a slide
   <!-- deck:divider subtitle="..." -->      a section divider titled by the NEXT heading,
                                             or by title="..." where it stands alone
-  <!-- deck:skip --> ... <!-- /deck:skip -->  kept in the document, dropped from the slide
+  <!-- deck:skip --> ... <!-- /deck:skip -->  kept in the document, dropped from the deck
   <!-- deck:note --> ... <!-- /deck:note -->  becomes presenter notes
 `;
 

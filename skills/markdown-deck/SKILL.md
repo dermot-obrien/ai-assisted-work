@@ -4,7 +4,7 @@ description: Render tagged sections of a Markdown document into HTML slides and 
 license: Apache-2.0
 compatibility: Node.js 18 or newer. PDF export additionally needs playwright and a Chromium-family browser; on Windows the bundled Edge is used automatically.
 metadata:
-  version: "0.5.0"
+  version: "0.5.1"
   homepage: https://github.com/OWNER/markdown-deck
   requires-skills: ""
 ---
@@ -25,7 +25,7 @@ The document stays the source of truth. Tags are HTML comments, so the file stil
 | `<!-- deck:image src="./slide.png" title="..." -->` | On its own line, anywhere | A whole slide from a finished 16:9 image, such as a slide exported from another deck. The title labels it in the index, comments and address; the image is not overdrawn. Add `header="true"` to put the deck's own header above the image instead |
 | `<!-- deck:html src="./slide.html" title="..." -->` | On its own line, anywhere | A whole slide from a self-contained HTML file designed on the 1920x1080 canvas, for a layout Markdown cannot express. It is isolated in a frame, so its styles and scripts cannot reach the deck; the deck still provides the index, navigation, comments and PDF. `header="true"` puts the deck's header above it |
 | `<!-- deck:include src="../other.md" section="Heading" -->` | On its own line, anywhere | A section of another document, rendered live in this deck's theme and headed "From <source>". `deck="<deck_id>"` finds a published deck by id instead of `src`, so moving it does not break the include; `slide="<slide-id>"` takes one of its tagged slides instead of `section`; `title="..."` renames it. A target that cannot be found fails the build |
-| `<!-- deck:skip -->` ... `<!-- /deck:skip -->` | Inside a tagged section | Kept in the document, dropped from the slide |
+| `<!-- deck:skip -->` ... `<!-- /deck:skip -->` | Inside a tagged section, or around whole sections | Kept in the document, dropped from the deck. Around a whole section or appendix it drops every tag inside too: its slides, dividers, images, HTML slides and includes |
 | `<!-- deck:note -->` ... `<!-- /deck:note -->` | Inside a tagged section | Becomes presenter notes, never rendered on screen or in the PDF |
 
 Rules that matter:
