@@ -77,15 +77,24 @@ function headings(md) {
  * eyebrow, on the cover's ground. With `title` it stands alone; without one it takes the
  * NEXT heading's text, and that heading's body stays out of the divider.
  *
+ * No tag inside a deck:skip block is collected, so a skip block can hold a whole section
+ * or appendix, with its dividers, slides and includes, and keep all of it off the deck.
+ *
  * @returns {({kind: 'content', title: string, label: string, body: string} |
  *            {kind: 'image', title: string, label: string, src: string, header: boolean} |
  *            {kind: 'html', title: string, label: string, src: string, header: boolean} |
  *            {kind: 'divider', title: string, label: string, subtitle: string})[]}
  */
 export function collectSlides(md, { onWarn = () => {} } = {}) {
+  // A deck:skip block keeps everything inside it out of the deck, tags included, so a whole
+  // section or appendix can be kept in the document and left off the slides in one place.
+  // Headings inside it still end the section before it, as they do in the document.
+  const skipped = [...md.matchAll(SKIP_RE)].map((m) => [m.index, m.index + m[0].length]);
+  const inSkip = (at) => skipped.some(([a, b]) => at >= a && at < b);
   const hs = headings(md);
   const slides = [];
   for (const tag of md.matchAll(IMAGE_RE)) {
+    if (inSkip(tag.index)) continue;
     const a = attrs(tag[1]);
     if (!a.src) {
       onWarn(`deck:image tag at offset ${tag.index} has no src; skipped`);
@@ -98,6 +107,7 @@ export function collectSlides(md, { onWarn = () => {} } = {}) {
     });
   }
   for (const tag of md.matchAll(HTML_RE)) {
+    if (inSkip(tag.index)) continue;
     const a = attrs(tag[1]);
     if (!a.src) {
       onWarn(`deck:html tag at offset ${tag.index} has no src; skipped`);
@@ -111,6 +121,7 @@ export function collectSlides(md, { onWarn = () => {} } = {}) {
     });
   }
   for (const tag of md.matchAll(INCLUDE_RE)) {
+    if (inSkip(tag.index)) continue;
     const a = attrs(tag[1]);
     if (!(a.src || a.deck) || !(a.section || a.slide)) {
       onWarn(`deck:include tag at offset ${tag.index} needs src or deck, and section or slide; skipped`);
@@ -124,6 +135,7 @@ export function collectSlides(md, { onWarn = () => {} } = {}) {
     });
   }
   for (const tag of md.matchAll(DIVIDER_RE)) {
+    if (inSkip(tag.index)) continue;
     const a = attrs(tag[1]);
     const h = a.title ? null : hs.find((x) => x.start >= tag.index);
     if (!a.title && !h) {
@@ -137,6 +149,7 @@ export function collectSlides(md, { onWarn = () => {} } = {}) {
     });
   }
   for (const tag of md.matchAll(SLIDE_RE)) {
+    if (inSkip(tag.index)) continue;
     const a = attrs(tag[1]);
     const h = hs.find((x) => x.start >= tag.index);
     if (!h) {
