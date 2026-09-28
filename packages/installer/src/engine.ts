@@ -425,22 +425,33 @@ export async function recordModule(opts: InstallOptions): Promise<void> {
   // points its ontology or its deliverables register where it does. parse+stringify
   // would round-trip those away, so edit the document in place instead.
   let doc: Document.Parsed | Document;
-  if (await pathExists(configPath)) {
-    doc = parseDocument(await readFile(configPath, "utf8"));
+  const before = (await pathExists(configPath)) ? await readFile(configPath, "utf8") : null;
+  if (before !== null) {
+    doc = parseDocument(before);
     if (doc.contents === null) doc = new Document({});
   } else {
     doc = new Document({});
   }
 
-  doc.setIn(["modules", manifest.id], {
+  // Set only the fields that differ, and write only when something did: an install that
+  // changes nothing leaves the file byte for byte as it was.
+  const entry: Record<string, string> = {
     name: manifest.name,
     version: manifest.version,
     runtime: manifest.runtime,
     source_root:
       path.relative(workspaceRoot, manifest.frameworkRoot).split(path.sep).join("/") || ".",
-  });
+  };
+  if (!doc.hasIn(["modules", manifest.id])) {
+    doc.setIn(["modules", manifest.id], entry);
+  } else {
+    for (const [key, value] of Object.entries(entry)) {
+      if (doc.getIn(["modules", manifest.id, key]) !== value) doc.setIn(["modules", manifest.id, key], value);
+    }
+  }
 
-  await writeFile(configPath, doc.toString(), "utf8");
+  const after = doc.toString();
+  if (after !== before) await writeFile(configPath, after, "utf8");
 }
 
 /** Check that depended-on frameworks are present (resolvable or already recorded). */

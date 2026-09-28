@@ -95,3 +95,31 @@ test("an invalid mode exits 2 and writes nothing", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("keeps the config's comments, and leaves it untouched when nothing changed", () => {
+  const dir = workspace();
+  try {
+    const items = path.join(dir, "items");
+    const file = path.join(dir, ".aaw-config.yaml");
+    writeFileSync(
+      file,
+      `# Workspace settings, edited by hand.\ntenant: acme\nmode: local-fs\n` +
+        `work_items_path: ${JSON.stringify(items)}\n` +
+        `# The thread store, cloned to ~/.threads.\nthreads_remote: https://example.test/threads.git\n`,
+    );
+    let r = install(dir);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const first = readFileSync(file, "utf8");
+    assert.match(first, /^# Workspace settings, edited by hand\.$/m);
+    assert.match(first, /^# The thread store, cloned to ~\/\.threads\.$/m);
+    assert.equal(config(dir).threads_remote, "https://example.test/threads.git");
+
+    // A second install with nothing new to record must not touch the file: hooks run
+    // `aaw install` every session, and a rewrite would leave the file modified each time.
+    r = install(dir);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(readFileSync(file, "utf8"), first);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
