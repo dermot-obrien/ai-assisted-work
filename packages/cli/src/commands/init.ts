@@ -33,7 +33,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { createInterface } from "node:readline/promises";
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { Document, parse as parseYaml, parseDocument } from "yaml";
 import { runInstall } from "@aaw/installer";
 
 /** Answers supplied up front, as flags. A supplied answer is never prompted for. */
@@ -273,27 +273,25 @@ async function writeConfig(
     initiativesPath: string;
   },
 ): Promise<void> {
-  const existing = await readExistingYaml(root);
-  const yaml = stringifyYaml({
-    ...existing,
+  // .aaw-config.yaml is hand-edited and often committed: edit the document in place so its
+  // comments, key order and other keys survive, set only the values that changed, and leave
+  // the file untouched when nothing did. Hooks run `aaw install` every session, and a
+  // rewrite each time would leave the file modified in every session.
+  const configPath = path.join(root, ".aaw-config.yaml");
+  const before = await readFile(configPath, "utf8").catch(() => null);
+  let doc = before === null ? new Document({}) : parseDocument(before);
+  if (doc.contents === null || typeof doc.toJSON() !== "object") doc = new Document({});
+  const values: Record<string, string> = {
     tenant: cfg.tenant,
     mode: cfg.mode,
     work_items_path: cfg.workItemsPath,
     initiatives_path: cfg.initiativesPath,
-  });
-  await writeFile(path.join(root, ".aaw-config.yaml"), yaml, "utf8");
-}
-
-
-async function readExistingYaml(workspaceRoot: string): Promise<Record<string, unknown>> {
-  const configPath = path.join(workspaceRoot, ".aaw-config.yaml");
-  try {
-    const text = await readFile(configPath, "utf8");
-    const parsed = parseYaml(text) as Record<string, unknown> | null;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
+  };
+  for (const [key, value] of Object.entries(values)) {
+    if (doc.get(key) !== value) doc.set(key, value);
   }
+  const after = doc.toString();
+  if (after !== before) await writeFile(configPath, after, "utf8");
 }
 
 
