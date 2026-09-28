@@ -7,6 +7,17 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+- **`markdown-deck` and `model` moved to their own repositories.** They are general tooling,
+  used without this framework, so each is now mastered and released on its own:
+  `markdown-deck` at https://github.com/dermot-obrien/markdown-deck (from 0.6.0) and `model` at
+  https://github.com/dermot-obrien/diagram-model (from 0.6.0). Each repository's `NOTICE` names
+  the commit here it was taken from, markdown-deck 0.5.1 at ad39fd9 and model 0.5.0 at
+  ac5c7ec, and their history before that is the history of `skills/markdown-deck` and
+  `skills/model` here. `aaw install` no longer installs them; install them from their
+  repositories. A workspace that already has them keeps its installed copies, since the
+  installer never removes a skill it no longer ships.
+
 ### Fixed
 - **`aaw install` keeps `.aaw-config.yaml` as written.** It re-serialised the whole file,
   which dropped every comment and blank line, and it wrote the file on every run. A
