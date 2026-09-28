@@ -7,6 +7,14 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **`aaw install` keeps `.aaw-config.yaml` as written.** It re-serialised the whole file,
+  which dropped every comment and blank line, and it wrote the file on every run. A
+  SessionStart hook that runs `aaw install` therefore left the config modified in every
+  session. Both writers (`aaw install` and the per-framework module record) now edit the
+  document in place, set only values that changed, and leave the file untouched when nothing
+  did. A new test covers comments surviving and a second install writing nothing.
+
 ### Added
 - **Projects in threads** (thread 0.8.0). A project is a thread of kind `project`, usually a
   root, that groups the threads it is for. `project "<name>"` finds a project by title or
