@@ -111,19 +111,26 @@ holding a `SKILL.md` (YAML frontmatter plus instructions) alongside its `referen
 | `/aaw-start-initiative` | `skills/aaw-start-initiative/` |
 | `/quarter-planning` | `skills/quarter-planning/` |
 
-**General tooling**, domain-agnostic and useful on their own. They are not work management,
-but they are the kind of thing every project needs and nothing about them is specific to one:
+**General tooling**, domain-agnostic and useful on its own. It is not work management, but
+it is the kind of thing every project needs and nothing about it is specific to one:
 
 | Skill | Does |
 |-------|------|
-| `markdown-deck` | Renders tagged sections of a Markdown document into HTML slides and a PDF, keeping the Markdown as the only source |
-| `model` | Treats a diagram and a document as two views of one model of boxes and lines: extract, emit, validate one against the other, render |
 | `thread` | Keeps thought processes untangled across chats, projects, IDEs and machines: a throwaway tree of intents in a git repo you own, which every tool reads and writes |
 
-Neither carries any organisation's branding. `markdown-deck` ships one brand-free theme and
-takes an organisation's colours as a **palette** in its binding, so the layout stays with the
-skill and the brand stays with the organisation. Both read their repository specifics from
-`.agents/skill-bindings.toml` rather than assuming a layout.
+Two general tooling skills that began here now live in their own repositories, so they can be
+installed without this framework. Each repository's `NOTICE` records the commit here it was
+taken from:
+
+| Skill | Repository | Does |
+|-------|------------|------|
+| `markdown-deck` | [markdown-deck](https://github.com/dermot-obrien/markdown-deck) | Renders tagged sections of a Markdown document into HTML slides and a PDF, keeping the Markdown as the only source |
+| `model` | [diagram-model](https://github.com/dermot-obrien/diagram-model) | Treats a diagram and a document as two views of one model of boxes and lines: extract, emit, validate one against the other, render |
+
+Install them wherever your agent reads skills, for example with
+`gh skill install dermot-obrien/markdown-deck markdown-deck` and
+`gh skill install dermot-obrien/diagram-model model`. `quarter-planning` and `thread` do not need
+either.
 
 Each carries a `description`, so an assistant can invoke it on its own when a request matches
 rather than only when you type the slash command. The long-form procedure sits in
