@@ -8,6 +8,18 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **Projects in threads** (thread 0.8.0). A project is a thread of kind `project`, usually a
+  root, that groups the threads it is for. `project "<name>"` finds a project by title or
+  starts one; `projects` lists them. `open --project <id|name>` opens a root thread under a
+  project, and with neither `--parent` nor `--project` a root thread goes under
+  `$THREAD_PROJECT` or `threads_project:` in `.aaw-config.yaml` when set (`--root` opts out).
+  With a project set, `status` shows its tree first. A project is not a repository: each
+  thread still records the repository it was opened in. No new event type; older copies of
+  the tool show projects as ordinary threads with a kind.
+- **`improvement` as the example capture kind** (thread 0.8.0). The skill captures with
+  `/thread improvement: <text>` (or "add an improvement: ...") and lists with
+  `/thread improvements`, beside `feature`, `bug` and `idea`. Any one-word kind already worked;
+  this makes the skill recognise and suggest it.
 - **Feature requests in quarter planning** (quarter-planning 3.2.0). An optional demand
   layer, on when a workspace binds `requests` (and optionally `products`). A request is raised
   against one product, which a platform team owns, and ranked there by WSJF. A request that

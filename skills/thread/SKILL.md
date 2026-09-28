@@ -1,12 +1,12 @@
 ---
 name: thread
-description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks whether a chat is done and can be deleted (/thread wrap), or wants closed threads pruned or archived (/thread prune). Also captures feature requests, bugs and ideas as tagged threads to come back to (/thread feature: <text>) and lists them across every tree (/thread features).
+description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks whether a chat is done and can be deleted (/thread wrap), or wants closed threads pruned or archived (/thread prune). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, "add an improvement: ...") and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>).
 license: CC-BY-4.0
 compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.7.0"
+  version: "0.8.0"
 ---
 
 # Thread
@@ -67,9 +67,11 @@ don't nag.
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
 | `/thread prune`, `/thread archive` | `prune` (`--dry-run` to preview, `--days <n>` to keep recent ones) | Show the output as-is. See "Pruning" |
 | `/thread wrap` | See "Wrapping up a chat" | Say whether the chat can be deleted, and ask before closing the thread |
-| `/thread feature: <text>` (or `bug:`, `idea:`, any one word and a colon) | `open "<text>" --kind feature --parent <this chat's id> --tool …` | One line with the new id. This chat keeps following its own thread. See "Capturing by kind" |
+| `/thread improvement: <text>` (or `feature:`, `bug:`, `idea:`, any one word and a colon), or "add an improvement: <text>" | `open "<text>" --kind improvement --parent <this chat's id> --tool …` | One line with the new id. This chat keeps following its own thread. See "Capturing by kind" |
 | `/thread kind <id> <kind>` | `kind <id> <kind>` (`none` clears it) | One-line acknowledgement |
-| `/thread features` (or `bugs`, `ideas`), `/thread list <kind>` | `list --kind feature` (`--all` for finished ones too) | Show the output as-is |
+| `/thread improvements` (or `features`, `bugs`, `ideas`), `/thread list <kind>` | `list --kind improvement` (`--all` for finished ones too) | Show the output as-is |
+| `/thread project <name>` | `project "<name>"` | Show the anchor. This chat now has that project: pass `--project <its id>` whenever you open a root thread here. See "Projects" |
+| `/thread projects` | `projects` | Show the output as-is |
 
 Every close carries a one-line resolution, and the script refuses a close without one. It
 is what the tree shows for that thread from then on, so it should let someone who was not in
@@ -99,27 +101,49 @@ When a chat's work has clearly moved away from its title, offer one line: "This 
 
 ## Capturing by kind
 
-Some threads are not work in progress but something to come back to: a feature request, a
+Some threads are not work in progress but something to come back to: an improvement, a
 bug, an idea. Give those a kind, one lowercase word, so they can be found later wherever they
 sit in the tree.
 
-- **Capture is a dump, not a switch.** `/thread feature: <text>` records the item and the chat
+- **Capture is a dump, not a switch.** `/thread improvement: <text>` records the item and the chat
   carries on with what it was doing, under its own thread. Put what the user said in the title,
   and anything else they said about it in the description (`describe`), so it can be picked up
   cold. Don't ask clarifying questions at capture time.
 - **Where it goes.** Under this chat's thread when the item comes out of this work. If it is
   plainly unrelated, or the chat has no thread, open it as a root. If the user keeps an inbox
   thread for that kind in this area (a thread whose description says so), put it there.
-- **Finding them.** `list --kind feature` is flat and crosses every tree and project, with the
+- **Finding them.** `list --kind improvement` is flat and crosses every tree and project, with the
   path each one sits under. It shows open and parked ones; `--all` adds the closed ones with
   their resolutions. `list --json` gives the same rows for a widget or a script.
-- **Tagging after the fact.** `kind <id> feature` marks an existing thread; `kind <id> none`
+- **Tagging after the fact.** `kind <id> improvement` marks an existing thread; `kind <id> none`
   clears it.
 - **Promoting one.** When the item is written up properly somewhere that outlives the thread (a
   feature specification, an issue, a work item), follow the workspace's own procedure for that,
   then close the thread `done` with where it now lives, for example
   `done t-kus "specified as FE-004: change/features/FE-004-chat-stop.md"`. If it is rejected,
   `drop` it with why. The thread keeps its kind, so `list --all` still shows it and where it went.
+
+## Projects
+
+A project is what a group of threads is for: a product, a client, an initiative. It is a
+thread of kind `project`, usually a root, and the threads of that project sit under it. A
+project is not a repository: one repository can hold several projects, and one project can
+span several repositories. Each thread still records the repository it was opened in (`ctx`).
+
+- **Starting or finding one.** `project "<name>"` finds the project with that title (ignoring
+  case), or starts it as a new root thread of kind `project`. `project <id>` finds one by id.
+  An existing thread becomes a project with `kind <id> project`.
+- **This chat's project.** After `/thread project <name>`, keep the project's id from the
+  conversation, as you keep the thread id, and pass `--project <id>` every time you open a
+  root thread in this chat. A thread opened with `--parent` already sits where it belongs.
+- **A default for a workspace.** A root thread opened with neither `--parent` nor `--project`
+  goes under `$THREAD_PROJECT`, or else `threads_project:` in the nearest `.aaw-config.yaml`,
+  when either is set. Either takes a project id or title. `$THREAD_PROJECT` can be set per
+  repository in `.claude/settings.json` (`"env": {"THREAD_PROJECT": "t-9c3"}`) or for a whole
+  project in tools that have one. `--root` opens a root thread outside any project.
+- **Status.** With a project set, `status` shows that project's tree first; otherwise it shows
+  the trees opened in this repository.
+- **Listing.** `projects` lists every project, across all trees.
 
 ## Showing the tree
 
