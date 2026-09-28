@@ -78,20 +78,31 @@ function tryGit(args, opts) {
 const hasRemote = () => tryGit(["remote"]).out.split("\n").includes("origin");
 const hasCommits = () => tryGit(["rev-parse", "--verify", "HEAD"]).ok;
 
-/** Find `threads_remote:` in the nearest .aaw-config.yaml above cwd. */
-function remoteFromWorkspace() {
+/** A top-level `key:` in the nearest .aaw-config.yaml above cwd, or null. A quoted value may hold spaces. */
+function workspaceSetting(key) {
   let dir = process.cwd();
+  const re = new RegExp(`^${key}:\\s*(?:"([^"]*)"|'([^']*)'|([^\\s#]+))`, "m");
   for (;;) {
     const f = path.join(dir, ".aaw-config.yaml");
     if (existsSync(f)) {
-      const m = readFileSync(f, "utf8").match(/^threads_remote:\s*["']?([^"'\s#]+)/m);
-      if (m) return m[1];
+      const m = readFileSync(f, "utf8").match(re);
+      if (m) return m[1] ?? m[2] ?? m[3];
     }
     const up = path.dirname(dir);
     if (up === dir) return null;
     dir = up;
   }
 }
+
+/** Find `threads_remote:` in the nearest .aaw-config.yaml above cwd. */
+const remoteFromWorkspace = () => workspaceSetting("threads_remote");
+
+/**
+ * The project a root thread opened here belongs to, when none is named: $THREAD_PROJECT (set
+ * it per repo in .claude/settings.json "env", or for a whole desktop project), else
+ * `threads_project:` in the nearest .aaw-config.yaml. An id or a project title.
+ */
+const projectDefault = () => process.env.THREAD_PROJECT || workspaceSetting("threads_project");
 
 function ensureStore(remoteArg) {
   if (existsSync(path.join(HOME, ".git"))) return;
@@ -413,6 +424,23 @@ function newId(nodes) {
   }
 }
 
+/**
+ * A project: a thread of kind project, found by id or by title (ignoring case). An unfinished
+ * one wins over a finished one with the same title; two unfinished ones are ambiguous.
+ */
+function findProject(nodes, ref) {
+  if (/^t-[0-9a-z]+$/.test(ref)) {
+    const n = nodes.get(ref);
+    if (n && n.kind !== "project") die(`${ref} is not a project (its kind is ${n.kind ?? "none"}); thread kind ${ref} project makes it one`);
+    return n ?? null;
+  }
+  const want = ref.trim().toLowerCase();
+  const hits = [...nodes.values()].filter((n) => n.kind === "project" && n.text.toLowerCase() === want);
+  const live = hits.filter(isUnfinished);
+  if (live.length > 1) die(`more than one project is called "${ref}": ${live.map((n) => n.id).join(", ")}; use its id`);
+  return live[0] ?? hits[0] ?? null;
+}
+
 function need(nodes, id) {
   if (!id) die("which thread? pass its id, e.g. t-4k2");
   const n = nodes.get(id);
@@ -587,6 +615,15 @@ const commands = {
     if (!text) die('what are you doing? e.g. thread open "fix ingestion retry bug"');
     let parent = null;
     if (typeof flags.parent === "string") parent = need(nodes, flags.parent).id;
+    else if (!flags.root) {
+      // A root thread goes under this chat's project, or the workspace's default one.
+      const ref = typeof flags.project === "string" ? flags.project : projectDefault();
+      if (ref) {
+        const p = findProject(nodes, ref);
+        if (!p) die(`no project "${ref}". Start it with: thread project "${ref}"`);
+        parent = p.id;
+      }
+    }
     // An archived id is still taken: the full tree replays the archive too.
     const kind = kindArg(flags.kind);
     if (kind === "none") die("--kind none only makes sense on thread kind; leave --kind off instead");
@@ -597,6 +634,29 @@ const commands = {
     const n = tree.get(id);
     console.log(anchor(n) + tag(n));
     if (parent) console.log(`   under: ${pathTo(tree, n).slice(0, -1).map((p) => `${p.id} ${p.text}`).join(" › ")}`);
+  },
+
+  project(pos, flags, nodes) {
+    // Find a project, or start one: a root thread of kind project that other threads go under.
+    const ref = pos.join(" ").trim() || projectDefault();
+    if (!ref) {
+      return console.log(
+        "no project here. thread project \"<name>\" finds or starts one; set a default with\n" +
+          "THREAD_PROJECT, or threads_project: in .aaw-config.yaml.",
+      );
+    }
+    let p = findProject(nodes, ref);
+    if (!p) {
+      if (/^t-[0-9a-z]+$/.test(ref)) die(`no thread ${ref}`);
+      const id = newId(new Set([...nodes.keys(), ...readArchive().map((e) => e.id)]));
+      writeEvent({ type: "open", id, parent: null, text: ref, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL, kind: "project" });
+      commitAndPush(`open ${id}: ${ref} (project)`);
+      p = buildTree(readEvents()).get(id);
+      console.log(`started project ${p.id}`);
+    }
+    console.log(anchor(p) + tag(p));
+    const open = p.children.filter(isLive).length;
+    console.log(`   ${open} open thread(s) under it. Root threads opened with --project ${p.id} go under it.`);
   },
 
   resume(pos, flags, nodes) {
@@ -748,15 +808,18 @@ const commands = {
   },
 
   status(pos, flags, nodes) {
-    // This project's threads first: a tree counts as here if any node in it was opened here.
+    // This project's threads first. With a project (named, or the workspace default) that is
+    // its tree; otherwise a tree counts as here if any node in it was opened in this repo.
     const ctx = context(flags);
-    const touchesHere = (n) => n.ctx === ctx || n.children.some(touchesHere);
+    const ref = typeof flags.project === "string" ? flags.project : projectDefault();
+    const project = ref ? findProject(nodes, ref) : null;
+    const touchesHere = project ? (n) => n.id === project.id : (n) => n.ctx === ctx || n.children.some(touchesHere);
     const live = [...nodes.values()].filter((n) => !n.parent && isLive(n)).sort(byRecent);
     const here = flags.all ? live : live.filter(touchesHere);
     const elsewhere = live.filter((n) => !here.includes(n));
     if (!live.length) return console.log("no open threads.");
     if (here.length) console.log(renderForest(view(here), { focus: flags.here }));
-    else console.log(`no open threads in ${ctx}.`);
+    else console.log(`no open threads in ${project ? `project ${project.id} ${project.text}` : ctx}.`);
     if (elsewhere.length) {
       const where = [...new Set(elsewhere.map((n) => n.ctx))].join(", ");
       console.log(`
@@ -801,7 +864,11 @@ const commands = {
     console.log(`thread — a throwaway tree of intents, shared across machines, tools and chats
 
   thread [--all]                  open threads in this project, most recent first (alias: status)
-  thread open "<text>" [--parent <id>] [--kind <kind>] [--tool <name>] [--ctx <name>]
+  thread open "<text>" [--parent <id> | --project <id|name> | --root] [--kind <kind>] [--tool <name>] [--ctx <name>]
+                                  with no --parent, a root thread goes under --project, else under
+                                  $THREAD_PROJECT or threads_project: in .aaw-config.yaml, if set
+  thread project ["<name>"|<id>]  find or start a project (a root thread of kind project)
+  thread projects                 every project (alias: list --kind project)
   thread resume <id>              pick a thread back up in this chat
   thread show <id>                one thread: path, notes, branches
   thread done|park|drop <id> "<resolution>"
@@ -810,7 +877,7 @@ const commands = {
   thread rename <id> "<title>"    clarify a title; earlier titles are kept
   thread describe <id> "<text>"   a longer description, shown by show and resume
   thread move <id> --parent <id> | --root
-  thread kind <id> <kind>|none    mark a thread as a feature, bug, question… (one lowercase word)
+  thread kind <id> <kind>|none    mark a thread as an improvement, bug, project… (one lowercase word)
   thread list [--kind <kind>] [--all] [--json]  every thread of that kind, across all trees
   thread fork <id>                header for a handoff to a new chat
   thread tree [<id>] [--all] [--mermaid|--json]  open and parked threads; --all (or: tree all)
@@ -843,6 +910,10 @@ if (/^t-[0-9a-z]+$/.test(cmd)) {
   cmd = "resume";
 }
 if (cmd === "archive") cmd = "prune";
+if (cmd === "projects") {
+  cmd = "list";
+  flags.kind = "project";
+}
 if (cmd === "tree" && pos[0] === "all") {
   pos.shift();
   flags.all = true;
