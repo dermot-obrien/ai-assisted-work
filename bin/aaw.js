@@ -7431,16 +7431,6 @@ var VersionConflictError = class extends Error {
     this.name = "VersionConflictError";
   }
 };
-var NotHolderError = class extends Error {
-  activityId;
-  caller;
-  constructor(activityId, caller) {
-    super(`Caller ${caller} does not hold the claim for ${activityId}`);
-    this.activityId = activityId;
-    this.caller = caller;
-    this.name = "NotHolderError";
-  }
-};
 
 // src/backends/local-fs/index.ts
 import { mkdir, readFile as readFile2, readdir, stat, unlink, writeFile } from "node:fs/promises";
@@ -7750,9 +7740,8 @@ var LocalFsBackend = class {
     if (!activity)
       throw new Error(`Activity ${activityId} not found`);
     if (activity.status === "in_progress") {
-      throw new NotHolderError(
-        activityId,
-        "must call updateActivity to set terminal state before releaseActivity"
+      throw new Error(
+        `${activityId} is in_progress: set a terminal status (completed, blocked, skipped or abandoned) in progress.yaml before releasing it`
       );
     }
     const wiPath = await this.resolveWorkItemPath(wi.id);
@@ -8613,9 +8602,13 @@ AI tools detected: ${detectedNames || "none"}
     await mkdir3(env.workspaceRoot, { recursive: true });
     process4.stdout.write("\n\u25B8 Writing .aaw-config.yaml\n");
     await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
-    process4.stdout.write(`\u25B8 Creating ${workItemsPath}
+    const workItemsDir = path5.resolve(
+      env.workspaceRoot,
+      workItemsPath.replace(/^~(?=\/|\\|$)/, homedir2()).replace(/\{tenant\}/g, tenant).replace(/\{repo\}/g, repoName)
+    );
+    process4.stdout.write(`\u25B8 Creating ${workItemsDir}
 `);
-    await mkdir3(workItemsPath, { recursive: true });
+    await mkdir3(workItemsDir, { recursive: true });
     const result = await runInstall({
       frameworkRoot: env.aawSourceRoot,
       cwd: env.workspaceRoot,
@@ -9824,12 +9817,15 @@ var HELP = `aaw \u2014 AI-Assisted Work CLI
 Usage:
   aaw install                         Bootstrap/install this workspace
   aaw install --workspace PATH        Bootstrap/install another workspace
-  aaw install --framework PATH        Install another AAW-family framework
+  aaw install --framework PATH [--no-python] [--seed]
+                                      Install another AAW-family framework; skip its
+                                      Python dependencies, or run its content seeder
   aaw install --yes                   Never prompt: keep existing values or defaults
-                                      (automatic when there is no terminal)
+                                      (automatic when there is no terminal; also -y)
   aaw install --tenant NAME --mode local-fs|cloud --work-items-path PATH
                                       Answer the bootstrap questions as flags
-  aaw check-skills                    Report installed skills that no longer match
+  aaw check-skills [--workspace PATH] [--framework PATH]
+                                      Report installed skills that no longer match
                                       the framework that owns them
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
   aaw next-task [WI-NNN]              Show the next claimable task
@@ -9865,6 +9861,10 @@ async function main(argv) {
   if (command === "--version" || command === "-v") {
     process14.stdout.write(`${VERSION}
 `);
+    return 0;
+  }
+  if (rest.includes("--help") || rest.includes("-h")) {
+    process14.stdout.write(HELP);
     return 0;
   }
   if (command === "init") {

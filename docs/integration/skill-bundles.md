@@ -65,6 +65,10 @@ An installer runs every installed skill's check straight after installing it, an
 
 A bundle without checks is valid but discouraged.
 
+`aaw install` does not run the checks yet. Until it does, run them the way an installer
+would with `validate-bundle.mjs --run-checks`, below, or one at a time with
+`node .agents/skills/<skill>/bin/check.mjs` from the workspace root.
+
 ## Checking a bundle
 
 ```bash

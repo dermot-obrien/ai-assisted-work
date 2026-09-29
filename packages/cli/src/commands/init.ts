@@ -156,8 +156,18 @@ export async function runInit(input: InitInput): Promise<number> {
     process.stdout.write("\n▸ Writing .aaw-config.yaml\n");
     await writeConfig(env.workspaceRoot, { tenant, mode, workItemsPath, initiativesPath });
 
-    process.stdout.write(`▸ Creating ${workItemsPath}\n`);
-    await mkdir(workItemsPath, { recursive: true });
+    // The config keeps the path as given; the folder is created where every reader of
+    // the config resolves it: ~ and {tenant}/{repo} expanded, relative to the workspace.
+    // Before, a literal "~/..." (PowerShell does not expand it) became a folder named "~".
+    const workItemsDir = path.resolve(
+      env.workspaceRoot,
+      workItemsPath
+        .replace(/^~(?=\/|\\|$)/, homedir())
+        .replace(/\{tenant\}/g, tenant)
+        .replace(/\{repo\}/g, repoName),
+    );
+    process.stdout.write(`▸ Creating ${workItemsDir}\n`);
+    await mkdir(workItemsDir, { recursive: true });
 
     // Hand off to the shared engine, so this path and `aaw install --framework`
     // place skills identically and the module registry is written once, by the

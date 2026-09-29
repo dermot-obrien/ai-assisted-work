@@ -35,12 +35,15 @@ const HELP = `aaw — AI-Assisted Work CLI
 Usage:
   aaw install                         Bootstrap/install this workspace
   aaw install --workspace PATH        Bootstrap/install another workspace
-  aaw install --framework PATH        Install another AAW-family framework
+  aaw install --framework PATH [--no-python] [--seed]
+                                      Install another AAW-family framework; skip its
+                                      Python dependencies, or run its content seeder
   aaw install --yes                   Never prompt: keep existing values or defaults
-                                      (automatic when there is no terminal)
+                                      (automatic when there is no terminal; also -y)
   aaw install --tenant NAME --mode local-fs|cloud --work-items-path PATH
                                       Answer the bootstrap questions as flags
-  aaw check-skills                    Report installed skills that no longer match
+  aaw check-skills [--workspace PATH] [--framework PATH]
+                                      Report installed skills that no longer match
                                       the framework that owns them
   aaw status [WI-NNN | IN-NNN]        List work items, or show one
   aaw next-task [WI-NNN]              Show the next claimable task
@@ -83,6 +86,12 @@ async function main(argv: string[]): Promise<number> {
   }
   if (command === "--version" || command === "-v") {
     process.stdout.write(`${VERSION}\n`);
+    return 0;
+  }
+  // `aaw <command> --help` prints the help and does nothing else. Without this,
+  // `aaw install --help` ran a real install in the current directory.
+  if (rest.includes("--help") || rest.includes("-h")) {
+    process.stdout.write(HELP);
     return 0;
   }
 
