@@ -8,12 +8,14 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Documentation
-- **DD-11: Skill bundles, versioned skill references and a layered ontology.** A repository
-  is a bundle of one or more skills and an optional ontology module. A skill is referenced as
-  `<host>/<owner>/<repo>/skills/<skill>@<range>`, versioned on its own with Semantic
-  Versioning and tagged `<skill>--v<version>`, with the breaking changes stated. The work
-  ontology (WorkItem, Activity, Task, Initiative, Deliverable) belongs to AAW; delivery
-  planning and architecture build on it in layers. Accepted; not yet implemented.
+- **DD-11: Skill bundles, versioned skill identifiers and a layered ontology.** A repository
+  is a bundle of one or more skills and an optional ontology module, described by a neutral
+  `bundle.json` from which any agent's packaging is generated. A skill is identified by a
+  host-independent Package URL (ECMA-427), `pkg:generic/<owner>/<bundle>/<skill>@<version>`,
+  resolved through a source map, versioned on its own with Semantic Versioning and tagged
+  `<skill>--v<version>`, with the breaking changes stated. The work ontology (WorkItem,
+  Activity, Task, Initiative, Deliverable) belongs to AAW; delivery planning and architecture
+  build on it in layers. Accepted; not yet implemented.
 
 ### Removed
 - **`markdown-deck` and `model` moved to their own repositories.** They are general tooling,
