@@ -19,8 +19,8 @@ is the decision; this page is the reference for writing and checking one.
     {
       "name": "model",
       "path": "skills/model",
-      "version": "0.7.1",
-      "purl": "pkg:generic/dermot-obrien/diagram-model/model@0.7.1",
+      "version": "0.7.0",
+      "purl": "pkg:generic/dermot-obrien/diagram-model/model@0.7.0",
       "requires": [],
       "check": {
         "command": ["python", "bin/model.py", "doctor"],
