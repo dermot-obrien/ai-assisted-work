@@ -520,6 +520,40 @@ the directory each configured agent reads (`.claude/skills` for Claude Code, for
 and reports drift. It knows agents only as a list of directories to link. It replaces both
 the skills wiring in `aaw install` and the per-workspace script.
 
+#### The manifest
+
+`bundle.json` is defined by `schemas/bundle.schema.json` in AAW, whose `$id` is
+`pkg:generic/dermot-obrien/ai-assisted-work/bundle-schema@1.0.0`. It holds the bundle's
+`name`, `owner`, `description`, `license` (an SPDX expression), `homepage` and optional
+`derived_from`; each skill's `name`, `path`, `version`, `purl`, `requires` (each a purl
+without its version, and a `range`) and optional `check`; an optional `ontology` module
+(`id`, `path`, and the modules it `extends`, each a purl and a range); and optional
+`adapters`, each an agent packaging's file, such as `claude-plugin` for a Claude Code
+marketplace. `scripts/validate-bundle.mjs` checks a manifest against the schema and against
+the skills: versions and requirements equal each `SKILL.md`'s, purls are formed from the
+fields, every skill directory is listed, the ontology module's `$ref`s resolve to modules it
+declares, and adapters list each skill at its version. A module references another by its
+purl without a version (`pkg:generic/dermot-obrien/ai-assisted-work/work-ontology#/$defs/WorkItem`),
+and `extends` states the range, so a minor release of the lower layer changes no reference.
+
+#### Post-install check
+
+Every skill should declare a `check` in the manifest: a command, as an argument vector
+relative to the installed skill's directory, with the `runtime` it needs. An installer runs
+each installed skill's check straight after installing it, and on demand, such as from a
+skills check command. The contract:
+
+- It runs from the workspace root, the repository the skills are installed into, with
+  `SKILL_DIR` set to the installed skill's directory.
+- Exit 0: the skill and the workspace configuration it depends on are correct. Exit 1:
+  problems, each printed as one line saying what is wrong, where, and how to fix it. Exit 2:
+  a usage or environment error, such as a missing runtime.
+- It is fast, offline and read-only. It never requires an optional tool: an optional tool's
+  absence is a warning, and the exit stays 0.
+
+A bundle without checks is valid, but discouraged: a skill whose configuration is wrong
+otherwise fails the first time someone uses it, far from the install that caused it.
+
 ### Rationale
 
 - **An identifier should outlive its host.** A purl of the `generic` type names an owner, a
@@ -571,18 +605,23 @@ the skills wiring in `aaw install` and the per-workspace script.
 
 - AAW's ontology module must exist before anything references it. It becomes the source of
   truth for the work layer, `packages/protocol/src/schema.ts` is generated from it or
-  checked against it, and the `progress.yaml` templates are tested against it.
+  checked against it, and the `progress.yaml` templates are tested against it. Done:
+  `schemas/work.schema.json`, `work-ontology@1.0.0`; `scripts/check-protocol-schema.mjs`
+  compares `schema.ts` with it and `scripts/test-work-schema.mjs` tests the templates, both
+  in CI.
 - "Deliverable" and "product" must be disambiguated before the modules split. AAW's
   Deliverable is what a work item produces. Delivery's typed, sized deliverable extends it.
   A registered product that consumers use and raise feature requests against is a delivery
-  concept, not AAW's.
+  concept, not AAW's. Settled so: the work module defines Deliverable and has no product.
 - AAW's `WorkType` enumerates domains (development, architecture, consultancy), against
-  DD-01. It becomes open, with each bundle contributing its values.
+  DD-01. It becomes open, with each bundle contributing its values. Done, without breaking
+  anything: the four values stay valid, and a layer adds `<prefix>:<value>` (such as
+  `delivery:enabler`) or a workspace `x-<value>`.
 - AAA's base ontology moves Initiative to the work layer and the programme and delivery types
   to the delivery layer. That is a breaking change to AAA's schema and ships as a major
   version with a migration note.
 - The `bundle.json` schema is defined, with AAW as its first user, before other bundles adopt
-  it.
+  it. Done: `schemas/bundle.schema.json`, and AAW's own `bundle.json`.
 
 ### Consequences
 
@@ -612,4 +651,4 @@ the skills wiring in `aaw install` and the per-workspace script.
 | DD-08 | Contribution Model | 2026-02 | Implemented |
 | DD-09 | Template Extensibility | 2026-02 | Implemented |
 | DD-10 | Agent Skills as the Distribution Format | 2026-09 | Implemented |
-| DD-11 | Skill Bundles, Versioned Skill Identifiers and a Layered Ontology | 2026-09 | Accepted; not yet implemented |
+| DD-11 | Skill Bundles, Versioned Skill Identifiers and a Layered Ontology | 2026-09 | Accepted; manifest, checks and work module implemented |
