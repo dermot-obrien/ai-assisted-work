@@ -109,7 +109,6 @@ holding a `SKILL.md` (YAML frontmatter plus instructions) alongside its `referen
 | `/aaw-work-status` | `skills/aaw-work-status/` |
 | `/aaw-next-task` | `skills/aaw-next-task/` |
 | `/aaw-start-initiative` | `skills/aaw-start-initiative/` |
-| `/quarter-planning` | `skills/quarter-planning/` |
 
 **General tooling**, domain-agnostic and useful on its own. It is not work management, but
 it is the kind of thing every project needs and nothing about it is specific to one:
@@ -118,19 +117,18 @@ it is the kind of thing every project needs and nothing about it is specific to 
 |-------|------|
 | `thread` | Keeps thought processes untangled across chats, projects, IDEs and machines: a throwaway tree of intents in a git repo you own, which every tool reads and writes |
 
-Two general tooling skills that began here now live in their own repositories, so they can be
-installed without this framework. Each repository's `NOTICE` records the commit here it was
-taken from:
+Three skills that began here now live in their own repositories, so they can be installed
+without this framework. Each repository's `NOTICE` records the commit here it was taken from:
 
 | Skill | Repository | Does |
 |-------|------------|------|
 | `markdown-deck` | [markdown-deck](https://github.com/dermot-obrien/markdown-deck) | Renders tagged sections of a Markdown document into HTML slides and a PDF, keeping the Markdown as the only source |
 | `model` | [diagram-model](https://github.com/dermot-obrien/diagram-model) | Treats a diagram and a document as two views of one model of boxes and lines: extract, emit, validate one against the other, render |
+| `quarter-planning` | [delivery-planning](https://github.com/dermot-obrien/delivery-planning) | Plans the delivery of technology work by quarter: derives a budget from the calendar and resourcing, allocates it to epics, and keeps the plan honest. It reads this framework's work items where a workspace binds `workItemsDir`, and needs nothing else from it |
 
 Install them wherever your agent reads skills, for example with
 `gh skill install dermot-obrien/markdown-deck markdown-deck` and
-`gh skill install dermot-obrien/diagram-model model`. `quarter-planning` and `thread` do not need
-either.
+`gh skill install dermot-obrien/diagram-model model`. `thread` needs none of them.
 
 Each carries a `description`, so an assistant can invoke it on its own when a request matches
 rather than only when you type the slash command. The long-form procedure sits in
@@ -251,7 +249,6 @@ Once installed, these commands are available in your AI assistant:
 | `/aaw-work-status` | Report work status. |
 | `/aaw-next-task` | Identify the next task to work on. |
 | `/aaw-start-initiative` | Create a strategic initiative grouping work items. |
-| `/quarter-planning` | Derive a quarter's budget from the calendar and the resourcing register, allocate it to epics, and keep the plan honest. |
 
 And from the shell (the git-clone install does not put `aaw` on your PATH; either type the bundle path, or set up a shell alias — see [DEPLOYMENT.md](DEPLOYMENT.md#shell-alias)):
 
