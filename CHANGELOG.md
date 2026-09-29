@@ -7,6 +7,28 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **`thread` loads in strict YAML readers** (thread 0.8.2). Its `description` was an
+  unquoted value holding `: `, which a YAML parser reads as a second mapping, so
+  `skills-ref validate` rejected the skill and a strict client could not load it. The value
+  is now quoted, with the same text. `scripts/validate-skills.mjs` missed this because its
+  reader is lenient; it now reports an unquoted value containing `: ` as an error.
+
+### Changed
+- **`thread`'s SKILL.md is under the specification's 5,000-token guidance** (thread 0.8.2).
+  Its body was about 5,500 tokens. The cloud and repository setup moved to
+  `references/setup.md` and the shared-action ownership rules to `references/ownership.md`,
+  each linked from a short section that says when to read it. What the skill does is
+  unchanged. A repository that commits `.claude/skills/thread/` for cloud sessions commits
+  `references/` as well.
+
+### Added
+- **CI runs the Agent Skills reference validator.** A new job, "Agent Skills reference
+  validator", installs `skills-ref` from the agentskills repository at a pinned commit and
+  runs `skills-ref validate` on every skill `bundle.json` lists, on pull requests and pushes
+  to `main`. `scripts/validate-skills.mjs` also warns when a body passes about 5,000 tokens.
+  The README has a section on conformance and how to validate locally.
+
 ### Added
 - The bundle manifest schema, `schemas/bundle.schema.json`
   (`pkg:generic/dermot-obrien/ai-assisted-work/bundle-schema@1.0.0`), and AAW's own
