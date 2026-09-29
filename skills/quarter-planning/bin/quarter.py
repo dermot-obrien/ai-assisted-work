@@ -55,6 +55,11 @@ before reading any of them.
 
 Run:  python <skills>/quarter-planning/bin/quarter.py --quarter <slug> [--apply]
       python <skills>/quarter-planning/bin/quarter.py --quarter <slug> --cards [--check]
+      python <skills>/quarter-planning/bin/quarter.py --quarter <slug> --links [--check]
+
+--links points every reference-link definition in the quarter folder's Markdown documents
+whose label names an epic or a story, [EP-001]: or [EP-001-A2]:, at that record's own page:
+the siteUrl binding plus the site_route the record carries in the model. See src/links.py.
 
 --apply writes the derived budget_points onto each epic in work_item.yaml, replacing only
 that one value on that one line, or inserting the line after the record's id where there is
@@ -65,6 +70,7 @@ budgets are behind it.
 with --check writes nothing and fails if any is stale. Everything else is read only.
 """
 import argparse
+import glob
 import io
 import os
 import re
@@ -76,6 +82,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 from bindings import Bindings  # noqa: E402
 from capacity import Quarter, base_points, f, product_points  # noqa: E402
 import cards as cards_mod  # noqa: E402
+import links as links_mod  # noqa: E402
 from framing import close_section, framing_section, has_close, register_rules  # noqa: E402
 import feature_requests as req_mod  # noqa: E402
 from planmodel import load_items, load_ladder, load_plan, load_register, work_item_path  # noqa: E402
@@ -305,6 +312,12 @@ def apply_budgets(text, want):
     return '\n'.join(lines), written
 
 
+def display_path(p):
+    """A path relative to the working directory, or absolute when it is on another drive."""
+    same = os.path.splitdrive(p)[0].lower() == os.path.splitdrive(os.getcwd())[0].lower()
+    return os.path.relpath(p, os.getcwd()) if same else p
+
+
 def cards(q, bind, check):
     """Write the epic cards and the stage grid, or with check, report which are stale."""
     if not bind.declared('cardsDir'):
@@ -314,8 +327,7 @@ def cards(q, bind, check):
         return 2
     files = cards_mod.build(q, bind, q.fiscal)
     stale = cards_mod.write(files, check=check)
-    shown = [os.path.relpath(p, os.getcwd()) if os.path.splitdrive(p)[0].lower()
-             == os.path.splitdrive(os.getcwd())[0].lower() else p for p in stale]
+    shown = [display_path(p) for p in stale]
     if check:
         if stale:
             print('Stale epic cards for %s. Regenerate with %s:\n  %s'
@@ -325,6 +337,45 @@ def cards(q, bind, check):
         return 0
     print('Wrote %d of %d file(s) for %s.' % (len(stale), len(files), q.fiscal))
     for p in shown:
+        print('  %s' % p)
+    return 0
+
+
+def links(q, bind, check):
+    """Point each document's epic and story links at the records' pages, or report stale ones."""
+    if not bind.declared('siteUrl'):
+        sys.stderr.write('quarter-planning: --links needs the site the pages are published on. '
+                         'Declare siteUrl in [suite.quarter-planning] of %s.\n'
+                         % (bind.file or '.agents/skill-bindings.toml'))
+        return 2
+    items, _ = load_items(bind, q.fiscal)
+    resolver = links_mod.Links(bind, items)
+    qdir = bind.resolve('quarterDir')
+    stale = []
+    for path in sorted(glob.glob(os.path.join(qdir, '*.md'))):
+        with io.open(path, encoding='utf-8') as fh:
+            have = fh.read()
+        want = links_mod.rewrite(have, resolver)
+        if want == have:
+            continue
+        stale.append(display_path(path))
+        if not check:
+            with io.open(path, 'w', encoding='utf-8', newline='\n') as fh:
+                fh.write(want)
+    for rid in sorted(resolver.missing):
+        print('  WARNING %s is linked but has no site_route in the model, so it is left as it '
+              'is' % rid)
+    if check:
+        if stale:
+            again = bind.command('links') or 'quarter.py --quarter %s --links' % q.slug
+            print('Links behind the model for %s. Regenerate with %s:\n  %s'
+                  % (q.fiscal, again, '\n  '.join(stale)))
+            return 1
+        print('Links for %s are current.' % q.fiscal)
+        return 0
+    print('Pointed the links in %d document(s) for %s at %s.'
+          % (len(stale), q.fiscal, resolver.root))
+    for p in stale:
         print('  %s' % p)
     return 0
 
@@ -343,14 +394,19 @@ def main():
                     help='write the derived budget_points onto the epics in work_item.yaml')
     ap.add_argument('--cards', action='store_true',
                     help='write the epic cards and the stage grid to the cardsDir binding')
+    ap.add_argument('--links', action='store_true',
+                    help='point the epic and story links in the quarter folder documents at '
+                         'each record page: siteUrl plus the record site_route')
     ap.add_argument('--check', action='store_true',
-                    help='with --cards, write nothing and exit non-zero if any card is stale')
+                    help='with --cards or --links, write nothing and exit non-zero if stale')
     ap.add_argument('--backlog', action='store_true',
                     help='print each product\'s feature requests ranked by WSJF, with their '
                          'epic and stories, and stop. Needs the requests binding')
     args = ap.parse_args()
-    if args.check and not args.cards:
-        ap.error('--check applies to --cards')
+    if args.check and not (args.cards or args.links):
+        ap.error('--check applies to --cards or --links')
+    if args.cards and args.links:
+        ap.error('run --cards and --links separately')
     bind = Bindings(args.quarter, start=args.workspace or os.getcwd())
     if args.where:
         print(bind.describe())
@@ -390,6 +446,8 @@ def main():
     q = Quarter(args.quarter, bind)
     if args.cards:
         return cards(q, bind, args.check)
+    if args.links:
+        return links(q, bind, args.check)
     basis, people = q.basis, q.people
     base = base_points(bind)
     items, notes = load_items(bind, q.fiscal)

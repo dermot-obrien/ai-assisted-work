@@ -54,6 +54,12 @@ OPTIONAL_PATH_KEYS = ("ladder", "epicsDir", "cardsDir", "workItemsDir", "request
 # Optional paths that are written rather than read, so their absence is not a fault.
 WRITTEN_KEYS = ("cardsDir",)
 
+# Optional values that are not paths, each opting in to --links.
+#   siteUrl            the root of the published site, which each record's site_route is
+#                      appended to. A URL, so it is never resolved against the binding file
+#   externalRefSystem  the external_refs system whose external_id may label a link to an epic
+OPTIONAL_VALUE_KEYS = ("siteUrl", "externalRefSystem")
+
 # What does have a default is convention rather than location, and is the same question
 # every workspace answers the same way until it doesn't.
 DEFAULTS = {
@@ -204,6 +210,9 @@ class Bindings:
             gone = not os.path.exists(p)
             flag = ("   not yet written" if k in WRITTEN_KEYS else "   MISSING") if gone else ""
             lines.append(f"    {k:<12} {p}{flag}")
+        for k in OPTIONAL_VALUE_KEYS:
+            shown = self.values.get(k) if self.declared(k) else "not declared (optional)"
+            lines.append(f"    {k:<12} {shown}")
         lines.append(f"    {'label':<12} {self.label()}")
         if not self.declared("slugPattern"):
             lines.append("  note: slugPattern is not declared, so the fiscal-year default "
