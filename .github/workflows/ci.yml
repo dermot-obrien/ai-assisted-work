@@ -130,6 +130,36 @@ jobs:
             echo "::error::check-skills passed on an edited copy"; exit 1
           fi
 
+  skills-ref:
+    name: Agent Skills reference validator
+    runs-on: ubuntu-latest
+    env:
+      # skills-ref is the specification's reference library. It is pinned to a commit
+      # because it is published for demonstration and its checks may change.
+      SKILLS_REF: git+https://github.com/agentskills/agentskills@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install skills-ref
+        run: pip install "skills-ref @ $SKILLS_REF"
+
+      # bundle.json is the list of skills this repository ships, and the "Agent Skills
+      # validation" job already fails when it and skills/ disagree. Validating what it
+      # lists therefore covers exactly the skills aaw install places.
+      - name: Validate every skill bundle.json lists
+        run: |
+          paths=$(node -e 'for (const s of require("./bundle.json").skills) console.log(s.path)')
+          test -n "$paths" || { echo "::error::bundle.json lists no skills"; exit 1; }
+          failed=0
+          for p in $paths; do
+            skills-ref validate "$p" || { echo "::error file=$p/SKILL.md::skills-ref validate failed for $p"; failed=1; }
+          done
+          exit $failed
+
   reuse:
     name: REUSE compliance
     runs-on: ubuntu-latest
