@@ -147,7 +147,8 @@ From `assets/templates/progress.yaml`:
    `state: planned`
 4. Populate the `activities` array from `plan.md`, each with its `produces`
 5. Set `artifacts.jira` to the URL captured in Scoping, or null if skipped
-6. Where the workspace plans by quarter with `quarter-planning`, and binds `workItemsDir` so
+6. Where the workspace plans by quarter with `quarter-planning` (from the
+   [delivery-planning](https://github.com/dermot-obrien/delivery-planning) bundle), and binds `workItemsDir` so
    that skill reads this file, fill the optional quarter-planning block on an epic: `lane`,
    `flows` with their rung movement, `home` and `approval`. Leave `budget_points` to the
    quarter's planning, which derives it, and `planned_points` to the sum of the products.
