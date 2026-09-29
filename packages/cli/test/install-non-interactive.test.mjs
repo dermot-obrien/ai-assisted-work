@@ -123,3 +123,33 @@ test("keeps the config's comments, and leaves it untouched when nothing changed"
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("install --help prints the help and installs nothing", () => {
+  const dir = workspace();
+  try {
+    const r = install(dir, ["--help"]);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /^Usage:/m);
+    assert.equal(existsSync(path.join(dir, ".aaw-config.yaml")), false);
+    assert.equal(existsSync(path.join(dir, ".agents")), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("the work items folder is created where the config resolves it", () => {
+  const dir = workspace();
+  const elsewhere = mkdtempSync(path.join(tmpdir(), "aaw-cwd-"));
+  try {
+    const r = install(elsewhere, [
+      "--yes", "--workspace", dir, "--tenant", "acme", "--work-items-path", "./items/{tenant}",
+    ]);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(config(dir).work_items_path, "./items/{tenant}");
+    assert.ok(existsSync(path.join(dir, "items", "acme")), "created under the workspace, expanded");
+    assert.equal(existsSync(path.join(elsewhere, "items")), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(elsewhere, { recursive: true, force: true });
+  }
+});

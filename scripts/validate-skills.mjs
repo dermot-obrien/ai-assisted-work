@@ -203,6 +203,11 @@ function validateSkill(dir) {
   return { errors, warnings, name: name ?? dirName, description: description ?? "", lines };
 }
 
+if (["-h", "--help"].includes(process.argv[2])) {
+  console.log("usage: validate-skills.mjs [skillsRoot]   (default: ./skills; exit 0 ok, 1 errors)");
+  process.exit(0);
+}
+
 const root = path.resolve(process.argv[2] ?? "skills");
 if (!existsSync(root)) {
   console.error(`No skills directory at ${root}`);

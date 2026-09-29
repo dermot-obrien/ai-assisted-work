@@ -58,7 +58,7 @@ plugin-supplied skills as `/plugin-name:skill-name`, but skills installed into
 
 ## Verifying an install
 
-Type `/` in your assistant. The five `/aaw-*` skills should appear. If they do not:
+Type `/` in your assistant. The five `/aaw-*` skills and `thread` should appear. If they do not:
 
 1. Restart the assistant. Several tools cache the skill list at startup.
 2. Check `.agents/skills/` exists and holds a directory per skill, each with a `SKILL.md`.
@@ -70,24 +70,19 @@ Type `/` in your assistant. The five `/aaw-*` skills should appear. If they do n
 
 ## Legacy command shims
 
-Before the Agent Skills format existed, every tool had its own incompatible layout, so AAW
-shipped a per-tool shim: a small file whose only content was a pointer to the real instructions
-elsewhere in the framework. Those shims are still installed for setups that have not moved.
+Before the Agent Skills format existed, AAW shipped a small per-tool file for each command,
+pointing at instructions elsewhere in the framework:
 
 | Tool | Legacy location |
 |------|-----------------|
-| Claude Code | `.claude/commands/aaw/*.md` → `/aaw:start-work` |
+| Claude Code | `.claude/commands/aaw/*.md`, invoked as `/aaw:start-work` |
 | Cursor | `.cursor/commands/aaw/*.md` |
 | GitHub Copilot | `.github/prompts/aaw-*.prompt.md` |
 | Gemini CLI | `.gemini/skills/aaw/` |
 
-They are superseded and will be removed. Two reasons they are worth leaving behind rather than
-maintaining: a shim carries no `description`, so the assistant can only run it when you type
-the command; and a shim points at one large instruction file that is read whole on every
-invocation, which is the opposite of progressive disclosure.
-
-Prefer the skills. If you have both installed, the skills and the shims will both appear, and
-the skill is the maintained definition.
+They were removed in 3.0.0, and `aaw install` deletes any an earlier install wrote, because
+they point at instruction files that no longer exist. If you still see `/aaw:start-work`,
+install again.
 
 ## See also
 

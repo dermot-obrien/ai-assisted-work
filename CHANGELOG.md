@@ -7,6 +7,32 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Documentation built around a quick start. `docs/quick-start.md` goes from nothing to a
+  work item you can list, lint, claim and hand to an agent, with the commands for PowerShell
+  and bash, tested on Windows. New: a concepts guide in reading order
+  (`docs/concepts/index.md`), a page per skill (`docs/skills/`), a configuration reference
+  covering every `.aaw-config.yaml` key, environment variable and manifest key
+  (`docs/reference/configuration.md`), a command reference checked against `--help`
+  (`docs/reference/commands.md`), troubleshooting keyed to the messages the tools print
+  (`docs/troubleshooting.md`), an examples index and a docs index. The README covers
+  installing for each agent at workspace and user level. `docs/integration/index.md` is now
+  the per-agent install guide.
+
+### Fixed
+- `aaw <command> --help` prints the help and stops. `aaw install --help` ran a real
+  install in the current directory. The help now lists every flag.
+- `aaw install` creates the work items folder where the config resolves it, with `~`,
+  `{tenant}` and `{repo}` expanded and relative to the workspace. From PowerShell,
+  `--work-items-path ~/...` created a folder named `~` in the current directory.
+- `aaw release` on an activity still `in_progress` says what to do, instead of
+  `Caller must call updateActivity ... does not hold the claim`.
+- `scripts/validate-skills.mjs --help` prints its usage instead of looking for a folder
+  named `--help`.
+- Stale documentation: DEPLOYMENT.md still described the per-tool shims removed in 3.0.0 and
+  Node 16; CONTRIBUTING.md and `change/work-items/README.md` named `/aiaw-self-*` commands
+  that no longer exist; the README badge said 3.1.0.
+
 ### Fixed
 - **`thread` loads in strict YAML readers** (thread 0.8.2). Its `description` was an
   unquoted value holding `: `, which a YAML parser reads as a second mapping, so
