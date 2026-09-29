@@ -427,24 +427,39 @@ export function checkBundle(dir, registry) {
         if (!o.id.startsWith(prefix)) where("/ontology/id", `${o.id} is not a component of ${prefix.slice(0, -1)}`);
         registry.add(mod, f);
         const ext = new Map((o.extends ?? []).map((r) => [r.purl, r.range]));
+        // A module of this bundle's own, by purl, or a schema file inside it that has no
+        // purl, such as an older base schema the module builds on, needs no entry in
+        // extends. Another bundle's module, even a vendored copy, does.
+        const inBundle = (doc) => {
+          const file = doc && registry.files.get(doc.$id);
+          return Boolean(file) && !path.relative(dir, file).startsWith("..") && !path.isAbsolute(path.relative(dir, file));
+        };
+        const seen = new Set();
         for (const ref of new Set(refsIn(mod))) {
-          if (!registry.resolve(ref, mod)) {
+          const resolved = registry.resolve(ref, mod);
+          if (!resolved) {
             where(o.path, `$ref ${ref} does not resolve`);
             continue;
           }
           const base = ref.split("#")[0];
           if (!base || unversioned(base) === unversioned(o.id)) continue;
           const target = unversioned(base);
+          if (target.startsWith("pkg:") ? target.startsWith(prefix) : inBundle(resolved.root)) continue;
+          if (base !== target) where(o.path, `$ref ${ref} pins a version; reference ${target} and state the range in extends`);
+          if (seen.has(target)) continue;
+          seen.add(target);
           if (!ext.has(target)) {
             where("/ontology/extends", `${o.path} references ${target}, which extends does not declare`);
             continue;
           }
           const got = registry.byId.get(target);
           const version = got && got.$id.includes("@") ? got.$id.split("@").pop() : null;
-          if (base !== target) where(o.path, `$ref ${ref} pins a version; reference ${target} and state the range in extends`);
           if (version && !satisfies(version, ext.get(target))) {
             where("/ontology/extends", `${target} ${ext.get(target)} is not met by the loaded ${got.$id}`);
           }
+        }
+        for (const target of ext.keys()) {
+          if (!seen.has(target)) where("/ontology/extends", `${target} is declared, but ${o.path} references nothing in it`);
         }
       }
     }
