@@ -7,6 +7,18 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+- **`quarter-planning` moved to its own repository**, the delivery-planning bundle at
+  https://github.com/dermot-obrien/delivery-planning, released there from 3.4.0 under the
+  per-skill tag `quarter-planning--v3.4.0` (DD-11). Delivery planning is technology-specific
+  and this framework is domain-agnostic (DD-01), so it builds on AAW's work items from
+  outside. Its `NOTICE` names the commit here it was taken from, quarter-planning 3.3.0 at
+  78ec34e, and its history before that is the history of `skills/quarter-planning` here and
+  the entries in this changelog. `aaw install` no longer installs it; a workspace keeps its
+  installed copy until it installs from the new repository. The `progress.yaml` templates
+  still carry the optional fields it reads.
+  `aaw-start-work` 2.4.1 points its planning notes at the new repository.
+
 ### Documentation
 - **DD-11: Skill bundles, versioned skill identifiers and a layered ontology.** A repository
   is a bundle of one or more skills and an optional ontology module, described by a neutral
