@@ -243,7 +243,9 @@ The five `aaw-*` checks are one file, copied into each skill. They check that
 to folders, that a plain `deliverables_register` path exists, and that `mode` is valid.
 `thread`'s check looks for git and for a store at `$THREADS_HOME`, or a remote to clone one
 from. Each prints `warning:` lines, one line per problem, then `<skill>: ok` when there are
-no problems. `--help` prints a one-line usage; any other argument exits 2.
+no problems. Exit 0 with no problems, 1 with any. `--help` (or `-h`) prints one line and
+exits 0: what the check reads for the `aaw-*` checks, the usage for `thread`'s. Any other
+argument exits 2.
 
 `aaw install` does not run them yet. To run every skill's check the way an installer
 would, from a workspace with AAW cloned at `.ai-assisted-work/`:
