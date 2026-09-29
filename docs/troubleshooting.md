@@ -218,6 +218,8 @@ The checks (`node .agents/skills/<skill>/bin/check.mjs`, or all of them through
 | `<store>: no thread store yet, and no remote to clone one from.` | `thread`: set `THREADS_REMOTE` or `threads_remote` (below) |
 | `warning: <store>: no thread store yet; thread clones <url> on first use.` | `thread`: fine; the first command clones it |
 | `<store>: the thread store is not a git clone.` | Move the folder aside, or point `THREADS_HOME` at a clone |
+| `<store>: the thread store is a file, not a folder.` | Move the file aside, or point `THREADS_HOME` at another folder |
+| `git: not found on the PATH. Install git; thread keeps its store in a git clone.` | `thread`: install git, then open a new terminal |
 
 ## thread
 
