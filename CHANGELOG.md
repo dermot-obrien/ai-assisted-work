@@ -7,6 +7,37 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- The bundle manifest schema, `schemas/bundle.schema.json`
+  (`pkg:generic/dermot-obrien/ai-assisted-work/bundle-schema@1.0.0`), and AAW's own
+  `bundle.json`, its first user (DD-11). `scripts/validate-bundle.mjs`, with no dependencies,
+  checks a manifest against the schema and against the skills it lists, and with
+  `--run-checks` runs each skill's post-install check as an installer would. CI runs both.
+- The post-install check contract (DD-11): a skill declares `check` in `bundle.json`, and an
+  installer runs it after install and on demand, from the workspace root with `SKILL_DIR`
+  set. Exit 0 correct, 1 problems (one actionable line each), 2 usage or environment error.
+- A check in every AAW skill, `bin/check.mjs`: aaw-next-task 2.2.0, aaw-progress-work 2.4.0,
+  aaw-start-initiative 2.2.0, aaw-start-work 2.5.0 and aaw-work-status 2.3.0 check
+  `.aaw-config.yaml` and the paths it names; thread 0.8.1 checks git and the thread store (a patch: before 1.0.0 a minor would fall outside a dependent's `^0.8.0`).
+- The work layer of the ontology, `schemas/work.schema.json`
+  (`pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0`): WorkItem, Activity,
+  Task, Initiative, Deliverable, Stakeholder, Objective and the shared primitives, as
+  `progress.yaml` holds them. Deliverable stays here; a registered product belongs to the
+  delivery layer. From schema version 3 an activity must name what it `produces`.
+  `scripts/test-work-schema.mjs` tests the templates against it.
+- `docs/integration/skill-bundles.md`, and DD-11 sections on the manifest and the check.
+
+### Changed
+- WorkType is open, without breaking anything: `development`, `architecture`,
+  `consultancy` and `mixed` stay valid, a layer adds `<prefix>:<value>` and a workspace
+  `x-<value>`. The CLI's validator accepts them.
+- `packages/protocol/src/schema.ts` follows the work schema, and
+  `scripts/check-protocol-schema.mjs` fails CI when they disagree. WorkItem gains
+  `workItemLevel`, `parentWorkItemId`, `planningPeriod`, `advancesKrIds` and `deliverables`;
+  Activity gains `produces`; `Deliverable` is the schema version 3 product, and the older
+  shape under `artifacts` is `ArtifactDeliverable`. The local-fs backend reads and writes the
+  new fields.
+
 ### Removed
 - **`quarter-planning` moved to its own repository**, the delivery-planning bundle at
   https://github.com/dermot-obrien/delivery-planning, released there from 3.4.0 under the

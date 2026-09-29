@@ -7464,15 +7464,53 @@ function parseWorkItem(yamlText, tenantId) {
     lastModified: y.last_modified,
     lastModifiedBy: y.last_modified_by,
     schemaVersion: y.schema_version ?? 1,
+    // Schema version 3 fields, carried only when the file has them, so an older
+    // work item is written back without keys it never had.
+    ...y.work_item_level !== void 0 && { workItemLevel: y.work_item_level },
+    ...y.parent_work_item_id !== void 0 && { parentWorkItemId: y.parent_work_item_id },
+    ...y.planning_period !== void 0 && { planningPeriod: y.planning_period },
+    ...y.advances_kr_ids !== void 0 && { advancesKrIds: y.advances_kr_ids ?? [] },
+    ...y.deliverables !== void 0 && { deliverables: (y.deliverables ?? []).map(parseDeliverable) },
     activities: (y.activities ?? []).map(parseActivity),
     blockers: [],
     artifacts: parseArtifacts(y.artifacts ?? {})
+  };
+}
+function parseDeliverable(y) {
+  return {
+    id: y.id,
+    type: y.type ?? null,
+    name: y.name,
+    whyNeeded: y.why_needed ?? null,
+    dependsOn: y.depends_on ?? [],
+    qualityCriteria: y.quality_criteria ?? null,
+    approver: y.approver ?? null,
+    state: y.state ?? "planned",
+    owner: y.owner ?? null,
+    path: y.path ?? null,
+    filesChanged: y.files_changed ?? []
+  };
+}
+function serialiseDeliverable(d) {
+  return {
+    id: d.id,
+    type: d.type,
+    name: d.name,
+    why_needed: d.whyNeeded,
+    depends_on: d.dependsOn,
+    quality_criteria: d.qualityCriteria,
+    approver: d.approver,
+    state: d.state,
+    owner: d.owner,
+    path: d.path,
+    files_changed: d.filesChanged
   };
 }
 function parseActivity(y) {
   return {
     id: y.id,
     title: y.title,
+    ...y.produces !== void 0 && { produces: y.produces },
     status: y.status,
     actor: y.actor ?? "any",
     dependsOn: y.depends_on ?? [],
@@ -7519,12 +7557,18 @@ function serialiseWorkItem(wi) {
     title: wi.title,
     type: wi.type,
     status: wi.status,
+    ...wi.workItemLevel !== void 0 && { work_item_level: wi.workItemLevel },
+    ...wi.parentWorkItemId !== void 0 && { parent_work_item_id: wi.parentWorkItemId },
     initiative_id: wi.initiativeId,
+    ...wi.planningPeriod !== void 0 && { planning_period: wi.planningPeriod },
+    ...wi.advancesKrIds !== void 0 && { advances_kr_ids: wi.advancesKrIds },
     created: wi.created,
     updated: wi.updated,
+    ...wi.deliverables !== void 0 && { deliverables: wi.deliverables.map(serialiseDeliverable) },
     activities: wi.activities.map((a) => ({
       id: a.id,
       title: a.title,
+      ...a.produces !== void 0 && { produces: a.produces },
       status: a.status,
       actor: a.actor,
       depends_on: a.dependsOn,
@@ -8937,10 +8981,10 @@ function validateWorkItem(wi) {
       message: `invalid WorkItemStatus '${wi.status}' (expected one of: ${WORK_ITEM_STATUSES.join(", ")})`
     });
   }
-  if (!isOneOf(wi.type, WORK_TYPES)) {
+  if (!isWorkType(wi.type)) {
     issues.push({
       path: `${wi.id}.type`,
-      message: `invalid WorkType '${wi.type}' (expected one of: ${WORK_TYPES.join(", ")})`
+      message: `invalid WorkType '${wi.type}' (expected one of: ${WORK_TYPES.join(", ")}, a layer's <prefix>:<value>, or x-<value>)`
     });
   }
   for (const a of wi.activities) {
@@ -8994,6 +9038,9 @@ function validateInitiative(init) {
     });
   }
   return issues;
+}
+function isWorkType(value) {
+  return isOneOf(value, WORK_TYPES) || /^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$/.test(value) || /^x-[a-z0-9]+(-[a-z0-9]+)*$/.test(value);
 }
 function isOneOf(value, allowed) {
   return allowed.includes(value);

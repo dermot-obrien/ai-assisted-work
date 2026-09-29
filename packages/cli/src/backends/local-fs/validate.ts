@@ -24,7 +24,7 @@ import type {
   TaskStatus,
   WorkItem,
   WorkItemStatus,
-  WorkType,
+  CoreWorkType,
 } from "@aaw/protocol";
 
 const WORK_ITEM_STATUSES: readonly WorkItemStatus[] = [
@@ -69,7 +69,7 @@ const INITIATIVE_STATUSES: readonly InitiativeStatus[] = [
 
 const ACTORS: readonly Actor[] = ["agent", "human", "any"];
 
-const WORK_TYPES: readonly WorkType[] = [
+const WORK_TYPES: readonly CoreWorkType[] = [
   "development",
   "architecture",
   "consultancy",
@@ -90,10 +90,10 @@ export function validateWorkItem(wi: WorkItem): Issue[] {
       message: `invalid WorkItemStatus '${wi.status}' (expected one of: ${WORK_ITEM_STATUSES.join(", ")})`,
     });
   }
-  if (!isOneOf(wi.type, WORK_TYPES)) {
+  if (!isWorkType(wi.type)) {
     issues.push({
       path: `${wi.id}.type`,
-      message: `invalid WorkType '${wi.type}' (expected one of: ${WORK_TYPES.join(", ")})`,
+      message: `invalid WorkType '${wi.type}' (expected one of: ${WORK_TYPES.join(", ")}, a layer's <prefix>:<value>, or x-<value>)`,
     });
   }
 
@@ -154,6 +154,15 @@ export function validateInitiative(init: Initiative): Issue[] {
     });
   }
   return issues;
+}
+
+/** WorkType is open (DD-11): a core value, `<prefix>:<value>` or `x-<value>`. */
+function isWorkType(value: string): boolean {
+  return (
+    isOneOf(value, WORK_TYPES) ||
+    /^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$/.test(value) ||
+    /^x-[a-z0-9]+(-[a-z0-9]+)*$/.test(value)
+  );
 }
 
 function isOneOf<T extends string>(value: string, allowed: readonly T[]): value is T {

@@ -181,3 +181,4 @@ Implement the `Backend` interface from `@aaw/protocol` and ship as a separate pa
 - [Command Discovery](command-discovery.md) — how slash commands surface across tools
 - [docs/concepts/work-management.md](../concepts/work-management.md) — concepts and lifecycle
 - [packages/protocol/README.md](../../packages/protocol/README.md) — the contract for backends
+- [Skill bundles](skill-bundles.md): `bundle.json`, post-install checks and the work ontology
