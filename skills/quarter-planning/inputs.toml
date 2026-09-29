@@ -98,8 +98,9 @@ description = """The workspace's own commands, by role, so the skill can tell so
 to run without knowing whether this workspace uses npm, make or a script. Roles it names:
 `regenerate` (rebuild the views derived from the model), `check` (fail on prose that
 disagrees with them), `compose` (rebuild the composed model from its sources), `cards`
-(regenerate the epic cards, named in each card's generated-file notice). Anything not set
-is described rather than commanded."""
+(regenerate the epic cards, named in each card's generated-file notice), `links` (point the
+plan documents' epic and story links at their pages). Anything not set is described rather
+than commanded."""
 
 [inputs.options.approvalStages]
 type = "str"
@@ -164,3 +165,19 @@ required = false
 default = "analyzing,backlog,implementing,validating,releasing,done,rejected"
 description = """A feature request's statuses, least advanced first and comma-separated. The
 first is not yet ready to build."""
+
+[inputs.options.siteUrl]
+type = "str"
+required = false
+description = """The root of the site the epic and story pages are published on, including
+any base path, such as http://localhost:3000 for a local preview. Where each page sits is not
+configured here: every epic and story records its own `site_route` in the model, and a link is
+this root plus that route. Bound, `--links` points the plan documents at those pages. A URL,
+never resolved against the binding file."""
+
+[inputs.options.externalRefSystem]
+type = "str"
+required = false
+description = """The `system` of an epic's `external_refs` entry whose `external_id` may label a
+link to that epic, so a document that names epics by a tracker key links them to the epic's
+own page rather than to the tracker. Unbound, only epic and story ids are resolved."""

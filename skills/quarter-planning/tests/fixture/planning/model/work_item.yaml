@@ -2,6 +2,10 @@
 work_item:
 - id: EP-001
   title: Example capability increment
+  site_route: /epics/EP-001/
+  external_refs:
+  - system: tracker
+    external_id: TRK-7
   quarter: 2027-Q1
   lane: Example lane
   home: EP-001-example
