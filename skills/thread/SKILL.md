@@ -1,12 +1,12 @@
 ---
 name: thread
-description: Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks whether a chat is done and can be deleted (/thread wrap), or wants closed threads pruned or archived (/thread prune). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, "add an improvement: ...") and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>).
+description: "Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks whether a chat is done and can be deleted (/thread wrap), or wants closed threads pruned or archived (/thread prune). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>)."
 license: CC-BY-4.0
 compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.8.1"
+  version: "0.8.2"
 ---
 
 # Thread
@@ -218,7 +218,7 @@ Nothing should exist only in the chat. Check, in this order, and fix what you ca
    push what belongs to this chat's task. Never commit another chat's edits, merge a PR or
    delete a branch to make the answer yes; report those instead.
 2. **Shared actions.** If this chat's thread owns deploys, publishes or merges for its tree,
-   hand over first (see "Many chats, one tree").
+   hand over first (see [references/ownership.md](references/ownership.md)).
 3. **Knowledge.** Decisions, facts and gotchas that live only in the conversation go where
    they belong: the repository (docs, CLAUDE.md, a runbook) if other people or agents need
    them, the agent's memory if only future sessions do, and a thread note otherwise.
@@ -246,42 +246,15 @@ user. That's what someone switching back from another chat needs.
 
 ## Many chats, one tree: one owner for shared actions
 
-Several chats often work under one tree at once: branches of the same goal, in different
-tools or on different machines. Reading, exploring and editing in parallel is fine. Changing
-shared state from more than one chat is not, because each chat acts on what it last saw and
-none of them sees the others.
+Several chats often work under one tree at once. Reading, exploring and editing in parallel
+is fine, but in each tree exactly one thread owns the actions that change shared state:
+deploys, publishes, and merges into a shared branch. The owner is recorded as a note on the
+tree's root (`note <root> "owner: t-9c3 (deploys, publishes, merges)"`). Before a shared
+action, run `resume <root>` and read the notes; if another thread owns it, do not act.
 
-In each tree, exactly one thread owns the actions that change shared state:
-
-| Owned by one thread per tree | What goes wrong with two |
-|---|---|
-| Deploys, infrastructure applies, and image builds that decide what gets deployed | The environment ends up running code that neither chat tested |
-| Publishing data that people or services read | The last publish wins, silently |
-| Merging into, rebasing or force-pushing a shared branch | One chat's integration undoes or duplicates the other's |
-
-How it works:
-
-- The owner is recorded as a note on the tree's root:
-  `note <root> "owner: t-9c3 (deploys, publishes, merges)"`. If no owner is named, the first
-  chat that needs a shared action records itself. The latest owner note wins.
-- Before a shared action, run `resume <root>` and read the notes. If another thread owns it,
-  do not act. Say in one line which thread owns it, and leave a note on the owner's thread
-  saying what is ready (commit, branch, what to deploy).
-- If the user asks a chat that is not the owner to act anyway, say which thread owns it and
-  act only once they confirm. Then record the new owner on the root.
-- To hand over, the owner notes the new owner on the root, and notes on the new owner's
-  thread what it inherits: anything built but not deployed, and anything half done. A thread
-  that owns shared actions hands over before it is closed, parked or dropped.
-- Make the owner visible where the chat list is. In a tool that can rename chats, the owning
-  chat's title starts with `main · `, for example `main · earnings lab`. Only the owner uses
-  the prefix. On handover the old owner drops it and the new owner adds it. In a tool that
-  cannot rename chats, the owner puts `main` after the anchor line when it records ownership,
-  so scrolling up shows it.
-- Each chat works in its own checkout or git worktree. Two chats in one folder overwrite each
-  other's uncommitted edits, and each picks up the other's changes in its commits.
-
-This sits alongside work-item locks (`aaw-progress-work`, `references/concurrency.md`). A lock
-decides who works an activity; the tree's owner decides who changes shared environments.
+Read [references/ownership.md](references/ownership.md) before any shared action, when
+recording or handing over ownership, or when the user asks a chat that is not the owner to
+act.
 
 ## When sync fails
 
@@ -292,72 +265,7 @@ at all, it prints how to configure one; relay that. Never edit files in the stor
 ## Setting up a repo and cloud sessions
 
 Locally nothing is needed beyond a store: the first command clones it to `~/.threads`. A
-cloud session (Claude Code on the web, Cursor cloud agents) starts from a fresh clone of the
-repo, so everything `/thread` needs must be **committed on the branch the session starts
-from**. When asked to set a repo up, or when `/thread` is missing or can't push in the cloud,
-check these in order and fix what's missing.
-
-**In the repo:**
-
-1. **This skill committed at `.claude/skills/thread/`** (`SKILL.md` and `bin/`). Claude Code
-   and Cursor both load skills from there. The AAW installer makes it a link to the installed
-   copy; git stores the real files through it. Without AAW, copy this directory there. If
-   `.claude/` is ignored, un-ignore down to the skill:
-
-   ```gitignore
-   /.claude/*
-   !/.claude/skills/
-   /.claude/skills/*
-   !/.claude/skills/thread/
-   ```
-
-   (A directory pattern like `.claude/skills/` can't be partly un-ignored; replace it with
-   `.claude/skills/*` plus the `!` line.)
-2. **`threads_remote: <store url>` in `.aaw-config.yaml`** at the repo root (a file with
-   just that line is fine), so no environment variables are needed.
-3. **Refresh the committed copy** whenever this skill is updated: re-run the AAW install, or
-   copy it again, then commit.
-
-**Claude Code on the web:**
-
-- **Leave the environment setup script empty.** It runs once per environment, outside the
-  repo; a leftover `git …` line fails with `fatal: not a git repository` and blocks every
-  session.
-- **Give the session the store repo.** A private store needs credentials to clone as well
-  as to push. The first `/thread` may ask to add the repo; allow it. It may not ask, and the
-  clone fails with `could not read Username`: attach the store repo with push access, or
-  select it as a repository when starting the session. The Claude GitHub App must be allowed
-  on that repo.
-- **Skills load at session start.** If `/thread` isn't offered, the skill isn't on the
-  session's branch or was committed after the session started: start a new one.
-
-**Cursor Cloud agents** (from Cursor's docs; not yet verified end to end):
-
-1. **Skill:** Cursor loads project skills from `.agents/skills/`, `.cursor/skills/` and, for
-   compatibility, `.claude/skills/`, so the committed `.claude/skills/thread/` is found in
-   the agent's clone. Don't depend on `.agents/skills/` there: AAW installs it and it is
-   usually gitignored. Cursor's "Sync Skills for Cloud Agents" setting only syncs
-   `~/.cursor/skills/`, so it isn't needed for a committed skill.
-2. **Environment:** the agent runs on an Ubuntu machine with GitHub reachable by default.
-   `/thread` needs only `node` (18+) and `git`. If the environment's `install` command
-   (`.cursor/environment.json` or the dashboard) sets up a toolchain, make sure Node 18+ is
-   in it. Don't clone the store there: `install` runs once per Build, from the project root,
-   and the store is cloned on first use anyway.
-3. **Access to the store repo:** the agent reaches GitHub through the Cursor GitHub app, so
-   give the app read-write access to the store repo as well as the project repo (GitHub →
-   Settings → Applications → Cursor → Repository access). If pushes still fail, go to step 4.
-4. **Secret, when access isn't enough:** on the Cloud Agents dashboard
-   (`cursor.com/dashboard/cloud-agents`) → Secrets, add `THREADS_REMOTE` as a **Runtime
-   Secret**, which is redacted from transcripts and commits, set to the token URL below.
-   Secrets are scoped to the team/workspace, or to one environment. They are injected when
-   an agent starts, so start a new agent after adding one.
-5. **Start the agent on a branch that has the skill,** type `/thread`, and do the check below.
-
-**Fallback for either tool:** set `THREADS_REMOTE` as an environment variable or secret. If
-the session can't get write access to the store, use a fine-grained token limited to that
-repo (Contents: read and write):
-`https://x-access-token:<token>@github.com/<owner>/<store>.git`.
-
-**Check it works:** `/thread <id>` of something opened locally shows up in the cloud, and a
-`/thread note` made in the cloud appears locally on the next `/thread`. `NOT PUSHED` means no
-write access; events not pushed are lost when the cloud container ends, so fix access first.
+cloud session starts from a fresh clone of the repo, so everything `/thread` needs must be
+committed on the branch the session starts from. When asked to set a repo up, or when
+`/thread` is missing or can't push in a cloud session (Claude Code on the web, Cursor cloud
+agents), follow [references/setup.md](references/setup.md).

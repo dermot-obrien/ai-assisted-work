@@ -182,11 +182,39 @@ One caveat worth knowing: Cursor and Copilot read both `.agents/skills/` and `.c
 so a workspace also set up for Claude Code may list a skill twice in those tools. The link
 means both entries are the same content.
 
-Validate a skill against the spec with:
+### Conformance with the Agent Skills specification
+
+Every skill here follows the [Agent Skills specification](https://agentskills.io/specification).
+Each is a directory named after the skill, holding a `SKILL.md` whose YAML frontmatter carries
+a `name` equal to the directory name and a `description` of at most 1,024 characters that says
+what the skill does and when to use it. `metadata` values are strings, so versions are quoted.
+Each `SKILL.md` stays under 500 lines and 5,000 tokens; longer procedure sits in `references/`,
+templates in `assets/` and executables in `bin/`, each named from `SKILL.md` by a relative
+path one level deep.
+
+CI checks this on every pull request and every push to `main`, with two validators:
+
+- `skills-ref validate`, the specification's reference validator, on each skill `bundle.json`
+  lists (the job "Agent Skills reference validator").
+- `scripts/validate-skills.mjs`, which has no dependencies and also checks that relative
+  links resolve and warns on body length (the job "Agent Skills validation").
+
+To validate locally, from a clone of this repository:
 
 ```bash
-node .ai-assisted-work/scripts/validate-skills.mjs skills
+python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install "skills-ref @ git+https://github.com/agentskills/agentskills#subdirectory=skills-ref"
+for d in skills/*/; do skills-ref validate "$d"; done
+
+node scripts/validate-skills.mjs skills
 ```
+
+On Windows, set `PYTHONUTF8=1` before running `skills-ref`, which otherwise reads `SKILL.md`
+in the system code page and fails on non-ASCII characters.
+
+Installed skills land in `.agents/skills/<name>/`, the cross-tool project location that most
+skills-compatible tools read, with `.claude/skills/<name>` linked at it for Claude Code (see
+[Installing](#installing)).
 
 ### Optional: a deliverables type register
 
