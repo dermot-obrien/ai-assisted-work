@@ -18,7 +18,7 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   set. Exit 0 correct, 1 problems (one actionable line each), 2 usage or environment error.
 - A check in every AAW skill, `bin/check.mjs`: aaw-next-task 2.2.0, aaw-progress-work 2.4.0,
   aaw-start-initiative 2.2.0, aaw-start-work 2.5.0 and aaw-work-status 2.3.0 check
-  `.aaw-config.yaml` and the paths it names; thread 0.9.0 checks git and the thread store.
+  `.aaw-config.yaml` and the paths it names; thread 0.8.1 checks git and the thread store (a patch: before 1.0.0 a minor would fall outside a dependent's `^0.8.0`).
 - The work layer of the ontology, `schemas/work.schema.json`
   (`pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0`): WorkItem, Activity,
   Task, Initiative, Deliverable, Stakeholder, Objective and the shared primitives, as
