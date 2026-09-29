@@ -57,6 +57,17 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Regenerate cards after upgrading; `--cards --check` reports them stale until then.
 
 ### Added
+- **Plan documents link each epic and story to its published page** (quarter-planning
+  3.3.0). Where a record is published is data in the model: the epic in `work_item.yaml` or
+  `progress.yaml` and the story in `activity.yaml` each carry `site_route`, a stable route
+  relative to the site root. The workspace binds `siteUrl`, the root, so moving from a local
+  preview to the published site is one value. `--links` points every reference-link
+  definition in the quarter folder's Markdown whose label is an epic id, a story id or, with
+  `externalRefSystem` bound, an epic's tracker key, at that record's page, and leaves prose
+  and other definitions alone; `--links --check` fails when one is behind. A record with no
+  route is reported, not guessed. `src/links.py` is importable, so a workspace generator
+  that writes links itself resolves them the same way. `progress.yaml` gains an optional
+  `site_route` (aaw-start-work 2.4.0, aaw-progress-work 2.3.0).
 - **Threads carry an optional kind** (thread 0.7.0). `open --kind feature` tags a thread as
   it is opened, `kind <id> <kind>` tags one afterwards (`none` clears it), and
   `list --kind <kind>` lists every thread of that kind flat, across all trees and projects,
