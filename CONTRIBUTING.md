@@ -43,28 +43,72 @@ This project welcomes contributions from:
 - Tips and best practices.
 - Integration patterns.
 
-## Development Work Management
+## Development setup
 
-When working on AI-Assisted Work itself, use the `/aiaw-self-*` Cursor commands to manage your work:
+AAW is an npm workspaces monorepo: `@aaw/protocol` (types), `@aaw/installer` (the shared
+install engine and manifest contract) and `@aaw/cli` (the `aaw` command). The Agent Skills
+are not a package: they live in `skills/` and `aaw install` places them.
 
-| Command | Purpose |
-|---------|---------|
-| `/aiaw-self-start-work` | Create a new work item |
-| `/aiaw-self-progress-work` | Continue work on an item |
-| `/aiaw-self-work-status` | Check status of work items |
-| `/aiaw-self-next-task` | Identify next task to work on |
+Requirements: Node.js 18 or newer (20 recommended, and what CI uses) and npm. The reference
+validator also needs Python 3.12.
 
-### Why /aiaw-self-* Commands?
+```bash
+git clone https://github.com/dermot-obrien/ai-assisted-work.git
+cd ai-assisted-work
+npm ci
 
-Skills are self-contained under `skills/<name>/`, so there is no deployed-versus-self split any more: edit the skill and re-run `aaw install`.
-
-### Example
-
+# Build in this order: the CLI bundle inlines @aaw/protocol and @aaw/installer from dist/.
+npm run build --workspace @aaw/protocol
+npm run build --workspace @aaw/installer
+cd packages/cli && npm run bundle && cd ../..    # writes bin/aaw.js
+npm test                                          # the CLI's install tests, against bin/aaw.js
 ```
-/aiaw-self-start-work Create a work item to add validation schemas for progress.yaml
+
+`bin/aaw.js` is committed, because the git-only install paths run it without a build.
+Rebuild and commit it whenever the CLI or the installer changes; CI fails when it is out of
+date. `packages/*/dist/` and `node_modules/` are gitignored.
+
+## Checks to run before a pull request
+
+These are what CI runs (see `.github/workflows/ci.yml`). Every command is in the
+[command reference](docs/reference/commands.md#repository-scripts).
+
+```bash
+node scripts/test-work-schema.mjs                 # progress.yaml templates match the work schema
+node scripts/check-protocol-schema.mjs            # protocol types agree with the work schema
+node scripts/validate-skills.mjs skills           # Agent Skills specification, links, body size
+node scripts/validate-bundle.mjs .                # bundle.json against its schema and the skills
+npx tsc -p packages/cli/tsconfig.json --noEmit    # after the builds above
 ```
 
-Work items are created in the `change/work-items/` folder.
+The reference validator, as the "Agent Skills reference validator" job runs it:
+
+```bash
+python -m venv .venv && . .venv/bin/activate      # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install "skills-ref @ git+https://github.com/agentskills/agentskills#subdirectory=skills-ref"
+for d in skills/*/; do skills-ref validate "$d"; done
+```
+
+On Windows, set `PYTHONUTF8=1` first; otherwise `skills-ref` reads `SKILL.md` in the system
+code page and fails on non-ASCII characters.
+
+## Versions
+
+- Each skill carries its own version, in `metadata.version` in its `SKILL.md` and in
+  `bundle.json` (`version` and `purl`). A change inside a skill folder bumps that skill:
+  patch for a fix or wording, minor for new behaviour. Add a line to `CHANGELOG.md` under
+  Unreleased naming the skill and its new version.
+- The packages (`@aaw/protocol`, `@aaw/installer`, `@aaw/cli`) version together through
+  Changesets: run `npx changeset` and commit the file it writes. See
+  [PUBLISHING.md](PUBLISHING.md).
+- Documentation outside `skills/` needs no version bump.
+- Every `SKILL.md` stays under 500 lines and about 5,000 body tokens. Put longer procedure
+  in the skill's `references/`, and user documentation in `docs/`.
+
+## Working on AAW with AAW
+
+Install this clone into itself (`node bin/aaw.js install`) and use the same `/aaw-*` skills
+as any other workspace. `change/work-items/` holds a few work items published as examples.
 
 ---
 

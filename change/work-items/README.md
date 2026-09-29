@@ -10,10 +10,10 @@ Use the `/aaw-*` skills to manage work items here. Skills are self-contained und
 
 | Command | Purpose |
 |---------|---------|
-| `/aiaw-self-start-work` | Create a new work item |
-| `/aiaw-self-progress-work` | Continue work on an item |
-| `/aiaw-self-work-status` | Check status of work items |
-| `/aiaw-self-next-task` | Identify next task to work on |
+| `/aaw-start-work` | Create a new work item |
+| `/aaw-progress-work` | Continue work on an item |
+| `/aaw-work-status` | Check status of work items |
+| `/aaw-next-task` | Identify next task to work on |
 
 ## Structure
 

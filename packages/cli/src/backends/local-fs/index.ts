@@ -27,7 +27,6 @@ import {
   type EventScope,
   type Initiative,
   type ListFilters,
-  NotHolderError,
   type StateResult,
   type StateScope,
   type Task,
@@ -179,9 +178,9 @@ export class LocalFsBackend implements Backend {
     const activity = wi.activities.find((a) => a.id === activityId);
     if (!activity) throw new Error(`Activity ${activityId} not found`);
     if (activity.status === "in_progress") {
-      throw new NotHolderError(
-        activityId,
-        "must call updateActivity to set terminal state before releaseActivity",
+      throw new Error(
+        `${activityId} is in_progress: set a terminal status (completed, blocked, skipped ` +
+          "or abandoned) in progress.yaml before releasing it",
       );
     }
     const wiPath = await this.resolveWorkItemPath(wi.id);
