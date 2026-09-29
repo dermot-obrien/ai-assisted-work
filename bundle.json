@@ -1,0 +1,87 @@
+{
+  "$schema": "pkg:generic/dermot-obrien/ai-assisted-work/bundle-schema@1.0.0",
+  "name": "ai-assisted-work",
+  "owner": "dermot-obrien",
+  "description": "AI-Assisted Work: domain-agnostic work management as Agent Skills (work items, activities, tasks, initiatives and the products they leave behind), and the work layer of the ontology.",
+  "license": "CC-BY-4.0 AND Apache-2.0",
+  "homepage": "https://github.com/dermot-obrien/ai-assisted-work",
+  "skills": [
+    {
+      "name": "aaw-next-task",
+      "path": "skills/aaw-next-task",
+      "version": "2.2.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-next-task@2.2.0",
+      "requires": [],
+      "check": {
+        "command": ["node", "bin/check.mjs"],
+        "runtime": "node",
+        "description": ".aaw-config.yaml is present and work_items_path resolves to a folder"
+      }
+    },
+    {
+      "name": "aaw-progress-work",
+      "path": "skills/aaw-progress-work",
+      "version": "2.4.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-progress-work@2.4.0",
+      "requires": [],
+      "check": {
+        "command": ["node", "bin/check.mjs"],
+        "runtime": "node",
+        "description": ".aaw-config.yaml is present and work_items_path resolves to a folder"
+      }
+    },
+    {
+      "name": "aaw-start-initiative",
+      "path": "skills/aaw-start-initiative",
+      "version": "2.2.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-start-initiative@2.2.0",
+      "requires": [],
+      "check": {
+        "command": ["node", "bin/check.mjs"],
+        "runtime": "node",
+        "description": ".aaw-config.yaml is present and its work item and initiative paths resolve"
+      }
+    },
+    {
+      "name": "aaw-start-work",
+      "path": "skills/aaw-start-work",
+      "version": "2.5.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-start-work@2.5.0",
+      "requires": [],
+      "check": {
+        "command": ["node", "bin/check.mjs"],
+        "runtime": "node",
+        "description": ".aaw-config.yaml is present, and work_items_path and any deliverables_register resolve"
+      }
+    },
+    {
+      "name": "aaw-work-status",
+      "path": "skills/aaw-work-status",
+      "version": "2.3.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-work-status@2.3.0",
+      "requires": [],
+      "check": {
+        "command": ["node", "bin/check.mjs"],
+        "runtime": "node",
+        "description": ".aaw-config.yaml is present and work_items_path resolves to a folder"
+      }
+    },
+    {
+      "name": "thread",
+      "path": "skills/thread",
+      "version": "0.9.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/thread@0.9.0",
+      "requires": [],
+      "check": {
+        "command": ["node", "bin/check.mjs"],
+        "runtime": "node",
+        "description": "git is on the PATH, and the thread store is a git clone or has a remote to clone"
+      }
+    }
+  ],
+  "ontology": {
+    "id": "pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0",
+    "path": "schemas/work.schema.json",
+    "extends": []
+  }
+}

@@ -12,6 +12,7 @@
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import type {
   Activity,
+  Deliverable,
   Initiative,
   Task,
   WorkItem,
@@ -27,17 +28,37 @@ interface YamlWorkItem {
   title: string;
   type: string;
   status: string;
+  work_item_level?: string;
+  parent_work_item_id?: string | null;
   initiative_id: string | null;
+  planning_period?: string | null;
+  advances_kr_ids?: string[];
   created: string;
   updated: string;
+  deliverables?: Array<YamlDeliverable>;
   activities: Array<YamlActivity>;
   blockers: Array<unknown>;
   artifacts: Record<string, unknown>;
 }
 
+interface YamlDeliverable {
+  id: string;
+  type?: string | null;
+  name: string;
+  why_needed?: string | null;
+  depends_on?: string[];
+  quality_criteria?: string | null;
+  approver?: string | null;
+  state?: string;
+  owner?: string | null;
+  path?: string | null;
+  files_changed?: Array<{ path: string; action: string }>;
+}
+
 interface YamlActivity {
   id: string;
   title: string;
+  produces?: string | null;
   status: string;
   actor: string;
   depends_on: string[];
@@ -72,9 +93,48 @@ export function parseWorkItem(yamlText: string, tenantId: string): WorkItem {
     lastModified: y.last_modified,
     lastModifiedBy: y.last_modified_by,
     schemaVersion: y.schema_version ?? 1,
+    // Schema version 3 fields, carried only when the file has them, so an older
+    // work item is written back without keys it never had.
+    ...(y.work_item_level !== undefined && { workItemLevel: y.work_item_level as WorkItem["workItemLevel"] }),
+    ...(y.parent_work_item_id !== undefined && { parentWorkItemId: y.parent_work_item_id }),
+    ...(y.planning_period !== undefined && { planningPeriod: y.planning_period }),
+    ...(y.advances_kr_ids !== undefined && { advancesKrIds: y.advances_kr_ids ?? [] }),
+    ...(y.deliverables !== undefined && { deliverables: (y.deliverables ?? []).map(parseDeliverable) }),
     activities: (y.activities ?? []).map(parseActivity),
     blockers: [],
     artifacts: parseArtifacts(y.artifacts ?? {}),
+  };
+}
+
+function parseDeliverable(y: YamlDeliverable): Deliverable {
+  return {
+    id: y.id,
+    type: y.type ?? null,
+    name: y.name,
+    whyNeeded: y.why_needed ?? null,
+    dependsOn: y.depends_on ?? [],
+    qualityCriteria: y.quality_criteria ?? null,
+    approver: y.approver ?? null,
+    state: (y.state ?? "planned") as Deliverable["state"],
+    owner: y.owner ?? null,
+    path: y.path ?? null,
+    filesChanged: (y.files_changed ?? []) as Deliverable["filesChanged"],
+  };
+}
+
+function serialiseDeliverable(d: Deliverable): YamlDeliverable {
+  return {
+    id: d.id,
+    type: d.type,
+    name: d.name,
+    why_needed: d.whyNeeded,
+    depends_on: d.dependsOn,
+    quality_criteria: d.qualityCriteria,
+    approver: d.approver,
+    state: d.state,
+    owner: d.owner,
+    path: d.path,
+    files_changed: d.filesChanged,
   };
 }
 
@@ -82,6 +142,7 @@ function parseActivity(y: YamlActivity): Activity {
   return {
     id: y.id,
     title: y.title,
+    ...(y.produces !== undefined && { produces: y.produces }),
     status: y.status as Activity["status"],
     actor: (y.actor ?? "any") as Activity["actor"],
     dependsOn: y.depends_on ?? [],
@@ -131,12 +192,18 @@ export function serialiseWorkItem(wi: WorkItem): string {
     title: wi.title,
     type: wi.type,
     status: wi.status,
+    ...(wi.workItemLevel !== undefined && { work_item_level: wi.workItemLevel }),
+    ...(wi.parentWorkItemId !== undefined && { parent_work_item_id: wi.parentWorkItemId }),
     initiative_id: wi.initiativeId,
+    ...(wi.planningPeriod !== undefined && { planning_period: wi.planningPeriod }),
+    ...(wi.advancesKrIds !== undefined && { advances_kr_ids: wi.advancesKrIds }),
     created: wi.created,
     updated: wi.updated,
+    ...(wi.deliverables !== undefined && { deliverables: wi.deliverables.map(serialiseDeliverable) }),
     activities: wi.activities.map((a) => ({
       id: a.id,
       title: a.title,
+      ...(a.produces !== undefined && { produces: a.produces }),
       status: a.status,
       actor: a.actor,
       depends_on: a.dependsOn,

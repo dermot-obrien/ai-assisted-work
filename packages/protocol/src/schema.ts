@@ -7,6 +7,11 @@
  *
  * Pure data shapes. No methods, no I/O. Backends serialise these to/from
  * their preferred wire format (YAML on disk, JSON over HTTP, etc.).
+ *
+ * The work layer's source of truth is schemas/work.schema.json (DD-11). These
+ * types are its camelCase projection: scripts/check-protocol-schema.mjs fails CI
+ * when an enum or an entity's fields here disagree with it. Tenant, Pool, Claim
+ * and Event are protocol runtime types with no on-disk counterpart.
  */
 
 // === Status enums ===
@@ -47,11 +52,24 @@ export type InitiativeStatus =
   | "done"
   | "cancelled";
 
+/** The state of a product named in a work item's deliverables (schema version 3). */
+export type DeliverableState = "planned" | "drafted" | "in_review" | "accepted";
+
+/** The status of a schema version 1 or 2 deliverable under artifacts.deliverables. */
 export type DeliverableStatus = "pending" | "draft" | "complete";
 
 export type Actor = "agent" | "human" | "any";
 
-export type WorkType = "development" | "architecture" | "consultancy" | "mixed";
+/** The work types AAW has always accepted. */
+export type CoreWorkType = "development" | "architecture" | "consultancy" | "mixed";
+
+/**
+ * Open (DD-11): a core value, a value a higher layer contributes as
+ * `<prefix>:<value>`, or a workspace's own as `x-<value>`.
+ */
+export type WorkType = CoreWorkType | `${string}:${string}` | `x-${string}`;
+
+export type WorkItemLevel = "workstream" | "epic";
 
 export type FileChangeAction = "created" | "modified" | "deleted";
 
@@ -119,6 +137,13 @@ export interface WorkItem {
   lastModified: string | null;
   lastModifiedBy: string | null;
   schemaVersion: number;
+  /** Schema version 3 on. */
+  workItemLevel?: WorkItemLevel;
+  parentWorkItemId?: string | null;
+  planningPeriod?: string | null;
+  advancesKrIds?: string[];
+  /** The products this work item will produce (schema version 3). */
+  deliverables?: Deliverable[];
   activities: Activity[];
   blockers: Blocker[];
   artifacts: WorkItemArtifacts;
@@ -127,6 +152,8 @@ export interface WorkItem {
 export interface Activity {
   id: string; // {WI}-A{N}
   title: string;
+  /** The deliverable this activity contributes to. Required from schema version 3. */
+  produces?: string | null;
   status: ActivityStatus;
   actor: Actor;
   dependsOn: string[];
@@ -170,10 +197,28 @@ export interface WorkItemArtifacts {
   branch: string | null;
   pr: string | null;
   diagrams: string[];
-  deliverables: Deliverable[];
+  /** Schema versions 1 and 2 only; version 3 uses WorkItem.deliverables. */
+  deliverables: ArtifactDeliverable[];
 }
 
+/** A product a work item leaves behind (schema version 3). */
 export interface Deliverable {
+  id: string; // {WI}-D{N}
+  /** A type id from the workspace's deliverables register, if one is configured. */
+  type: string | null;
+  name: string;
+  whyNeeded: string | null;
+  dependsOn: string[];
+  qualityCriteria: string | null;
+  approver: string | null;
+  state: DeliverableState;
+  owner: string | null;
+  path: string | null;
+  filesChanged: FileChange[];
+}
+
+/** A deliverable as schema versions 1 and 2 recorded it, under artifacts. */
+export interface ArtifactDeliverable {
   id: string; // {WI}-D{NN}
   title: string;
   path: string;
