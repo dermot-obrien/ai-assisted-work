@@ -24,6 +24,10 @@ jobs:
       - name: Install
         run: npm ci
 
+      # The work layer's source of truth is schemas/work.schema.json (DD-11).
+      - name: The progress.yaml templates match the work schema
+        run: node scripts/test-work-schema.mjs
+
       - name: Typecheck protocol
         working-directory: packages/protocol
         run: npx tsc -p tsconfig.json --noEmit
@@ -77,6 +81,19 @@ jobs:
       - name: Validate skills against the agentskills.io spec
         run: node scripts/validate-skills.mjs skills
 
+      - name: Validate bundle.json against the bundle schema and the skills
+        run: node scripts/validate-bundle.mjs .
+
+      - name: The protocol types agree with the work schema
+        run: node scripts/check-protocol-schema.mjs
+
+      # Each aaw-* skill ships its own copy of the check, so it is complete on its own.
+      - name: The aaw-* post-install checks are one file
+        run: |
+          for f in skills/aaw-*/bin/check.mjs; do
+            cmp skills/aaw-start-work/bin/check.mjs "$f" || { echo "::error::$f differs from skills/aaw-start-work/bin/check.mjs"; exit 1; }
+          done
+
       - name: Install skills into a scratch workspace
         run: |
           mkdir -p /tmp/ws/.claude && cd /tmp/ws && git init -q .
@@ -88,6 +105,20 @@ jobs:
           for s in /tmp/ws/.claude/skills/aaw-*; do
             test -f "$s/SKILL.md" || { echo "::error::$s does not resolve"; exit 1; }
           done
+
+      - name: Each skill's post-install check passes in the fresh workspace
+        env:
+          THREADS_HOME: /tmp/threads
+          THREADS_REMOTE: https://example.invalid/threads.git
+        run: node scripts/validate-bundle.mjs --run-checks /tmp/ws .
+
+      - name: A misconfigured workspace fails the checks
+        run: |
+          echo "work_items_path: ./missing" >> /tmp/ws/.aaw-config.yaml
+          if node scripts/validate-bundle.mjs --run-checks /tmp/ws .; then
+            echo "::error::the checks passed with work_items_path pointing nowhere"; exit 1
+          fi
+          sed -i '/^work_items_path: .\/missing$/d' /tmp/ws/.aaw-config.yaml
 
       - name: A fresh install reports no drift
         run: node "$GITHUB_WORKSPACE/bin/aaw.js" check-skills --workspace /tmp/ws --framework "$GITHUB_WORKSPACE"
