@@ -1,12 +1,12 @@
 ---
 name: quarter-planning
-description: Plan and maintain a quarter in two stages, deriving a budget of points from the calendar and the resourcing register, allocating it down to epics, then elaborating deliverables and rolling their sizes up. Frames an epic against its capability lane and the definition ladder, names its products from the deliverable register, generates epic cards, and interprets the integrity checks. Optionally tracks feature requests raised against registered products, ranked by WSJF, taken on by epics and joined to the stories that build them. Use when planning or replanning a quarter, reporting or setting a quarter budget, framing or sizing an epic, setting budget_points, naming deliverables on a work item, generating epic cards, closing a quarter, or reconciling plan documents with the model.
+description: Plan and maintain a quarter in two stages, deriving a budget of points from the calendar and the resourcing register, allocating it down to epics, then elaborating deliverables and rolling their sizes up. Frames an epic against its capability lane and the definition ladder, names its products from the deliverable register, generates epic cards, links the plan documents to each epic's and story's published page, and interprets the integrity checks. Optionally tracks feature requests raised against registered products, ranked by WSJF, taken on by epics and joined to the stories that build them. Use when planning or replanning a quarter, reporting or setting a quarter budget, framing or sizing an epic, setting budget_points, naming deliverables on a work item, generating epic cards, linking plan documents to epic and story pages, closing a quarter, or reconciling plan documents with the model.
 license: CC-BY-4.0
 compatibility: Python 3.11 or newer, and PyYAML. Reads the planning registers, the model sources and the deliverable register at whatever paths [suite.quarter-planning] in the workspace .agents/skill-bindings.toml declares. Those six paths are required and have no default, so the skill carries no directory layout; it assumes no jurisdiction's holidays either.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "3.2.0"
+  version: "3.3.0"
 ---
 
 # Quarter Planning
@@ -43,6 +43,13 @@ before. Each one opts in to something:
 | `workItemsDir` | Reading epics from AAW work items' `progress.yaml` as well as `work_item.yaml`, and the feature requests each story cites in `request_ids` |
 | `requests` | The feature-request layer: requests against products, taken on by epics, section 10 of the validation, requests and supported products on the cards, and `--backlog`. See [references/feature-requests.md](references/feature-requests.md) |
 | `products` | Product names, platforms and teams for the requests, and checking each request's product exists |
+
+Two optional values opt in to linking the plan documents to published pages, with `--links`:
+
+| Key | Opts in to |
+|---|---|
+| `siteUrl` | The root of the published site. Each epic's and story's `site_route` is appended to it |
+| `externalRefSystem` | Letting a tracker key, the `external_id` an epic carries in `external_refs` for this system, label a link to the epic's own page |
 
 Derived, never hand-edited: the epic cards and the stage grid, which this skill generates
 with `--cards`, the capacity-load and epic-load views under the `quarterDir` binding, any
@@ -82,6 +89,7 @@ are deferred and cannot load anyone's quarter.
 | `budget` | Report the top-level budget and the ladder it comes down, and stop. Read only |
 | `validate` | Validate the whole chain: period, resources, quarter budget, epic budgets, elaboration, load, approval, framing, and the close once recorded. Read only |
 | `cards` | Regenerate the epic cards and the stage grid, then check them. Needs `cardsDir` |
+| `links` | Point the epic and story links in the quarter's documents at each record's page. Needs `siteUrl` |
 | `close` | Record what each flow reached and what each product took, then read section 9 |
 | `approve <record> <stage>` | Move a WorkPlan, an epic or a product to an approval stage, then validate. Only on the user's say-so |
 | `check` | Run the checks and interpret the output |
@@ -266,6 +274,42 @@ prints each product's requests ranked by WSJF, with the epic and the stories for
 register contracts, the checks and the card sections are in
 [references/feature-requests.md](references/feature-requests.md).
 
+## Links to epic and story pages
+
+A plan document, or a deck built from one, is for discussion; the page each epic and story has
+on the published site is where a reader goes for the detail and everything linked from it. So
+the documents link every epic and story to its page, and a PDF of the deck keeps those links.
+
+Where a record is published is data in the model, not configuration. The epic in
+`work_item.yaml` (or its `progress.yaml`) and the story in `activity.yaml` each carry
+`site_route`, the route of its own page relative to the site root. The workspace binds one
+value, `siteUrl`, so moving from a local preview to the published site is one change and a
+rerun. Keep routes stable, with no quarter or grouping in them, so a link in a PDF already
+circulated survives a story moving quarter. The workspace's page generator publishes each page
+at the route its record names; this skill only reads the routes.
+
+A document names an epic or a story with a Markdown reference link and keeps the definition
+at its foot:
+
+```markdown
+The quarter commits to [the example increment][EP-001], starting with [the capability area][EP-001-A1].
+
+[EP-001]: https://site.example/epics/EP-001/
+[EP-001-A1]: https://site.example/stories/EP-001-A1/
+```
+
+```bash
+python <skills>/quarter-planning/bin/quarter.py --quarter <slug> --links
+python <skills>/quarter-planning/bin/quarter.py --quarter <slug> --links --check
+```
+
+The first rewrites every definition in the quarter folder's Markdown whose label is an epic
+id, a story id or, with `externalRefSystem` bound, an epic's tracker key, and leaves the prose
+and every other definition alone. A record with no `site_route` is reported and its definition
+left as it is. The second writes nothing and exits non-zero if any definition is behind the
+model. A generator that writes links itself, a stories page or a schedule, imports
+`src/links.py` so it resolves routes the same way.
+
 ## Epics from AAW work items
 
 An epic opened with `aaw-start-work` lives in `<work items>/WI-NNN/progress.yaml`, not in the
@@ -380,6 +424,8 @@ and the reserve is gone" is a claim, not a figure.
 | `WARNING X records no lane` | The capability area is unstated | Set `lane` |
 | `WARNING X is recorded in both work_item.yaml and ...` | Two records for one epic | Remove one. `work_item.yaml` is used meanwhile |
 | `Stale epic cards for Q` | A card no longer matches the model | Run `--cards` and commit the result |
+| `Links behind the model for Q` | A definition does not point at its record's page | Run `--links` |
+| `WARNING X is linked but has no site_route` | The record does not say where it is published | Set `site_route` on the record |
 | `<file>.csv has X; the model gives Y` | A derived view is stale | `commands.regenerate` |
 | `<file>.md says X; the derived view has Y` | Prose has drifted from the model | Fix the prose, never the view |
 | `activity X is assigned but has no estimate` | Warning. Sizing lives on products, not activities | Usually nothing |

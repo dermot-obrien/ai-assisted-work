@@ -53,7 +53,7 @@ _DELIVERABLE_FIELDS = (
 
 # Epic fields carried across unchanged, beyond the id and the quarter.
 _EPIC_FIELDS = ('title', 'budget_points', 'planned_points', 'lane', 'flows', 'home',
-                'approval', 'advances_criterion_ids', 'threads')
+                'approval', 'advances_criterion_ids', 'threads', 'site_route', 'external_refs')
 
 
 def from_progress(doc, path):

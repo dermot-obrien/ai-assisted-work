@@ -92,6 +92,8 @@ flows: []                     # The rung movement per flow, on the workspace's d
                               #   rung_reached: null   # Recorded when the quarter closes
 home: null                    # The epic's own hand-written folder, by name, under the
                               # workspace's epics folder
+site_route: null              # The route of the epic's own page on the published site,
+                              # relative to its root, e.g. /epics/EP-001/. Stable: no quarter
 approval: draft               # draft | sized | validated | approved. The epic as written.
                               # Approved is commitment.
 

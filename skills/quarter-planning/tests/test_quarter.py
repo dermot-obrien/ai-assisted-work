@@ -447,6 +447,88 @@ class TestFeatureRequests(Workspace):
         self.assertIn('PR-1 Example product (Data platform, Team A)', out)
         self.assertLess(out.index('FR-3'), out.index('FR-1'))
 
+class TestLinks(Workspace):
+
+    PLAN = 'planning/2027-q1/2027-q1-plan.md'
+    STORIES = 'planning/model/activity.yaml'
+
+    def test_points_definitions_at_the_records_pages(self):
+        code, out = self.run_quarter('--links')
+        self.assertEqual(code, 0, out)
+        plan = self.read(self.PLAN)
+        self.assertIn('[EP-001]: http://localhost:3000/docs/epics/EP-001/\n', plan)
+        self.assertIn('[EP-001-A1]: http://localhost:3000/docs/stories/EP-001-A1/\n', plan)
+        self.assertIn('[EP-001-A2]: http://localhost:3000/docs/stories/EP-001-A2/\n', plan)
+        # The prose is untouched.
+        self.assertIn('[naming the capability area][EP-001-A1]', plan)
+
+    def test_external_key_links_to_the_epic_not_the_tracker(self):
+        self.run_quarter('--links')
+        self.assertIn('[TRK-7]: http://localhost:3000/docs/epics/EP-001/\n',
+                      self.read(self.PLAN))
+
+    def test_external_key_is_left_alone_without_the_binding(self):
+        self.edit(self.BINDINGS, 'externalRefSystem = "tracker"\n', '')
+        self.run_quarter('--links')
+        self.assertIn('[TRK-7]: https://tracker.example/TRK-7\n', self.read(self.PLAN))
+
+    def test_unrelated_definitions_are_left_alone(self):
+        self.run_quarter('--links')
+        self.assertIn('[guide]: https://example.org/ladder\n', self.read(self.PLAN))
+
+    def test_a_record_without_a_route_is_reported_and_left(self):
+        code, out = self.run_quarter('--links')
+        self.assertEqual(code, 0, out)
+        self.assertIn('EP-001-A3 is linked but has no site_route', out)
+        self.assertIn('[EP-001-A3]: TODO\n', self.read(self.PLAN))
+
+    def test_check_fails_when_stale_and_writes_nothing(self):
+        before = self.read(self.PLAN)
+        code, out = self.run_quarter('--links', '--check')
+        self.assertEqual(code, 1, out)
+        self.assertIn('2027-q1-plan.md', out)
+        self.assertEqual(before, self.read(self.PLAN))
+
+    def test_check_passes_once_written(self):
+        self.run_quarter('--links')
+        code, out = self.run_quarter('--links', '--check')
+        self.assertEqual(code, 0, out)
+        self.assertIn('Links for 2027-Q1 are current', out)
+
+    def test_moving_the_site_is_one_binding(self):
+        self.run_quarter('--links')
+        self.edit(self.BINDINGS, 'http://localhost:3000/docs/', 'https://site.example')
+        self.run_quarter('--links')
+        self.assertIn('[EP-001-A1]: https://site.example/stories/EP-001-A1/\n',
+                      self.read(self.PLAN))
+
+    def test_the_model_decides_the_route(self):
+        self.edit(self.STORIES, 'site_route: /stories/EP-001-A1/',
+                  'site_route: /work/capability-area/')
+        self.run_quarter('--links')
+        self.assertIn('[EP-001-A1]: http://localhost:3000/docs/work/capability-area/\n',
+                      self.read(self.PLAN))
+
+    def test_an_epic_from_a_work_item_carries_its_route(self):
+        self.edit('work-items/WI-002/progress.yaml', 'title: Second example increment\n',
+                  'title: Second example increment\nsite_route: /epics/WI-002/\n')
+        self.edit(self.PLAN, '[guide]: https://example.org/ladder\n',
+                  '[guide]: https://example.org/ladder\n[WI-002]: TODO\n')
+        self.run_quarter('--links')
+        self.assertIn('[WI-002]: http://localhost:3000/docs/epics/WI-002/\n',
+                      self.read(self.PLAN))
+
+    def test_needs_a_site(self):
+        self.edit(self.BINDINGS, 'siteUrl      = "http://localhost:3000/docs/"\n', '')
+        code, out = self.run_quarter('--links')
+        self.assertEqual(code, 2, out)
+        self.assertIn('Declare siteUrl', out)
+
+    def test_where_shows_the_site(self):
+        code, out = self.run_quarter('--where')
+        self.assertEqual(code, 0, out)
+        self.assertIn('http://localhost:3000/docs/', out)
+
 
 if __name__ == '__main__':
     unittest.main()
