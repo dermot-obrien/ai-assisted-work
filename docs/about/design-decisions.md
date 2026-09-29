@@ -389,6 +389,213 @@ content.
   rather than being deleted with them.
 - Skills are validated against the spec with `skills-ref validate`.
 
+## DD-11: Skill Bundles, Versioned Skill Identifiers and a Layered Ontology
+
+### Context
+
+DD-10 made each workflow an Agent Skill. Since then, general-purpose skills have left the
+frameworks for repositories of their own: `markdown-deck` and `model` left AAW, and `pattern`
+left AI-Assisted Architecture (AAA), for the markdown-deck, diagram-model and
+architecture-pattern repositories. Quarter planning is following, into a delivery-planning
+repository. Doing that exposed seven things the frameworks had left implicit:
+
+1. A skill declared what it needed by name alone (`x-skill-requires: "model@^0.6.0"`), with
+   no owner or repository, so two repositories shipping a skill of the same name were
+   indistinguishable.
+2. Where an identifier did name a repository, it named the hosting service too
+   (`github.com/<owner>/<repo>`), so moving to another host or an internal mirror would have
+   changed every identifier.
+3. Versions and release tags belonged to the repository (`diagram-model--v0.6.0`), not to
+   the skill it held, and the only packaging that resolved dependencies was one agent's
+   plugin system, which treated the whole repository as one package.
+4. The Agent Skills specification has no namespace. A skill installs at
+   `.agents/skills/<name>`, so two skills with the same name cannot be installed side by
+   side, whatever repository each came from.
+5. The concepts AAW originated were defined elsewhere. WorkItem and Activity were defined in
+   each workspace's own schema, Initiative in AAA's base ontology, and AAW itself held only
+   TypeScript types (`packages/protocol/src/schema.ts`) that had fallen behind its own
+   skills: they carry no `work_item_level` and no `produces`.
+6. Delivery-planning concepts (programmes, milestones, gates, commitments) sat in AAA's base
+   ontology, so the architecture framework defined the delivery vocabulary that architecture
+   work depends on, which is the dependency inverted.
+7. Two installers existed: `aaw install` for the frameworks and a per-workspace script for
+   the standalone repositories.
+
+### Decision
+
+Nothing below depends on a particular agent or a particular hosting service. Where an agent
+or host has its own packaging, that packaging is an adapter generated from what is decided
+here, never the source of it.
+
+**Bundles.** A bundle is one version-controlled repository holding one or more skills under
+`skills/<name>/`, an optional ontology module under `ontology/`, and a bundle manifest,
+`bundle.json`, at its root. The manifest names the bundle, lists each skill with its version
+and its requirements, names each ontology module with its version, and states the bundle's
+licence and lineage. It is the only source of that information: an agent's plugin or
+marketplace file, where an agent has one, is generated from it. A bundle declares its
+dependencies on other bundles' skills and ontology modules, never on a framework being
+installed. The frameworks are bundles too: AAW, AAA and AI-Assisted Research (AAR) are
+bundles that happen to hold several skills.
+
+**Identifiers are URIs, and say nothing about where a skill is hosted.** A skill is
+identified by a Package URL (purl, ECMA-427) of the `generic` type, with the owner and the
+bundle as its namespace and the skill as its name:
+
+```
+pkg:generic/<owner>/<bundle>/<skill>@<version>
+pkg:generic/dermot-obrien/diagram-model/model@0.6.0
+```
+
+The `generic` type names no registry and no host. The same skill keeps the same identifier
+whether its bundle lives on GitHub, another Git host, an internal mirror or an archive. Where
+a bundle is fetched from is resolution, not identity: an installer maps an owner, or an
+owner and bundle, to a base location through a source map the workspace configures, and a
+default entry covers the public source. Moving host or adding a mirror changes one source
+map entry and no identifier.
+
+A requirement is an identifier without its version, followed by a Semantic Versioning range,
+comma separated in `metadata.x-skill-requires`:
+
+```
+x-skill-requires: "pkg:generic/dermot-obrien/diagram-model/model ^0.6.0, pkg:generic/dermot-obrien/markdown-deck/markdown-deck ^0.6.0"
+```
+
+Ranges use the familiar `^`, `~` and comparison forms of Semantic Versioning. When the
+Version Range Specifier (VERS) completes standardisation beside purl, ranges may also be
+written in its `vers:semver/...` form, which states the same constraint. A bare skill name
+is allowed only for a skill in the same bundle.
+
+**Versions.** Each skill is versioned with Semantic Versioning in `metadata.version` and in
+the bundle manifest, and the two must agree. The bundle has no version of its own: two
+version streams for one release would drift. A framework that also ships code, such as
+AAW's installer and protocol packages, versions that code separately, as it does today. A
+release of a skill is tagged `<skill>--v<version>` in its repository, so a bundle holding
+several skills releases each independently. Where an agent's packaging versions packages,
+its adapter packages each skill separately, so the agent sees the skill's version.
+
+What is a breaking change is stated, not assumed. A major version, or a minor version before
+1.0.0, is required for any of:
+
+- renaming the skill
+- removing or renaming a binding in `inputs.toml`, or making an optional one required
+- removing or renaming a field, file or identifier shape the skill reads (its data contract)
+- removing or changing the meaning of a command-line option or command
+- changing the shape or location of a file the skill writes
+- a new major version of an ontology module the skill depends on
+
+A requirement states a range. An installation pins an exact commit, so a build is
+reproducible and moves only when someone moves the pin.
+
+**Skill names.** An identifier distinguishes skills; it does not let two skills of one name
+be installed together, because the install path is the name. Skill names are unique across
+the bundles a workspace installs. Families use a prefix (`aaw-`, `aaa-`); a standalone skill
+takes a distinctive name. Generic names already published (`model`, `pattern`) are debt,
+renamed at their next major version with the old name kept as an alias for one release.
+
+**Ontology layering.** Each bundle that defines domain concepts publishes them as a JSON
+Schema module. A module's `$id` is a purl in the same form, naming the module as a component
+of its bundle, such as `pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0`. It
+identifies the module and is resolved from the installed bundle, never fetched from a host.
+Modules reference each other by `$ref` and never copy a definition. The layers, each
+depending only on those beneath it:
+
+| Layer | Bundle | Holds |
+|---|---|---|
+| Work | AAW | WorkItem, Activity, Task, Initiative, Deliverable, Stakeholder, and the shared primitives (external references, notes) |
+| Delivery | delivery-planning | Epic and story as profiles of WorkItem and Activity, the work plan, capacity and resourcing, deliverable types, products and feature requests, programmes, milestones, gates, commitments and slips |
+| Architecture | AAA | Capabilities, platforms, building blocks, interfaces and integrations, patterns, decisions, risks, controls, standards, views |
+
+A higher layer extends a lower one's types with `allOf`, adding its fields, rather than
+redefining them. An epic is a WorkItem whose `work_item_level` is `epic`, with the planning
+fields added; a story is an Activity with its page route and request references added. A
+workspace composes the modules it uses into its active schema and adds its own extensions.
+
+A bundle depends on another bundle's ontology module, not on that framework being installed.
+A skill reads data through its own documented data contract, so it runs in a workspace that
+produces the data some other way.
+
+**One installer.** A single installer reads bundle manifests, resolves identifiers through
+the workspace's source map at their pinned commits, installs into `.agents/skills`, links
+the directory each configured agent reads (`.claude/skills` for Claude Code, for example),
+and reports drift. It knows agents only as a list of directories to link. It replaces both
+the skills wiring in `aaw install` and the per-workspace script.
+
+### Rationale
+
+- **An identifier should outlive its host.** A purl of the `generic` type names an owner, a
+  bundle, a skill and a version, and nothing about where the bytes live, so a repository can
+  move, or be mirrored inside an organisation, without a single reference changing.
+- **A standard beats a convention.** Purl is an Ecma standard (ECMA-427) already used by
+  software bills of materials (CycloneDX, SPDX) and vulnerability databases, so skills
+  identified this way fit the tooling organisations use to inventory what they run.
+- **No agent is the source of truth.** Agent Skills is read by many agents, and each packages
+  plugins differently, if at all. A neutral manifest, with generated adapters, keeps every
+  agent equal and lets a new one be supported by writing an adapter.
+- **A repository is a unit of release and ownership, not of meaning.** Planning skills for a
+  sprint, an increment and a year share one data model and travel together, so they belong
+  in one bundle, yet each has consumers of its own and a version of its own.
+- **Per-skill versions keep a dependency honest.** A requirement on `model ^0.6.0` should not
+  move because an unrelated skill in the same repository shipped a breaking change.
+- **Concepts belong where they originate.** Work items, activities, tasks and initiatives are
+  general work management, AAW's domain (DD-01). Delivery planning specialises them for
+  delivering technology; architecture work builds on both. Defining each once, where it
+  began, ends parallel definitions drifting apart.
+- **Depending on a schema rather than a framework keeps skills portable.** A team can use the
+  delivery-planning skills without adopting AAW's workflow, as long as its data meets the
+  contract.
+
+### Trade-offs
+
+| Benefit | Trade-off |
+|---------|-----------|
+| Identifiers survive a move of host or a mirror | A purl is longer than a bare name, and an installer needs a source map to resolve it |
+| One standard format, understood by inventory tooling | `generic` purls are not resolved by any public registry; the source map does that job |
+| No agent or host is privileged | Each agent's packaging needs an adapter, generated from the manifest |
+| Skills version and release independently | More tags, and one agent package per skill rather than per repository |
+| Breaking changes are defined | Every skill must keep its data contract and bindings documented |
+| Concepts are defined once, where they originate | AAW must publish and maintain a real schema, and AAA's base loses types its consumers use today |
+| Skills do not require a framework | A bundle's ontology module is a second artefact to version beside its skills |
+
+### Alternatives considered
+
+- **Hosting URLs as identifiers** (`github.com/<owner>/<repo>/skills/<skill>`): the form
+  existing installers accept, but it ties identity to one host.
+- **A purl of a host-specific type** (`pkg:github/...`): standard, but still names the host.
+- **A domain the owner controls, redirecting to the current host**, as Go's vanity import
+  paths do: host-independent, but it needs a domain and a redirect service kept running, and
+  an identifier that fails to resolve when that service is down.
+- **`tag:` URIs (RFC 4151)**: stable and host-independent, but not recognised by any
+  inventory tooling.
+
+### Prerequisites and open points
+
+- AAW's ontology module must exist before anything references it. It becomes the source of
+  truth for the work layer, `packages/protocol/src/schema.ts` is generated from it or
+  checked against it, and the `progress.yaml` templates are tested against it.
+- "Deliverable" and "product" must be disambiguated before the modules split. AAW's
+  Deliverable is what a work item produces. Delivery's typed, sized deliverable extends it.
+  A registered product that consumers use and raise feature requests against is a delivery
+  concept, not AAW's.
+- AAW's `WorkType` enumerates domains (development, architecture, consultancy), against
+  DD-01. It becomes open, with each bundle contributing its values.
+- AAA's base ontology moves Initiative to the work layer and the programme and delivery types
+  to the delivery layer. That is a breaking change to AAA's schema and ships as a major
+  version with a migration note.
+- The `bundle.json` schema is defined, with AAW as its first user, before other bundles adopt
+  it.
+
+### Consequences
+
+- The standalone bundles gain `bundle.json`, their `x-skill-requires` moves to purl
+  requirements, and their tags to `<skill>--v<version>`, at each skill's next release. Their
+  existing agent packaging is regenerated from the manifest.
+- The delivery-planning bundle ships the `quarter-planning` skill with a documented data
+  contract first, and its ontology module once AAW's work module exists.
+- `aaw install` keeps working until the single installer replaces its skills wiring.
+- A workspace that mirrors bundles configures one source map entry; no identifier changes.
+- Each extraction records its lineage in the new bundle's `NOTICE`, in its manifest, and in
+  each `SKILL.md` as `metadata.x-derived-from`, the source path at the source commit.
+
 ---
 
 ## Decision Log
@@ -405,3 +612,4 @@ content.
 | DD-08 | Contribution Model | 2026-02 | Implemented |
 | DD-09 | Template Extensibility | 2026-02 | Implemented |
 | DD-10 | Agent Skills as the Distribution Format | 2026-09 | Implemented |
+| DD-11 | Skill Bundles, Versioned Skill Identifiers and a Layered Ontology | 2026-09 | Accepted; not yet implemented |
