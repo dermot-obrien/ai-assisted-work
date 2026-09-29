@@ -203,12 +203,21 @@ function validateSkill(dir) {
   return { errors, warnings, name: name ?? dirName, description: description ?? "", lines };
 }
 
-if (["-h", "--help"].includes(process.argv[2])) {
-  console.log("usage: validate-skills.mjs [skillsRoot]   (default: ./skills; exit 0 ok, 1 errors)");
+const USAGE = "usage: validate-skills.mjs [skillsRoot]   (default: ./skills; exit 0 ok, 1 errors, 2 usage)";
+const args = process.argv.slice(2);
+if (args.some((x) => x === "-h" || x === "--help")) {
+  console.log(USAGE);
   process.exit(0);
 }
+// An unknown option is a mistake, not a folder name: say so rather than validating "--foo".
+const unknown = args.find((x) => x.startsWith("-"));
+if (unknown || args.length > 1) {
+  console.error(unknown ? `unknown option: ${unknown}` : `expected at most one skills folder, got ${args.length}`);
+  console.error(USAGE);
+  process.exit(2);
+}
 
-const root = path.resolve(process.argv[2] ?? "skills");
+const root = path.resolve(args[0] ?? "skills");
 if (!existsSync(root)) {
   console.error(`No skills directory at ${root}`);
   process.exit(1);
