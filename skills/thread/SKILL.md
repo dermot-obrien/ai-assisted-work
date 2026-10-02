@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.9.0"
+  version: "0.9.1"
 ---
 
 # Thread
@@ -232,6 +232,10 @@ Work through this list, doing rather than proposing:
    and what remains lives in other threads; `park` with what is left and what would restart
    it when it is not. If the chat has no thread, open one under the right parent, then close
    it.
+6. **This chat.** Wrapping is the user marking the chat done. When the answer will be yes,
+   mark the chat itself done wherever the tool can: a session or chat status, a sidebar's
+   completed mark, an archive flag the user has asked for. Don't ask first. A tool with no
+   such mark skips this step.
 
 ### The reply
 
@@ -250,7 +254,8 @@ Three parts, in this order, and nothing after the last line.
 3. **The last line**, one of exactly two:
    - `Yes, you can close this chat.` Only when everything the agent could do is done, every
      PR this chat opened is merged or is waiting on a person, every outstanding item is in a
-     thread, and this chat's thread is closed or parked.
+     thread, this chat's thread is closed or parked, and the chat is marked done where the
+     tool can.
    - `No, you can't close this chat. I'm continuing with: <items>.` Then continue with them
      in the same turn, and wrap again when they are done.
 
