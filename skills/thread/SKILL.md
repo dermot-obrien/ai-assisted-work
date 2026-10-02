@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.9.2"
+  version: "0.10.0"
 ---
 
 # Thread
@@ -247,16 +247,20 @@ Write the reply only when nothing is left that the agent can do now. While agent
 remains, keep working; don't reply with a plan. Three parts, in this order, and nothing
 after the last line.
 
-1. **What the agent did.** One short list of what wrapping changed: commits, PRs opened and
-   merged, threads closed or created, with links and ids.
+1. **What the agent did.** A short list grouped by item or thread: what changed, with PR
+   links, commit ids, and the ids of threads closed, parked or opened.
 2. **Everything still outstanding**, one table in material order, blockers first. Every item,
-   including those that wait on someone else. Columns: owner, gate, action, thread.
+   including those that wait on someone else, and every one already in a thread. Columns:
+   Owner, Gate, Action, Thread, Recommendation.
    - Owner: 👤 **You**, 🤖 **Agent**, 🌐 **Waiting** (another person, another chat, CI).
    - Gate: 🔴 **Blocking** (something waits on it), 🟡 **Next**, ⚪ **Later**.
    - A 🤖 row is allowed only for something the agent cannot do yet, with what it waits for.
      Anything the agent can do now, it has done.
    - Keep 👤 rows to the fewest the user truly must do, each one concrete: a decision, an
      approval, a command. Put them first among rows with the same gate.
+   - Every 👤 row carries a recommendation: what the agent would do or choose, and why, in
+     one line. For a decision, name the option; for a command, say when to run it. Other rows
+     may leave it empty.
 3. **The last line**, one of exactly two:
    - `Yes, you can close this chat.` When everything the agent could do is done, every PR
      this chat opened is merged or is waiting on a person or an external gate such as CI,
@@ -265,6 +269,20 @@ after the last line.
    - `No, you can't close this chat. Still to do here: <items>.` Only when the agent has to
      stop with work left that only this chat can carry, such as uncommitted work that cannot
      yet be committed. Name each item; the user decides whether to carry on.
+
+For example:
+
+```markdown
+| Owner | Gate | Action | Thread | Recommendation |
+|---|---|---|---|---|
+| 👤 You | 🔴 Blocking | Choose the knowledge base for the subset | t-cuk | The IT help base: it has an owner and real search logs |
+| 🌐 Waiting | 🟡 Next | Platform team confirms the export method | t-pcx | |
+| 🤖 Agent | ⚪ Later | Register the requests once the products exist | t-evk | |
+
+Yes, you can close this chat.
+```
+
+Use the same shape for any summary at the end of a piece of work, not only a wrap.
 
 Don't end with a question. If a decision blocks the rest, it is a 👤 row marked 🔴, and the
 work that does not depend on it is still done.
