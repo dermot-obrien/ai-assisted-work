@@ -44,6 +44,7 @@ anchor, such as `🧵 t-4k2 · fix ingestion retry bug · my-repo`.
 | `/thread improvement: <text>` | Captures an improvement (or `bug:`, `idea:`, any one word and a colon) without switching away |
 | `/thread improvements` | Lists them across every tree |
 | `/thread project <name>` | Groups this chat's new root threads under a project |
+| `/thread prs` | Lists every open pull request across your repositories in one table, with its state, context (thread, who opened it, clashes) and a recommendation, and acts only on the ones you name |
 | `/thread wrap` | Finishes everything an agent can do (commits, PRs, merges, threads), closes the chat's thread, then lists what is left in one table, with a recommendation on every item that needs the user, and ends with "Yes, you can close this chat" or "No, you can't" |
 | `/thread prune` | Archives closed branches now; it also happens daily by itself |
 

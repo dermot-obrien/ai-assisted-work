@@ -7,6 +7,13 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- thread 0.11.0: `/thread prs` lists every open pull request across the accounts and
+  organisations the session can see, with state, context (thread, who opened it, clashes and
+  ordering across repositories) and a recommendation each, and checks that recently merged pull
+  requests did not overwrite this chat's work. It acts only on the recommendations the user
+  names. Procedure in `skills/thread/references/prs.md`.
+
 ### Fixed
 - thread 0.10.1: the full wrap reply shape, with its closing yes-or-no line, applies to wraps
   only. Other replies that list outstanding items reuse the table and its Recommendation

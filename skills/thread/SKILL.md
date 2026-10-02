@@ -1,12 +1,12 @@
 ---
 name: thread
-description: "Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks to wrap up a chat or whether it can be closed (/thread wrap, 'thread wrap', 'wrap up'), or wants closed threads pruned or archived (/thread prune). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>)."
+description: "Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archives. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks to wrap up a chat or whether it can be closed (/thread wrap, 'thread wrap', 'wrap up'), or wants closed threads pruned or archived (/thread prune), or asks what pull requests are open across their repositories (/thread prs). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>)."
 license: CC-BY-4.0
 compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.10.1"
+  version: "0.11.0"
 ---
 
 # Thread
@@ -66,6 +66,7 @@ don't nag.
 | `/thread tree` | `tree` (`--all`, or `tree all`, for finished threads too) | See "Showing the tree" |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
 | `/thread prune`, `/thread archive` | `prune` (`--dry-run` to preview, `--days <n>` to keep recent ones) | Show the output as-is. See "Pruning" |
+| `/thread prs`, "what PRs are open" | See "Open pull requests" | One table of every open PR across the user's repositories, with state, context and a recommendation each |
 | `/thread wrap`, "thread wrap", "wrap up" | See "Wrapping up a chat" | Finish everything an agent can, close the thread, list what is left, and end with whether the chat can be closed |
 | `/thread improvement: <text>` (or `feature:`, `bug:`, `idea:`, any one word and a colon), or "add an improvement: <text>" | `open "<text>" --kind improvement --parent <this chat's id> --tool …` | One line with the new id. This chat keeps following its own thread. See "Capturing by kind" |
 | `/thread kind <id> <kind>` | `kind <id> <kind>` (`none` clears it) | One-line acknowledgement |
@@ -201,6 +202,12 @@ handoff: the goal, the decisions so far, key facts and file paths, and open ques
 refer to "above". Give it to the user to paste into a new chat. Beginning with the anchor
 line ties the new chat to the same thread. If the new chat is a genuinely new branch,
 `open` a child first and fork that.
+
+## Open pull requests
+
+`/thread prs` reports every open pull request across the user's accounts and organisations in one
+table, each with its state, context and a recommendation, and acts only on the ones the user
+names. Follow [references/prs.md](references/prs.md).
 
 ## Wrapping up a chat
 
