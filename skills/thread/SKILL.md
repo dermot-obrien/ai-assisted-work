@@ -1,12 +1,12 @@
 ---
 name: thread
-description: "Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks whether a chat is done and can be deleted (/thread wrap), or wants closed threads pruned or archived (/thread prune). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>)."
+description: "Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archive files so the live store stays small. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks to wrap up a chat or whether it can be closed (/thread wrap, 'thread wrap', 'wrap up'), or wants closed threads pruned or archived (/thread prune). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>)."
 license: CC-BY-4.0
 compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.8.2"
+  version: "0.9.0"
 ---
 
 # Thread
@@ -66,7 +66,7 @@ don't nag.
 | `/thread tree` | `tree` (`--all`, or `tree all`, for finished threads too) | See "Showing the tree" |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
 | `/thread prune`, `/thread archive` | `prune` (`--dry-run` to preview, `--days <n>` to keep recent ones) | Show the output as-is. See "Pruning" |
-| `/thread wrap` | See "Wrapping up a chat" | Say whether the chat can be deleted, and ask before closing the thread |
+| `/thread wrap`, "thread wrap", "wrap up" | See "Wrapping up a chat" | Finish everything an agent can, close the thread, list what is left, and end with whether the chat can be closed |
 | `/thread improvement: <text>` (or `feature:`, `bug:`, `idea:`, any one word and a colon), or "add an improvement: <text>" | `open "<text>" --kind improvement --parent <this chat's id> --tool …` | One line with the new id. This chat keeps following its own thread. See "Capturing by kind" |
 | `/thread kind <id> <kind>` | `kind <id> <kind>` (`none` clears it) | One-line acknowledgement |
 | `/thread improvements` (or `features`, `bugs`, `ideas`), `/thread list <kind>` | `list --kind improvement` (`--all` for finished ones too) | Show the output as-is |
@@ -204,39 +204,58 @@ line ties the new chat to the same thread. If the new chat is a genuinely new br
 
 ## Wrapping up a chat
 
-`/thread wrap` asks one question: is everything in this chat finished or recorded somewhere
-that outlives it, so the chat can be deleted? Treat "can I delete this chat?", "are we done
-here?" and "anything left?" the same way.
+`/thread wrap` is an instruction to finish, not a question. "Thread wrap", "wrap up",
+"everything wrapped up", "can I close this chat?" and "anything left?" mean the same. Do
+every outstanding thing an agent can do, without asking, and stop only for a blocker that
+prevents what comes after it. What is left at the end is only what the user must do.
 
-It is a question, not an instruction to finish: the user may answer no and carry on in this
-chat under the same thread. So `wrap` never closes the thread by itself.
+Workspace rules win. Where a workspace forbids an action (committing, opening PRs,
+merging, pushing a branch), that action becomes a user item; don't argue with the rule or
+work around it. Never act on another chat's work: its uncommitted edits, its PRs, its
+branches. Report it as an item for that chat's thread.
 
-Nothing should exist only in the chat. Check, in this order, and fix what you can:
+Work through this list, doing rather than proposing:
 
-1. **Work in progress.** Uncommitted changes, commits not pushed, background tasks or
-   monitors still running, and PRs this chat opened (their state and checks). Commit and
-   push what belongs to this chat's task. Never commit another chat's edits, merge a PR or
-   delete a branch to make the answer yes; report those instead.
+1. **Work in progress.** Commit and push this chat's changes. Open a PR for each branch that
+   needs one. Merge each PR this chat opened once it can be merged: checks pass, no review
+   is still required, the workspace allows it. Delete merged branches. Wait for running
+   checks and tasks this chat started, unless they will plainly outlast the turn.
 2. **Shared actions.** If this chat's thread owns deploys, publishes or merges for its tree,
    hand over first (see [references/ownership.md](references/ownership.md)).
 3. **Knowledge.** Decisions, facts and gotchas that live only in the conversation go where
    they belong: the repository (docs, CLAUDE.md, a runbook) if other people or agents need
    them, the agent's memory if only future sessions do, and a thread note otherwise.
-4. **Loose ends.** Every follow-up becomes a note on this thread's parent or a new child
-   thread, with a description that stands on its own. A title alone is not enough to pick
-   it up from cold.
-5. **This chat's thread.** Don't close it. Propose how it would close: `done` with a
-   resolution, or, if it isn't finished, `park` with what is left and what would restart it.
-   If the chat has no thread, say so and offer to record one; don't open it unasked.
+4. **Loose ends.** Every item still outstanding becomes a thread, or a note on one, with a
+   description that stands on its own. A title alone is not enough to pick it up from cold.
+   That includes every user item.
+5. **This chat's thread.** Close it: `done` with a resolution when its own work is delivered
+   and what remains lives in other threads; `park` with what is left and what would restart
+   it when it is not. If the chat has no thread, open one under the right parent, then close
+   it.
 
-Then answer in one of two ways. "Yes, you can delete this chat once the thread is closed" with a short table of what
-went where. Or "Not yet" with exactly what still needs the user or another chat, such as a PR
-to merge, a question to decide or a task still running. Things waiting on the user outside the
-chat, such as PRs to merge, do not block deletion; name them anyway.
+### The reply
 
-End with one question, for example: "Close t-4k2 as done: <resolution>? Or keep it open?"
-Run `done` or `park` only when the user says yes. If they say no, or just carry on, leave the
-thread open; this chat still follows it.
+Three parts, in this order, and nothing after the last line.
+
+1. **What the agent did.** One short list of what wrapping changed: commits, PRs opened and
+   merged, threads closed or created, with links and ids.
+2. **Everything still outstanding**, one table in material order, blockers first. Every item,
+   including those that wait on someone else. Columns: owner, gate, action, thread.
+   - Owner: 👤 **You**, 🤖 **Agent**, 🌐 **Waiting** (another person, another chat, CI).
+   - Gate: 🔴 **Blocking** (something waits on it), 🟡 **Next**, ⚪ **Later**.
+   - A 🤖 row is allowed only for something the agent cannot do yet, with what it waits for.
+     Anything the agent can do now, it has done.
+   - Keep 👤 rows to the fewest the user truly must do, each one concrete: a decision, an
+     approval, a command. Put them first among rows with the same gate.
+3. **The last line**, one of exactly two:
+   - `Yes, you can close this chat.` Only when everything the agent could do is done, every
+     PR this chat opened is merged or is waiting on a person, every outstanding item is in a
+     thread, and this chat's thread is closed or parked.
+   - `No, you can't close this chat. I'm continuing with: <items>.` Then continue with them
+     in the same turn, and wrap again when they are done.
+
+Don't end with a question. If a decision blocks the rest, it is a 👤 row marked 🔴, and the
+work that does not depend on it is still done.
 
 ## Coming back after a long run
 
