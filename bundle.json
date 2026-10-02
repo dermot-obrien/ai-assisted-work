@@ -69,8 +69,8 @@
     {
       "name": "thread",
       "path": "skills/thread",
-      "version": "0.11.1",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/thread@0.11.1",
+      "version": "0.12.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/thread@0.12.0",
       "requires": [],
       "check": {
         "command": ["node", "bin/check.mjs"],
