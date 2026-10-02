@@ -7,6 +7,12 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- thread 0.10.0: the wrap reply groups what was done by item, and its outstanding table gains a
+  Recommendation column: every row that needs the user says what the agent would do or choose
+  and why. A worked example shows the table and the last line. The same shape applies to any
+  end-of-work summary.
+
 ### Fixed
 - thread 0.9.2: `/thread wrap` checks which thread owns merges before merging a PR, can
   answer Yes while a PR waits on CI that is recorded in a thread, and writes its reply only
