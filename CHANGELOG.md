@@ -7,6 +7,11 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- thread 0.10.1: the full wrap reply shape, with its closing yes-or-no line, applies to wraps
+  only. Other replies that list outstanding items reuse the table and its Recommendation
+  column, and the short form after a long run is unchanged.
+
 ### Changed
 - thread 0.10.0: the wrap reply groups what was done by item, and its outstanding table gains a
   Recommendation column: every row that needs the user says what the agent would do or choose

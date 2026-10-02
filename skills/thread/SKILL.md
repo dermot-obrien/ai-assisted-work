@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.10.0"
+  version: "0.10.1"
 ---
 
 # Thread
@@ -282,7 +282,9 @@ For example:
 Yes, you can close this chat.
 ```
 
-Use the same shape for any summary at the end of a piece of work, not only a wrap.
+This shape is for wraps. Another reply that lists outstanding items reuses the table and its
+Recommendation column, but not the closing line; after a long run, keep to the short form in
+"Coming back after a long run".
 
 Don't end with a question. If a decision blocks the rest, it is a 👤 row marked 🔴, and the
 work that does not depend on it is still done.
