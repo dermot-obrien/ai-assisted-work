@@ -1,12 +1,12 @@
 ---
 name: thread
-description: "Keep thought processes untangled across chats, projects, IDEs and machines with a throwaway tree of intents. Records why a chat exists, branches when the work diverges, closes or parks it when it's finished, shows the tree of what is open, and prunes closed threads into archives. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork work into a new chat, is finishing, parking or abandoning something, asks to wrap up a chat or whether it can be closed (/thread wrap, 'thread wrap', 'wrap up'), or wants closed threads pruned or archived (/thread prune), or asks what pull requests are open across their repositories (/thread prs). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>)."
+description: "Keep thought processes untangled across chats, projects, IDEs and machines with a tree of intents. Records why a chat exists, branches, closes or parks it, shows what is open, and prunes closed threads. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork or split work into its own session (/thread split, /thread branch), wants a chat's work recorded in threads and the chat renamed (/thread sync), is finishing, parking or abandoning something, asks to wrap up a chat or whether it can be closed (/thread wrap, 'wrap up'), or wants closed threads pruned or archived (/thread prune), or asks what pull requests are open (/thread prs). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>)."
 license: CC-BY-4.0
 compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.11.1"
+  version: "0.12.0"
 ---
 
 # Thread
@@ -62,7 +62,9 @@ don't nag.
 | `/thread refine <text>` | `refine <id> "<text>"` | Show the output as-is: the new anchor, description and earlier titles |
 | `/thread rename <title>` | `rename <id> "<title>"` | Show the new anchor |
 | `/thread describe <text>` | `describe <id> "<text>"` | One-line acknowledgement |
-| `/thread fork` | `fork <id>` | See below |
+| `/thread fork` | `fork <id>` | See "Forking and splitting" |
+| `/thread split [what]`, `/thread branch [what]`, "move this to its own session", "this is its own thing now" | `open` a child for the work, then `fork` it | See "Forking and splitting". This chat goes back to its own thread |
+| `/thread sync`, "sync the threads", "make sure this is all in threads" | See "Syncing a chat" | Every strand of work in this chat recorded in a thread, and the chat renamed for the latest |
 | `/thread tree` | `tree` (`--all`, or `tree all`, for finished threads too) | See "Showing the tree" |
 | `/thread move <id> under <id>` | `move <id> --parent <id>` or `--root` | One-line acknowledgement |
 | `/thread prune`, `/thread archive` | `prune` (`--dry-run` to preview, `--days <n>` to keep recent ones) | Show the output as-is. See "Pruning" |
@@ -195,13 +197,25 @@ is still in play, and each day's archive is its own file. New events are filed u
 `/thread prune` does it now, for every closed branch however recent. Run it when the user asks
 to prune, archive or tidy the threads.
 
-## Forking to a new chat
+## Syncing a chat
+
+One chat often drifts across several things. `/thread sync` makes sure each of them is in a
+thread, makes the chat follow the latest, renames the chat to match where the tool can, and
+pushes. It records; it does not finish work, commit or close the chat (that is `/thread wrap`).
+Follow [references/sessions.md](references/sessions.md).
+
+## Forking and splitting
 
 `fork <id>` prints the anchor and the thread's path. Below it, write a short self-contained
-handoff: the goal, the decisions so far, key facts and file paths, and open questions. Never
-refer to "above". Give it to the user to paste into a new chat. Beginning with the anchor
-line ties the new chat to the same thread. If the new chat is a genuinely new branch,
-`open` a child first and fork that.
+handoff: the goal, the decisions so far, key facts and file paths, what is done and what is
+next, and open questions. Never refer to "above". Beginning with the anchor line ties the new
+chat to the same thread. If the new chat is a genuinely new branch, `open` a child first and
+fork that.
+
+**Splitting** is the usual reason to fork: work that began in this chat has become a standalone
+thing and belongs in its own session. `/thread split` (or `/thread branch`) gives it its own thread, starts the new
+session with the handoff where the tool can (else gives the handoff to paste), and returns this
+chat to its own thread. Follow [references/sessions.md](references/sessions.md).
 
 ## Open pull requests
 
@@ -258,7 +272,10 @@ after the last line.
    links, commit ids, and the ids of threads closed, parked or opened.
 2. **Everything still outstanding**, one table in material order, blockers first. Every item,
    including those that wait on someone else, and every one already in a thread. Columns:
-   Owner, Gate, Action, Thread, Recommendation.
+   #, Owner, Gate, Action, Thread, Recommendation.
+   - #: the row number, 1, 2, 3 and so on, so the user can answer by number ("do 2", "1: go
+     with the IT base"). When the user answers by number, act on that row of the table most
+     recently shown.
    - Owner: 👤 **You**, 🤖 **Agent**, 🌐 **Waiting** (another person, another chat, CI).
    - Gate: 🔴 **Blocking** (something waits on it), 🟡 **Next**, ⚪ **Later**.
    - A 🤖 row is allowed only for something the agent cannot do yet, with what it waits for.
@@ -280,16 +297,16 @@ after the last line.
 For example:
 
 ```markdown
-| Owner | Gate | Action | Thread | Recommendation |
-|---|---|---|---|---|
-| 👤 You | 🔴 Blocking | Choose the knowledge base for the subset | t-cuk | The IT help base: it has an owner and real search logs |
-| 🌐 Waiting | 🟡 Next | Platform team confirms the export method | t-pcx | |
-| 🤖 Agent | ⚪ Later | Register the requests once the products exist | t-evk | |
+| # | Owner | Gate | Action | Thread | Recommendation |
+|---|---|---|---|---|---|
+| 1 | 👤 You | 🔴 Blocking | Choose the knowledge base for the subset | t-cuk | The IT help base: it has an owner and real search logs |
+| 2 | 🌐 Waiting | 🟡 Next | Platform team confirms the export method | t-pcx | |
+| 3 | 🤖 Agent | ⚪ Later | Register the requests once the products exist | t-evk | |
 
 Yes, you can close this chat.
 ```
 
-This shape is for wraps. Another reply that lists outstanding items reuses the table and its
+This shape is for wraps. Another reply that lists outstanding items reuses the table, its numbers and its
 Recommendation column, but not the closing line; after a long run, keep to the short form in
 "Coming back after a long run".
 

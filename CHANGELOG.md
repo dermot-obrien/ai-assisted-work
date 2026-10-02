@@ -7,6 +7,14 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- thread 0.12.0: `/thread sync` records every strand of work in a chat in a thread (noting,
+  opening, refining or closing as needed), makes the chat follow the latest one, renames the
+  chat for it where the tool can, and pushes. `/thread split` (alias `/thread branch`) moves work that has grown into a
+  standalone thing into its own thread and its own session, starting that session with the
+  handoff where the tool can, and returns this chat to its own thread. The wrap table gains a
+  first column numbering its rows, so the user can answer by number.
+
 ### Fixed
 - thread 0.11.1: `/thread prs` recommends a merge only when the review decision is approved or
   none is required, and adds "Get the review" otherwise; it covers every signed-in host and
