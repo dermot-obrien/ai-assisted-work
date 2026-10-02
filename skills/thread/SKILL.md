@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.9.1"
+  version: "0.9.2"
 ---
 
 # Thread
@@ -216,12 +216,16 @@ branches. Report it as an item for that chat's thread.
 
 Work through this list, doing rather than proposing:
 
-1. **Work in progress.** Commit and push this chat's changes. Open a PR for each branch that
+1. **Shared actions.** Before any merge, publish or deploy, read the tree root's notes (see
+   [references/ownership.md](references/ownership.md)). If another thread owns that action,
+   don't take it: note on the owner's thread what is ready, and list it as a 🌐 row. If this
+   chat's thread owns it and is about to close, hand over first.
+2. **Work in progress.** Commit and push this chat's changes. Open a PR for each branch that
    needs one. Merge each PR this chat opened once it can be merged: checks pass, no review
-   is still required, the workspace allows it. Delete merged branches. Wait for running
-   checks and tasks this chat started, unless they will plainly outlast the turn.
-2. **Shared actions.** If this chat's thread owns deploys, publishes or merges for its tree,
-   hand over first (see [references/ownership.md](references/ownership.md)).
+   or unresolved conversation is outstanding, the workspace allows it, and no other thread
+   owns merges. Delete merged branches. Wait for running checks and tasks this chat started,
+   unless they will plainly outlast the turn; then record each in a thread with what to do
+   when it finishes, and list it as a 🌐 row.
 3. **Knowledge.** Decisions, facts and gotchas that live only in the conversation go where
    they belong: the repository (docs, CLAUDE.md, a runbook) if other people or agents need
    them, the agent's memory if only future sessions do, and a thread note otherwise.
@@ -239,7 +243,9 @@ Work through this list, doing rather than proposing:
 
 ### The reply
 
-Three parts, in this order, and nothing after the last line.
+Write the reply only when nothing is left that the agent can do now. While agent work
+remains, keep working; don't reply with a plan. Three parts, in this order, and nothing
+after the last line.
 
 1. **What the agent did.** One short list of what wrapping changed: commits, PRs opened and
    merged, threads closed or created, with links and ids.
@@ -252,12 +258,13 @@ Three parts, in this order, and nothing after the last line.
    - Keep 👤 rows to the fewest the user truly must do, each one concrete: a decision, an
      approval, a command. Put them first among rows with the same gate.
 3. **The last line**, one of exactly two:
-   - `Yes, you can close this chat.` Only when everything the agent could do is done, every
-     PR this chat opened is merged or is waiting on a person, every outstanding item is in a
-     thread, this chat's thread is closed or parked, and the chat is marked done where the
-     tool can.
-   - `No, you can't close this chat. I'm continuing with: <items>.` Then continue with them
-     in the same turn, and wrap again when they are done.
+   - `Yes, you can close this chat.` When everything the agent could do is done, every PR
+     this chat opened is merged or is waiting on a person or an external gate such as CI,
+     every outstanding item is in a thread that says what to do next, this chat's thread is
+     closed or parked, and the chat is marked done where the tool can.
+   - `No, you can't close this chat. Still to do here: <items>.` Only when the agent has to
+     stop with work left that only this chat can carry, such as uncommitted work that cannot
+     yet be committed. Name each item; the user decides whether to carry on.
 
 Don't end with a question. If a decision blocks the rest, it is a 👤 row marked 🔴, and the
 work that does not depend on it is still done.
