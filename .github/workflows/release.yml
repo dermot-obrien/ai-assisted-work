@@ -58,7 +58,10 @@ jobs:
 
       - name: Build packages
         run: |
-          (cd packages/protocol && npx tsc -p tsconfig.json)
+          # Same order as CONTRIBUTING and CI: the CLI imports @aaw/protocol and
+          # @aaw/installer by package name, so both are built first.
+          npm run build --workspace @aaw/protocol
+          npm run build --workspace @aaw/installer
           (cd packages/cli && npx tsc -p tsconfig.json)
           (cd packages/cli && npm run bundle)
 
