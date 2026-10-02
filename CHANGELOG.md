@@ -8,6 +8,7 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- thread 0.9.1: wrapping a chat also marks the chat itself done, wherever the tool has such a mark (a session status, a sidebar's completed mark), without asking. Wrapping is the user marking the chat done; a Yes now includes it.
 - thread 0.9.0: `/thread wrap` finishes the work instead of asking. It commits, opens and
   merges this chat's PRs where the workspace allows, records every leftover as a thread and
   closes the chat's thread, then lists what is left in material order with the user's part
