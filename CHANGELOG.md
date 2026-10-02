@@ -7,6 +7,12 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- thread 0.11.1: `/thread prs` recommends a merge only when the review decision is approved or
+  none is required, and adds "Get the review" otherwise; it covers every signed-in host and
+  account, fetches up to the search ceiling with a per-repository fallback, pages through every
+  review conversation, and runs the thread script from the skill's own directory.
+
 ### Added
 - thread 0.11.0: `/thread prs` lists every open pull request across the accounts and
   organisations the session can see, with state, context (thread, who opened it, clashes and
