@@ -7,6 +7,13 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- thread 0.9.0: `/thread wrap` finishes the work instead of asking. It commits, opens and
+  merges this chat's PRs where the workspace allows, records every leftover as a thread and
+  closes the chat's thread, then lists what is left in material order with the user's part
+  kept to a minimum. The last line is always "Yes, you can close this chat." or "No, you
+  can't close this chat", and on No the agent carries on.
+
 ### Added
 - Documentation built around a quick start. `docs/quick-start.md` goes from nothing to a
   work item you can list, lint, claim and hand to an agent, with the commands for PowerShell
