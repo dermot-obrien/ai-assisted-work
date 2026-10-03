@@ -1,12 +1,16 @@
 # Sources
 
-
 One store can hold several sources: separate trees for separate segments of work, such as an
 employer's work, a business and a personal project. The default source is the store's root;
 a named one lives under `sources/<name>/` in the same store. A workspace picks its source with
 `threads_source: <name>` in `.aaw-config.yaml`, or `$THREAD_SOURCE` (per repository in
 `.claude/settings.json` `"env"`); `--source <name>` overrides both for one command. Without
 any of them nothing changes: the default source is used.
+
+**The default source is the rule; a named source is the exception.** Every workspace uses the
+default source unless the user has decided that a segment of work belongs in its own source.
+Don't propose a new source for an ordinary project: group it with `/thread project` instead.
+Set `threads_source:` only in the workspaces of a segment the user has named.
 
 - Every command reads and writes the workspace's source only. `status`, `tree` and `list` start
   with `source: <name>` once the store has more than one, and `status` ends with a count of
