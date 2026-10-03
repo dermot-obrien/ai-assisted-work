@@ -1,12 +1,12 @@
 ---
 name: thread
-description: "Keep thought processes untangled across chats, projects, IDEs and machines with a tree of intents. Records why a chat exists, branches, closes or parks it, shows what is open, and prunes closed threads. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork or split work into its own session (/thread split, /thread branch), wants a chat's work recorded in threads and the chat renamed (/thread sync), is finishing, parking or abandoning something, asks to wrap up a chat or whether it can be closed (/thread wrap, 'wrap up'), or wants closed threads pruned or archived (/thread prune), or asks what pull requests are open (/thread prs). Also captures improvements, bugs and ideas as tagged threads to come back to (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), and groups threads under projects (/thread project <name>)."
+description: "Keep thought processes untangled across chats, projects, IDEs and machines in a tree of intents. Records why a chat exists, branches, closes or parks it, and shows what is open. Use when the user types /thread, says what they are doing or why they started, asks where they were, what is open, or what this chat was for, goes off on a tangent, wants to fork or split work into its own session (/thread split, /thread branch), wants a chat's work recorded and the chat renamed (/thread sync), is finishing, parking or abandoning something, asks to wrap up a chat or whether it can be closed (/thread wrap, 'wrap up'), or wants closed threads pruned or archived (/thread prune), or asks what pull requests are open (/thread prs). Also captures improvements, bugs and ideas as tagged threads (/thread improvement: <text>, 'add an improvement: ...') and lists them across every tree (/thread improvements), groups threads under projects (/thread project <name>), and keeps segments of work in separate sources (/thread sources)."
 license: CC-BY-4.0
-compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE.
+compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE, and the source within it from `threads_source:` or $THREAD_SOURCE.
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.12.0"
+  version: "0.13.0"
 ---
 
 # Thread
@@ -75,6 +75,9 @@ don't nag.
 | `/thread improvements` (or `features`, `bugs`, `ideas`), `/thread list <kind>` | `list --kind improvement` (`--all` for finished ones too) | Show the output as-is |
 | `/thread project <name>` | `project "<name>"` | Show the anchor. This chat now has that project: pass `--project <its id>` whenever you open a root thread here. See "Projects" |
 | `/thread projects` | `projects` | Show the output as-is |
+| `/thread sources` | `sources` | Show the output as-is. See "Sources" |
+| `/thread transfer <id> to <source>`, "move this tree to <source>" | `transfer <id> --to <source>` | Show the output as-is. Ask first: it moves the whole tree under that thread |
+| `/thread tree all sources`, "threads in every source" | `tree --source all` (also `status`, `list`) | Show the output as-is |
 
 Every close carries a one-line resolution, and the script refuses a close without one. It
 is what the tree shows for that thread from then on, so it should let someone who was not in
@@ -147,6 +150,15 @@ span several repositories. Each thread still records the repository it was opene
 - **Status.** With a project set, `status` shows that project's tree first; otherwise it shows
   the trees opened in this repository.
 - **Listing.** `projects` lists every project, across all trees.
+
+## Sources
+
+One store can hold several sources: separate trees for separate segments of work. A workspace
+picks one with `threads_source: <name>` in `.aaw-config.yaml` or `$THREAD_SOURCE`; without
+either, the default source is used and nothing changes. Commands read and write that source
+only, an id in another source is found there, and `transfer` moves a tree between sources.
+Read [references/sources.md](references/sources.md) before a transfer, when a view starts
+with `source:`, or when the user asks about sources.
 
 ## Showing the tree
 

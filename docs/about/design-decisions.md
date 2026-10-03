@@ -637,6 +637,65 @@ otherwise fails the first time someone uses it, far from the install that caused
 
 ---
 
+## DD-12: Thread Sources, Separate Trees in One Store
+
+### Context
+
+The `thread` skill kept one tree in one store: every chat on every machine, in every
+workspace, read and wrote the same `events/` folder. Work falls into segments that have
+little to do with each other (an employer's platform, a business, personal image and video
+generation), and one tree mixed them: `status` and `tree` showed every segment's threads,
+and nothing could keep one segment's threads apart from another's.
+
+### Decision
+
+**A store holds sources.** A source is a separate tree with the same layout as before. The
+default source is `events/` and `archive/` at the store's root, so existing stores and
+workspaces are unchanged. A named source is the same pair under `sources/<name>/`. A name is
+one lowercase word or hyphenated words.
+
+**A workspace picks its source.** `--source <name>` on any command, else `$THREAD_SOURCE`,
+else `threads_source:` in the nearest `.aaw-config.yaml`, else the default. A command reads
+and writes that source only, and the daily prune runs per source. `status`, `tree` and
+`list` say which source they show once the store has more than one, `status` counts the
+open trees in the others, and `--source all` shows every source in turn. A source starts
+with its first write, which says so in case the name was a typo.
+
+**Ids are unique across the store, and an id resolves from anywhere.** A new id avoids every
+id in every source. A command naming an id the selected source does not hold runs in the
+source that does, so an anchor line still works in a chat whose workspace now points at a
+different source.
+
+**`transfer` moves a tree between sources without losing history.** `thread transfer <id>
+--to <source>` copies the thread's and every descendant's events, live and archived, to the
+target under the same paths, removes the live files from the source, and writes a `transfer`
+event there naming every id that moved. Replay drops those ids, including from the source's
+archive, which stays unedited. An event written to the old source for a moved id, by a
+machine that had not seen the transfer, is forwarded to the new source on the next command.
+
+### Rationale
+
+- Folders in one repository keep one clone, one pull and one push per command, and make a
+  view across sources a local read. The alternative, one repository per source, gives real
+  access separation but multiplies clones and makes cross-source views depend on what each
+  machine has cloned. A store remote is already per workspace (`threads_remote:`), so a
+  segment that needs separate access can still use its own store.
+- Keeping the default source at the root means no migration and no change for workspaces
+  that never set a source.
+- Unique ids across sources make anchors unambiguous, which is what lets a command find a
+  thread in another source instead of failing.
+- Tombstones (`transfer` events) rather than editing the archive keep the store append-only,
+  so two machines can never conflict.
+
+### Consequences
+
+- Each `transfer` leaves one small live event in the source the tree left; prune keeps it.
+- A machine that has every source in its clone sees every segment. Segments that must not
+  reach a machine belong in a separate store, set with `threads_remote:`.
+- The store README documents sources and the `transfer` event for agents without the skill.
+
+---
+
 ## Decision Log
 
 | ID | Decision | Date | Status |
@@ -652,3 +711,4 @@ otherwise fails the first time someone uses it, far from the install that caused
 | DD-09 | Template Extensibility | 2026-02 | Implemented |
 | DD-10 | Agent Skills as the Distribution Format | 2026-09 | Implemented |
 | DD-11 | Skill Bundles, Versioned Skill Identifiers and a Layered Ontology | 2026-09 | Accepted; manifest, checks and work module implemented |
+| DD-12 | Thread Sources, Separate Trees in One Store | 2026-10 | Implemented (thread 0.13.0) |

@@ -44,6 +44,8 @@ anchor, such as `🧵 t-4k2 · fix ingestion retry bug · my-repo`.
 | `/thread improvement: <text>` | Captures an improvement (or `bug:`, `idea:`, any one word and a colon) without switching away |
 | `/thread improvements` | Lists them across every tree |
 | `/thread project <name>` | Groups this chat's new root threads under a project |
+| `/thread sources` | Lists the store's sources: separate trees for separate segments of work |
+| `/thread transfer <id> to <source>` | Moves a thread and its branches to another source, keeping ids and history |
 | `/thread prs` | Lists every open pull request across your repositories in one table, with its state, context (thread, who opened it, clashes) and a recommendation, and acts only on the ones you name |
 | `/thread wrap` | Finishes everything an agent can do (commits, PRs, merges, threads), closes the chat's thread, then lists what is left in one table, with a recommendation on every item that needs the user, and ends with "Yes, you can close this chat" or "No, you can't" |
 | `/thread prune` | Archives closed branches now; it also happens daily by itself |
@@ -60,6 +62,7 @@ All the underlying commands and flags are in
 |---------|---------|---------|
 | `THREADS_HOME` | `~/.threads` | Where the store is cloned. Use an absolute path |
 | `THREADS_REMOTE`, or `threads_remote` in `.aaw-config.yaml` | unset | Where to clone the store from the first time |
+| `THREAD_SOURCE`, or `threads_source` in `.aaw-config.yaml` | the default source | Which tree in the store this workspace reads and writes. A named source lives under `sources/<name>/` |
 | `THREAD_PROJECT`, or `threads_project` in `.aaw-config.yaml` | unset | The project new root threads go under |
 | `THREADS_AUTO_PRUNE` | on | `0` stops the daily archive |
 | `THREAD_CTX`, `THREAD_TOOL` | the repository's name; unset | What a new thread records as its context and tool |
