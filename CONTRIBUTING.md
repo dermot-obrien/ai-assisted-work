@@ -133,24 +133,28 @@ A copy does not track this repository: it stays at the version you copied until 
 
 ### You cloned or forked the repository and keep it in step
 
-1. Keep this repository as a remote so you can take its releases: `git remote add upstream https://github.com/dermot-obrien/ai-assisted-work.git`, then `git fetch upstream` and merge or rebase onto its `main` or a release tag.
-2. Make your changes on a branch in your fork, and open a pull request against this repository's `main` for anything useful to others. Keep organisation-specific configuration out of the skills: it belongs in your workspace's bindings, which this repository never needs to see.
+1. Keep this repository as a remote so you can take its releases: `git remote add upstream https://github.com/dermot-obrien/ai-assisted-work.git`, then `git fetch upstream` and merge or rebase onto its `main` (releases only) or a release tag.
+2. Make your changes on a branch in your fork, and open a pull request against this repository's `develop` for anything useful to others. Keep organisation-specific configuration out of the skills: it belongs in your workspace's bindings, which this repository never needs to see.
 3. If you publish your fork, it is a derivative work: follow Derivative Works below.
 
 ## Contribution Process
 
+This repository uses Git Flow. `develop` is the integration branch: start every branch from
+`develop` and open every pull request against it. `main` takes releases only, through a
+pull request from `develop` that the maintainers open.
+
 ### For Minor Changes
 
 1. Fork the repository.
-2. Make your changes.
-3. Submit a pull request.
+2. Make your changes on a branch from `develop`.
+3. Submit a pull request against `develop`.
 
 ### For Significant Changes
 
 1. **Open an Issue** describing what you want to contribute.
 2. **Discuss** with maintainers.
 3. **Fork and develop**.
-4. **Submit PR** referencing the issue.
+4. **Submit PR** against `develop`, referencing the issue.
 
 ## Pull Request Guidelines
 
