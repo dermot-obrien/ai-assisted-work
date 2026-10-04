@@ -8,6 +8,16 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- thread 0.13.0: sources (DD-12). One store holds separate trees for separate segments of work:
+  the default source at its root, named ones under `sources/<name>/`. A workspace picks one
+  with `threads_source:` in `.aaw-config.yaml` or `$THREAD_SOURCE` (`--source` per command);
+  nothing changes without one. `status`, `tree` and `list` say which source they show and take
+  `--source all`. Ids are unique across sources and a command finds an id in whichever source
+  holds it. `thread transfer <id> --to <source>` moves a tree with its archived branches,
+  keeping ids and history; late events for a moved thread are forwarded. `thread sources`
+  lists them. Tests in `scripts/test-thread.mjs`, run in CI.
+
+### Added
 - thread 0.12.0: `/thread sync` records every strand of work in a chat in a thread (noting,
   opening, refining or closing as needed), makes the chat follow the latest one, renames the
   chat for it where the tool can, and pushes. `/thread split` (alias `/thread branch`) moves work that has grown into a

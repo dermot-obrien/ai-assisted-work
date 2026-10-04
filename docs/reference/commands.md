@@ -221,9 +221,16 @@ node .agents/skills/thread/bin/thread.mjs <command> [args] [flags]
 | `thread fork <id>` | The header for handing a thread to a new chat |
 | `thread tree [<id>] [--all] [--mermaid\|--json]` | Open and parked threads; `--all` (or `tree all`) adds finished and archived ones |
 | `thread prune [--days <n>] [--dry-run]` | Archive closed branches into a new `archive/` file. Alias `archive` |
+| `thread sources` | Every source in the store, with its open trees |
+| `thread transfer <id> --to <source>` | Move a thread and every branch under it, archived ones included, to another source. Ids and history are kept |
 | `thread init [<git-url>]` | Clone or seed the store |
 | `thread sync` | Push anything left unpushed |
 | `thread help` (or `-h`, `--help`) | The usage |
+
+`--source <name>` on any command picks the source, a separate tree in the same store (DD-12);
+else `$THREAD_SOURCE`, else `threads_source` in `.aaw-config.yaml`, else the default. An id held by
+another source is found there. `status`, `tree` and `list` take `--source all` to show every
+source in turn.
 
 Every command that writes also archives, once a day, the branches closed before that day
 (`THREADS_AUTO_PRUNE=0` turns that off). Errors are printed as `thread: <message>` with exit

@@ -84,6 +84,9 @@ jobs:
       - name: Validate bundle.json against the bundle schema and the skills
         run: node scripts/validate-bundle.mjs .
 
+      - name: The thread script's tests pass
+        run: node --test scripts/test-thread.mjs
+
       - name: The protocol types agree with the work schema
         run: node scripts/check-protocol-schema.mjs
 

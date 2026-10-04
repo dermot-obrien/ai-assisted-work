@@ -14,6 +14,11 @@
  * live events/ folder only holds what is still in play. Archives are never edited
  * either; `tree --all` and `show` replay them alongside the live events.
  *
+ * One store can hold several sources: separate trees for separate segments of work. The
+ * default source is events/ and archive/ at the store's root; a named source is the same
+ * pair under sources/<name>/. A command reads and writes one source, chosen by --source,
+ * $THREAD_SOURCE or threads_source: in .aaw-config.yaml. Ids are unique across sources.
+ *
  * Zero dependencies; Node 18+. Run `thread help` for usage.
  */
 
@@ -23,7 +28,11 @@ import { homedir, hostname } from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 
-const HOME = process.env.THREADS_HOME || path.join(homedir(), ".threads");
+// STORE is the git clone. HOME is the selected source's folder inside it: the store's root
+// for the default source, sources/<name>/ for a named one. It is set once, in main.
+const STORE = process.env.THREADS_HOME || path.join(homedir(), ".threads");
+let SOURCE = "default";
+let HOME = STORE;
 // Automatic prune: the first write of a new day archives every branch closed before that
 // day began, so events/ holds the day's events and whatever is still in play. Days are
 // the machine's local days. THREADS_AUTO_PRUNE=0 turns it off.
@@ -32,7 +41,7 @@ const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
-const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run"]);
+const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources"]);
 
 function parseArgs(argv) {
   const flags = {};
@@ -61,7 +70,7 @@ const warn = (msg) => process.stderr.write(`thread: ${msg}\n`);
 
 function git(args, opts = {}) {
   return execFileSync("git", args, {
-    cwd: opts.cwd ?? HOME,
+    cwd: opts.cwd ?? STORE,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();
@@ -104,12 +113,84 @@ const remoteFromWorkspace = () => workspaceSetting("threads_remote");
  */
 const projectDefault = () => process.env.THREAD_PROJECT || workspaceSetting("threads_project");
 
+/** A source name is one lowercase word or hyphenated words; "default" is the store's root. */
+function sourceArg(raw, what = "a source") {
+  const s = String(raw).trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(s)) die(`${what} is one lowercase word or hyphenated words, such as image-and-video (got "${raw}")`);
+  return s;
+}
+
+/**
+ * The source this command reads and writes: --source, else $THREAD_SOURCE (set it per repo
+ * in .claude/settings.json "env"), else threads_source: in the nearest .aaw-config.yaml,
+ * else the default. "all" is only a view, for status, tree and list.
+ */
+function sourceChoice(flags) {
+  const raw = typeof flags.source === "string" ? flags.source : process.env.THREAD_SOURCE || workspaceSetting("threads_source");
+  return raw ? sourceArg(raw) : "default";
+}
+
+const sourceDir = (name) => (name === "default" ? STORE : path.join(STORE, "sources", name));
+
+/** Every source in the store: the default first, then the named ones. */
+function sources() {
+  const dir = path.join(STORE, "sources");
+  const named = existsSync(dir)
+    ? readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()
+    : [];
+  return ["default", ...named];
+}
+
+/** Point HOME at a source. */
+function useSource(name) {
+  SOURCE = name;
+  HOME = sourceDir(name);
+}
+
+/** Run fn with HOME pointed at another source, then point it back. */
+function inSource(name, fn) {
+  const was = SOURCE;
+  useSource(name);
+  try {
+    return fn();
+  } finally {
+    useSource(was);
+  }
+}
+
+/** The ids a source holds, live or archived, less the ones it has transferred away. */
+function sourceIds(name) {
+  return inSource(name, () => {
+    const all = mergeEvents(readEvents());
+    const moved = movedIds(all);
+    return new Set(all.filter((e) => e.type === "open" && !moved.has(e.id)).map((e) => e.id));
+  });
+}
+
+/** Every id taken in any source, so a new id is unique across the whole store. */
+function allIds() {
+  const ids = new Set();
+  for (const s of sources()) {
+    inSource(s, () => {
+      for (const e of mergeEvents(readEvents())) if (e.id) ids.add(e.id);
+    });
+  }
+  return ids;
+}
+
+/** Ids a source has transferred to another one: id -> the source it went to. */
+function movedIds(events) {
+  const moved = new Map();
+  for (const e of events) if (e.type === "transfer") for (const id of e.ids ?? [e.id]) moved.set(id, e.to);
+  return moved;
+}
+
 function ensureStore(remoteArg) {
-  if (existsSync(path.join(HOME, ".git"))) return;
+  if (existsSync(path.join(STORE, ".git"))) return;
   const remote = remoteArg || process.env.THREADS_REMOTE || remoteFromWorkspace();
   if (!remote) {
     die(
-      `no threads store at ${HOME}, and no remote configured to clone it from.\n` +
+      `no threads store at ${STORE}, and no remote configured to clone it from.\n` +
         "  The store is a private git repo you own (create an empty one first if you have none).\n" +
         "  Point at it in any one of these ways:\n" +
         "    • every repo on this machine:  setx THREADS_REMOTE <git-url>          (Windows; open a new terminal after)\n" +
@@ -119,7 +200,7 @@ function ensureStore(remoteArg) {
         "  In a cloud session, the environment also needs push access to that repo.",
     );
   }
-  const r = tryGit(["clone", "--quiet", remote, HOME], { cwd: homedir() });
+  const r = tryGit(["clone", "--quiet", remote, STORE], { cwd: homedir() });
   if (!r.ok) die(`could not clone ${remote}:\n${r.out}`);
   if (!hasCommits()) tryGit(["symbolic-ref", "HEAD", "refs/heads/main"]);
   if (!tryGit(["config", "user.email"]).ok) {
@@ -321,15 +402,15 @@ function archiveBranches(branches, events) {
   const body = moving.map(({ _file, ...ev }) => JSON.stringify({ src: rel(_file), ...ev })).join("\n") + "\n";
   writeFileSync(path.join(ARCHIVE(), name), body);
   for (const e of moving) rmSync(e._file, { force: true });
-  const readme = path.join(HOME, "README.md");
+  const readme = path.join(STORE, "README.md");
   if (!existsSync(readme) || readFileSync(readme, "utf8") !== README) writeFileSync(readme, README);
   return { file: `archive/${name}`, threads: ids.size, events: moving.length };
 }
 
-/** When the last prune ran, from the newest archive file's name; null if never. */
+/** When the last prune ran, from the newest archive file's name; null if never. A transfer's archive file does not count. */
 function lastPrune() {
   if (!existsSync(ARCHIVE())) return null;
-  const names = readdirSync(ARCHIVE()).filter((f) => f.endsWith(".jsonl")).sort();
+  const names = readdirSync(ARCHIVE()).filter((f) => /^\d{8}T\d{6}Z.*\.jsonl$/.test(f)).sort();
   const m = names.length && /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/.exec(names[names.length - 1]);
   return m ? Date.parse(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`) : null;
 }
@@ -404,6 +485,10 @@ function buildTree(events) {
       case "kind":
         if (n) Object.assign(n, { kind: ev.kind || null, last: ev.ts });
         break;
+      case "transfer":
+        // The thread and its branches now live in another source; this one forgets them.
+        for (const id of ev.ids ?? [ev.id]) nodes.delete(id);
+        break;
     }
   }
   for (const n of nodes.values()) {
@@ -414,6 +499,7 @@ function buildTree(events) {
   const lastOf = (n) => n.children.reduce((m, c) => (lastOf(c) > m ? lastOf(c) : m), n.last);
   for (const n of nodes.values()) n.lastDeep = lastOf(n);
   for (const n of nodes.values()) n.children.sort((a, b) => (a.opened < b.opened ? -1 : 1));
+  nodes.moved = movedIds(events);
   return nodes;
 }
 
@@ -444,7 +530,8 @@ function findProject(nodes, ref) {
 function need(nodes, id) {
   if (!id) die("which thread? pass its id, e.g. t-4k2");
   const n = nodes.get(id);
-  if (!n) die(`no thread ${id}`);
+  if (!n && nodes.moved?.has(id)) die(`${id} was transferred to source ${nodes.moved.get(id)}: pass --source ${nodes.moved.get(id)}`);
+  if (!n) die(`no thread ${id}${SOURCE === "default" ? "" : ` in source ${SOURCE}`}`);
   return n;
 }
 
@@ -532,8 +619,8 @@ function renderMermaid(views) {
   return out.join("\n");
 }
 
-/** The same view as nested JSON, for an agent to render as a widget. */
-function renderJson(views) {
+/** The same view as nested objects, for an agent to render as a widget. With a source, each root names it. */
+function renderJson(views, source) {
   const walk = ({ n, kids }) => ({
     id: n.id,
     title: n.text,
@@ -548,7 +635,13 @@ function renderJson(views) {
     ago: ago(n.lastDeep),
     children: kids.map(walk),
   });
-  return JSON.stringify(views.map(walk), null, 2);
+  return views.map((v) => (source ? { source, ...walk(v) } : walk(v)));
+}
+
+/** Say which source a view shows, once the store has more than one. */
+function sourceHeading(flags) {
+  if (flags.json || flags._each) return;
+  if (SOURCE !== "default" || sources().length > 1) console.log(`source: ${SOURCE}`);
 }
 
 const byRecent = (a, b) => (a.lastDeep < b.lastDeep ? 1 : -1);
@@ -571,6 +664,15 @@ edited either. The full tree is \`events/\` and every archive replayed together,
 \`src\`. A new id must not be used in either. An event in \`events/\` for a thread that was archived
 brings that thread back: copy its archived events back to their \`src\` paths.
 
+## Sources
+
+The store can hold several sources, separate trees for separate segments of work. The default
+source is \`events/\` and \`archive/\` at the root; a named source is the same pair under
+\`sources/<name>/\`, with \`src\` paths relative to that folder. Each source is replayed on its
+own. Ids are unique across every source. A \`transfer\` event moves a thread and its branches to
+another source: their events are copied there with the same paths, removed from this source's
+\`events/\`, and this source then ignores those ids, including in its archive.
+
 | type | fields |
 |---|---|
 | \`open\` | \`id\` (\`t-\` + 3 base-36 chars, unused), \`parent\` (id or null), \`text\`, \`ctx\` (repo), \`tool\`, optional \`kind\` |
@@ -581,6 +683,7 @@ brings that thread back: copy its archived events back to their \`src\` paths.
 | \`rename\` | \`id\`, \`text\` (the new title; earlier ones stay in the history) |
 | \`describe\` | \`id\`, \`text\` (a longer description; the latest one wins) |
 | \`kind\` | \`id\`, \`kind\` (one lowercase word such as \`feature\`, or null to clear; the latest one wins) |
+| \`transfer\` | \`id\`, \`to\` (the source), \`ids\` (the thread and every branch under it that moved) |
 
 Every event also carries \`ts\` (ISO-8601 UTC) and \`host\`. The tree is the events replayed in \`ts\` order.
 `;
@@ -627,7 +730,7 @@ const commands = {
     // An archived id is still taken: the full tree replays the archive too.
     const kind = kindArg(flags.kind);
     if (kind === "none") die("--kind none only makes sense on thread kind; leave --kind off instead");
-    const id = newId(new Set([...nodes.keys(), ...readArchive().map((e) => e.id)]));
+    const id = newId(allIds());
     writeEvent({ type: "open", id, parent, text, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL, ...(kind ? { kind } : {}) });
     commitAndPush(`open ${id}: ${text}`);
     const tree = buildTree(readEvents());
@@ -648,7 +751,7 @@ const commands = {
     let p = findProject(nodes, ref);
     if (!p) {
       if (/^t-[0-9a-z]+$/.test(ref)) die(`no thread ${ref}`);
-      const id = newId(new Set([...nodes.keys(), ...readArchive().map((e) => e.id)]));
+      const id = newId(allIds());
       writeEvent({ type: "open", id, parent: null, text: ref, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL, kind: "project" });
       commitAndPush(`open ${id}: ${ref} (project)`);
       p = buildTree(readEvents()).get(id);
@@ -774,8 +877,10 @@ const commands = {
         last: n.lastDeep,
         ago: ago(n.lastDeep),
       });
+      if (flags._each) return hits.map((n) => ({ source: SOURCE, ...row(n) }));
       return console.log(JSON.stringify(hits.map(row), null, 2));
     }
+    sourceHeading(flags);
     const what = kind ? `${kind} threads` : "threads with a kind";
     if (!hits.length) return console.log(flags.all ? `no ${what}.` : `no open ${what}. (--all shows finished ones)`);
     for (const n of hits) {
@@ -799,6 +904,57 @@ const commands = {
     console.log(`${n.id} now under ${parent ?? "(root)"}`);
   },
 
+  transfer(pos, flags, nodes, _status, events) {
+    // Move a thread and every branch under it, archived ones included, to another source.
+    // Ids and event files keep their names, so anchors and history carry over unchanged.
+    const n = need(nodes, pos[0]);
+    if (typeof flags.to !== "string") die(`transfer it where? thread transfer ${n.id} --to <source>`);
+    const to = sourceArg(flags.to);
+    if (to === "all") die('"all" is a view, not a source');
+    if (to === SOURCE) die(`${n.id} is already in source ${to}`);
+    const full = buildTree(mergeEvents(events));
+    const ids = new Set();
+    const collect = (x) => {
+      ids.add(x.id);
+      x.children.forEach(collect);
+    };
+    collect(full.get(n.id));
+    const clash = [...sourceIds(to)].filter((id) => ids.has(id));
+    if (clash.length) die(`source ${to} already holds ${clash.join(", ")}`);
+    const live = events.filter((e) => ids.has(e.id));
+    const liveFiles = new Set(live.map((e) => rel(e._file)));
+    const archived = readArchive().filter((e) => ids.has(e.id) && !liveFiles.has(rel(e._file)));
+    const target = sourceDir(to);
+    for (const { _file, ...body } of live) {
+      const dest = path.join(target, rel(_file));
+      mkdirSync(path.dirname(dest), { recursive: true });
+      writeFileSync(dest, JSON.stringify(body, null, 2) + "\n");
+    }
+    if (archived.length) {
+      // Kept archived in the new source. Named apart from prune files so the daily prune there still runs.
+      const host = hostname().toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 20) || "host";
+      const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+      mkdirSync(path.join(target, "archive"), { recursive: true });
+      const body = archived.map(({ _file, ...ev }) => JSON.stringify({ src: rel(_file), ...ev })).join("\n") + "\n";
+      writeFileSync(path.join(target, "archive", `transfer-${stamp}-${host}-${randomBytes(3).toString("hex")}.jsonl`), body);
+    }
+    for (const e of live) rmSync(e._file, { force: true });
+    writeEvent({ type: "transfer", id: n.id, to, ids: [...ids] });
+    commitAndPush(`transfer ${n.id} and ${ids.size - 1} branch(es) from source ${SOURCE} to ${to}`);
+    console.log(`transferred ${n.id} ${n.text} and ${ids.size - 1} thread(s) under it (${live.length + archived.length} events) from source ${SOURCE} to ${to}.`);
+    if (n.parent) console.log(`   it was under ${n.parent}, which stays in ${SOURCE}; in ${to} it is a root.`);
+    console.log(`   ids are unchanged; commands find it in ${to} from anywhere.`);
+  },
+
+  sources(pos, flags) {
+    // Every source in the store, with its open and parked root counts.
+    for (const s of sources()) {
+      const roots = inSource(s, () => [...buildTree(readEvents()).values()].filter((n) => !n.parent && isLive(n)));
+      const here = s === SOURCE ? "   ← this workspace" : "";
+      console.log(`${s.padEnd(20)} ${String(roots.length).padStart(3)} open tree(s)  ${s === "default" ? "events/" : `sources/${s}/`}${here}`);
+    }
+  },
+
   fork(pos, flags, nodes) {
     const n = need(nodes, pos[0]);
     const chain = pathTo(nodes, n);
@@ -817,13 +973,22 @@ const commands = {
     const live = [...nodes.values()].filter((n) => !n.parent && isLive(n)).sort(byRecent);
     const here = flags.all ? live : live.filter(touchesHere);
     const elsewhere = live.filter((n) => !here.includes(n));
-    if (!live.length) return console.log("no open threads.");
-    if (here.length) console.log(renderForest(view(here), { focus: flags.here }));
+    sourceHeading(flags);
+    if (!live.length) console.log("no open threads.");
+    else if (here.length) console.log(renderForest(view(here), { focus: flags.here }));
     else console.log(`no open threads in ${project ? `project ${project.id} ${project.text}` : ctx}.`);
     if (elsewhere.length) {
       const where = [...new Set(elsewhere.map((n) => n.ctx))].join(", ");
       console.log(`
 + ${elsewhere.length} open elsewhere (${where}) — thread tree to see them all`);
+    }
+    if (flags._each) return; // --source all lists every source in turn
+    const others = sources()
+      .filter((s) => s !== SOURCE)
+      .map((s) => [s, inSource(s, () => [...buildTree(readEvents()).values()].filter((n) => !n.parent && isLive(n)).length)])
+      .filter(([, k]) => k);
+    if (others.length) {
+      console.log(`+ open in other sources: ${others.map(([s, k]) => `${s} (${k})`).join(", ")} — thread status --source all`);
     }
   },
 
@@ -832,7 +997,11 @@ const commands = {
     let roots = [...nodes.values()].filter((n) => !n.parent);
     if (pos[0]) roots = [pathTo(nodes, need(nodes, pos[0]))[0]];
     const views = view(roots, { all: flags.all });
-    if (flags.json) return console.log(renderJson(views));
+    if (flags.json) {
+      const out = renderJson(views, flags._each ? SOURCE : undefined);
+      return flags._each ? out : console.log(JSON.stringify(out, null, 2));
+    }
+    sourceHeading(flags);
     if (!views.length) return console.log(flags.all ? "no threads." : "no open threads. (thread tree --all shows finished ones)");
     const render = flags.mermaid ? renderMermaid : renderForest;
     console.log(render(views, { focus: flags.here }));
@@ -885,8 +1054,14 @@ const commands = {
   thread prune [--days <n>] [--dry-run]   archive closed branches to a new archive/ file (alias: archive)
                                   runs by itself on the first write of a new day, archiving what
                                   closed before today; THREADS_AUTO_PRUNE=0 turns that off
-  thread init [<git-url>]         clone/seed the store at ${HOME}
+  thread sources                  every source in the store, with its open trees
+  thread transfer <id> --to <source>   move a thread and its branches to another source
+  thread init [<git-url>]         clone/seed the store at ${STORE}
   thread sync                     push anything left unpushed
+
+  --source <name> on any command picks the source (a separate tree in the same store); else
+  $THREAD_SOURCE, else threads_source: in .aaw-config.yaml, else the default. An id held by
+  another source is found there. status, tree and list take --source all to show every source.
 
   Store: $THREADS_HOME or ~/.threads. Remote for first use: argument, $THREADS_REMOTE,
   or threads_remote: in .aaw-config.yaml.`);
@@ -920,17 +1095,77 @@ if (cmd === "tree" && pos[0] === "all") {
 }
 const statuses = { done: "done", park: "parked", drop: "dropped" };
 if (!statuses[cmd] && !commands[cmd]) die(`unknown command "${cmd}". Try: thread help`);
-const READ_ONLY = new Set(["status", "show", "fork", "tree", "list", "prune", "sync"]);
+const READ_ONLY = new Set(["status", "show", "fork", "tree", "list", "prune", "sync", "sources"]);
 
 ensureStore();
 pull();
+
+const isId = (x) => typeof x === "string" && /^t-[0-9a-z]+$/.test(x);
+const choice = flags["all-sources"] ? "all" : sourceChoice(flags);
+if (choice === "all") {
+  // A view across every source, one after another; JSON views come back as one array.
+  if (!["status", "tree", "list"].includes(cmd)) die("--source all is only a view: use it with status, tree or list");
+  const out = [];
+  sources().forEach((s, i) => {
+    useSource(s);
+    let evs = readEvents();
+    if ((cmd === "tree" && flags.all) || (cmd === "list" && flags.all)) evs = mergeEvents(evs);
+    const nodes = buildTree(evs);
+    if (cmd === "tree" && pos[0] && !nodes.has(pos[0])) return;
+    if (!flags.json) console.log(`${i ? "\n" : ""}── source: ${s} ──`);
+    const r = commands[cmd](pos, { ...flags, _each: true, all: cmd === "status" ? true : flags.all }, nodes);
+    if (Array.isArray(r)) out.push(...r);
+  });
+  if (flags.json) console.log(JSON.stringify(out, null, 2));
+  process.exit(0);
+}
+useSource(choice);
+
+// An id this source does not hold is looked up in the others, so an anchor resolves from any
+// workspace: the command then runs in the source that holds it.
+const named = [cmd === "open" || cmd === "project" ? null : pos[0], flags.parent, isId(flags.project) ? flags.project : null].filter(isId);
+if (named.length && !["sources", "sync", "prune"].includes(cmd)) {
+  const here = sourceIds(SOURCE);
+  const homes = new Set();
+  for (const id of named) {
+    if (here.has(id)) {
+      homes.add(SOURCE);
+      continue;
+    }
+    const other = sources().find((s) => s !== SOURCE && sourceIds(s).has(id));
+    if (other) homes.add(other);
+  }
+  if (homes.size > 1) die(`${named.join(" and ")} are in different sources (${[...homes].join(", ")}); thread transfer moves a whole tree between them`);
+  const [home] = homes;
+  if (home && home !== SOURCE) {
+    warn(`${named.join(", ")} ${named.length > 1 ? "are" : "is"} in source ${home}; using it`);
+    useSource(home);
+  }
+}
+
 let events = readEvents();
+
+// Events written to this source for threads it has transferred away (by a machine that had
+// not yet seen the transfer) are forwarded to the source the threads went to.
+const moved = movedIds(events);
+const strays = events.filter((e) => e.type !== "transfer" && moved.has(e.id));
+if (strays.length) {
+  for (const { _file, ...body } of strays) {
+    const dest = path.join(sourceDir(moved.get(body.id)), rel(_file));
+    mkdirSync(path.dirname(dest), { recursive: true });
+    writeFileSync(dest, JSON.stringify(body, null, 2) + "\n");
+    rmSync(_file, { force: true });
+  }
+  commitAndPush(`forward ${strays.length} event(s) for transferred threads`);
+  warn(`forwarded ${strays.length} event(s) for transferred threads to their new source`);
+  events = readEvents();
+}
 
 // Bring archived threads back into events/ when they are in play again: an event here for
 // a thread with no open event here (another machine wrote to it while this one archived
-// it), or a thread this command is about to change.
+// it), or a thread this command is about to change. Transferred threads stay where they went.
 const opened = new Set(events.filter((e) => e.type === "open").map((e) => e.id));
-const wanted = new Set(events.filter((e) => !opened.has(e.id)).map((e) => e.id));
+const wanted = new Set(events.filter((e) => e.type !== "transfer" && !opened.has(e.id)).map((e) => e.id));
 if (!READ_ONLY.has(cmd)) {
   for (const id of [cmd === "open" ? null : pos[0], flags.parent]) {
     if (typeof id === "string" && /^t-[0-9a-z]+$/.test(id) && !opened.has(id)) wanted.add(id);
@@ -946,6 +1181,9 @@ let nodes = buildTree(events);
 if (["show", "fork"].includes(cmd) || (cmd === "list" && flags.all) || (cmd === "tree" && (flags.all || (pos[0] && !nodes.has(pos[0]))))) {
   nodes = buildTree(mergeEvents(events));
 }
+const fresh = !existsSync(HOME);
 if (statuses[cmd]) commands.close(pos, flags, nodes, statuses[cmd]);
 else commands[cmd](pos, flags, nodes, undefined, events);
+// A named source starts with its first write; say so, in case the name was a typo.
+if (fresh && existsSync(HOME)) console.log(`(started source ${SOURCE} at sources/${SOURCE}/ in the store)`);
 if (!READ_ONLY.has(cmd)) autoPrune();

@@ -9,6 +9,7 @@
  * Checks what thread.mjs needs before its first write: Node.js 18 or newer, git on the
  * PATH, and either a store at $THREADS_HOME (default ~/.threads) that is a git clone, or
  * a remote to clone it from ($THREADS_REMOTE, or threads_remote: in .aaw-config.yaml).
+ * A source chosen by $THREAD_SOURCE or threads_source: must be a valid name (DD-12).
  *
  * Exit 0: correct (warnings may be printed). Exit 1: problems, one line each.
  * Exit 2: usage or environment error. Offline and read-only: it never clones or fetches.
@@ -42,13 +43,13 @@ try {
   problems.push("git: not found on the PATH. Install git; thread keeps its store in a git clone.");
 }
 
-/** threads_remote: from the nearest .aaw-config.yaml at or above the working directory. */
-function workspaceRemote() {
+/** A top-level key from the nearest .aaw-config.yaml at or above the working directory. */
+function workspaceSetting(key) {
   let dir = process.cwd();
   for (;;) {
     const f = path.join(dir, ".aaw-config.yaml");
     if (existsSync(f)) {
-      const m = /^threads_remote:\s*["']?([^"'#\s]+)/m.exec(readFileSync(f, "utf8"));
+      const m = new RegExp(`^${key}:[ \\t]*["']?([^"'#\\s]+)`, "m").exec(readFileSync(f, "utf8"));
       return m ? m[1] : null;
     }
     const up = path.dirname(dir);
@@ -56,6 +57,7 @@ function workspaceRemote() {
     dir = up;
   }
 }
+const workspaceRemote = () => workspaceSetting("threads_remote");
 
 const home = process.env.THREADS_HOME || path.join(homedir(), ".threads");
 const remote = process.env.THREADS_REMOTE || workspaceRemote();
@@ -73,6 +75,11 @@ if (existsSync(home)) {
   );
 } else {
   warnings.push(`${home}: no thread store yet; thread clones ${remote} on first use.`);
+}
+
+const source = process.env.THREAD_SOURCE || workspaceSetting("threads_source");
+if (source && !/^[a-z0-9][a-z0-9-]*$/.test(source)) {
+  problems.push(`threads_source "${source}": a source is one lowercase word or hyphenated words, such as image-and-video.`);
 }
 
 for (const w of warnings) console.log(`warning: ${w}`);

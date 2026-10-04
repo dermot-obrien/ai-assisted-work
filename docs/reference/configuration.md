@@ -37,7 +37,7 @@ modules:
 - The `aaw` CLI walks up from the current directory to the first folder holding
   `.aaw-config.yaml` or `.git`, and treats that as the workspace root.
 - The `aaw-*` skills and their post-install checks read it at the workspace root.
-- `thread` reads `threads_remote` and `threads_project` from the nearest
+- `thread` reads `threads_remote`, `threads_source` and `threads_project` from the nearest
   `.aaw-config.yaml` above the current directory.
 
 ### Path expansion
@@ -170,6 +170,19 @@ The CLI does not read this key. AAW ships no register and no schema for one.
 Where `thread` clones its store from the first time it runs on a machine. Committing it in
 the workspace is what lets a cloud session find the store without environment variables.
 
+#### threads_source
+
+| | |
+|---|---|
+| Type | a source name: one lowercase word or hyphenated words |
+| Default | unset: the store's default source (`events/` at its root) |
+| Read by | `thread` |
+| Precedence | `--source` on any command, then `$THREAD_SOURCE`, then this key |
+| Example | `threads_source: image-and-video` |
+
+Which tree in the store this workspace reads and writes (DD-12). A named source lives under
+`sources/<name>/` in the store and starts with its first write.
+
 #### threads_project
 
 | | |
@@ -213,6 +226,7 @@ Do not edit it by hand; run the installer again instead.
 | `THREADS_HOME` | `thread` | `~/.threads` | Where the thread store is cloned and read |
 | `THREADS_REMOTE` | `thread` | unset | Remote to clone the store from on first use. Beats `threads_remote` |
 | `THREAD_PROJECT` | `thread` | unset | Default project for root threads. Beats `threads_project` |
+| `THREAD_SOURCE` | `thread` | unset | The store's source this workspace uses (DD-12). Beats `threads_source` |
 | `THREADS_AUTO_PRUNE` | `thread` | on | `0` turns off the daily archive of closed threads |
 | `THREAD_CTX` | `thread` | the git repository's folder name | The project context recorded on a new thread. `--ctx` beats it |
 | `THREAD_TOOL` | `thread` | unset | The tool recorded on a new thread. `--tool` beats it |
