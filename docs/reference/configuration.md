@@ -37,7 +37,8 @@ modules:
 - The `aaw` CLI walks up from the current directory to the first folder holding
   `.aaw-config.yaml` or `.git`, and treats that as the workspace root.
 - The `aaw-*` skills and their post-install checks read it at the workspace root.
-- `thread` reads `threads_remote`, `threads_source` and `threads_project` from the nearest
+- `thread` reads `threads_remote`, `threads_source`, `threads_project`,
+  `threads_master_prefix` and `threads_merges` from the nearest
   `.aaw-config.yaml` above the current directory.
 
 ### Path expansion
@@ -194,6 +195,33 @@ Which tree in the store this workspace reads and writes (DD-12). A named source 
 | Example | `threads_project: t-9c3` |
 
 The project a root thread opened in this workspace goes under.
+
+#### threads_master_prefix
+
+| | |
+|---|---|
+| Type | string |
+| Default | `master` |
+| Read by | the `thread` skill, when it records ownership or wraps a chat |
+| Example | `threads_master_prefix: owner` |
+
+The title prefix that marks the chat owning merges, releases, publishes and deploys for a
+repository group, for example `master: image and video`. The owner note on the tree's root
+stays the record. See the thread skill's `references/ownership.md`.
+
+#### threads_merges
+
+| | |
+|---|---|
+| Type | `master` or `own` |
+| Default | `master` |
+| Read by | the `thread` skill, in `/thread wrap` and `/thread prs` |
+| Example | `threads_merges: own` |
+
+Who merges pull requests. `master`: only the owner recorded on the tree's root; every other
+chat hands its ready pull requests to it. `own`: every chat merges the pull requests it
+opened, for a workspace with one chat at a time. Releases, publishes and deploys stay with
+the master either way.
 
 #### endpoint
 
