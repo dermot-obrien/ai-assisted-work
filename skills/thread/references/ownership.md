@@ -1,12 +1,15 @@
 # Many chats, one tree: the master owns shared actions
 
 Several chats often work on the same repositories at once: branches of the same goal, in
-different tools or on different machines. They form a group. Reading, exploring and editing
-in parallel is fine. Changing shared state from more than one chat is not, because each chat
-acts on what it last saw and none of them sees the others.
+different tools or on different machines. The repositories they share form a group, for
+example a platform repository and the architecture repository that designs it. Reading,
+exploring and editing in parallel is fine. Changing shared state from more than one chat is
+not, because each chat acts on what it last saw and none of them sees the others.
 
-In each group exactly one chat is the **master**. The others are **workers**. Only the master
-takes the actions that change shared state:
+In each repository group exactly one chat is the **master**: one session per group, alone
+merging, releasing, publishing and deploying. The others are **workers**: they open pull
+requests and tell the master what is ready. Only the master takes the actions that change
+shared state:
 
 | Only the master | What goes wrong with two |
 |---|---|
@@ -17,17 +20,20 @@ takes the actions that change shared state:
 
 ## Who the master is
 
-- The master is the chat whose title starts with `master`, for example
+- The master is the chat whose title starts with the owner prefix, for example
   `master: image and video`, or the chat the user names. Only the master uses the prefix.
-- It is also recorded as a note on the tree's root, which every chat can read, cloud sessions
-  included: `note <root> "owner: t-9c3 (master: merges, releases, publishes, deploys)"`. The
-  latest owner note wins. If none is named, ask the user rather than claiming it.
-- In a tool that cannot rename chats, the master puts `master` after the anchor line when it
+  The prefix is `master` unless the workspace sets another (see
+  [Workspace settings](#workspace-settings)).
+- The owner note on the tree's root is the record, which every chat can read, cloud sessions
+  included: `note <root> "owner: t-9c3 (master: merges, releases, publishes, deploys)"`. A
+  title can drift or be read wrongly; the note decides. The latest owner note wins. If none
+  is named, ask the user rather than claiming it.
+- In a tool that cannot rename chats, the master puts the prefix after the anchor line when it
   records ownership, so scrolling up shows it.
 - To hand over, the master notes the new owner on the root and notes on the new master's
   thread what it inherits: open pull requests and their order, anything merged but not
-  released or deployed, and anything half done. The old master drops the `master` prefix and
-  the new one adds it. A master hands over before its thread is closed, parked or dropped.
+  released or deployed, and anything half done. The old master drops the prefix and the new
+  one adds it. A master hands over before its thread is closed, parked or dropped.
 
 ## Workers
 
@@ -70,6 +76,18 @@ not merge in the master's place.
   `develop` and `main`. If a release needs time to settle while `develop` moves on, cut a
   short-lived `release/X.Y` from `develop`, land fixes there, and merge it into `main` (tag)
   and back into `develop`.
+
+## Workspace settings
+
+Two optional keys in the nearest `.aaw-config.yaml` above the working directory change the
+defaults. Read them before a shared action or a wrap.
+
+| Key | Default | Effect |
+|---|---|---|
+| `threads_master_prefix` | `master` | The title prefix that marks the master, for example `threads_master_prefix: owner` gives `owner: image and video` |
+| `threads_merges` | `master` | Who merges pull requests. `master`: only the owner recorded on the root. `own`: every chat merges the pull requests it opened, once they can be merged (a workspace with one chat at a time). Releases, publishes and deploys stay with the master either way |
+
+With neither key set, a chat that is not the recorded owner never merges.
 
 ## Every chat
 

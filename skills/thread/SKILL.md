@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.14.0"
+  version: "0.15.0"
 ---
 
 # Thread
@@ -250,16 +250,18 @@ branches. Report it as an item for that chat's thread.
 Work through this list, doing rather than proposing:
 
 1. **Shared actions.** Before any merge, publish or deploy, read the tree root's notes (see
-   [references/ownership.md](references/ownership.md)). If this chat is not the master, don't
-   take it: hand the pull request to the master (a message to its chat and a note on its
-   thread), and list it as a 🌐 row. If this chat is the master and is about to close, hand
-   over first.
+   [references/ownership.md](references/ownership.md)). A chat takes a shared action only if
+   it is the owner recorded on the root, or the workspace says so (`threads_merges: own` in
+   `.aaw-config.yaml` lets every chat merge the pull requests it opened). Otherwise don't
+   take it: tell the owner what is ready (a message to its chat and a note on its thread),
+   and list it as a 🌐 row. If this chat is the owner and is about to close, hand over first.
 2. **Work in progress.** Commit and push this chat's changes. Open a PR for each branch that
-   needs one. If this chat is the master, merge each PR once it can be merged: checks
-   pass, no review or unresolved conversation is outstanding, and the workspace allows it. A
-   worker makes its PRs ready and hands them to the master instead. Delete merged branches. Wait for running checks and tasks this chat started,
-   unless they will plainly outlast the turn; then record each in a thread with what to do
-   when it finishes, and list it as a 🌐 row.
+   needs one. Never merge by default. Only the owner, or any chat where the workspace says so,
+   merges each PR once it can be merged: checks pass, no review or unresolved conversation is
+   outstanding, and the workspace allows it. Every other chat makes its PRs ready and hands
+   them to the owner, even PRs it opened itself. Delete merged branches. Wait for running
+   checks and tasks this chat started, unless they will plainly outlast the turn; then record
+   each in a thread with what to do when it finishes, and list it as a 🌐 row.
 3. **Knowledge.** Decisions, facts and gotchas that live only in the conversation go where
    they belong: the repository (docs, CLAUDE.md, a runbook) if other people or agents need
    them, the agent's memory if only future sessions do, and a thread note otherwise.
@@ -335,14 +337,16 @@ user. That's what someone switching back from another chat needs.
 ## Many chats, one tree: the master owns shared actions
 
 Several chats often work on the same repositories at once. Reading, exploring and editing in
-parallel is fine, but in each group exactly one chat, the **master**, takes the actions that
-change shared state: merging pull requests, releases and tags, publishes and deploys. Its
-title starts with `master` (for example `master: image and video`), or the user names it, and
-it is recorded as a note on the tree's root
+parallel is fine, but in each repository group exactly one chat, the **master**, takes the
+actions that change shared state: merging pull requests, releases and tags, publishes and
+deploys. Its title starts with the owner prefix, `master` unless the workspace sets
+`threads_master_prefix:` in `.aaw-config.yaml` (for example `master: image and video`), or the
+user names it. The record is a note on the tree's root
 (`note <root> "owner: t-9c3 (master: merges, releases, publishes, deploys)"`). Every other
 chat is a worker: it never merges, not even its own green pull request. It makes the pull
 request ready and hands it to the master (a message to the master's chat and a note on its
-thread; from a cloud session, the pull request description and a thread note).
+thread; from a cloud session, the pull request description and a thread note). A workspace
+where each chat merges its own pull requests says so with `threads_merges: own`.
 
 Read [references/ownership.md](references/ownership.md) before any shared action, before
 handing a pull request to the master, when recording or handing over ownership, or when the
