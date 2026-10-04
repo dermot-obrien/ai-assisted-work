@@ -104,7 +104,8 @@ Action, Thread, Recommendation), without the closing line.
 
 Act only on the recommendations the user names. Merge in the stated order, and only a pull
 request whose review decision allows it. Workspace rules win: where a repository forbids
-merging, the action stays the user's. Before merging another chat's pull request, check the
-tree's ownership notes (see [ownership.md](ownership.md)). Fix a review comment before resolving
+merging, the action stays the user's. Only the master merges (see [ownership.md](ownership.md)):
+check the tree's owner note first, and in a worker hand the ready pull requests to the master
+instead of merging them. Fix a review comment before resolving
 its conversation, and reply saying what changed. Never merge a draft. After each merge, check
 the next pull request in the order is still mergeable.

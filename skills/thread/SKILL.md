@@ -6,7 +6,7 @@ compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/
 metadata:
   author: dermot-obrien
   framework: aaw
-  version: "0.13.0"
+  version: "0.14.0"
 ---
 
 # Thread
@@ -250,13 +250,14 @@ branches. Report it as an item for that chat's thread.
 Work through this list, doing rather than proposing:
 
 1. **Shared actions.** Before any merge, publish or deploy, read the tree root's notes (see
-   [references/ownership.md](references/ownership.md)). If another thread owns that action,
-   don't take it: note on the owner's thread what is ready, and list it as a 🌐 row. If this
-   chat's thread owns it and is about to close, hand over first.
+   [references/ownership.md](references/ownership.md)). If this chat is not the master, don't
+   take it: hand the pull request to the master (a message to its chat and a note on its
+   thread), and list it as a 🌐 row. If this chat is the master and is about to close, hand
+   over first.
 2. **Work in progress.** Commit and push this chat's changes. Open a PR for each branch that
-   needs one. Merge each PR this chat opened once it can be merged: checks pass, no review
-   or unresolved conversation is outstanding, the workspace allows it, and no other thread
-   owns merges. Delete merged branches. Wait for running checks and tasks this chat started,
+   needs one. If this chat is the master, merge each PR once it can be merged: checks
+   pass, no review or unresolved conversation is outstanding, and the workspace allows it. A
+   worker makes its PRs ready and hands them to the master instead. Delete merged branches. Wait for running checks and tasks this chat started,
    unless they will plainly outlast the turn; then record each in a thread with what to do
    when it finishes, and list it as a 🌐 row.
 3. **Knowledge.** Decisions, facts and gotchas that live only in the conversation go where
@@ -331,17 +332,21 @@ When you finish a long-running task in a chat that has a thread, start your repl
 anchor line, then one line of what you did and one line saying what, if anything, needs the
 user. That's what someone switching back from another chat needs.
 
-## Many chats, one tree: one owner for shared actions
+## Many chats, one tree: the master owns shared actions
 
-Several chats often work under one tree at once. Reading, exploring and editing in parallel
-is fine, but in each tree exactly one thread owns the actions that change shared state:
-deploys, publishes, and merges into a shared branch. The owner is recorded as a note on the
-tree's root (`note <root> "owner: t-9c3 (deploys, publishes, merges)"`). Before a shared
-action, run `resume <root>` and read the notes; if another thread owns it, do not act.
+Several chats often work on the same repositories at once. Reading, exploring and editing in
+parallel is fine, but in each group exactly one chat, the **master**, takes the actions that
+change shared state: merging pull requests, releases and tags, publishes and deploys. Its
+title starts with `master` (for example `master: image and video`), or the user names it, and
+it is recorded as a note on the tree's root
+(`note <root> "owner: t-9c3 (master: merges, releases, publishes, deploys)"`). Every other
+chat is a worker: it never merges, not even its own green pull request. It makes the pull
+request ready and hands it to the master (a message to the master's chat and a note on its
+thread; from a cloud session, the pull request description and a thread note).
 
-Read [references/ownership.md](references/ownership.md) before any shared action, when
-recording or handing over ownership, or when the user asks a chat that is not the owner to
-act.
+Read [references/ownership.md](references/ownership.md) before any shared action, before
+handing a pull request to the master, when recording or handing over ownership, or when the
+user asks a worker to merge or deploy.
 
 ## When sync fails
 
