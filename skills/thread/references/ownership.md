@@ -1,38 +1,84 @@
-# Many chats, one tree: one owner for shared actions
+# Many chats, one tree: the master owns shared actions
 
-Several chats often work under one tree at once: branches of the same goal, in different
-tools or on different machines. Reading, exploring and editing in parallel is fine. Changing
-shared state from more than one chat is not, because each chat acts on what it last saw and
-none of them sees the others.
+Several chats often work on the same repositories at once: branches of the same goal, in
+different tools or on different machines. They form a group. Reading, exploring and editing
+in parallel is fine. Changing shared state from more than one chat is not, because each chat
+acts on what it last saw and none of them sees the others.
 
-In each tree, exactly one thread owns the actions that change shared state:
+In each group exactly one chat is the **master**. The others are **workers**. Only the master
+takes the actions that change shared state:
 
-| Owned by one thread per tree | What goes wrong with two |
+| Only the master | What goes wrong with two |
 |---|---|
+| Merging pull requests into the integration branch (`develop` under Git Flow), and rebasing or force-pushing a shared branch | One chat's integration undoes or duplicates the other's |
+| Opening and merging a release pull request (`develop` into `main`), when the user asks for a release, and tagging it | Two releases cut from different commits |
+| Publishing data or packages that people or services read | The last publish wins, silently |
 | Deploys, infrastructure applies, and image builds that decide what gets deployed | The environment ends up running code that neither chat tested |
-| Publishing data that people or services read | The last publish wins, silently |
-| Merging into, rebasing or force-pushing a shared branch | One chat's integration undoes or duplicates the other's |
 
-How it works:
+## Who the master is
 
-- The owner is recorded as a note on the tree's root:
-  `note <root> "owner: t-9c3 (deploys, publishes, merges)"`. If no owner is named, the first
-  chat that needs a shared action records itself. The latest owner note wins.
-- Before a shared action, run `resume <root>` and read the notes. If another thread owns it,
-  do not act. Say in one line which thread owns it, and leave a note on the owner's thread
-  saying what is ready (commit, branch, what to deploy).
-- If the user asks a chat that is not the owner to act anyway, say which thread owns it and
+- The master is the chat whose title starts with `master`, for example
+  `master: image and video`, or the chat the user names. Only the master uses the prefix.
+- It is also recorded as a note on the tree's root, which every chat can read, cloud sessions
+  included: `note <root> "owner: t-9c3 (master: merges, releases, publishes, deploys)"`. The
+  latest owner note wins. If none is named, ask the user rather than claiming it.
+- In a tool that cannot rename chats, the master puts `master` after the anchor line when it
+  records ownership, so scrolling up shows it.
+- To hand over, the master notes the new owner on the root and notes on the new master's
+  thread what it inherits: open pull requests and their order, anything merged but not
+  released or deployed, and anything half done. The old master drops the `master` prefix and
+  the new one adds it. A master hands over before its thread is closed, parked or dropped.
+
+## Workers
+
+A worker never merges (not even its own pull request with every check green), never pushes to
+`develop` or `main`, never tags, publishes or deploys, and never retargets or edits another
+chat's pull request. When the user tells a worker to "merge", it hands the pull request to
+the master instead.
+
+A worker makes its pull request ready:
+
+- The branch starts from the integration branch (`origin/develop`) and the pull request
+  targets it.
+- Checks pass, or there are none, and GitHub says it can be merged.
+- The description says what changed and how it was checked.
+- Open items are in threads.
+- Pull requests that depend on each other are stacked, with the merge order stated.
+
+Then it tells the master:
+
+- **Locally:** a message to the master's chat (in Claude Code, `SendMessage` to the session
+  found with `ListAgents`) with the link, what it holds, how it was tested and what it
+  overlaps with, plus the same as a note on the master's thread.
+- **From a cloud session**, which cannot message back: the same in the pull request
+  description and in a note on its own thread. The master finds it with `/thread prs`.
+
+If no master is running, the worker tells the user and leaves the pull request open; it does
+not merge in the master's place.
+
+## The master
+
+- Before a shared action, run `resume <root>` and read the notes to confirm it is still the
+  owner.
+- Merge with a merge commit once the checks pass and any overlap with other open pull requests
+  is resolved, in the stated order. Delete the branch, then tell the worker it is in.
+- Open the release pull request (`develop` into `main`) only when the user asks for a release,
+  merge it with a merge commit (never squash, or the two branches' histories diverge), and tag
+  the release on `main`.
+- Deploys promote the same commit: `develop` to a staging or preview environment where there
+  is one, production from a tagged release on `main`. There is no long-lived branch between
+  `develop` and `main`. If a release needs time to settle while `develop` moves on, cut a
+  short-lived `release/X.Y` from `develop`, land fixes there, and merge it into `main` (tag)
+  and back into `develop`.
+
+## Every chat
+
+- If the user asks a worker to take a shared action anyway, say which chat is the master and
   act only once they confirm. Then record the new owner on the root.
-- To hand over, the owner notes the new owner on the root, and notes on the new owner's
-  thread what it inherits: anything built but not deployed, and anything half done. A thread
-  that owns shared actions hands over before it is closed, parked or dropped.
-- Make the owner visible where the chat list is. In a tool that can rename chats, the owning
-  chat's title starts with `main · `, for example `main · earnings lab`. Only the owner uses
-  the prefix. On handover the old owner drops it and the new owner adds it. In a tool that
-  cannot rename chats, the owner puts `main` after the anchor line when it records ownership,
-  so scrolling up shows it.
 - Each chat works in its own checkout or git worktree. Two chats in one folder overwrite each
   other's uncommitted edits, and each picks up the other's changes in its commits.
+- Workspace rules win: where a repository's instructions name a different owner or forbid an
+  action, follow them.
 
-This sits alongside work-item locks (the `aaw-progress-work` skill's concurrency reference). A lock
-decides who works an activity; the tree's owner decides who changes shared environments.
+This sits alongside work-item locks (the `aaw-progress-work` skill's concurrency reference). A
+lock decides who works an activity; the master decides who changes shared environments.

@@ -7,6 +7,15 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- thread 0.14.0: the chat that owns shared actions is the **master**: its title starts with
+  `master` (was `main · `), or the user names it, and it is recorded as an `owner:` note on the
+  tree's root. Only the master merges into `develop`, opens and merges release pull requests,
+  tags, publishes and deploys. Workers never merge, not even their own green pull request: they
+  make it ready and hand it to the master (a message and a note on the master's thread; from a
+  cloud session, the pull request description and a thread note found with `/thread prs`).
+  `/thread wrap` and `/thread prs` follow the same rule. See `references/ownership.md`.
+
 ### Added
 - thread 0.13.0: sources (DD-12). One store holds separate trees for separate segments of work:
   the default source at its root, named ones under `sources/<name>/`. A workspace picks one
