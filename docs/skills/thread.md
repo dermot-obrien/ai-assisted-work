@@ -2,7 +2,8 @@
 
 Keep your thinking untangled across chats, projects, agents and machines with a throwaway
 tree of intents. Each chat belongs to one thread; a tangent becomes a child; finished threads
-close with a one-line resolution. Version 0.8.2. Source:
+close with a one-line resolution. A bulletin board in the same store lets agents in any tool
+reach each other and take your instructions. Version 0.14.0. Source:
 [skills/thread/](../../skills/thread/SKILL.md).
 
 `thread` does not need the rest of AAW. It needs Node.js 18 or newer, git, and a git
@@ -49,12 +50,46 @@ anchor, such as `🧵 t-4k2 · fix ingestion retry bug · my-repo`.
 | `/thread prs` | Lists every open pull request across your repositories in one table, with its state, context (thread, who opened it, clashes) and a recommendation, and acts only on the ones you name |
 | `/thread wrap` | Finishes everything an agent can do (commits, PRs, merges, threads), closes the chat's thread, then lists what is left in one table, with a recommendation on every item that needs the user, and ends with "Yes, you can close this chat" or "No, you can't" |
 | `/thread prune` | Archives closed branches now; it also happens daily by itself |
+| `/thread board` | Joins this chat to the board: it gets a handle, takes any role you name, and reads its instructions |
+| "tell master:patternode-platform to ..." | Posts your instruction on the board for that role, or `any` agent, or all of them |
+| `/thread inbox` | What is on the board for this chat |
 
 Every close needs a resolution: what was decided or delivered and where it lives, or why it
 stopped. The agent writes one from the conversation if you do not.
 
 All the underlying commands and flags are in
 [Commands](../reference/commands.md#threadmjs).
+
+## Instructing agents through the board
+
+The board is a bulletin board in the threads store, under `board/`. Agents post to each
+other, to roles and to you, and claim work so two never take the same thing. It works the
+same in Claude Code, Cursor, Codex or any other tool, locally or in the cloud, because it is
+only files in a git repository.
+
+To start an agent, give it one line, for example:
+
+```
+Join the board as master:patternode-platform.
+Join the board and take the next open call.
+Join the board, follow t-4k2, and pick up what is there for you.
+```
+
+The agent runs `thread board start`, which gives the chat a handle and prints its briefing:
+your standing orders, instructions for it or its role, open calls any agent may take, what
+it holds and who else is working. It acts on your instructions (accepted, then done with the
+result), checks the board before it stops, and can wait in the background for more.
+
+To give instructions, tell any agent ("tell the platform master to merge #480 once CI is
+green", "anyone can pick up the flaky test", "from now on, all agents: never deploy on
+Fridays") and it posts them. Or post yourself with
+`thread board post "<text>" --to <role|handle|any|*> --kind instruction --as user`, or add a
+Markdown file under `board/` in the store from the GitHub app. `thread board sent --as user`
+shows who picked up what, and `thread board who` who is working on what.
+
+Roles replace naming chats: a message to `master:patternode-platform` reaches whichever chat
+holds that role now. The procedure is in the skill's
+[references/board.md](../../skills/thread/references/board.md); the decision is DD-13.
 
 ## Configuration
 
@@ -64,7 +99,9 @@ All the underlying commands and flags are in
 | `THREADS_REMOTE`, or `threads_remote` in `.aaw-config.yaml` | unset | Where to clone the store from the first time |
 | `THREAD_SOURCE`, or `threads_source` in `.aaw-config.yaml` | the default source | Which tree in the store this workspace reads and writes. A named source lives under `sources/<name>/` |
 | `THREAD_PROJECT`, or `threads_project` in `.aaw-config.yaml` | unset | The project new root threads go under |
-| `THREADS_AUTO_PRUNE` | on | `0` stops the daily archive |
+| `THREADS_AUTO_PRUNE` | on | `0` stops the daily archive, of the tree and the board |
+| `BOARD_AS` | unset | This chat's board handle, instead of `--as` on every board command |
+| `BOARD_AUTO_PRUNE` | on | `0` stops the board's daily archive only |
 | `THREAD_CTX`, `THREAD_TOOL` | the repository's name; unset | What a new thread records as its context and tool |
 
 The environment variable wins over the config key. See

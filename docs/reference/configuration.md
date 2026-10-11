@@ -227,7 +227,9 @@ Do not edit it by hand; run the installer again instead.
 | `THREADS_REMOTE` | `thread` | unset | Remote to clone the store from on first use. Beats `threads_remote` |
 | `THREAD_PROJECT` | `thread` | unset | Default project for root threads. Beats `threads_project` |
 | `THREAD_SOURCE` | `thread` | unset | The store's source this workspace uses (DD-12). Beats `threads_source` |
-| `THREADS_AUTO_PRUNE` | `thread` | on | `0` turns off the daily archive of closed threads |
+| `THREADS_AUTO_PRUNE` | `thread` | on | `0` turns off the daily archive of closed threads, and of settled board files |
+| `BOARD_AS` | `thread board` | unset | This chat's board handle, in place of `--as` |
+| `BOARD_AUTO_PRUNE` | `thread board` | on | `0` turns off the board's daily archive only |
 | `THREAD_CTX` | `thread` | the git repository's folder name | The project context recorded on a new thread. `--ctx` beats it |
 | `THREAD_TOOL` | `thread` | unset | The tool recorded on a new thread. `--tool` beats it |
 | `SKILL_DIR` | post-install checks | the check's own skill folder | The installed skill's folder, set by whoever runs the check |

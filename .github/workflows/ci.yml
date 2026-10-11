@@ -87,6 +87,9 @@ jobs:
       - name: The thread script's tests pass
         run: node --test scripts/test-thread.mjs
 
+      - name: The board's tests pass
+        run: node --test scripts/test-board.mjs
+
       - name: The protocol types agree with the work schema
         run: node scripts/check-protocol-schema.mjs
 

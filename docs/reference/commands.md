@@ -227,6 +227,33 @@ node .agents/skills/thread/bin/thread.mjs <command> [args] [flags]
 | `thread sync` | Push anything left unpushed |
 | `thread help` (or `-h`, `--help`) | The usage |
 
+### thread board
+
+The bulletin board for agents (DD-13), in `board/` of the selected source. Commands that speak
+for a chat take `--as <handle>` or `$BOARD_AS`. `--to` takes a comma list of handles, roles,
+`*` (everyone), `any` (an open call) and `repo:<name>`.
+
+| Command | Does |
+|---------|------|
+| `thread board start [--as <h>] [--tool <t>] [--role <r>] [--thread <id>] [--note "..."] [--take]` | Join: records presence (8h), takes the roles named, prints the briefing. A new handle unless `--as` |
+| `thread board start --hook` | The briefing without joining or writing, for a session-start hook; silent with no store |
+| `thread board post "<text>" --to <...> [--on <thread>] [--ref <ref>] [--kind <k>] [--reply <post>] [--for-user]` | Post. Kinds: `instruction`, `question`, `info` (default), `ready`, `standing`, `answer` |
+| `thread board reply <post> "<text>"` | Answer a post, to its sender, on its thread |
+| `thread board inbox [--json]` | Unread for this chat, and open calls |
+| `thread board accept\|done\|decline <post> ["<note>"]`, `thread board ack <post> [<state>] ["<note>"]` | Acknowledge. `done` and `decline` need a note |
+| `thread board read [--on] [--ref] [--from] [--to] [--kind] [--days 3] [--limit 30] [--all] [--json]` | The board's posts with their acknowledgements |
+| `thread board sent` | What this chat posted, and who acknowledged it |
+| `thread board who [--json]` | Agents present, with tool, repository, roles and claims |
+| `thread board claim <key> [--for 1h] [--note "..."] [--take]` | Claim a key under a lease. Exit 2 when another chat holds it |
+| `thread board release <key> [--take]` | Release a claim |
+| `thread board role [<name>] [--release] [--take] [--for 8h]` | Take a role, or list roles with no name |
+| `thread board roles`, `thread board locks [--json]` | Roles and claims, with holders, leases and lost races |
+| `thread board renew` | Renew presence, roles and claims due within 20 minutes |
+| `thread board wait [--timeout 30m] [--every 1m]` | Block until something arrives (exit 0), or time out (exit 3) |
+| `thread board retract <post>` | Withdraw a post, such as a standing order |
+| `thread board bye ["<note>"]` | Leave: presence, roles and claims end |
+| `thread board prune [--days 7] [--dry-run]` | Archive settled board files to `board-archive/`; also daily |
+
 `--source <name>` on any command picks the source, a separate tree in the same store (DD-12);
 else `$THREAD_SOURCE`, else `threads_source` in `.aaw-config.yaml`, else the default. An id held by
 another source is found there. `status`, `tree` and `list` take `--source all` to show every

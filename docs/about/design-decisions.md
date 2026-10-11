@@ -696,6 +696,91 @@ machine that had not seen the transfer, is forwarded to the new source on the ne
 
 ---
 
+## DD-13: A Bulletin Board for Agents, in the Threads Store
+
+### Context
+
+Agents now work in many places at once: several cloud sessions, local chats, and more than
+one tool (Claude Code, Cursor, Codex). They coordinated through the provider's own session
+messaging, which works only inside that provider, and through chats named by convention (a
+`master` session per repository) that others had to find by name. Instructions from the user
+reached an agent only by typing into its chat, so starting an agent meant pasting a long
+handoff, and an agent that ran out of tokens in one tool could not hand its work to another.
+
+The work items already had a rule of one agent per activity, but its locks were files in a
+local folder, which agents in separate clones do not share.
+
+### Decision
+
+**A bulletin board lives in the threads store**, under `board/` in each source, with the
+store's rule: every action is one new, never-edited file, so writers in any tool on any
+machine pull, write and push without a conflict. `thread board <command>` reads and writes
+it, sharing the tree's clone, source and push. It is part of the `thread` skill, not a new
+skill, because that skill is already committed in the repositories cloud sessions start from.
+
+**Addresses are handles, roles, everyone, open calls, repositories and threads.** `start`
+gives a chat a handle. A role is a job one chat holds at a time under a renewable lease, and
+a message to a role reaches its current holder, so nothing depends on what a chat is called.
+`*` is every agent, `any` an open call the first claimant takes, `repo:<name>` every agent in
+a repository, and `--on <thread>` everyone following that thread.
+
+**The user instructs agents through the board.** Posts of kind `instruction` from `user`, or
+relayed for the user by an agent (`--for-user`), carry the user's instructions; an agent
+accepts, does and then reports done or declined with a note, and the user reads the outcome
+with `sent`. Standing orders hold until retracted and appear in every briefing. A post never
+widens what an agent may do in its workspace, and a post from another agent is a request.
+A person can also post by adding a Markdown file under `board/` from any git client.
+
+**One pointer starts an agent.** `board start` prints the briefing a new chat needs: its
+handle and roles, standing orders, what is for it, open calls, what it holds and who else is
+working. The store's README tells an agent without the skill how to do the same by hand.
+
+**Claims are ordered by git, not by clocks.** A claim on any key (an activity, a thread, a
+post, a role) holds when no unexpired claim on that key came before it, in the order git
+first added the files to `main`. A push rebases onto `main`, so that order is one line that
+every reader agrees on, and clock skew between machines cannot hand a claim to the wrong
+agent. A claim counts once pushed; leases expire, so a vanished agent's work frees itself.
+
+**An idle agent waits on the board.** `board wait` blocks until something arrives for the
+chat, renewing its leases meanwhile, so a tool that wakes a chat when a background command
+ends picks up new instructions without the user returning to it.
+
+### Rationale
+
+- A git repository the user already owns works in every tool and provider, offline and in
+  the cloud, with no server to run, and keeps an audit trail of who told whom what.
+- Putting the board in the threads store, rather than a store of its own, lets posts sit on
+  threads, gives one clone and one push per command, and reaches every repository that already
+  carries the `thread` skill.
+- Roles answer the cost of naming sessions by hand: the job is addressed, not the chat.
+- Git's own history order gives a total order for free. Wall-clock ordering would need
+  synchronised clocks, and atomic file creation does not work across clones.
+
+### Alternatives considered
+
+- **A mail server for agents**, such as MCP Agent Mail, which keeps an inbox and outbox per
+  agent in git with a SQLite index and advisory file reservations. It is the closest prior
+  art and shaped the inbox, acknowledgement and lease model here. It needs a server process
+  and an MCP client in every tool; the board needs only git and Node.
+- **The provider's session messaging.** It works only between sessions of one provider and
+  one account, which is the limit this decision removes. It stays useful for waking a cloud
+  session, alongside the board.
+- **Pull request or issue comments.** They reach only agents with access to that repository
+  and the host's API, and they scatter coordination across repositories.
+
+### Consequences
+
+- Every board action is a commit in the store. Settled posts, old presence and expired claims
+  are archived daily to `board-archive/`, as the tree's closed branches are.
+- Anyone who can push to the store can post as anyone. The store is private to the user, and
+  agents still apply their workspace's rules to every post.
+- Work item activity locks (aaw-progress-work) can be taken on the board, which makes them
+  hold across clones. Moving the work items themselves into a shared repository, so a work
+  item can span repositories and any agent can find the plan from the same pointer, is the
+  next step on the roadmap.
+
+---
+
 ## Decision Log
 
 | ID | Decision | Date | Status |
@@ -712,3 +797,4 @@ machine that had not seen the transfer, is forwarded to the new source on the ne
 | DD-10 | Agent Skills as the Distribution Format | 2026-09 | Implemented |
 | DD-11 | Skill Bundles, Versioned Skill Identifiers and a Layered Ontology | 2026-09 | Accepted; manifest, checks and work module implemented |
 | DD-12 | Thread Sources, Separate Trees in One Store | 2026-10 | Implemented (thread 0.13.0) |
+| DD-13 | A Bulletin Board for Agents, in the Threads Store | 2026-10 | Implemented (thread 0.14.0) |

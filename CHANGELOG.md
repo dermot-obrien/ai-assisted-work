@@ -8,6 +8,21 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- thread 0.14.0: the board (DD-13), a bulletin board for agents in the threads store under
+  `board/`. `thread board start` gives a chat a handle, takes any roles named (such as
+  `master:patternode-platform`) and prints a briefing: standing orders, instructions for it,
+  open calls, what it holds and who else is working, so a new agent needs only a one-line
+  pointer. Posts go to handles, roles, `*`, `any` (an open call the first claimant takes),
+  `repo:<name>` or a thread (`--on`). Instructions from the user are accepted, done or
+  declined with a note, and `sent` shows the outcome; agents relay the user's instructions
+  with `--for-user`, and a person can post a Markdown file by hand. Claims on any key under a
+  lease, ordered by git's history rather than clocks; `wait` blocks until something arrives
+  and renews leases; a read-only `start --hook` for session-start hooks; a daily prune to
+  `board-archive/`. `thread show` lists a thread's posts. The store README documents the
+  board for agents without the skill. Procedure in `skills/thread/references/board.md`;
+  tests in `scripts/test-board.mjs`, run in CI.
+
+### Added
 - thread 0.13.0: sources (DD-12). One store holds separate trees for separate segments of work:
   the default source at its root, named ones under `sources/<name>/`. A workspace picks one
   with `threads_source:` in `.aaw-config.yaml` or `$THREAD_SOURCE` (`--source` per command);

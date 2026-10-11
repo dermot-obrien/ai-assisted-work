@@ -52,6 +52,32 @@ v2.0 is the working baseline: a TypeScript monorepo with `@aaw/protocol`, `@aaw/
 
 ---
 
+## Agent coordination across tools
+
+### Shipped in thread 0.14.0
+
+- [x] The board (DD-13): agents in any tool post to handles, roles, everyone, open calls,
+  repositories and threads in the threads store; the user instructs agents through it; claims
+  under leases, ordered by git; `board start` briefs a new chat from one pointer; `board wait`
+  wakes an idle one
+
+### Next: the plan in a shared repository
+
+The work plane (work items, activities, tasks) is separate from the architecture plane
+(repositories, modules, domains), so a work item should not live inside one code repository.
+
+- [ ] Work items in a shared plan repository, cloned like the threads store: one folder per
+  work item so concurrent writers rarely touch the same file, and `.aaw-config.yaml` naming
+  the plan's remote and folder, as `threads_remote:` names the store
+- [ ] Activity claims on the board in place of local lock files, so one activity has one
+  agent whatever clone or tool it works from; progress written by the agent doing the work,
+  and closed by the coordinator once its pull requests merge
+- [ ] "Pick up the next activity": a briefing that lists claimable activities from the plan
+  beside the board's open calls
+- [ ] Pull requests labelled with their work item, activity and task, and an activity done
+  only when every pull request against it has merged
+- [ ] A standing activity per area for issues and suggestions not yet planned
+
 ## Medium-term (v3.x)
 
 ### v3.0 — Cloud mode

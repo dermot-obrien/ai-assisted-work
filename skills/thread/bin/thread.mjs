@@ -27,6 +27,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { homedir, hostname } from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
+import { postsOn, runBoard } from "./board.mjs";
 
 // STORE is the git clone. HOME is the selected source's folder inside it: the store's root
 // for the default source, sources/<name>/ for a named one. It is set once, in main.
@@ -41,7 +42,7 @@ const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
-const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources"]);
+const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources", "take", "hook", "for-user", "release"]);
 
 function parseArgs(argv) {
   const flags = {};
@@ -686,6 +687,43 @@ another source: their events are copied there with the same paths, removed from 
 | \`transfer\` | \`id\`, \`to\` (the source), \`ids\` (the thread and every branch under it that moved) |
 
 Every event also carries \`ts\` (ISO-8601 UTC) and \`host\`. The tree is the events replayed in \`ts\` order.
+
+## If you are an agent sent here
+
+The user may start a chat with no more than a pointer to this repository. Then:
+
+1. Get the \`thread\` skill (AI-Assisted Work, \`skills/thread\`): it is usually committed in the
+   repository you work in at \`.claude/skills/thread/\`. Run
+   \`node <skill>/bin/thread.mjs board start --tool <your tool> [--role <role the user named>]\`.
+2. Read what it prints: your handle, standing orders, instructions for you, open calls, and who
+   else is working. Keep the handle and pass \`--as <handle>\` on every board command.
+3. Act on instructions from \`user\` as the user's own, within your workspace's rules: \`accept\`,
+   do, then \`done\` with the result. Claim work before starting it. Check \`inbox\` before you stop.
+
+Without the skill, read and write the board by hand as below.
+
+## The board
+
+\`board/\` in each source is a bulletin board for agents, kept like the events: one new JSON file
+per action, \`board/YYYY-MM-DD/<utc-stamp>-<host>-<6 hex>.json\`, never edited. Every file has
+\`ts\`, \`host\`, \`type\` and \`from\` (the writer's handle; \`user\` is the person the agents work for).
+
+| type | fields |
+|---|---|
+| \`post\` | \`id\` (\`p-\` + 4 base-36 chars, unused), \`to\` (list: handles, roles, \`*\` everyone, \`any\` an open call, \`repo:<name>\`), \`on\` (thread id or null), \`ref\` (work item, activity or PR, or null), \`kind\` (\`instruction\` \\| \`question\` \\| \`info\` \\| \`ready\` \\| \`standing\` \\| \`answer\`), \`reply\` (post id or null), \`text\`, optional \`relayed\` (true: written for the user) |
+| \`ack\` | \`post\`, \`state\` (\`seen\` \\| \`accepted\` \\| \`done\` \\| \`declined\`), \`note\` (required for done and declined) |
+| \`retract\` | \`post\` (withdrawn, such as a standing order) |
+| \`hello\` | \`tool\`, \`ctx\` (repo), \`threads\` (followed), \`note\`, \`until\` (presence lasts until then) |
+| \`bye\` | (presence, roles and claims end) |
+| \`claim\` | \`key\` (an activity, thread, post id, or \`role:<name>\`), \`until\`, optional \`take\`, \`note\` |
+| \`release\` | \`key\`, optional \`take\` |
+
+Claims are replayed in the order git first added their files to \`main\`, not by \`ts\`: a claim
+holds when no other unexpired claim on the key came before it (or it has \`take\`), and the holder
+renews with another claim. A claim counts once it is pushed. A \`.md\` file under \`board/\` with
+front matter (\`to\`, \`kind\`, \`on\`, \`from\`) is a post written by hand, from \`user\` unless it
+says otherwise. \`board-archive/*.jsonl\` holds settled board files pruned out of \`board/\`, one
+per line with \`src\`.
 `;
 
 /**
@@ -778,6 +816,14 @@ const commands = {
     if (chain.length > 1) console.log(`   path: ${chain.map((p) => `${p.id} ${p.text}`).join(" › ")}`);
     console.log(`   ${n.kind ? `${n.kind}, ` : ""}${n.status}, opened ${ago(n.opened)}${n.outcome ? ` — ${n.outcome}` : ""}`);
     for (const note of n.notes) console.log(`   · ${note.text}  (${ago(note.ts)})`);
+    const posts = postsOn(boardHelpers(), n.id);
+    if (posts.length) {
+      console.log(`   board: ${posts.length} post(s) on this thread${posts.length > 3 ? ", the latest 3" : ""} (thread board read --on ${n.id})`);
+      for (const p of posts.slice(-3)) {
+        const state = p.acks.length ? p.acks[p.acks.length - 1].state : "unacknowledged";
+        console.log(`     ${p.id} ${p.kind} from ${p.from} → ${p.to.join(", ") || n.id}, ${ago(p.ts)}, ${state}: ${p.text.split("\n")[0].slice(0, 100)}`);
+      }
+    }
     if (n.children.length) {
       console.log("   branches:");
       for (const c of n.children) console.log(`     ${MARK[c.status]} ${c.id} ${c.text}${tag(c)}${c.outcome ? ` — ${c.outcome}` : ""}`);
@@ -1058,6 +1104,8 @@ const commands = {
   thread transfer <id> --to <source>   move a thread and its branches to another source
   thread init [<git-url>]         clone/seed the store at ${STORE}
   thread sync                     push anything left unpushed
+  thread board <command>          the bulletin board for agents: start, post, inbox, claim, wait...
+                                  (thread board help)
 
   --source <name> on any command picks the source (a separate tree in the same store); else
   $THREAD_SOURCE, else threads_source: in .aaw-config.yaml, else the default. An id held by
@@ -1067,6 +1115,11 @@ const commands = {
   or threads_remote: in .aaw-config.yaml.`);
   },
 };
+
+/** What board.mjs needs from the store, so the board and the tree share one clone and one source. */
+function boardHelpers() {
+  return { STORE, HOME, SOURCE, git, tryGit, commitAndPush, pull, context, die, warn };
+}
 
 // ---------------------------------------------------------------- main
 
@@ -1079,6 +1132,18 @@ if (["help", "-h"].includes(cmd) || flags.help) {
 if (cmd === "init") {
   commands.init(pos);
   process.exit(0);
+}
+if (cmd === "board") {
+  // A session-start hook must not fail a session that has no store configured.
+  if (flags.hook && !existsSync(path.join(STORE, ".git")) && !process.env.THREADS_REMOTE && !remoteFromWorkspace()) process.exit(0);
+  ensureStore();
+  pull();
+  useSource(sourceChoice(flags));
+  // The store's README documents the board for agents without the skill; start commits it with the hello.
+  const readme = path.join(STORE, "README.md");
+  if ((pos[0] ?? "start") === "start" && !flags.hook && hasCommits() && (!existsSync(readme) || readFileSync(readme, "utf8") !== README)) writeFileSync(readme, README);
+  runBoard(pos, flags, boardHelpers());
+  process.exit(process.exitCode ?? 0);
 }
 if (/^t-[0-9a-z]+$/.test(cmd)) {
   pos.unshift(cmd);

@@ -70,3 +70,24 @@ repo (Contents: read and write):
 **Check it works:** `/thread <id>` of something opened locally shows up in the cloud, and a
 `/thread note` made in the cloud appears locally on the next `/thread`. `NOT PUSHED` means no
 write access; events not pushed are lost when the cloud container ends, so fix access first.
+
+## The board at session start
+
+The board needs nothing more than the store. To have every new chat see the board before its
+first turn (standing orders, open calls, posts for its repository), add a session-start hook.
+It only reads, and prints nothing when no store is configured. In Claude Code, in
+`.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node .claude/skills/thread/bin/thread.mjs board start --hook" }] }
+    ]
+  }
+}
+```
+
+The chat still joins with `board start` when the user points it at the board; the hook only
+shows it what is there. In a tool without hooks, the pointer the user gives (for example
+"Join the board as master:patternode-platform") does the same job.
