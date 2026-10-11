@@ -187,7 +187,8 @@ function bundleOf(src, ws, flags, commit) {
   }
   const { cache, url } = fetchRepo(src.bundle, src.ref, ws, `bundle ${src.bundle}`, commit);
   if (!existsSync(path.join(cache, "bundle.json"))) die(`${url}: no bundle.json at its root`);
-  return { ...JSON.parse(readFileSync(path.join(cache, "bundle.json"), "utf8")), root: cache, commit: git(["rev-parse", "HEAD"], cache), url };
+  // The lock records the repository as declared: a mirror ($SKILLS_BASE_URL) is where it was fetched from, not what it is.
+  return { ...JSON.parse(readFileSync(path.join(cache, "bundle.json"), "utf8")), root: cache, commit: git(["rev-parse", "HEAD"], cache), url: src.bundle, fetchedFrom: url };
 }
 
 // ---------------------------------------------------------------- installing
@@ -269,6 +270,14 @@ function installOne(skill, bundle, ws, flags, lock) {
   mkdirSync(path.dirname(target), { recursive: true });
   cpSync(dir, target, { recursive: true, filter: (p) => path.basename(p) !== ".git" });
   const linked = linkClaude(ws, skill.name, target, flags.copy);
+  // From copies on this machine (--from), keep the provenance the lock already holds, so an
+  // offline install neither loses the pinned commit nor leaves the committed lock changed.
+  const kept = typeof flags.from === "string" ? lock.skills[skill.name] : null;
+  if (kept) {
+    lock.skills[skill.name] = { ...kept, version: fm.version ?? kept.version, hash: hashDir(target) };
+    say(`installed ${skill.name}${fm.version ? ` ${fm.version}` : ""} from ${origin}, keeping its locked source${linked ? ` (.claude/skills ${linked})` : ""}`);
+    return fm;
+  }
   lock.skills[skill.name] = {
     version: fm.version,
     source: skill.source ? skill.source.repo : typeof flags.from === "string" ? "folder" : bundle.url === "workspace" ? "workspace" : "bundle",
@@ -317,8 +326,8 @@ const commands = {
     const installed = [];
     for (const src of decl.sources) {
       if (src.bundle) {
-        const url = mirrored(src.bundle);
-        const prior = Object.values(lock.skills).find((e) => e.bundle === url && e.source === "bundle");
+        // Locks written while a mirror was set recorded the mirrored URL; accept either.
+        const prior = Object.values(lock.skills).find((e) => e.source === "bundle" && (e.bundle === src.bundle || e.bundle === mirrored(src.bundle)));
         if (locked && !prior && typeof flags.from !== "string") die(`--locked: the lock has no commit for bundle ${src.bundle}; run skills sync first`);
         const bundle = { ...bundleOf(src, ws, flags, locked ? prior?.commit : undefined), ref: src.ref ?? null };
         for (const s of chosen(bundle, src.skills || [])) {
