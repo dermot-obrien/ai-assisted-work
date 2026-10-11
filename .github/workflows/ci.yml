@@ -158,7 +158,8 @@ jobs:
       # lists therefore covers exactly the skills aaw install places.
       - name: Validate every skill bundle.json lists
         run: |
-          paths=$(node -e 'for (const s of require("./bundle.json").skills) console.log(s.path)')
+          # A skill with a source lives in a repository of its own and is validated there.
+          paths=$(node -e 'for (const s of require("./bundle.json").skills) if (!s.source) console.log(s.path)')
           test -n "$paths" || { echo "::error::bundle.json lists no skills"; exit 1; }
           failed=0
           for p in $paths; do

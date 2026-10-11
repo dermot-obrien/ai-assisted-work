@@ -94,7 +94,7 @@ Each workspace's change goes through that repository's own pull request rules an
 | A4 `work` | Done: one skill, five flows, every reference and template kept. `scripts/extract-skill.mjs work <dir>` builds its own repository the same way; waiting for `dermot-obrien/work` to be created. `aaw install` removes the five retired copies from upgraded workspaces |
 | A5 Optional mentions | Done for `thread` and `work` |
 | A6 The bundle | Done: README, `bundle.json` with sources, version 4.0.0. `thread` switches to its repository when that exists |
-| A7 Workspaces | Not started |
+| A7 Workspaces | Pull requests open, 11 October 2026: patternode/patternode-platform#474, patternode/patternode-business#89, patternode/life-guide-internal#98 and patternode/patternode-architecture#128 refresh the committed `thread` to 0.14.0 and name `work`. No install mechanism changes: `aaw install` 4.0.0 installs `work` and removes the retired copies. Merge after this repository's #58 |
 | A8 Constrained trial | Done, 11 October 2026: [trial-constrained.sh](trial-constrained.sh), eight steps on a machine whose git may use only local files, with an empty home and no threads remote. All pass. It found one flaw, fixed: a fetch that failed left an empty clone cache behind |
 | A9 AAA and AAR | Inventoried, 11 October 2026 (below). Both bundles install and check with `bin/skills.mjs` today (9 and 12 skills); making them standalone is work in their own repositories |
 
