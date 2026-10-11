@@ -36,7 +36,7 @@ const say = (msg) => console.log(msg);
 function parseArgs(argv) {
   const flags = {};
   const pos = [];
-  const BOOL = new Set(["json", "help", "dry-run", "copy"]);
+  const BOOL = new Set(["json", "help", "dry-run", "copy", "locked"]);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith("--")) {
@@ -99,7 +99,9 @@ function locate(skill, bundle, ws, flags) {
   if (typeof flags.from === "string") {
     const from = path.resolve(flags.from);
     const repoName = src ? path.basename(src.repo).replace(/\.git$/, "") : null;
-    const tries = [path.join(from, skill.name), repoName && path.join(from, repoName, skill.path), repoName && path.join(from, repoName), path.join(from, skill.path)].filter(Boolean);
+    // A bundle found under --from serves the skills in its own folder first.
+    const own = !src && bundle?.url === "folder" ? path.join(bundle.root, skill.path) : null;
+    const tries = [own, path.join(from, skill.name), repoName && path.join(from, repoName, skill.path), repoName && path.join(from, repoName), path.join(from, skill.path)].filter(Boolean);
     const hit = tries.find((d) => existsSync(path.join(d, "SKILL.md")));
     if (!hit) die(`${skill.name}: not found under ${from} (looked in ${tries.map((t) => path.relative(from, t) || ".").join(", ")})`);
     return { dir: hit, commit: null, origin: `folder ${from}` };
@@ -115,27 +117,72 @@ function locate(skill, bundle, ws, flags) {
     }
     return { dir, commit, origin: `bundle ${bundle.name || bundle.root}` };
   }
-  const url = mirrored(src.repo);
-  const cache = path.join(ws, ".agents", ".skill-sources", path.basename(url).replace(/\.git$/, ""));
-  try {
-    if (!existsSync(path.join(cache, ".git"))) {
-      mkdirSync(path.dirname(cache), { recursive: true });
-      git(["clone", "--quiet", "--depth", "1", ...(src.ref ? ["--branch", src.ref] : []), url, cache], ws);
-    } else {
-      git(["fetch", "--quiet", "--depth", "1", "origin", src.ref || "HEAD"], cache);
-      git(["checkout", "--quiet", "--force", "FETCH_HEAD"], cache);
-    }
-  } catch (e) {
-    // Leave nothing behind from a fetch that failed: no half clone, no empty cache folder.
-    if (!existsSync(path.join(cache, ".git", "HEAD"))) rmSync(cache, { recursive: true, force: true });
-    const parent = path.dirname(cache);
-    if (existsSync(parent) && !readdirSync(parent).length) rmSync(parent, { recursive: true, force: true });
-    die(`${skill.name}: could not fetch ${url}${src.ref ? ` at ${src.ref}` : ""}:\n${String(e.stderr || e.message).trim()}\n  In a constrained environment, copy the skill onto the machine and pass --from <folder>, or set SKILLS_BASE_URL to a mirror.`);
-  }
+  const { cache, url } = fetchRepo(src.repo, src.ref, ws, skill.name, src.commit);
   // A repository holds its skill at the entry's path (skills/<name>), or a lone skill at its root.
   const dir = [path.join(cache, skill.path || "."), cache].find((d) => existsSync(path.join(d, "SKILL.md")));
   if (!dir) die(`${skill.name}: no SKILL.md at ${skill.path} in ${url}`);
   return { dir, commit: git(["rev-parse", "HEAD"], cache), origin: url };
+}
+
+/**
+ * Fetch a repository into .agents/.skill-sources/<name>, at a ref (tag or branch) or, when
+ * `commit` is given, at exactly that commit. Returns the clone and the URL used.
+ */
+function fetchRepo(repo, ref, ws, label, commit) {
+  const url = mirrored(repo);
+  const cache = path.join(ws, ".agents", ".skill-sources", path.basename(url).replace(/\.git$/, ""));
+  const want = commit || ref || "HEAD";
+  try {
+    if (!existsSync(path.join(cache, ".git"))) {
+      mkdirSync(cache, { recursive: true });
+      git(["init", "--quiet"], cache);
+      git(["remote", "add", "origin", url], cache);
+    } else git(["remote", "set-url", "origin", url], cache);
+    git(["fetch", "--quiet", "--depth", "1", "origin", want], cache);
+    git(["checkout", "--quiet", "--force", "FETCH_HEAD"], cache);
+  } catch (e) {
+    // Leave nothing behind from a fetch that failed: no half clone, no empty cache folder.
+    if (!existsSync(path.join(cache, ".git", "FETCH_HEAD"))) rmSync(cache, { recursive: true, force: true });
+    const parent = path.dirname(cache);
+    if (existsSync(parent) && !readdirSync(parent).length) rmSync(parent, { recursive: true, force: true });
+    die(`${label}: could not fetch ${url} at ${want}:\n${String(e.stderr || e.message).trim()}\n  In a constrained environment, copy the skill onto the machine and pass --from <folder>, or set SKILLS_BASE_URL to a mirror.`);
+  }
+  return { cache, url };
+}
+
+// ---------------------------------------------------------------- the workspace's declaration
+
+const declFile = (ws) => path.join(ws, ".agents", "skills.json");
+
+/**
+ * The workspace's .agents/skills.json: the skills it wants, as a list of sources. A source is
+ * a bundle ({ "bundle": "<repository>", "ref": "<tag or branch>", "skills": [<names>] }, all
+ * of its skills when "skills" is left out) or one skill ({ "repo": "<repository>", "ref": ...,
+ * "name": "<skill>", "path": "skills/<skill>" }).
+ */
+function readDecl(ws) {
+  const f = declFile(ws);
+  if (!existsSync(f)) die(`no ${path.relative(ws, f)}: it lists the skills this workspace wants. See skills help.`);
+  const decl = JSON.parse(readFileSync(f, "utf8"));
+  if (!Array.isArray(decl.sources)) die(`${path.relative(ws, f)}: "sources" must be a list`);
+  decl.sources.forEach((src, i) => {
+    if (!src.bundle === !src.repo) die(`${path.relative(ws, f)}: sources[${i}] needs exactly one of "bundle" or "repo"`);
+    if (src.repo && !src.name) src.name = path.basename(src.repo).replace(/\.git$/, "");
+  });
+  return decl;
+}
+
+/** A declared bundle, fetched (or found under --from) and read. */
+function bundleOf(src, ws, flags, commit) {
+  if (typeof flags.from === "string") {
+    const name = path.basename(src.bundle).replace(/\.git$/, "");
+    const root = path.join(path.resolve(flags.from), name);
+    if (!existsSync(path.join(root, "bundle.json"))) die(`bundle ${name}: no bundle.json under ${root}`);
+    return { ...JSON.parse(readFileSync(path.join(root, "bundle.json"), "utf8")), root, commit: null, url: "folder" };
+  }
+  const { cache, url } = fetchRepo(src.bundle, src.ref, ws, `bundle ${src.bundle}`, commit);
+  if (!existsSync(path.join(cache, "bundle.json"))) die(`${url}: no bundle.json at its root`);
+  return { ...JSON.parse(readFileSync(path.join(cache, "bundle.json"), "utf8")), root: cache, commit: git(["rev-parse", "HEAD"], cache), url };
 }
 
 // ---------------------------------------------------------------- installing
@@ -220,6 +267,7 @@ function installOne(skill, bundle, ws, flags, lock) {
   lock.skills[skill.name] = {
     version: fm.version,
     source: skill.source ? skill.source.repo : typeof flags.from === "string" ? "folder" : "bundle",
+    ...(bundle.url && bundle.url !== "folder" ? { bundle: bundle.url, bundleRef: bundle.ref ?? null } : {}),
     ref: skill.source?.ref ?? null,
     path: skill.path,
     commit,
@@ -247,6 +295,52 @@ const commands = {
     if (flags["dry-run"]) return;
     writeLock(ws, lock);
     // Skills are standalone: anything one still says it needs is reported, never pulled in.
+    for (const [name, fm] of installed) {
+      const missing = (fm?.requires || []).filter((r) => !existsSync(path.join(ws, ".agents", "skills", r)));
+      if (missing.length) say(`note: ${name} says it needs ${missing.join(", ")}, which is not installed`);
+    }
+  },
+
+  sync(pos, flags) {
+    // Make the workspace match .agents/skills.json: install what it declares, remove what this
+    // installer put here and it no longer declares. --locked installs the commits the lock holds.
+    const ws = workspaceOf(flags);
+    const decl = readDecl(ws);
+    const lock = readLock(ws);
+    const locked = Boolean(flags.locked);
+    const wanted = new Set();
+    const installed = [];
+    for (const src of decl.sources) {
+      if (src.bundle) {
+        const url = mirrored(src.bundle);
+        const prior = Object.values(lock.skills).find((e) => e.bundle === url && e.source === "bundle");
+        if (locked && !prior && typeof flags.from !== "string") die(`--locked: the lock has no commit for bundle ${src.bundle}; run skills sync first`);
+        const bundle = { ...bundleOf(src, ws, flags, locked ? prior?.commit : undefined), ref: src.ref ?? null };
+        for (const s of chosen(bundle, src.skills || [])) {
+          wanted.add(s.name);
+          // A skill the bundle sources from its own repository: at the lock's commit when --locked.
+          const entry = s.source && locked ? lock.skills[s.name] : null;
+          const skill = entry?.commit ? { ...s, source: { ...s.source, commit: entry.commit } } : s;
+          installed.push([s.name, installOne(skill, bundle, ws, flags, lock)]);
+        }
+      } else {
+        wanted.add(src.name);
+        const entry = locked ? lock.skills[src.name] : null;
+        if (locked && !entry?.commit && typeof flags.from !== "string") die(`--locked: the lock has no commit for ${src.name}; run skills sync first`);
+        const skill = { name: src.name, path: src.path || `skills/${src.name}`, source: { repo: src.repo, ref: src.ref, commit: entry?.commit } };
+        installed.push([src.name, installOne(skill, { name: "single", root: ws }, ws, flags, lock)]);
+      }
+    }
+    if (flags["dry-run"]) return;
+    // Only what the lock says this installer put here is ever removed.
+    for (const name of Object.keys(lock.skills)) {
+      if (wanted.has(name)) continue;
+      rmSync(path.join(ws, ".agents", "skills", name), { recursive: true, force: true });
+      rmSync(path.join(ws, ".claude", "skills", name), { recursive: true, force: true });
+      delete lock.skills[name];
+      say(`removed ${name}: no longer in ${path.relative(ws, declFile(ws))}`);
+    }
+    writeLock(ws, lock);
     for (const [name, fm] of installed) {
       const missing = (fm?.requires || []).filter((r) => !existsSync(path.join(ws, ".agents", "skills", r)));
       if (missing.length) say(`note: ${name} says it needs ${missing.join(", ")}, which is not installed`);
@@ -317,6 +411,8 @@ const commands = {
   skills list [--bundle <file|dir>] [--json]        the bundle's skills; ● installed here
   skills install [<name>...] [--bundle <file|dir>]  install all, or the ones named
   skills install --repo <url> [--ref <tag>] [--path skills/<name>] [--name <skill>]   one skill from its own repository
+  skills sync [--locked]                            install what .agents/skills.json declares, remove what it no longer does;
+                                                    --locked installs the commits in the lock, as a session start should
   skills update [<name>...]                         fetch each installed skill again and reinstall it
   skills check                                      ✓ or ✗ per installed skill; exit 1 when one changed or is missing
   skills remove <name>...
@@ -328,7 +424,10 @@ const commands = {
   SKILLS_BASE_URL    clone from a mirror: <base>/<repository>.git
 
   Skills go to .agents/skills/<name>, linked from .claude/skills/<name> when .claude/ exists.
-  The lock file is .agents/skills.lock.json; .agents/.skill-sources/ holds the clones (gitignore it).`);
+  The lock file is .agents/skills.lock.json; .agents/.skill-sources/ holds the clones (gitignore it).
+  .agents/skills.json, committed, declares a workspace's skills:
+    { "sources": [ { "bundle": "<repository>", "ref": "main", "skills": ["thread", "work"] },
+                   { "repo": "<repository>", "ref": "<tag>", "name": "<skill>" } ] }`);
   },
 };
 
