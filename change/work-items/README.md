@@ -6,14 +6,15 @@ This folder contains work items committed to the repository as live demonstratio
 
 ## Usage
 
-Use the `/aaw-*` skills to manage work items here. Skills are self-contained under `skills/<name>/`, so the same ones serve development on this repo and deployed use elsewhere.
+Use the `work` skill to manage work items here. It is self-contained under `skills/work/`, so the same skill serves development on this repo and deployed use elsewhere.
 
 | Command | Purpose |
 |---------|---------|
-| `/aaw-start-work` | Create a new work item |
-| `/aaw-progress-work` | Continue work on an item |
-| `/aaw-work-status` | Check status of work items |
-| `/aaw-next-task` | Identify next task to work on |
+| `/work start` | Create a new work item |
+| `/work progress` | Continue work on an item |
+| `/work status` | Check status of work items |
+| `/work next` | Identify next task to work on |
+| `/work initiative` | Create an initiative |
 
 ## Structure
 
