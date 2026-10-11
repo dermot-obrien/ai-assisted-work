@@ -43,23 +43,27 @@ try {
   problems.push("git: not found on the PATH. Install git; thread keeps its store in a git clone.");
 }
 
-/** A top-level key from the nearest .aaw-config.yaml at or above the working directory. */
-function workspaceSetting(key) {
+/** A top-level key from the nearest .aaw-config.yaml at or above the working directory, with that file's folder. */
+function workspaceSettingAt(key) {
   let dir = process.cwd();
   for (;;) {
     const f = path.join(dir, ".aaw-config.yaml");
     if (existsSync(f)) {
       const m = new RegExp(`^${key}:[ \\t]*["']?([^"'#\\s]+)`, "m").exec(readFileSync(f, "utf8"));
-      return m ? m[1] : null;
+      return m ? { value: m[1], dir } : null;
     }
     const up = path.dirname(dir);
     if (up === dir) return null;
     dir = up;
   }
 }
+const workspaceSetting = (key) => workspaceSettingAt(key)?.value ?? null;
 const workspaceRemote = () => workspaceSetting("threads_remote");
+const homeAt = workspaceSettingAt("threads_home");
 
-const home = process.env.THREADS_HOME || path.join(homedir(), ".threads");
+const home =
+  process.env.THREADS_HOME ||
+  (homeAt ? path.resolve(homeAt.dir, homeAt.value.replace(/^~(?=$|[\\/])/, homedir())) : path.join(homedir(), ".threads"));
 const remote = process.env.THREADS_REMOTE || workspaceRemote();
 if (existsSync(home)) {
   if (!statSync(home).isDirectory()) {
@@ -69,6 +73,8 @@ if (existsSync(home)) {
       `${home}: the thread store is not a git clone. Move it aside and let thread clone it, or set THREADS_HOME to a clone.`,
     );
   }
+} else if (remote === "local" || remote === "none") {
+  warnings.push(`${home}: no thread store yet; thread starts a local one there on first use, with no remote.`);
 } else if (!remote) {
   problems.push(
     `${home}: no thread store yet, and no remote to clone one from. Set THREADS_REMOTE to a git URL, or add threads_remote: <git-url> to .aaw-config.yaml.`,

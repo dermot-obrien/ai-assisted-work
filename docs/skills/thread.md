@@ -20,6 +20,7 @@ repository you own to hold the tree (the store).
    | Every workspace, macOS or Linux | `export THREADS_REMOTE=https://github.com/you/threads.git` in your shell profile |
    | One workspace | `threads_remote: https://github.com/you/threads.git` in its `.aaw-config.yaml` |
    | Right now | `node <skill>/bin/thread.mjs init https://github.com/you/threads.git` |
+| No remote at all, in a constrained environment | `threads_remote: local` and `threads_home: <folder>` in `.aaw-config.yaml`, or `thread init --local` |
 
 3. The first command clones the store to `~/.threads` (or `$THREADS_HOME`). After that every
    command pulls before it reads and pushes after it writes.

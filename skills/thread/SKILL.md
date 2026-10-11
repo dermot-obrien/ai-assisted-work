@@ -2,7 +2,7 @@
 name: thread
 description: "Keep thought processes untangled across chats, projects, IDEs and machines in a tree of intents, and let agents in any tool coordinate on a bulletin board in the same store. Records why a chat exists, branches, closes or parks it, and shows what is open. Use when the user types /thread, says what they are doing or why, asks where they were or what is open, goes off on a tangent, wants work split into its own session (/thread split), a chat's work recorded (/thread sync) or a chat wrapped up (/thread wrap), asks to prune threads or what pull requests are open (/thread prs), captures an improvement, bug or idea (/thread improvement: <text>), or groups threads under projects or sources. Also use for the board (/thread board): when a chat is pointed at the board or given a role, when the user has instructions for other agents or asks what they are doing, to message an agent or a role such as a master session, to say a pull request is ready to merge, or to claim work before starting it."
 license: CC-BY-4.0
-compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE, and the source within it from `threads_source:` or $THREAD_SOURCE.
+compatibility: Node.js 18 or newer and git. The store is a git repo cloned to ~/.threads ($THREADS_HOME); pushing needs write access to it. The remote for first use comes from `threads_remote:` in .aaw-config.yaml or $THREADS_REMOTE (`local` for a store with no remote, placed by `threads_home:`), and the source within it from `threads_source:` or $THREAD_SOURCE.
 metadata:
   author: dermot-obrien
   framework: aaw

@@ -228,6 +228,8 @@ Do not edit it by hand; run the installer again instead.
 | `THREAD_PROJECT` | `thread` | unset | Default project for root threads. Beats `threads_project` |
 | `THREAD_SOURCE` | `thread` | unset | The store's source this workspace uses (DD-12). Beats `threads_source` |
 | `THREADS_AUTO_PRUNE` | `thread` | on | `0` turns off the daily archive of closed threads, and of settled board files |
+| `THREADS_HOME`, or `threads_home` in `.aaw-config.yaml` (relative to that file) | `thread` | `~/.threads` | Where the store is. The variable wins |
+| `threads_remote: local` (or `none`) | `thread` | unset | A store with no remote: created on first use, commits and never pushes |
 | `BOARD_AS` | `thread board` | unset | This chat's board handle, in place of `--as` |
 | `BOARD_AUTO_PRUNE` | `thread board` | on | `0` turns off the board's daily archive only |
 | `THREAD_CTX` | `thread` | the git repository's folder name | The project context recorded on a new thread. `--ctx` beats it |

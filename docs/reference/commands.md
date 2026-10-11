@@ -224,7 +224,7 @@ node .agents/skills/thread/bin/thread.mjs <command> [args] [flags]
 | `thread prune [--days <n>] [--dry-run]` | Archive closed branches into a new `archive/` file. Alias `archive` |
 | `thread sources` | Every source in the store, with its open trees |
 | `thread transfer <id> --to <source>` | Move a thread and every branch under it, archived ones included, to another source. Ids and history are kept |
-| `thread init [<git-url>]` | Clone or seed the store |
+| `thread init [<git-url>] [--local]` | Clone or seed the store; `--local` starts one with no remote |
 | `thread sync` | Push anything left unpushed |
 | `thread help` (or `-h`, `--help`) | The usage |
 

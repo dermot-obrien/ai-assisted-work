@@ -449,8 +449,11 @@ function newPostId(events) {
 }
 
 /** Write one board file into a source's board/ folder. */
+// Strictly increasing within one run, so two files written in the same millisecond keep their order.
+let LAST_TS = 0;
 function write(ev, source) {
-  const ts = new Date().toISOString();
+  LAST_TS = Math.max(Date.now(), LAST_TS + 1);
+  const ts = new Date(LAST_TS).toISOString();
   const dir = path.join(boardDir(source), localDay());
   mkdirSync(dir, { recursive: true });
   const full = { ts, host: host(), ...ev };

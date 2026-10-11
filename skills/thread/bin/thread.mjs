@@ -31,7 +31,7 @@ import { holders, postsOn, releaseOnClose, runBoard } from "./board.mjs";
 
 // STORE is the git clone. HOME is the selected source's folder inside it: the store's root
 // for the default source, sources/<name>/ for a named one. It is set once, in main.
-const STORE = process.env.THREADS_HOME || path.join(homedir(), ".threads");
+const STORE = storeHome();
 let SOURCE = "default";
 let HOME = STORE;
 // Automatic prune: the first write of a new day archives every branch closed before that
@@ -42,7 +42,7 @@ const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
-const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources", "take", "hook", "for-user", "release", "claim", "list", "more"]);
+const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources", "take", "hook", "for-user", "release", "claim", "list", "more", "local"]);
 
 function parseArgs(argv) {
   const flags = {};
@@ -88,21 +88,41 @@ function tryGit(args, opts) {
 const hasRemote = () => tryGit(["remote"]).out.split("\n").includes("origin");
 const hasCommits = () => tryGit(["rev-parse", "--verify", "HEAD"]).ok;
 
-/** A top-level `key:` in the nearest .aaw-config.yaml above cwd, or null. A quoted value may hold spaces. */
-function workspaceSetting(key) {
+/** A top-level `key:` in the nearest .aaw-config.yaml above cwd, with the folder of that file, or null. A quoted value may hold spaces. */
+function workspaceSettingAt(key) {
   let dir = process.cwd();
   const re = new RegExp(`^${key}:\\s*(?:"([^"]*)"|'([^']*)'|([^\\s#]+))`, "m");
   for (;;) {
     const f = path.join(dir, ".aaw-config.yaml");
     if (existsSync(f)) {
       const m = readFileSync(f, "utf8").match(re);
-      if (m) return m[1] ?? m[2] ?? m[3];
+      if (m) return { value: m[1] ?? m[2] ?? m[3], dir };
     }
     const up = path.dirname(dir);
     if (up === dir) return null;
     dir = up;
   }
 }
+
+/** A top-level `key:` in the nearest .aaw-config.yaml above cwd, or null. */
+function workspaceSetting(key) {
+  return workspaceSettingAt(key)?.value ?? null;
+}
+
+/**
+ * Where the store is: $THREADS_HOME, else threads_home: in the nearest .aaw-config.yaml (a
+ * path relative to that file, or starting with ~), else ~/.threads. A workspace that cannot
+ * reach a shared store keeps its threads in a folder of its own this way.
+ */
+function storeHome() {
+  if (process.env.THREADS_HOME) return process.env.THREADS_HOME;
+  const at = workspaceSettingAt("threads_home");
+  if (at) return path.resolve(at.dir, at.value.replace(/^~(?=$|[\\/])/, homedir()));
+  return path.join(homedir(), ".threads");
+}
+
+/** A remote of "local" or "none" means a store with no remote: every command commits and nothing is pushed. */
+const isLocalOnly = (remote) => remote === "local" || remote === "none";
 
 /** Find `threads_remote:` in the nearest .aaw-config.yaml above cwd. */
 const remoteFromWorkspace = () => workspaceSetting("threads_remote");
@@ -206,9 +226,10 @@ function movedIds(events) {
   return moved;
 }
 
-function ensureStore(remoteArg) {
+function ensureStore(remoteArg, local = false) {
   if (existsSync(path.join(STORE, ".git"))) return;
   const remote = remoteArg || process.env.THREADS_REMOTE || remoteFromWorkspace();
+  if (local || isLocalOnly(remote)) return initLocal();
   if (!remote) {
     die(
       `no threads store at ${STORE}, and no remote configured to clone it from.\n` +
@@ -218,6 +239,7 @@ function ensureStore(remoteArg) {
         "                                   export THREADS_REMOTE=<git-url>        (macOS/Linux, in your shell profile)\n" +
         "    • just this workspace:         add  threads_remote: <git-url>  to .aaw-config.yaml\n" +
         "    • once, right now:             thread init <git-url>\n" +
+        "    • no remote at all (local):    threads_remote: local  in .aaw-config.yaml, or  thread init --local\n" +
         "  In a cloud session, the environment also needs push access to that repo.",
     );
   }
@@ -229,6 +251,24 @@ function ensureStore(remoteArg) {
     git(["config", "user.name", "thread"]);
     git(["config", "user.email", "thread@localhost"]);
   }
+}
+
+/** Create the store as a git repository with no remote, for a workspace that cannot reach a shared one. */
+function initLocal() {
+  mkdirSync(STORE, { recursive: true });
+  const r = tryGit(["init", "--quiet"], { cwd: STORE });
+  if (!r.ok) die(`could not create a local store at ${STORE}:\n${r.out}`);
+  tryGit(["symbolic-ref", "HEAD", "refs/heads/main"]);
+  if (!tryGit(["config", "user.email"]).ok) {
+    git(["config", "user.name", "thread"]);
+    git(["config", "user.email", "thread@localhost"]);
+  }
+  writeFileSync(path.join(STORE, "README.md"), README);
+  mkdirSync(path.join(STORE, "events"), { recursive: true });
+  writeFileSync(path.join(STORE, "events", ".gitkeep"), "");
+  git(["add", "-A"]);
+  git(["commit", "--quiet", "-m", "Initialise a local threads store"]);
+  warn(`started a local threads store at ${STORE}, with no remote; to share it later: git -C "${STORE}" remote add origin <git-url>`);
 }
 
 /**
@@ -302,8 +342,16 @@ function readEvents() {
   return sortEvents(out);
 }
 
+// Each event written by this process gets a later timestamp than the one before, so two
+// events written in the same millisecond (an open and its describe) replay in order.
+let LAST_TS = 0;
+function nextTs() {
+  LAST_TS = Math.max(Date.now(), LAST_TS + 1);
+  return new Date(LAST_TS).toISOString();
+}
+
 function writeEvent(ev) {
-  const ts = new Date().toISOString();
+  const ts = nextTs();
   const host = hostname().toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 20) || "host";
   const stamp = ts.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
   const dir = path.join(HOME, "events", localDay());
@@ -794,8 +842,8 @@ function splitRefinement(raw) {
 }
 
 const commands = {
-  init(pos) {
-    ensureStore(pos[0]);
+  init(pos, flags = {}) {
+    ensureStore(pos[0], Boolean(flags.local));
     pull();
     if (!existsSync(path.join(HOME, "README.md"))) {
       writeFileSync(path.join(HOME, "README.md"), README);
@@ -1170,7 +1218,7 @@ const commands = {
                                   closed before today; THREADS_AUTO_PRUNE=0 turns that off
   thread sources                  every source in the store, with its open trees
   thread transfer <id> --to <source>   move a thread and its branches to another source
-  thread init [<git-url>]         clone/seed the store at ${STORE}
+  thread init [<git-url>] [--local]         clone/seed the store at ${STORE}
   thread sync                     push anything left unpushed
   thread link <id> <ref>|none     link a thread to the plan: an activity or task (not a whole work item)
   thread board <command>          the bulletin board for agents: start, post, inbox, claim, wait...
@@ -1284,7 +1332,7 @@ if (["help", "-h"].includes(cmd) || flags.help) {
   process.exit(0);
 }
 if (cmd === "init") {
-  commands.init(pos);
+  commands.init(pos, flags);
   process.exit(0);
 }
 if (cmd === "board") {

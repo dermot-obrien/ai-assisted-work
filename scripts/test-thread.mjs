@@ -173,3 +173,49 @@ test("--source all is only a view", () => {
     f.cleanup();
   }
 });
+
+test("a local store: threads_home and threads_remote: local keep threads in the workspace's own folder, with no remote", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "thread-local-"));
+  try {
+    const ws = path.join(root, "work-laptop");
+    mkdirSync(ws);
+    execFileSync("git", ["init", "--quiet", ws]);
+    writeFileSync(path.join(ws, ".aaw-config.yaml"), "threads_home: ../my-threads\nthreads_remote: local\n");
+    const env = { ...process.env, THREADS_HOME: "", THREADS_REMOTE: "", THREAD_SOURCE: "", THREAD_PROJECT: "", GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" };
+    delete env.THREADS_HOME;
+    const run = (...args) => {
+      const r = spawnSync(process.execPath, [SCRIPT, ...args], { cwd: ws, env, encoding: "utf8" });
+      if (r.status !== 0) throw new Error(`thread ${args.join(" ")} failed:\n${r.stderr}${r.stdout}`);
+      return r.stdout + r.stderr;
+    };
+    const out = run("open", "offline work");
+    assert.match(out, /started a local threads store/);
+    assert.doesNotMatch(out, /NOT PUSHED/);
+    const store = path.join(root, "my-threads");
+    assert.ok(existsSync(path.join(store, ".git")));
+    assert.equal(execFileSync("git", ["-C", store, "remote"], { encoding: "utf8" }).trim(), "");
+    assert.match(run("status"), /offline work/);
+    assert.doesNotMatch(run("board", "start", "--as", "a1"), /not pushed/i);
+    // Sharing it later is one git command; the next write pushes.
+    const remote = path.join(root, "remote.git");
+    execFileSync("git", ["init", "--quiet", "--bare", "--initial-branch=main", remote]);
+    execFileSync("git", ["-C", store, "remote", "add", "origin", remote]);
+    run("open", "now shared");
+    assert.match(execFileSync("git", ["-C", remote, "log", "--oneline", "main"], { encoding: "utf8" }), /now shared/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("thread init --local starts a store with no remote", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "thread-init-local-"));
+  try {
+    const env = { ...process.env, THREADS_HOME: path.join(root, "store"), THREADS_REMOTE: "", GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" };
+    const r = spawnSync(process.execPath, [SCRIPT, "init", "--local"], { cwd: root, env, encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.ok(existsSync(path.join(root, "store", "README.md")));
+    assert.equal(execFileSync("git", ["-C", path.join(root, "store"), "remote"], { encoding: "utf8" }).trim(), "");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

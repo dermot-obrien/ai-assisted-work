@@ -91,3 +91,14 @@ It only reads, and prints nothing when no store is configured. In Claude Code, i
 The chat still joins with `board start` when the user points it at the board; the hook only
 shows it what is there. In a tool without hooks, the pointer the user gives (for example
 "Join the board as master:patternode-platform") does the same job.
+
+## A local store, with no remote
+
+Where the workspace cannot reach a shared store (a work laptop with no access to personal repositories, a machine offline), keep the threads in a git repository of its own on that machine. In `.aaw-config.yaml`:
+
+```yaml
+threads_home: ../threads-work     # a folder for the store, relative to this file (or ~/...)
+threads_remote: local             # no remote: every command commits, nothing is pushed
+```
+
+or run `thread init --local` with `THREADS_HOME` set. The first command creates the store, with a README, and says where it is. The board works the same way in it. Keep the store outside the workspace's own repository, or add it to that repository's `.gitignore`. To share it later, `git -C <store> remote add origin <git-url>`; the next command pushes.

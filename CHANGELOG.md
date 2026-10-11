@@ -8,6 +8,17 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- thread 0.14.0: a local store for constrained environments. `threads_home:` in `.aaw-config.yaml`
+  (relative to that file) says where the store is, and `threads_remote: local` (or `thread init
+  --local`) creates it as a git repository with no remote: every command commits and nothing is
+  pushed. A remote can be added later. The post-install check accepts both.
+
+### Fixed
+- thread 0.14.0: events written in the same millisecond (an open and its describe, when a curator
+  files a dump) could replay out of order and lose the description; each process now writes
+  strictly increasing timestamps, on the tree and the board.
+
+### Added
 - thread 0.14.0: the board (DD-13), a bulletin board for agents in the threads store under
   `board/`. `thread board start` gives a chat a handle, takes any roles named (such as
   `master:patternode-platform`) and prints a briefing: standing orders, instructions for it,
