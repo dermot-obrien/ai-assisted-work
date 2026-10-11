@@ -21,7 +21,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, readdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Document, parse as parseYaml, parseDocument } from "yaml";
 import {
@@ -72,11 +72,23 @@ export interface InstallResult {
   skills: string[];
   /** Legacy shim paths removed from a workspace installed before the migration. */
   removedLegacyShims: string[];
+  /** Copies of skills this framework retired, removed from .agents/skills and .claude/skills. */
+  removedRetiredSkills: string[];
   seededConfig: string[];
   dataDirs: string[];
   pythonInstalled: boolean;
   ranSeed: boolean;
   warnings: string[];
+}
+
+/** True for anything at the path, including a link whose target is gone. */
+async function entryExists(p: string): Promise<boolean> {
+  try {
+    await lstat(p);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function pathExists(p: string): Promise<boolean> {
@@ -262,6 +274,37 @@ const LEGACY_SHIM_DESTS: Record<string, string[]> = {
     path.join(".gemini", "skills", "aar"),
   ],
 };
+
+/**
+ * Skills a framework shipped and has since retired, by framework id. AAW 4.0.0 merged its
+ * five work-item skills into one, `work`; a workspace upgraded from an earlier release still
+ * holds the five copies, which would trigger on the same requests as `work`. Install removes
+ * them. Only names this installer put there are listed, so nothing else is touched.
+ */
+const RETIRED_SKILLS: Record<string, string[]> = {
+  aaw: ["aaw-start-work", "aaw-progress-work", "aaw-work-status", "aaw-next-task", "aaw-start-initiative"],
+};
+
+/** Remove the copies of skills this framework has retired, from .agents/skills and .claude/skills. */
+export async function removeRetiredSkills(opts: InstallOptions): Promise<string[]> {
+  const { manifest, workspaceRoot } = opts;
+  const log = opts.log ?? noopLog;
+  const removed: string[] = [];
+  for (const name of RETIRED_SKILLS[manifest.id] ?? []) {
+    for (const dir of [SKILLS_INTEROP_DIR, SKILLS_CLAUDE_DIR]) {
+      const dest = path.join(workspaceRoot, dir, name);
+      if (await entryExists(dest)) {
+        await rm(dest, { recursive: true, force: true });
+        removed.push(path.join(dir, name));
+      }
+    }
+  }
+  if (removed.length > 0) {
+    log(`  ▸ removed ${removed.length} retired skill cop(ies), replaced by \`work\`:`);
+    for (const r of removed) log(`      ${r}`);
+  }
+  return removed;
+}
 
 /** Copilot prompt shims are loose files, not a namespaced directory. */
 const LEGACY_SHIM_PROMPT_PREFIX: Record<string, string> = {
@@ -546,6 +589,7 @@ export async function installFramework(opts: InstallOptions): Promise<InstallRes
 
   const skills = await wireSkills(opts, selection);
   const removedLegacyShims = await removeLegacyShims(opts);
+  const removedRetiredSkills = await removeRetiredSkills(opts);
   const seededConfig = await seedConfig(opts);
   const dataDirs = await ensureDataDirs(opts);
   const pythonInstalled = await runToolSetup(opts, warnings);
@@ -566,6 +610,7 @@ export async function installFramework(opts: InstallOptions): Promise<InstallRes
     version: manifest.version,
     skills,
     removedLegacyShims,
+    removedRetiredSkills,
     seededConfig,
     dataDirs,
     pythonInstalled,

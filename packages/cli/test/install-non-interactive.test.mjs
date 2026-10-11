@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -152,4 +152,22 @@ test("the work items folder is created where the config resolves it", () => {
     rmSync(dir, { recursive: true, force: true });
     rmSync(elsewhere, { recursive: true, force: true });
   }
+});
+
+test("removes the five retired work-item skills, links included, and leaves other skills alone", () => {
+  const ws = workspace();
+  mkdirSync(path.join(ws, ".claude", "skills"), { recursive: true });
+  for (const name of ["aaw-start-work", "aaw-next-task", "my-own"]) {
+    mkdirSync(path.join(ws, ".agents", "skills", name), { recursive: true });
+    writeFileSync(path.join(ws, ".agents", "skills", name, "SKILL.md"), "x\n");
+  }
+  symlinkSync(path.join("..", "..", ".agents", "skills", "aaw-start-work"), path.join(ws, ".claude", "skills", "aaw-start-work"));
+  const r = install(ws, ["--yes", "--no-python"]);
+  assert.equal(r.status, 0, r.stderr);
+  for (const dir of [".agents", ".claude"]) {
+    assert.ok(!existsSync(path.join(ws, dir, "skills", "aaw-start-work")), `${dir}/skills/aaw-start-work removed`);
+    assert.ok(!existsSync(path.join(ws, dir, "skills", "aaw-next-task")), `${dir}/skills/aaw-next-task removed`);
+  }
+  assert.ok(existsSync(path.join(ws, ".agents", "skills", "my-own", "SKILL.md")), "a skill it never installed is kept");
+  assert.ok(existsSync(path.join(ws, ".agents", "skills", "work", "SKILL.md")));
 });

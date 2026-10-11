@@ -67,6 +67,10 @@ jobs:
           node bin/aaw.js --version
           node bin/aaw.js --help
 
+      - name: CLI tests (install without a terminal, retired skills removed)
+        working-directory: packages/cli
+        run: npm test
+
   skills:
     name: Agent Skills validation
     runs-on: ubuntu-latest
@@ -168,3 +172,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: fsfe/reuse-action@v6
+
+  extract:
+    name: Each skill builds as a repository of its own
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the extraction keeps each skill's history
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Extract thread and work, then validate each
+        run: |
+          git config --global user.name ci && git config --global user.email ci@localhost
+          for s in thread work; do
+            node scripts/extract-skill.mjs "$s" "/tmp/extract/$s"
+            (cd "/tmp/extract/$s" && node scripts/validate-skills.mjs skills && node scripts/validate-bundle.mjs .)
+          done
