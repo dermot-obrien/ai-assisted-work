@@ -41,9 +41,10 @@ Each skill is copied to `.agents/skills/<name>`, which Codex, Cursor, Copilot, V
 | A mirror of the repositories | `SKILLS_BASE_URL=<base>`; each clone comes from `<base>/<repository>.git` |
 | One skill from its own repository | `skills.mjs install --repo <url> --ref <tag> --path skills/<name>` |
 | No shared threads store | `threads_remote: local` and `threads_home: <folder>` in `.aaw-config.yaml` ([thread setup](skills/thread/references/setup.md#a-local-store-with-no-remote)) |
+| A workspace that declares its skills | Commit `.agents/skills.json` listing bundles and single skills (format in `skills.mjs help`), then `skills.mjs sync` installs them, records each commit in the lock, and removes any skill it installed that the file no longer lists. Commit the lock too; a session start runs `skills.mjs sync --locked`, which installs exactly the locked commits |
 | Without any installer | Copy `skills/<name>/` to `.agents/skills/<name>/` (and `.claude/skills/<name>/`) |
 
-`aaw install` (`bin/aaw.js`), the framework installer, still works and installs `work` and `thread`; AI-Assisted Architecture and AI-Assisted Research install through it until they move to standalone skills too.
+`aaw install` (`bin/aaw.js`), the framework installer, still works and installs `work` and `thread`, and AI-Assisted Architecture and AI-Assisted Research still install through it. Their skills now stand alone, so a workspace can install all three bundles with `skills.mjs sync` instead ([WI-005](change/work-items/WI-005-retire-ai-assisted-work/scope.md) step 2c).
 
 ## Quick start
 

@@ -182,3 +182,128 @@ test("remove takes a skill out of both folders and the lock", () => {
     f.cleanup();
   }
 });
+
+/** The fixture's bundle as a repository of its own, so a workspace can declare it by URL. */
+function bundleRepo(f) {
+  execFileSync("git", ["init", "--quiet", "--initial-branch=main", f.bundle]);
+  execFileSync("git", ["-C", f.bundle, "add", "-A"], { env: GIT_ENV });
+  execFileSync("git", ["-C", f.bundle, "commit", "-qm", "bundle"], { env: GIT_ENV });
+  const remote = path.join(f.root, "bundle.git");
+  execFileSync("git", ["clone", "--quiet", "--bare", f.bundle, remote]);
+  return remote;
+}
+const declare = (f, sources) => {
+  mkdirSync(path.join(f.ws, ".agents"), { recursive: true });
+  writeFileSync(path.join(f.ws, ".agents", "skills.json"), JSON.stringify({ sources }, null, 2));
+};
+const lockOf = (f) => JSON.parse(readFileSync(path.join(f.ws, ".agents", "skills.lock.json"), "utf8"));
+
+test("sync installs what .agents/skills.json declares, from a bundle's repository and a skill's own", () => {
+  const f = fixture();
+  try {
+    const bundle = bundleRepo(f);
+    declare(f, [{ bundle, ref: "main", skills: ["work"] }, { repo: f.remote, ref: "v1.1.0", name: "thread" }]);
+    const out = f.ok("sync");
+    assert.match(out, /installed work 3\.0\.0/);
+    assert.match(out, /installed thread 1\.1\.0/);
+    const lock = lockOf(f);
+    assert.equal(lock.skills.work.bundle, bundle);
+    assert.match(lock.skills.work.commit, /^[0-9a-f]{40}$/);
+    assert.equal(lock.skills.thread.ref, "v1.1.0");
+    assert.match(f.ok("check"), /✓ thread 1\.1\.0[\s\S]*✓ work 3\.0\.0/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("sync removes a skill it installed once the declaration drops it, and never one it did not install", () => {
+  const f = fixture();
+  try {
+    const bundle = bundleRepo(f);
+    declare(f, [{ bundle, ref: "main" }]);
+    f.ok("sync");
+    mkdirSync(path.join(f.ws, ".agents", "skills", "my-own"), { recursive: true });
+    writeFileSync(path.join(f.ws, ".agents", "skills", "my-own", "SKILL.md"), "x\n");
+    declare(f, [{ bundle, ref: "main", skills: ["work"] }]);
+    assert.match(f.ok("sync"), /removed thread: no longer in/);
+    assert.ok(!existsSync(path.join(f.ws, ".agents", "skills", "thread")));
+    assert.ok(!existsSync(path.join(f.ws, ".claude", "skills", "thread")));
+    assert.ok(existsSync(path.join(f.ws, ".agents", "skills", "my-own", "SKILL.md")), "a skill the installer never put there is kept");
+    assert.deepEqual(Object.keys(lockOf(f).skills), ["work"]);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("sync --locked installs the locked commits after the sources have moved on", () => {
+  const f = fixture();
+  try {
+    const bundle = bundleRepo(f);
+    declare(f, [{ bundle, ref: "main", skills: ["work"] }, { repo: f.remote, ref: "main", name: "thread" }]);
+    // thread's repository: main is v1.1.0 now. Lock it, then move both repositories on.
+    execFileSync("git", ["-C", f.root, "clone", "--quiet", f.remote, "thread-work"]);
+    const tw = path.join(f.root, "thread-work");
+    execFileSync("git", ["-C", tw, "checkout", "--quiet", "-B", "main", "v1.1.0"], { env: GIT_ENV });
+    execFileSync("git", ["-C", tw, "push", "--quiet", "--force", "origin", "main"], { env: GIT_ENV });
+    f.ok("sync");
+    const before = lockOf(f);
+    skillFolder(path.join(tw, "skills", "thread"), "thread", "2.0.0");
+    execFileSync("git", ["-C", tw, "commit", "-qam", "v2"], { env: GIT_ENV });
+    execFileSync("git", ["-C", tw, "push", "--quiet", "origin", "main"], { env: GIT_ENV });
+    skillFolder(path.join(f.bundle, "skills", "work"), "work", "4.0.0");
+    execFileSync("git", ["-C", f.bundle, "commit", "-qam", "work 4"], { env: GIT_ENV });
+    execFileSync("git", ["-C", f.bundle, "push", "--quiet", bundle, "main"], { env: GIT_ENV });
+    rmSync(path.join(f.ws, ".agents", "skills"), { recursive: true, force: true });
+    const out = f.ok("sync", "--locked");
+    assert.match(out, /installed work 3\.0\.0/);
+    assert.match(out, /installed thread 1\.1\.0/);
+    assert.equal(lockOf(f).skills.thread.commit, before.skills.thread.commit);
+    // Without --locked, sync moves to the refs' current commits.
+    const moved = f.ok("sync");
+    assert.match(moved, /installed work 4\.0\.0/);
+    assert.match(moved, /installed thread 2\.0\.0/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("sync --locked with nothing locked yet stops and says to run sync", () => {
+  const f = fixture();
+  try {
+    declare(f, [{ bundle: bundleRepo(f), ref: "main" }]);
+    const r = f.run("sync", "--locked");
+    assert.notEqual(r.status, 0);
+    assert.match(r.out, /run skills sync first/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("sync --from installs a declared bundle from a folder on the machine, with no network", () => {
+  const f = fixture();
+  try {
+    declare(f, [{ bundle: "https://example.invalid/you/bundle.git", ref: "main", skills: ["work"] }]);
+    const from = path.join(f.root, "usb");
+    mkdirSync(from);
+    execFileSync("cp", ["-r", f.bundle, path.join(from, "bundle")]);
+    assert.match(f.ok("sync", "--from", from), /installed work 3\.0\.0/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("sync installs a skill the workspace keeps in its own folder, also with --locked", () => {
+  const f = fixture();
+  try {
+    skillFolder(path.join(f.ws, "skills", "briefing"), "briefing", "1.2.0");
+    declare(f, [{ folder: "skills/briefing" }]);
+    assert.match(f.ok("sync"), /installed briefing 1\.2\.0/);
+    assert.equal(lockOf(f).skills.briefing.source, "workspace");
+    assert.equal(lockOf(f).skills.briefing.commit, null, "a workspace skill records no commit, so the lock does not move with every commit");
+    rmSync(path.join(f.ws, ".agents", "skills"), { recursive: true, force: true });
+    assert.match(f.ok("sync", "--locked"), /installed briefing 1\.2\.0/);
+    assert.match(f.ok("check"), /✓ briefing 1\.2\.0/);
+  } finally {
+    f.cleanup();
+  }
+});
