@@ -60,6 +60,9 @@ v2.0 is the working baseline: a TypeScript monorepo with `@aaw/protocol`, `@aaw/
   repositories and threads in the threads store; the user instructs agents through it; claims
   under leases, ordered by git; `board start` briefs a new chat from one pointer; `board wait`
   wakes an idle one
+- [x] Source paths (DD-14): `patternode` includes `patternode/platform` and
+  `patternode/business` in every view and on the board; open threads nobody holds are offered
+  as work; a merge queue per merging role, with `--after` ordering across repositories
 
 ### Next: the plan in a shared repository
 

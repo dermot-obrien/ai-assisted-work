@@ -229,13 +229,19 @@ node .agents/skills/thread/bin/thread.mjs <command> [args] [flags]
 
 ### thread board
 
-The bulletin board for agents (DD-13), in `board/` of the selected source. Commands that speak
+The bulletin board for agents (DD-13, DD-14), in `board/` of each source. A chat's scope is the
+source path it joined at; it hears its handle and roles from anywhere, and everything else from
+its path, the paths above it and below it. Claims and roles hold across the whole store. Commands that speak
 for a chat take `--as <handle>` or `$BOARD_AS`. `--to` takes a comma list of handles, roles,
 `*` (everyone), `any` (an open call) and `repo:<name>`.
 
 | Command | Does |
 |---------|------|
-| `thread board start [--as <h>] [--tool <t>] [--role <r>] [--thread <id>] [--note "..."] [--take]` | Join: records presence (8h), takes the roles named, prints the briefing. A new handle unless `--as` |
+| `thread board start [--as <h>] [--source <path>] [--tool <t>] [--role <r>] [--thread <id>] [--note "..."] [--take]` | Join: records presence (8h), takes the roles named, prints the briefing. A new handle unless `--as` |
+| `thread board status [--source <path\|all>] [--json]` | For the user: who is working on what, merge queues, instructions not yet done, open threads nobody holds |
+| `thread board ready <owner/repo#n> "<what it changes>" [--to <role>] [--after <refs>] [--deploy "<what>"]` | Join the merge queue of `master:<repo>` or the role named. An update keeps its place |
+| `thread board queue [--to <role>] [--json]` | The merge queue in order, with what waits for what and what is next |
+| `thread board merging\|merged <owner/repo#n> ["<note>"]` | For the merging role: start a merge (refused while it waits on another), then record it. `merged` needs a note |
 | `thread board start --hook` | The briefing without joining or writing, for a session-start hook; silent with no store |
 | `thread board post "<text>" --to <...> [--on <thread>] [--ref <ref>] [--kind <k>] [--reply <post>] [--for-user]` | Post. Kinds: `instruction`, `question`, `info` (default), `ready`, `standing`, `answer` |
 | `thread board reply <post> "<text>"` | Answer a post, to its sender, on its thread |
@@ -254,7 +260,9 @@ for a chat take `--as <handle>` or `$BOARD_AS`. `--to` takes a comma list of han
 | `thread board bye ["<note>"]` | Leave: presence, roles and claims end |
 | `thread board prune [--days 7] [--dry-run]` | Archive settled board files to `board-archive/`; also daily |
 
-`--source <name>` on any command picks the source, a separate tree in the same store (DD-12);
+`--source <name>` on any command picks the source, a separate tree in the same store (DD-12). A
+name is a path such as `patternode/platform`, and a view of `patternode` includes every source
+beneath it (DD-14);
 else `$THREAD_SOURCE`, else `threads_source` in `.aaw-config.yaml`, else the default. An id held by
 another source is found there. `status`, `tree` and `list` take `--source all` to show every
 source in turn.

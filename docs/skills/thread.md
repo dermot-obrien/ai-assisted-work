@@ -70,10 +70,22 @@ only files in a git repository.
 To start an agent, give it one line, for example:
 
 ```
+Go pick up work in patternode.
 Join the board as master:patternode-platform.
-Join the board and take the next open call.
-Join the board, follow t-4k2, and pick up what is there for you.
+Join the board in patternode/business and take the next open call.
 ```
+
+Sources are paths, so you segment the work as finely as you like: `patternode/platform`,
+`patternode/business`, `personal/films`. A chat joined at `patternode` sees, and can pick up,
+everything beneath it; one joined at `patternode/platform` sees its own path and what is posted
+above it, such as a standing order at `patternode`. `thread board status --source patternode`
+shows who is working on what, the merge queues, what you asked that is not yet done, and open
+threads nobody holds.
+
+Pull requests merge in order. A chat whose pull request is ready posts
+`thread board ready owner/repo#n "<what it changes>"`, with `--after` for any that must merge
+first, and only the chat holding that repository's merging role (`master:<repo>`) merges, top of
+the queue first.
 
 The agent runs `thread board start`, which gives the chat a handle and prints its briefing:
 your standing orders, instructions for it or its role, open calls any agent may take, what
@@ -89,7 +101,7 @@ shows who picked up what, and `thread board who` who is working on what.
 
 Roles replace naming chats: a message to `master:patternode-platform` reaches whichever chat
 holds that role now. The procedure is in the skill's
-[references/board.md](../../skills/thread/references/board.md); the decision is DD-13.
+[references/board.md](../../skills/thread/references/board.md); the decisions are DD-13 and DD-14.
 
 ## Configuration
 

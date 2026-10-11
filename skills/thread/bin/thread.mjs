@@ -114,10 +114,21 @@ const remoteFromWorkspace = () => workspaceSetting("threads_remote");
  */
 const projectDefault = () => process.env.THREAD_PROJECT || workspaceSetting("threads_project");
 
-/** A source name is one lowercase word or hyphenated words; "default" is the store's root. */
+// Folder names a source keeps its own data in, so they cannot name a source beneath it.
+const RESERVED = new Set(["events", "archive", "board", "board-archive", "sources"]);
+
+/**
+ * A source name is a path of lowercase words or hyphenated words, such as patternode or
+ * patternode/platform; "default" is the store's root. A source beneath another lives in a
+ * folder inside it, and a view of a source includes every source beneath it.
+ */
 function sourceArg(raw, what = "a source") {
-  const s = String(raw).trim().toLowerCase();
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(s)) die(`${what} is one lowercase word or hyphenated words, such as image-and-video (got "${raw}")`);
+  const s = String(raw).trim().toLowerCase().replace(/^\/+|\/+$/g, "");
+  const parts = s.split("/");
+  if (!s || !parts.every((p) => /^[a-z0-9][a-z0-9-]*$/.test(p)))
+    die(`${what} is a path of lowercase words or hyphenated words, such as image-and-video or patternode/platform (got "${raw}")`);
+  if (parts.some((p) => RESERVED.has(p))) die(`${what} cannot use ${[...RESERVED].join(", ")} in its path (got "${raw}")`);
+  if (s !== "default" && s !== "all" && parts[0] === "default") die(`default is the store's root and has no sources beneath it; use a path such as ${parts.slice(1).join("/") || "work"}`);
   return s;
 }
 
@@ -131,16 +142,25 @@ function sourceChoice(flags) {
   return raw ? sourceArg(raw) : "default";
 }
 
-const sourceDir = (name) => (name === "default" ? STORE : path.join(STORE, "sources", name));
+const sourceDir = (name) => (name === "default" ? STORE : path.join(STORE, "sources", ...name.split("/")));
 
-/** Every source in the store: the default first, then the named ones. */
+/** Every source in the store: the default first, then the named ones as paths, each before those beneath it. */
 function sources() {
-  const dir = path.join(STORE, "sources");
-  const named = existsSync(dir)
-    ? readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()
-    : [];
+  const named = [];
+  const walk = (dir, prefix) => {
+    if (!existsSync(dir)) return;
+    for (const e of readdirSync(dir, { withFileTypes: true }).filter((x) => x.isDirectory() && !RESERVED.has(x.name) && !x.name.startsWith(".")).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      const name = prefix ? `${prefix}/${e.name}` : e.name;
+      named.push(name);
+      walk(path.join(dir, e.name), name);
+    }
+  };
+  walk(path.join(STORE, "sources"), "");
   return ["default", ...named];
 }
+
+/** A source and every source beneath it; "all" is every source. */
+const under = (name) => (name === "all" ? sources() : sources().filter((s) => s === name || s.startsWith(name + "/")));
 
 /** Point HOME at a source. */
 function useSource(name) {
@@ -669,7 +689,9 @@ brings that thread back: copy its archived events back to their \`src\` paths.
 
 The store can hold several sources, separate trees for separate segments of work. The default
 source is \`events/\` and \`archive/\` at the root; a named source is the same pair under
-\`sources/<name>/\`, with \`src\` paths relative to that folder. Each source is replayed on its
+\`sources/<name>/\`, with \`src\` paths relative to that folder. A name is a path such as
+\`patternode/platform\`, kept at \`sources/patternode/platform/\`; a view of \`patternode\` includes
+every source beneath it, and writes go only to the source named. Each source is replayed on its
 own. Ids are unique across every source. A \`transfer\` event moves a thread and its branches to
 another source: their events are copied there with the same paths, removed from this source's
 \`events/\`, and this source then ignores those ids, including in its archive.
@@ -694,11 +716,14 @@ The user may start a chat with no more than a pointer to this repository. Then:
 
 1. Get the \`thread\` skill (AI-Assisted Work, \`skills/thread\`): it is usually committed in the
    repository you work in at \`.claude/skills/thread/\`. Run
-   \`node <skill>/bin/thread.mjs board start --tool <your tool> [--role <role the user named>]\`.
+   \`node <skill>/bin/thread.mjs board start --tool <your tool> [--source <path>] [--role <role>]\`,
+   with the path and role the user named ("pick up work in patternode" is \`--source patternode\`).
 2. Read what it prints: your handle, standing orders, instructions for you, open calls, and who
    else is working. Keep the handle and pass \`--as <handle>\` on every board command.
 3. Act on instructions from \`user\` as the user's own, within your workspace's rules: \`accept\`,
    do, then \`done\` with the result. Claim work before starting it. Check \`inbox\` before you stop.
+4. Never merge your own pull request: post it with \`board ready <owner/repo#n>\` and the chat holding
+   the merging role merges the queue in order.
 
 Without the skill, read and write the board by hand as below.
 
@@ -710,17 +735,22 @@ per action, \`board/YYYY-MM-DD/<utc-stamp>-<host>-<6 hex>.json\`, never edited. 
 
 | type | fields |
 |---|---|
-| \`post\` | \`id\` (\`p-\` + 4 base-36 chars, unused), \`to\` (list: handles, roles, \`*\` everyone, \`any\` an open call, \`repo:<name>\`), \`on\` (thread id or null), \`ref\` (work item, activity or PR, or null), \`kind\` (\`instruction\` \\| \`question\` \\| \`info\` \\| \`ready\` \\| \`standing\` \\| \`answer\`), \`reply\` (post id or null), \`text\`, optional \`relayed\` (true: written for the user) |
+| \`post\` | \`id\` (\`p-\` + 4 base-36 chars, unused), \`to\` (list: handles, roles, \`*\` everyone, \`any\` an open call, \`repo:<name>\`), \`on\` (thread id or null), \`ref\` (work item, activity or PR, or null), \`kind\` (\`instruction\` \\| \`question\` \\| \`info\` \\| \`ready\` \\| \`standing\` \\| \`answer\`), \`reply\` (post id or null), \`text\`, optional \`relayed\` (true: written for the user), and for \`ready\`: \`after\` (PRs to merge first), \`deploy\` |
 | \`ack\` | \`post\`, \`state\` (\`seen\` \\| \`accepted\` \\| \`done\` \\| \`declined\`), \`note\` (required for done and declined) |
 | \`retract\` | \`post\` (withdrawn, such as a standing order) |
-| \`hello\` | \`tool\`, \`ctx\` (repo), \`threads\` (followed), \`note\`, \`until\` (presence lasts until then) |
+| \`hello\` | \`tool\`, \`ctx\` (repo), \`scope\` (the source path the agent works in), \`threads\` (followed), \`note\`, \`until\` (presence lasts until then) |
 | \`bye\` | (presence, roles and claims end) |
 | \`claim\` | \`key\` (an activity, thread, post id, or \`role:<name>\`), \`until\`, optional \`take\`, \`note\` |
 | \`release\` | \`key\`, optional \`take\` |
 
 Claims are replayed in the order git first added their files to \`main\`, not by \`ts\`: a claim
 holds when no other unexpired claim on the key came before it (or it has \`take\`), and the holder
-renews with another claim. A claim counts once it is pushed. A \`.md\` file under \`board/\` with
+renews with another claim. A claim counts once it is pushed. Claims, roles and presence are replayed
+across every source together. Posts to a handle or role reach it from any source; other posts reach
+agents whose scope is that source, a path above it or a path below it. Acks and retracts are filed
+beside their post. The merge queue for a role is its \`ready\` posts not done or declined, one per PR,
+in the order each PR's first ready post was added, a later one for the same PR replacing the earlier
+in place; a PR waits for every \`after\` PR still queued. A \`.md\` file under \`board/\` with
 front matter (\`to\`, \`kind\`, \`on\`, \`from\`) is a post written by hand, from \`user\` unless it
 says otherwise. \`board-archive/*.jsonl\` holds settled board files pruned out of \`board/\`, one
 per line with \`src\`.
@@ -1117,8 +1147,22 @@ const commands = {
 };
 
 /** What board.mjs needs from the store, so the board and the tree share one clone and one source. */
-function boardHelpers() {
-  return { STORE, HOME, SOURCE, git, tryGit, commitAndPush, pull, context, die, warn };
+function boardHelpers(scope = SOURCE) {
+  return { STORE, SCOPE: scope, git, tryGit, commitAndPush, pull, context, die, warn, sources, sourceDir, openThreads };
+}
+
+/** Open threads with nothing open beneath them, in a source and every source beneath it, newest first: work to pick up. */
+function openThreads(scope) {
+  const out = [];
+  for (const s of under(scope)) {
+    inSource(s, () => {
+      for (const n of buildTree(readEvents()).values()) {
+        if (n.status !== "open" || n.kind === "project" || n.children.some(isUnfinished)) continue;
+        out.push({ id: n.id, text: n.text, ctx: n.ctx, kind: n.kind || null, source: s, last: n.lastDeep });
+      }
+    });
+  }
+  return out.sort((a, b) => (a.last < b.last ? 1 : -1));
 }
 
 // ---------------------------------------------------------------- main
@@ -1138,11 +1182,12 @@ if (cmd === "board") {
   if (flags.hook && !existsSync(path.join(STORE, ".git")) && !process.env.THREADS_REMOTE && !remoteFromWorkspace()) process.exit(0);
   ensureStore();
   pull();
-  useSource(sourceChoice(flags));
+  const scope = flags["all-sources"] ? "all" : sourceChoice(flags);
+  useSource(scope === "all" ? "default" : scope);
   // The store's README documents the board for agents without the skill; start commits it with the hello.
   const readme = path.join(STORE, "README.md");
   if ((pos[0] ?? "start") === "start" && !flags.hook && hasCommits() && (!existsSync(readme) || readFileSync(readme, "utf8") !== README)) writeFileSync(readme, README);
-  runBoard(pos, flags, boardHelpers());
+  runBoard(pos, flags, boardHelpers(scope));
   process.exit(process.exitCode ?? 0);
 }
 if (/^t-[0-9a-z]+$/.test(cmd)) {
@@ -1167,11 +1212,15 @@ pull();
 
 const isId = (x) => typeof x === "string" && /^t-[0-9a-z]+$/.test(x);
 const choice = flags["all-sources"] ? "all" : sourceChoice(flags);
-if (choice === "all") {
-  // A view across every source, one after another; JSON views come back as one array.
-  if (!["status", "tree", "list"].includes(cmd)) die("--source all is only a view: use it with status, tree or list");
+const VIEWS = ["status", "tree", "list"];
+if (choice === "all" && !VIEWS.includes(cmd)) die("--source all is only a view: use it with status, tree or list");
+// A view of a source with sources beneath it shows them too, each in turn: patternode shows
+// patternode/platform and patternode/business. Writes go to the source named, and nowhere else.
+const scoped = under(choice);
+if (VIEWS.includes(cmd) && (choice === "all" || (choice !== "default" && scoped.length > 1))) {
+  // JSON views come back as one array.
   const out = [];
-  sources().forEach((s, i) => {
+  scoped.forEach((s, i) => {
     useSource(s);
     let evs = readEvents();
     if ((cmd === "tree" && flags.all) || (cmd === "list" && flags.all)) evs = mergeEvents(evs);

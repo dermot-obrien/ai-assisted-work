@@ -12,7 +12,12 @@ default source unless the user has decided that a segment of work belongs in its
 Don't propose a new source for an ordinary project: group it with `/thread project` instead.
 Set `threads_source:` only in the workspaces of a segment the user has named.
 
-- Every command reads and writes the workspace's source only. `status`, `tree` and `list` start
+- A source name is a path: `patternode`, `patternode/platform`. A source beneath another lives in
+  a folder inside it (`sources/patternode/platform/`). A view of a source (`status`, `tree`,
+  `list`) includes every source beneath it, each in turn, so pointing at `patternode` shows the
+  platform and business trees too; writes go only to the source named. The board reads paths the
+  same way ([board.md](board.md)). The default source has nothing beneath it.
+- Every command writes to the workspace's source only. `status`, `tree` and `list` start
   with `source: <name>` once the store has more than one, and `status` ends with a count of
   the open trees in the others. Relay those lines.
 - `--source all` on `status`, `tree` or `list` shows every source in turn; with `--json` each
@@ -26,6 +31,9 @@ Set `threads_source:` only in the workspaces of a segment the user has named.
   command.
 - A named source starts with its first write, which prints one line saying so. If that was
   not intended (a typo in the name), tell the user.
+
+Pick paths by segment of work, not by repository: `patternode/platform` and
+`patternode/business` when they are worked on apart, with `patternode` for what spans them.
 
 ## Moving a workspace's threads to a new source
 

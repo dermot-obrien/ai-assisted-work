@@ -79,10 +79,12 @@ don't nag.
 | `/thread sources` | `sources` | Show the output as-is. See "Sources" |
 | `/thread transfer <id> to <source>`, "move this tree to <source>" | `transfer <id> --to <source>` | Show the output as-is. Ask first: it moves the whole tree under that thread |
 | `/thread tree all sources`, "threads in every source" | `tree --source all` (also `status`, `list`) | Show the output as-is |
-| `/thread board`, "join the board", "you are <role>", "pick up your instructions" | `board start --tool … [--role <role>] [--thread <id>]` | Show the 📋 anchor and the briefing, then act on it. See "The board" |
+| `/thread board`, "join the board", "you are <role>", "pick up your instructions", "go pick up work in <path>" | `board start --tool … [--source <path>] [--role <role>] [--thread <id>]` | Show the 📋 anchor and the briefing, then act on it: take the first thing that fits. See "The board" |
+| "who is working on what?", "what's going on in <path>?" | `board status [--source <path>]` | Show the output as-is |
+| A pull request this chat opened is ready to merge | `board ready <owner/repo#n> "<what it changes>" [--after <refs>] [--deploy "<what>"]` | One line: its place in the queue. Never merge it yourself |
 | "tell <agent or role> to …", "ask all agents …", "anyone can pick up …" | `board post "<text>" --to <handle\|role\|*\|any> --kind instruction --for-user --as <handle>` | One line with the post id |
 | `/thread inbox`, "anything for me?" | `board inbox --as <handle>` | Act on what is there. See "The board" |
-| "what are the agents doing?", "who is on the board?" | `board who`, and `board sent --as <handle>` for what this chat asked of them | Show the output as-is |
+| "what did the agents do with what I asked?" | `board sent --as <handle>` | Show the output as-is |
 
 Every close carries a one-line resolution, and the script refuses a close without one. It
 is what the tree shows for that thread from then on, so it should let someone who was not in
@@ -158,7 +160,8 @@ span several repositories. Each thread still records the repository it was opene
 
 ## Sources
 
-One store can hold several sources: separate trees for separate segments of work. A workspace
+One store can hold several sources: separate trees for separate segments of work, named as
+paths (`patternode/platform`), where a view of `patternode` includes everything beneath it. A workspace
 picks one with `threads_source: <name>` in `.aaw-config.yaml` or `$THREAD_SOURCE`; without
 either, the default source is used and nothing changes. Commands read and write that source
 only, an id in another source is found there, and `transfer` moves a tree between sources.
@@ -183,9 +186,13 @@ everything from one pointer.
 - **Checking.** Read the inbox before replying at the end of each piece of work, and act on
   anything new first. When idle in a tool that wakes the chat when a background command ends,
   run `board wait` in the background.
+- **Scope.** A chat joins at a source path (`--source patternode`), and sees what is posted
+  there, above it and below it; posts to its handle or roles reach it from anywhere.
 - **Claims and roles.** Claim an activity, thread or open call before starting it, and leave
   it when someone else holds it. Address a job such as the master session by its role, not
   by a chat's name.
+- **Merge order.** A ready pull request joins its repository's merge queue with `board ready`;
+  only the chat holding the merging role merges, in queue order.
 
 Read [references/board.md](references/board.md) when joining, before posting, claiming or
 taking a role, and when the user asks what the board is or what the agents are doing.

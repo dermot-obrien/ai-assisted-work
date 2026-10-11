@@ -98,7 +98,7 @@ test("an open call goes to the first agent to claim it, and leaves everyone else
     f.a.run("board", "start", "--as", "a1");
     f.b.run("board", "start", "--as", "b1");
     const id = postId(f.human.run("board", "post", "Fix the flaky test", "--to", "any", "--kind", "instruction", "--as", "dermot"));
-    assert.match(f.b.run("board", "inbox", "--as", "b1"), /Open to any agent/);
+    assert.match(f.b.run("board", "inbox", "--as", "b1"), /Open calls/);
     assert.match(f.a.run("board", "claim", id, "--as", "a1"), /a1 holds/);
     assert.equal(f.b.raw("board", "claim", id, "--as", "b1").status, 2);
     assert.match(f.b.run("board", "inbox", "--as", "b1"), /nothing unread/);
@@ -236,5 +236,96 @@ test("a session-start hook with no store configured prints nothing and succeeds"
     assert.equal(r.stdout, "");
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("sources are paths: a view of patternode includes patternode/platform and patternode/business", () => {
+  const f = fixture();
+  try {
+    const p = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "platform work", "--source", "patternode/platform"))[1];
+    const b = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "business work", "--source", "patternode/business"))[1];
+    const o = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "film work", "--source", "personal"))[1];
+    assert.ok(existsSync(path.join(f.a.store, "sources", "patternode", "platform", "events")));
+    const view = f.a.run("tree", "--source", "patternode");
+    assert.match(view, new RegExp(p));
+    assert.match(view, new RegExp(b));
+    assert.doesNotMatch(view, new RegExp(o));
+    const leaf = f.a.run("tree", "--source", "patternode/platform");
+    assert.match(leaf, new RegExp(p));
+    assert.doesNotMatch(leaf, new RegExp(b));
+    assert.match(f.a.run("sources"), /patternode\/business/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("the board is scoped by path: broadcasts reach paths above and below, direct posts reach anywhere", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "plat", "--source", "patternode/platform", "--role", "master:patternode-platform");
+    f.b.run("board", "start", "--as", "film", "--source", "personal");
+    const top = postId(f.human.run("board", "post", "All Patternode agents: stop at 8pm", "--to", "*", "--kind", "standing", "--as", "user", "--source", "patternode"));
+    const direct = postId(f.human.run("board", "post", "Merge #480", "--to", "master:patternode-platform", "--kind", "instruction", "--as", "user", "--source", "personal"));
+    const platInbox = f.a.run("board", "inbox", "--as", "plat");
+    assert.match(platInbox, new RegExp(top), "a broadcast from the path above reaches it");
+    assert.match(platInbox, new RegExp(direct), "a post to its role reaches it from any path");
+    assert.doesNotMatch(f.b.run("board", "inbox", "--as", "film"), new RegExp(top), "a sibling path does not hear it");
+    // A chat joined at the top sees the agents beneath it; one in a sibling path does not.
+    f.human.run("board", "start", "--as", "user", "--source", "patternode");
+    assert.match(f.human.run("board", "status", "--as", "user"), /plat · .*in patternode\/platform/);
+    assert.doesNotMatch(f.human.run("board", "who", "--as", "user"), /film/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("claims hold across paths: the same key cannot be taken twice in two sources", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1", "--source", "patternode/platform");
+    f.b.run("board", "start", "--as", "b1", "--source", "patternode/business");
+    f.a.run("board", "claim", "WI-070-A1", "--as", "a1");
+    assert.equal(f.b.raw("board", "claim", "WI-070-A1", "--as", "b1").status, 2);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("pick up work: the briefing lists open threads in the scope that nobody holds", () => {
+  const f = fixture();
+  try {
+    const t = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "wire the queue", "--source", "patternode/platform"))[1];
+    const out = f.b.run("board", "start", "--as", "b1", "--source", "patternode");
+    assert.match(out, new RegExp(`Open threads nobody holds.*\\n.*${t}`));
+    f.b.run("board", "claim", t, "--as", "b1");
+    assert.doesNotMatch(f.a.run("board", "start", "--as", "a1", "--source", "patternode"), new RegExp(`${t} · wire`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("the merge queue keeps order, holds a pull request until the ones it follows merge, and keeps its place on update", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "m1", "--role", "master:patternode-platform");
+    f.b.run("board", "start", "--as", "w1");
+    f.b.run("board", "ready", "patternode/patternode-platform#10", "adds the API", "--as", "w1");
+    f.b.run("board", "ready", "patternode/patternode-platform#11", "uses the API", "--after", "patternode/patternode-platform#10", "--as", "w1");
+    f.b.run("board", "ready", "patternode/patternode-platform#12", "docs", "--as", "w1");
+    // #10 is updated after review: it keeps first place.
+    f.b.run("board", "ready", "patternode/patternode-platform#10", "adds the API, review fixed", "--as", "w1");
+    let q = f.a.run("board", "queue", "--as", "m1");
+    assert.match(q, /1\. patternode\/patternode-platform#10 · ready, next[\s\S]*review fixed/);
+    assert.match(q, /2\. patternode\/patternode-platform#11 · waits for patternode\/patternode-platform#10/);
+    assert.match(q, /3\. patternode\/patternode-platform#12 · ready/);
+    assert.notEqual(f.a.raw("board", "merging", "patternode/patternode-platform#11", "--as", "m1").status, 0, "cannot merge ahead of what it follows");
+    f.a.run("board", "merging", "patternode/patternode-platform#10", "--as", "m1");
+    f.a.run("board", "merged", "patternode/patternode-platform#10", "squash abc123, nothing deployed", "--as", "m1");
+    q = f.a.run("board", "queue", "--as", "m1");
+    assert.match(q, /1\. patternode\/patternode-platform#11 · ready, next/);
+    assert.doesNotMatch(f.a.run("board", "inbox", "--as", "m1"), /#10/, "the superseded note left the inbox");
+    assert.match(f.b.run("board", "sent", "--as", "w1"), /superseded by p-[0-9a-z]+[\s\S]*done by m1 just now: squash abc123/);
+  } finally {
+    f.cleanup();
   }
 });

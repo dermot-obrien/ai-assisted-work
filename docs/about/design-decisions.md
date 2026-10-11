@@ -781,6 +781,62 @@ ends picks up new instructions without the user returning to it.
 
 ---
 
+## DD-14: Source Paths, Scoped Views and a Merge Queue
+
+### Context
+
+DD-12 gave the store separate sources, but each was a flat name, so the user faced one choice:
+one source for everything Patternode (every view showing every repository's threads, every
+board broadcast reaching every agent) or one per repository, with no way to see them together.
+The board (DD-13) let agents say a pull request was ready, but nothing put those notes in an
+order, so a merging chat took them as they came and dependent pull requests could land the wrong
+way round.
+
+### Decision
+
+**A source name is a path.** `patternode/platform` lives at `sources/patternode/platform/`, inside
+`patternode`'s folder; the names a source keeps its own data in (`events`, `archive`, `board`,
+`board-archive`, `sources`) cannot be path segments. Writes go to the source named and nowhere
+else. A view (`status`, `tree`, `list`) of a source shows it and every source beneath it, each in
+turn, so `--source patternode` shows the platform and business trees together. The default
+source stays a root of its own with nothing beneath it, so existing views do not change.
+
+**The board scopes by path.** A chat joins at a path, its scope. Posts to its handle or roles
+reach it from any path; broadcasts, open calls, thread posts and standing orders reach it from
+its own path, the paths above it and the paths below it. A standing order at `patternode` binds
+every Patternode chat, and a chat joined at `patternode` sees everything beneath it. Claims, roles
+and presence are replayed across the whole store, so a key is never held twice.
+
+**Work is picked up from the scope.** The briefing lists, after instructions and open calls, the
+open threads in the scope that nobody has claimed, so "go pick up work in patternode" is one
+command. `board status` gives the user who is working on what, the merge queues, instructions
+not yet done and unclaimed threads.
+
+**A merge queue per merging role.** `board ready <owner/repo#n>` puts a pull request in the queue
+of `master:<repo>` (or a named role), in the order its first ready note reached the store; an
+update keeps its place. `--after` holds it until other pull requests merge, across repositories.
+The role holder takes the first entry not waiting on another, marks it `merging`, merges, and
+marks it `merged` with what shipped. Only the role holder merges.
+
+### Rationale
+
+- Paths give segmentation and aggregation from one mechanism: a narrow path for a session that
+  works one area, a wide one for a coordinator or for the user.
+- Folders inside folders keep one clone and one push, and every reader can compute a view from
+  its own copy.
+- Scoping visibility but not claims keeps the property that matters for safety (one holder per
+  key) independent of where a chat chose to join.
+- Ordering by the store's history, as claims already do, gives every reader the same queue.
+
+### Consequences
+
+- Existing named sources are paths of one segment and keep working. Moving Patternode's threads
+  out of the default source into `patternode/...` is a `transfer` per tree, the user's call.
+- A merging chat should still check GitHub before merging: the queue orders the work, GitHub
+  decides whether a pull request can merge.
+
+---
+
 ## Decision Log
 
 | ID | Decision | Date | Status |
@@ -798,3 +854,4 @@ ends picks up new instructions without the user returning to it.
 | DD-11 | Skill Bundles, Versioned Skill Identifiers and a Layered Ontology | 2026-09 | Accepted; manifest, checks and work module implemented |
 | DD-12 | Thread Sources, Separate Trees in One Store | 2026-10 | Implemented (thread 0.13.0) |
 | DD-13 | A Bulletin Board for Agents, in the Threads Store | 2026-10 | Implemented (thread 0.14.0) |
+| DD-14 | Source Paths, Scoped Views and a Merge Queue | 2026-10 | Implemented (thread 0.14.0); extends DD-12 and DD-13 |

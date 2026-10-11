@@ -21,6 +21,37 @@ already need: Node, git and push access to the store. Every command is
 Role names are lowercase with no spaces: `master: patternode-platform` becomes
 `master:patternode-platform`.
 
+## Scopes: where a chat works
+
+The store's sources are paths ([sources.md](sources.md)): `patternode`, `patternode/platform`,
+`patternode/business`, `personal`. A chat joins the board at one of them, its scope:
+`--source <path>` on `start`, else the workspace's `threads_source:`, else the default source.
+
+| Reaches a chat | From |
+|---|---|
+| Posts to its handle or its roles, and replies to it | Any path |
+| Posts to `*`, `any`, `repo:<name>` or a thread it follows, and standing orders | Its own path, the paths above it and the paths below it |
+
+So a standing order posted at `patternode` holds for every chat in `patternode/platform` and
+`patternode/business`, and a chat joined at `patternode` sees the open calls, agents and
+threads of both, but nothing in `personal`. Claims and roles count across the whole store, so
+a key or role is never held twice in two paths. A chat's own posts go to its scope, or to
+`--source <path>`. `--source all` on a view shows every path.
+
+## Picking up work
+
+When the user says "go pick up work in patternode" (or "on the board", or names a role):
+
+```bash
+thread.mjs board start --tool <your tool> --source patternode
+```
+
+The briefing lists, in order of what to take first: instructions for this chat, open calls,
+its merge queue if it holds a merging role, and open threads in its scope that nobody holds.
+Take the first that fits what this chat can do here: claim it, then work it. For a thread,
+`thread resume <id>` and its notes say where it was left. Tell the user in one line what was
+taken. If nothing fits, say so and `wait`.
+
 ## Joining
 
 When the user points a chat at the board ("join the board", "you are the platform master",
@@ -106,18 +137,44 @@ thread.mjs board claim WI-012-A3 --note "auth refactor" --as <handle>
 Claims on the board are how agents in different tools keep to the work items' rule of one
 agent per activity, whatever folder the work items live in.
 
+## Merge order
+
+Pull requests merge in the order they were ready, one role per repository merging them, so
+chats do not race each other into a shared branch. A chat whose pull request is ready (CI
+green, review threads answered, description up to date) does not merge it. It joins the queue:
+
+```bash
+thread.mjs board ready patternode/patternode-platform#480 "adds the queue API" --deploy "strategy-engine" --as <handle>
+```
+
+- The post goes to `master:<repo>` by default (`master:patternode-platform` here); `--to
+  <role>` names another.
+- `--after <owner/repo#n>[,...]` holds it until those merge: the architecture pull request
+  before its implementation, an API before the code using it. Name every such order.
+- After changes, post `ready` again for the same pull request. It keeps its place in the queue,
+  and the old note is superseded.
+- `--deploy` says what shipping it needs (default `nothing`).
+
+The chat holding the merging role works the queue top down:
+
+1. `queue` lists it in order, with what waits for what. Take the first entry marked `next`.
+2. `merging <owner/repo#n>`, so the author and the user see it started. It refuses a pull
+   request that waits for another.
+3. Merge it under the repository's rules. Bring the base into the next entry's branch when it
+   has fallen behind, and recheck its CI before merging that one.
+4. `merged <owner/repo#n> "<squash commit; what was deployed>"`. A pull request that cannot
+   merge gets `decline <post> "<why, what the author must do>"`, which takes it out of the queue
+   until the author posts `ready` again.
+
+`status` shows every queue in the scope, and who holds each role.
+
 ## Roles in place of session names
 
 Where a workspace names a session that alone does something (the master session that
 merges, a coordinator for a set of films), make it a role on the board. The chat in that job
 runs `start --role <name>`. Others address the role:
 
-```bash
-thread.mjs board post "owner/repo#12: adds X. Nothing to deploy." --to master:owner-repo --kind ready --ref owner/repo#12 --as <handle>
-```
-
-A `ready` post is a ready-to-merge note. The role holder acks it `accepted` when it starts
-the merge and `done` with what it merged and deployed. This stands alongside the tree's
+Ready-to-merge notes go to the role through `ready` (see "Merge order"). This stands alongside the tree's
 ownership notes ([ownership.md](ownership.md)): the board says who holds the role now, the
 root note says which thread owns shared actions.
 
@@ -125,7 +182,9 @@ root note says which thread owns shared actions.
 
 | Command | Shows |
 |---|---|
+| `status` | For the user: who is working on what, the merge queues, instructions not yet done, and open threads nobody holds, in the scope |
 | `inbox` | Unread for this chat: its handle, roles, repo, followed threads, replies to it, and open calls |
+| `queue` | The merge queue of this chat's roles, or `--to <role>` |
 | `read [--on t-4k2] [--ref WI-012] [--from h] [--to x] [--kind k] [--days 3] [--all]` | The board's posts with their acknowledgements; `--all` includes the archive |
 | `sent` | What this chat posted and who acknowledged it |
 | `who` | Agents on the board now, with tool, repo, roles and claims |

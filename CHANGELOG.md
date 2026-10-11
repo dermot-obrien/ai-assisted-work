@@ -21,6 +21,14 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `board-archive/`. `thread show` lists a thread's posts. The store README documents the
   board for agents without the skill. Procedure in `skills/thread/references/board.md`;
   tests in `scripts/test-board.mjs`, run in CI.
+- thread 0.14.0: source paths, scoped views and a merge queue (DD-14). A source is a path
+  (`patternode/platform`); `status`, `tree` and `list` of `patternode` include every source
+  beneath it, and writes go only to the source named. A board chat joins at a path: its handle
+  and roles are reached from anywhere, broadcasts, open calls and standing orders from its path,
+  the paths above and below. Claims and roles hold across the store. The briefing lists open
+  threads in the scope nobody holds ("go pick up work in patternode"), and `board status` shows
+  who is working on what. `board ready <owner/repo#n>` joins the merging role's queue in order,
+  with `--after` for pull requests that must merge first; `queue`, `merging` and `merged` work it.
 
 ### Added
 - thread 0.13.0: sources (DD-12). One store holds separate trees for separate segments of work:
