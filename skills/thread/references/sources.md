@@ -45,4 +45,4 @@ Pick paths by segment of work, not by repository: `patternode/platform` and
    committed, so cloud sessions get it too).
 4. `tree --source <source>` to check, and `tree` in the old source to see they are gone.
 
-The decision behind sources is DD-12 in AI-Assisted Work's design decisions.
+The decision behind sources is DD-12 in the design decisions published with this skill.

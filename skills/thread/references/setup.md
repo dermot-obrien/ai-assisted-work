@@ -9,8 +9,9 @@ check these in order and fix what's missing.
 **In the repo:**
 
 1. **This skill committed at `.claude/skills/thread/`** (`SKILL.md`, `bin/` and `references/`). Claude Code
-   and Cursor both load skills from there. The AAW installer makes it a link to the installed
-   copy; git stores the real files through it. Without AAW, copy this directory there. If
+   and Cursor both load skills from there. A skills installer (such as `skills install thread`)
+   makes it a link to the installed copy; git stores the real files through it. Without one,
+   copy this directory there. If
    `.claude/` is ignored, un-ignore down to the skill:
 
    ```gitignore
@@ -24,7 +25,7 @@ check these in order and fix what's missing.
    `.claude/skills/*` plus the `!` line.)
 2. **`threads_remote: <store url>` in `.aaw-config.yaml`** at the repo root (a file with
    just that line is fine), so no environment variables are needed.
-3. **Refresh the committed copy** whenever this skill is updated: re-run the AAW install, or
+3. **Refresh the committed copy** whenever this skill is updated: re-run the installer, or
    copy it again, then commit.
 
 **Claude Code on the web:**
@@ -44,7 +45,7 @@ check these in order and fix what's missing.
 
 1. **Skill:** Cursor loads project skills from `.agents/skills/`, `.cursor/skills/` and, for
    compatibility, `.claude/skills/`, so the committed `.claude/skills/thread/` is found in
-   the agent's clone. Don't depend on `.agents/skills/` there: AAW installs it and it is
+   the agent's clone. Don't depend on `.agents/skills/` there: installers fill it and it is
    usually gitignored. Cursor's "Sync Skills for Cloud Agents" setting only syncs
    `~/.cursor/skills/`, so it isn't needed for a committed skill.
 2. **Environment:** the agent runs on an Ubuntu machine with GitHub reachable by default.

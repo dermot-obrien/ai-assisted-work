@@ -39,5 +39,5 @@ Where the board is in use ([board.md](board.md)), the owner also holds a role th
 role instead of looking for a chat by its name. The role says which chat holds the job now; the
 root note says which thread owns the shared actions. Hand over both together.
 
-This sits alongside work-item locks (the `aaw-progress-work` skill's concurrency reference). A lock
+This sits alongside work-item locks, where a work-management skill is installed. A lock
 decides who works an activity; the tree's owner decides who changes shared environments.
