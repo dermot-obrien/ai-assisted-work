@@ -85,6 +85,13 @@ The work plane (work items, activities, tasks) is separate from the architecture
   only when every pull request against it has merged
 - [ ] A standing activity per area for issues and suggestions not yet planned
 
+## Skills extracted, AI-Assisted Work as a bundle (WI-004)
+
+- [x] A local threads store with no remote, for constrained environments (thread 0.14.0)
+- [ ] `thread` and a merged `work` skill in repositories of their own, with no dependency between skills
+- [ ] One installer for bundles and single skills, from a repository, a mirror or a local folder, with a lock file
+- [ ] This repository as a bundle: README, `bundle.json` pointing at the skill repositories, the installer
+
 ## Medium-term (v3.x)
 
 ### v3.0 — Cloud mode
