@@ -110,10 +110,13 @@ function locate(skill, bundle, ws, flags) {
     const dir = path.join(bundle.root, skill.path);
     if (!existsSync(path.join(dir, "SKILL.md"))) die(`${skill.name}: no SKILL.md at ${dir}`);
     let commit = null;
-    try {
-      commit = git(["rev-parse", "HEAD"], bundle.root);
-    } catch {
-      /* not a clone */
+    // A skill the workspace keeps itself records no commit: the workspace's own would change the lock on every commit.
+    if (bundle.url !== "workspace") {
+      try {
+        commit = git(["rev-parse", "HEAD"], bundle.root);
+      } catch {
+        /* not a clone */
+      }
     }
     return { dir, commit, origin: `bundle ${bundle.name || bundle.root}` };
   }

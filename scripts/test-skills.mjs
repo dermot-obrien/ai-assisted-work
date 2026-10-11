@@ -299,6 +299,7 @@ test("sync installs a skill the workspace keeps in its own folder, also with --l
     declare(f, [{ folder: "skills/briefing" }]);
     assert.match(f.ok("sync"), /installed briefing 1\.2\.0/);
     assert.equal(lockOf(f).skills.briefing.source, "workspace");
+    assert.equal(lockOf(f).skills.briefing.commit, null, "a workspace skill records no commit, so the lock does not move with every commit");
     rmSync(path.join(f.ws, ".agents", "skills"), { recursive: true, force: true });
     assert.match(f.ok("sync", "--locked"), /installed briefing 1\.2\.0/);
     assert.match(f.ok("check"), /✓ briefing 1\.2\.0/);
