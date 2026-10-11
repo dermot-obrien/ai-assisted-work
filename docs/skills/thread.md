@@ -82,6 +82,11 @@ above it, such as a standing order at `patternode`. `thread board status --sourc
 shows who is working on what, the merge queues, what you asked that is not yet done, and open
 threads nobody holds.
 
+There is one to-do list, the thread tree. An open call you post becomes a `task` thread, and any
+open thread nobody holds is work an agent may take; the tree marks the ones taken `⚑ <agent>`.
+A worker runs `thread board next --claim` and gets the best task free, so several agents can
+work one path in parallel without doubling up, and a dispatcher chat can start one per task.
+
 Pull requests merge in order. A chat whose pull request is ready posts
 `thread board ready owner/repo#n "<what it changes>"`, with `--after` for any that must merge
 first, and only the chat holding that repository's merging role (`master:<repo>`) merges, top of

@@ -69,9 +69,11 @@ v2.0 is the working baseline: a TypeScript monorepo with `@aaw/protocol`, `@aaw/
 The work plane (work items, activities, tasks) is separate from the architecture plane
 (repositories, modules, domains), so a work item should not live inside one code repository.
 
-- [ ] Work items in a shared plan repository, cloned like the threads store: one folder per
-  work item so concurrent writers rarely touch the same file, and `.aaw-config.yaml` naming
-  the plan's remote and folder, as `threads_remote:` names the store
+- [x] One list of work (DD-15): open threads are the to-do list, open calls become `task`
+  threads, claims show on the tree, and `board next --claim` lets parallel agents take work
+- [ ] Work items as the tree (DD-15): a work item, its activities and tasks as thread kinds
+  with parents in the shared store, so the plan needs no store of its own and any agent finds
+  it from the same pointer; the products each activity advances kept in its description
 - [ ] Activity claims on the board in place of local lock files, so one activity has one
   agent whatever clone or tool it works from; progress written by the agent doing the work,
   and closed by the coordinator once its pull requests merge

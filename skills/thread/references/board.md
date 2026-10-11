@@ -38,19 +38,43 @@ threads of both, but nothing in `personal`. Claims and roles count across the wh
 a key or role is never held twice in two paths. A chat's own posts go to its scope, or to
 `--source <path>`. `--source all` on a view shows every path.
 
+## Work is the tree; the board coordinates it
+
+There is one list of things to do: the thread tree. The board does not keep a second one. An
+open call (`post --to any`) opens a thread of kind `task` under the thread it is `--on`, and is
+claimed, shown and closed as that thread: `claim <post>` claims the task, `done <post>` closes
+it, and `thread done <task>` finishes the call. Any open thread nobody holds is work an agent
+may take, so the hierarchy of to-dos (projects, threads, tasks, and later work items and
+activities as kinds) is the tree, and who is doing what is the board's claims on it. `tree`
+marks a held thread `⚑ <handle>`, and closing a thread frees its claim.
+
 ## Picking up work
 
 When the user says "go pick up work in patternode" (or "on the board", or names a role):
 
 ```bash
 thread.mjs board start --tool <your tool> --source patternode
+thread.mjs board next --claim --as <handle>
 ```
 
-The briefing lists, in order of what to take first: instructions for this chat, open calls,
-its merge queue if it holds a merging role, and open threads in its scope that nobody holds.
-Take the first that fits what this chat can do here: claim it, then work it. For a thread,
-`thread resume <id>` and its notes say where it was left. Tell the user in one line what was
-taken. If nothing fits, say so and `wait`.
+`next` ranks what this chat could do: instructions and questions to it first, then the head of
+a merge queue it holds the role for, then open threads in its scope nobody holds (tasks, then
+bugs, then plain threads, then improvements and ideas). `--claim` takes the best open thread,
+and if another chat wins the race for it, the next one, so any number of agents can start on
+one scope at once without taking the same thing. When `next` points at an instruction or the
+queue instead, do that first. Then `thread resume <id>` and its notes say where the work was
+left. Tell the user in one line what was taken. If nothing is left, `wait`.
+
+## Dispatching in parallel
+
+A chat that hands work out holds a role such as `dispatcher:patternode`. It reads
+`next --list --source patternode`, the scope's queue heads and tasks nobody holds, and starts
+one worker per task, up to the number of workers the user allows (a standing order, such as
+"at most four agents in patternode"). Where the tool can start sessions with a prompt (a cloud
+session, a background agent), each starts with one line, "Go pick up work in patternode.";
+elsewhere it posts the work as open calls for idle agents. Workers claim with `next --claim`,
+so the dispatcher never assigns the same task twice and need not track who took what. It
+watches `status`, and it never merges: that stays with the merging role.
 
 ## Joining
 

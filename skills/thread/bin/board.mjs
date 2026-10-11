@@ -295,13 +295,29 @@ function inbox(state, who) {
     const near = inScope(scope, p._source);
     const addressed = p.to.some((t) => direct.has(t)) || (p.reply && mine.has(p.reply)) || (near && (p.to.some((t) => broad.has(t)) || (p.on && threads.has(p.on))));
     if (addressed) forMe.push(p);
-    else if (near && p.to.includes("any") && !finished(p)) {
-      const c = state.claims.get(p.id);
+    else if (near && p.to.includes("any") && !finished(p) && !taskClosed(p)) {
+      const c = state.claims.get(p.task || p.id);
       if (!c || !state.live(c) || c.who === who) open.push(p);
     }
   }
   return { forMe, open };
 }
+
+/** The key a post is claimed under: its task thread when it has one. */
+const keyOf = (p) => p.task || p.id;
+
+// Thread statuses, read once per command: an open call whose task thread was closed is finished.
+let STATUSES = null;
+const taskClosed = (p) => {
+  if (!p.task) return false;
+  STATUSES ??= H.threadStatuses();
+  const st = STATUSES.get(p.task);
+  return st === "done" || st === "dropped";
+};
+
+// What to pick up first among open threads: tasks, then bugs, then plain threads, then the rest.
+const KIND_RANK = { task: 0, bug: 1, activity: 1, "": 2, feature: 3, improvement: 4, idea: 5 };
+const rank = (t) => KIND_RANK[t.kind || ""] ?? 3;
 
 const standing = (state, scope) => [...state.posts.values()].filter((p) => p.kind === "standing" && !p.retracted && inScope(scope, p._source));
 
@@ -433,10 +449,33 @@ function agentLine(state, a) {
 
 /** Open threads under a scope that nobody has claimed: work a chat can pick up. */
 function unclaimedThreads(state, scope) {
-  return H.openThreads(scope).filter((t) => {
+  const free = H.openThreads(scope).filter((t) => {
     const c = state.claims.get(t.id);
     return !c || !state.live(c);
   });
+  // Stable: within a rank the newest stays first.
+  return free.map((t, i) => [t, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([t]) => t);
+}
+
+/**
+ * The next things a chat could do, best first: instructions and questions to it, the head of
+ * any merge queue it holds the role for, then open threads nobody holds in its scope (tasks
+ * first, ideas last). With no handle, the list a dispatcher hands out: queue heads and tasks.
+ */
+function nextUp(state, who) {
+  const out = [];
+  if (who) {
+    for (const p of inbox(state, who).forMe) {
+      if (p.kind === "instruction" || p.kind === "question") out.push({ what: p.kind, id: p.id, text: p.text, post: p });
+    }
+  }
+  const roles = who ? state.rolesOf(who) : [...new Set(queue(state).flatMap((e) => e.to))];
+  for (const role of roles) {
+    const { next } = queueLines(state, queue(state).filter((e) => e.to.includes(role)));
+    if (next) out.push({ what: "merge", id: next.ref, text: `${role}: merge ${next.ref}, ${next.latest.text.split("\n")[0]}`, role });
+  }
+  for (const t of unclaimedThreads(state, scopeOf(state, who))) out.push({ what: t.kind === "task" ? "task" : "thread", id: t.id, text: t.text, thread: t });
+  return out;
 }
 
 /** The briefing a new agent reads: who it is, standing orders, what is for it, work it could take, who is about. */
@@ -482,7 +521,7 @@ function brief(state, who, ctx, { hook = false } = {}) {
   }
   const threads = unclaimedThreads(state, scope);
   if (threads.length) {
-    out.push("", `Open threads nobody holds${scope !== "default" ? ` in ${scope}` : ""} (${threads.length}${threads.length > 8 ? ", the latest 8" : ""}):`);
+    out.push("", `Work nobody holds, tasks first${scope !== "default" ? ` in ${scope}` : ""} (${threads.length}${threads.length > 8 ? ", the latest 8" : ""}):`);
     for (const t of threads.slice(0, 8)) out.push(`  ${t.id} · ${t.text}${t.kind ? ` [${t.kind}]` : ""} · ${t.ctx}${t.source !== "default" ? ` · in ${t.source}` : ""} · ${ago(t.last)}`);
   }
   const others = state.present.filter((a) => a.handle !== who && inScope(scope, a.hello.scope));
@@ -494,7 +533,7 @@ function brief(state, who, ctx, { hook = false } = {}) {
     out.push(
       "",
       "Next: act on instructions first (accept, then done with the result); answer questions; merge in",
-      "queue order if you hold a merging role; then take an open call or an open thread, claiming it first.",
+      "queue order if you hold a merging role; then `thread board next --claim` takes the best open task.",
     );
   }
   return out.join("\n");
@@ -596,7 +635,7 @@ function autoPrune() {
 
 // ---------------------------------------------------------------- commands
 
-const WRITES = new Set(["start", "post", "reply", "ready", "ack", "accept", "done", "decline", "merging", "merged", "claim", "release", "role", "retract", "renew", "bye"]);
+const WRITES = new Set(["next", "start", "post", "reply", "ready", "ack", "accept", "done", "decline", "merging", "merged", "claim", "release", "role", "retract", "renew", "bye"]);
 
 /** The latest queue entry for a pull request, for merging and merged. */
 function entryFor(state, ref) {
@@ -702,6 +741,13 @@ const commands = {
     const events = readBoard();
     const state = replay(events);
     const home = homeFor(state, who, flags);
+    // An open call is work: it becomes a task in the tree, under the thread it is on, and is
+    // claimed, held and closed as that thread.
+    let task;
+    if (to.includes("any") && (kind === "instruction" || kind === "info")) {
+      const title = text.split("\n")[0].slice(0, 120);
+      task = H.openThread({ source: home, text: title, parent: typeof flags.on === "string" ? flags.on : null, kind: "task", ctx: H.context(flags), tool: typeof flags.tool === "string" ? flags.tool : undefined });
+    }
     const p = write(
       {
         type: "post",
@@ -715,12 +761,13 @@ const commands = {
         after: list(flags.after).length ? list(flags.after) : undefined,
         deploy: typeof flags.deploy === "string" ? flags.deploy : undefined,
         relayed: flags["for-user"] ? true : undefined,
+        task,
         text,
       },
       home,
     );
     save(`${who} posts ${p.id} (${kind}) to ${to.join(", ") || p.on}`);
-    console.log(`📮 ${p.id} · ${kind} → ${[...to, ...(p.on ? [`on ${p.on}`] : [])].join(", ")}${home !== "default" ? ` · in ${home}` : ""}`);
+    console.log(`📮 ${p.id} · ${kind} → ${[...to, ...(p.on ? [`on ${p.on}`] : [])].join(", ")}${home !== "default" ? ` · in ${home}` : ""}${task ? ` · task ${task} in the tree` : ""}`);
     return p;
   },
 
@@ -729,6 +776,46 @@ const commands = {
     const orig = replay(readBoard()).posts.get(pos[0]);
     if (!orig) H.die(`no post ${pos[0]} on the board`);
     commands.post(pos.slice(1), { ...flags, as: who, to: orig.relayed ? "user" : orig.from, on: orig.on ?? undefined, ref: orig.ref ?? undefined, reply: orig.id, kind: flags.kind ?? "answer" });
+  },
+
+  next(pos, flags) {
+    // One ranked list of what to do next. --claim takes the best open task, racing safely:
+    // when another chat wins it, the next one is tried. --list is the dispatcher's view.
+    const who = flags.list ? me(flags, { required: false }) : me(flags);
+    const limit = Number(flags.limit ?? (flags.list ? 20 : 5));
+    let state = replay(readBoard());
+    const items = nextUp(state, flags.list ? null : who);
+    if (flags.json) return console.log(JSON.stringify(items.slice(0, limit).map(({ post, ...i }) => i), null, 2));
+    if (!flags.claim) {
+      if (!items.length) return console.log("Nothing to pick up here. thread board wait waits for something to arrive.");
+      items.slice(0, limit).forEach((i, n) => console.log(`${n + 1}. ${i.what} · ${i.id} · ${i.text.split("\n")[0]}${i.thread ? ` · ${i.thread.ctx}${i.thread.source !== "default" ? ` · in ${i.thread.source}` : ""}` : ""}`));
+      if (items.length > limit) console.log(`+ ${items.length - limit} more`);
+      return;
+    }
+    const first = items[0];
+    if (first && (first.what === "instruction" || first.what === "question")) {
+      console.log(`First, the ${first.what} for you: ${first.id}. Accept it, act on it, then done or reply:\n  ${line(first.post)}`);
+      return;
+    }
+    if (first && first.what === "merge") {
+      console.log(`First, the merge queue: ${first.text}. thread board queue --as ${who} has the order.`);
+      return;
+    }
+    for (const i of items.filter((x) => x.thread)) {
+      const r = claim(i.id, who, { for: flags.for, note: typeof flags.note === "string" ? flags.note : undefined }, LEASE.claim);
+      if (r.held && r.pushed !== false) {
+        console.log(`🔒 ${who} took ${i.id} · ${i.text}${i.thread.source !== "default" ? ` · in ${i.thread.source}` : ""}`);
+        console.log(`Pick it up with: thread resume ${i.id}. Close it with thread done ${i.id} "<result>" when finished; that frees the claim.`);
+        return;
+      }
+      if (r.held) {
+        console.log(`(claimed ${i.id} but NOT PUSHED: not yours until a later command pushes it)`);
+        return;
+      }
+      state = replay(readBoard());
+    }
+    console.log("Nothing left to take: every open task here is held. thread board wait waits for something new.");
+    process.exitCode = 3;
   },
 
   ready(pos, flags) {
@@ -792,9 +879,11 @@ const commands = {
     if ((state === "done" || state === "declined") && !note) H.die(`say what happened: thread board ${state === "done" ? "done" : "decline"} ${id} "<result or why>"`);
     // An acknowledgement goes beside its post, so everyone who reads the post reads it.
     write({ type: "ack", from: who, post: id, state, note }, p._source);
-    // Finishing an open call lets its claim go.
-    const c = s.claims.get(id);
-    if ((state === "done" || state === "declined") && c && c.who === who) write({ type: "release", from: who, key: id }, p._source);
+    // Finishing an open call lets its claim go, and done closes its task in the tree. A decline
+    // by the agent that took it only lets it go, so another agent can take it.
+    const c = s.claims.get(keyOf(p));
+    if ((state === "done" || state === "declined") && c && c.who === who) write({ type: "release", from: who, key: keyOf(p) }, p._source);
+    if (state === "done" && p.task) H.closeThread(p.task, "done", note);
     save(`${who} ${state} ${id}`);
     console.log(`${id} ${state}${note ? `: ${note}` : ""}`);
   },
@@ -861,8 +950,10 @@ const commands = {
 
   claim(pos, flags) {
     const who = me(flags);
-    const key = pos[0];
+    let key = pos[0];
     if (!key) H.die("claim what? thread board claim <activity, thread, post or any key> --as <handle>");
+    const post = replay(readBoard()).posts.get(pos[0]);
+    if (post?.task) key = post.task;
     const r = claim(key, who, flags, LEASE.claim);
     if (r.held) console.log(`🔒 ${who} holds ${key} ${until(r.holder.until)}${r.pushed === false ? " (NOT PUSHED: not yours until it is)" : ""}`);
     else {
@@ -976,6 +1067,8 @@ const commands = {
   thread board reply <post> "<text>"
   thread board inbox                 unread for this handle and its roles, and what reaches its scope
   thread board accept|done|decline <post> ["<note>"]   (ack <post> <state> also works)
+  thread board next [--claim] [--list] [--limit 5]   what to do next, best first; --claim takes the best
+                                     open task (racing safely); --list is the dispatcher's view of the scope
   thread board ready <owner/repo#n> "<what it changes>" [--to <role>] [--after <refs>] [--deploy "<what>"]
                                      join the merge queue (default role master:<repo>)
   thread board queue [--to <role>]   the merge queue, in order, with what waits for what
@@ -1009,6 +1102,22 @@ export function runBoard(pos, flags, helpers) {
   if (!commands[cmd]) H.die(`unknown board command "${cmd}". Try: thread board help`);
   commands[cmd](pos, flags);
   if (WRITES.has(cmd) && !flags.hook) autoPrune();
+}
+
+/** Live claims on threads, for the tree: thread id -> handle. */
+export function holders(helpers) {
+  H = helpers;
+  const state = replay(readBoard());
+  return new Map([...state.claims.values()].filter((c) => state.live(c) && /^t-[0-9a-z]+$/.test(c.key)).map((c) => [c.key, c.who]));
+}
+
+/** When a thread closes, its claim ends: a release written beside the thread, committed with the close. */
+export function releaseOnClose(helpers, id) {
+  H = helpers;
+  const state = replay(readBoard());
+  const c = state.claims.get(id);
+  if (!c || !state.live(c)) return;
+  write({ type: "release", from: c.who, key: id, take: true, note: "thread closed" }, homeOf(H.SCOPE));
 }
 
 /** Posts on a thread, oldest first, for `thread show`: [{ id, kind, from, to, text, ts, acks }]. */

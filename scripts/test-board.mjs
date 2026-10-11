@@ -296,7 +296,7 @@ test("pick up work: the briefing lists open threads in the scope that nobody hol
   try {
     const t = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "wire the queue", "--source", "patternode/platform"))[1];
     const out = f.b.run("board", "start", "--as", "b1", "--source", "patternode");
-    assert.match(out, new RegExp(`Open threads nobody holds.*\\n.*${t}`));
+    assert.match(out, new RegExp(`Work nobody holds.*\\n.*${t}`));
     f.b.run("board", "claim", t, "--as", "b1");
     assert.doesNotMatch(f.a.run("board", "start", "--as", "a1", "--source", "patternode"), new RegExp(`${t} · wire`));
   } finally {
@@ -325,6 +325,58 @@ test("the merge queue keeps order, holds a pull request until the ones it follow
     assert.match(q, /1\. patternode\/patternode-platform#11 · ready, next/);
     assert.doesNotMatch(f.a.run("board", "inbox", "--as", "m1"), /#10/, "the superseded note left the inbox");
     assert.match(f.b.run("board", "sent", "--as", "w1"), /superseded by p-[0-9a-z]+[\s\S]*done by m1 just now: squash abc123/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("an open call is a task in the tree: claimed as the thread, shown with its holder, closed when done", () => {
+  const f = fixture();
+  try {
+    const parent = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "release 0.14"))[1];
+    f.a.run("board", "start", "--as", "a1");
+    const out = f.human.run("board", "post", "Fix the flaky test", "--to", "any", "--on", parent, "--kind", "instruction", "--as", "user");
+    const id = postId(out);
+    const task = /task (t-[0-9a-z]+) in the tree/.exec(out)[1];
+    assert.match(f.a.run("tree"), new RegExp(`${task} Fix the flaky test \\[task\\]`));
+    assert.match(f.a.run("board", "claim", id, "--as", "a1"), new RegExp(`a1 holds ${task}`));
+    assert.match(f.a.run("tree"), new RegExp(`${task} Fix the flaky test \\[task\\] ⚑ a1`));
+    f.a.run("board", "done", id, "fixed in #13", "--as", "a1");
+    assert.match(f.a.run("show", task), /done.*fixed in #13/);
+    assert.match(f.a.run("board", "locks"), /Nothing is claimed/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("closing a thread frees its claim", () => {
+  const f = fixture();
+  try {
+    const t = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "wire it"))[1];
+    f.a.run("board", "start", "--as", "a1");
+    f.a.run("board", "claim", t, "--as", "a1");
+    f.a.run("done", t, "wired in #20");
+    assert.doesNotMatch(f.a.run("board", "locks"), /🔒/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("next ranks instructions, then tasks, then ideas; --claim takes the best task and the next agent gets the next one", () => {
+  const f = fixture();
+  try {
+    const idea = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "maybe try X", "--kind", "idea"))[1];
+    const plain = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "tidy the docs"))[1];
+    f.a.run("board", "start", "--as", "a1");
+    f.b.run("board", "start", "--as", "b1");
+    const task = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "Ship the queue", "--to", "any", "--kind", "instruction", "--as", "user"))[1];
+    const list = f.human.run("board", "next", "--list");
+    assert.ok(list.indexOf(task) < list.indexOf(plain) && list.indexOf(plain) < list.indexOf(idea), list);
+    const direct = postId(f.human.run("board", "post", "Answer me first", "--to", "a1", "--kind", "instruction", "--as", "user"));
+    assert.match(f.a.run("board", "next", "--claim", "--as", "a1"), new RegExp(`First, the instruction for you: ${direct}`));
+    f.a.run("board", "accept", direct, "--as", "a1");
+    assert.match(f.a.run("board", "next", "--claim", "--as", "a1"), new RegExp(`a1 took ${task}`));
+    assert.match(f.b.run("board", "next", "--claim", "--as", "b1"), new RegExp(`b1 took ${plain}`));
   } finally {
     f.cleanup();
   }

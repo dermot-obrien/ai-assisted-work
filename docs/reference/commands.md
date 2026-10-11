@@ -239,6 +239,7 @@ for a chat take `--as <handle>` or `$BOARD_AS`. `--to` takes a comma list of han
 |---------|------|
 | `thread board start [--as <h>] [--source <path>] [--tool <t>] [--role <r>] [--thread <id>] [--note "..."] [--take]` | Join: records presence (8h), takes the roles named, prints the briefing. A new handle unless `--as` |
 | `thread board status [--source <path\|all>] [--json]` | For the user: who is working on what, merge queues, instructions not yet done, open threads nobody holds |
+| `thread board next [--claim] [--list] [--limit 5] [--json]` | What to do next, best first. `--claim` takes the best open thread, trying the next when another chat wins it; `--list` is the scope's view for a dispatcher (DD-15) |
 | `thread board ready <owner/repo#n> "<what it changes>" [--to <role>] [--after <refs>] [--deploy "<what>"]` | Join the merge queue of `master:<repo>` or the role named. An update keeps its place |
 | `thread board queue [--to <role>] [--json]` | The merge queue in order, with what waits for what and what is next |
 | `thread board merging\|merged <owner/repo#n> ["<note>"]` | For the merging role: start a merge (refused while it waits on another), then record it. `merged` needs a note |

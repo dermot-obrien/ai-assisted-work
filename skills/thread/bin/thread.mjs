@@ -27,7 +27,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { homedir, hostname } from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
-import { postsOn, runBoard } from "./board.mjs";
+import { holders, postsOn, releaseOnClose, runBoard } from "./board.mjs";
 
 // STORE is the git clone. HOME is the selected source's folder inside it: the store's root
 // for the default source, sources/<name>/ for a named one. It is set once, in main.
@@ -605,7 +605,8 @@ function renderForest(views, { focus } = {}) {
     const tail = [n.ctx, ago(n.lastDeep)].filter(Boolean).join(" · ");
     const outcome = n.outcome ? ` — ${n.outcome}` : "";
     const here = focus && n.id === focus ? "   ← here" : "";
-    lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${tag(n)}${outcome}   ${tail}${here}`);
+    const held = isUnfinished(n) && holderOf(n.id) ? ` ⚑ ${holderOf(n.id)}` : "";
+    lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${tag(n)}${held}${outcome}   ${tail}${here}`);
   };
   const walk = ({ n, kids }, prefix, branch, childPrefix) => {
     line(n, prefix, branch);
@@ -651,6 +652,7 @@ function renderJson(views, source) {
     description: n.description,
     outcome: n.outcome,
     notes: n.notes.map((x) => x.text),
+    holder: (isUnfinished(n) && holderOf(n.id)) || null,
     opened: n.opened,
     last: n.lastDeep,
     ago: ago(n.lastDeep),
@@ -735,7 +737,7 @@ per action, \`board/YYYY-MM-DD/<utc-stamp>-<host>-<6 hex>.json\`, never edited. 
 
 | type | fields |
 |---|---|
-| \`post\` | \`id\` (\`p-\` + 4 base-36 chars, unused), \`to\` (list: handles, roles, \`*\` everyone, \`any\` an open call, \`repo:<name>\`), \`on\` (thread id or null), \`ref\` (work item, activity or PR, or null), \`kind\` (\`instruction\` \\| \`question\` \\| \`info\` \\| \`ready\` \\| \`standing\` \\| \`answer\`), \`reply\` (post id or null), \`text\`, optional \`relayed\` (true: written for the user), and for \`ready\`: \`after\` (PRs to merge first), \`deploy\` |
+| \`post\` | \`id\` (\`p-\` + 4 base-36 chars, unused), \`to\` (list: handles, roles, \`*\` everyone, \`any\` an open call, \`repo:<name>\`), \`on\` (thread id or null), \`ref\` (work item, activity or PR, or null), \`kind\` (\`instruction\` \\| \`question\` \\| \`info\` \\| \`ready\` \\| \`standing\` \\| \`answer\`), \`reply\` (post id or null), \`text\`, optional \`relayed\` (true: written for the user), \`task\` (an open call's thread, of kind \`task\`, which is claimed and closed in its place), and for \`ready\`: \`after\` (PRs to merge first), \`deploy\` |
 | \`ack\` | \`post\`, \`state\` (\`seen\` \\| \`accepted\` \\| \`done\` \\| \`declined\`), \`note\` (required for done and declined) |
 | \`retract\` | \`post\` (withdrawn, such as a standing order) |
 | \`hello\` | \`tool\`, \`ctx\` (repo), \`scope\` (the source path the agent works in), \`threads\` (followed), \`note\`, \`until\` (presence lasts until then) |
@@ -745,7 +747,8 @@ per action, \`board/YYYY-MM-DD/<utc-stamp>-<host>-<6 hex>.json\`, never edited. 
 
 Claims are replayed in the order git first added their files to \`main\`, not by \`ts\`: a claim
 holds when no other unexpired claim on the key came before it (or it has \`take\`), and the holder
-renews with another claim. A claim counts once it is pushed. Claims, roles and presence are replayed
+renews with another claim. A claim counts once it is pushed. The to-do list is the tree: an open
+thread nobody claims is work any agent may take, and closing a thread releases its claim. Claims, roles and presence are replayed
 across every source together. Posts to a handle or role reach it from any source; other posts reach
 agents whose scope is that source, a path above it or a path below it. Acks and retracts are filed
 beside their post. The merge queue for a role is its \`ready\` posts not done or declined, one per PR,
@@ -845,6 +848,7 @@ const commands = {
     const chain = pathTo(nodes, n);
     if (chain.length > 1) console.log(`   path: ${chain.map((p) => `${p.id} ${p.text}`).join(" › ")}`);
     console.log(`   ${n.kind ? `${n.kind}, ` : ""}${n.status}, opened ${ago(n.opened)}${n.outcome ? ` — ${n.outcome}` : ""}`);
+    if (isUnfinished(n) && holderOf(n.id)) console.log(`   held on the board by ${holderOf(n.id)}`);
     for (const note of n.notes) console.log(`   · ${note.text}  (${ago(note.ts)})`);
     const posts = postsOn(boardHelpers(), n.id);
     if (posts.length) {
@@ -866,6 +870,8 @@ const commands = {
     // Every close carries a one-line resolution, so the tree says how each thread ended.
     if (!note) die(`a resolution is required: thread ${{ done: "done", parked: "park", dropped: "drop" }[status]} ${n.id} "<what was decided, delivered, or why it stopped>"`);
     writeEvent({ type: "close", id: n.id, status, note });
+    // A closed thread is no longer anyone's to work: its claim on the board ends with it.
+    releaseOnClose(boardHelpers(), n.id);
     commitAndPush(`${status} ${n.id}${note ? `: ${note}` : ""}`);
     const tree = buildTree(readEvents());
     console.log(`${MARK[status]} ${n.id} ${n.text} — ${status}${note ? `: ${note}` : ""}`);
@@ -1148,8 +1154,47 @@ const commands = {
 
 /** What board.mjs needs from the store, so the board and the tree share one clone and one source. */
 function boardHelpers(scope = SOURCE) {
-  return { STORE, SCOPE: scope, git, tryGit, commitAndPush, pull, context, die, warn, sources, sourceDir, openThreads };
+  return { STORE, SCOPE: scope, git, tryGit, commitAndPush, pull, context, die, warn, sources, sourceDir, openThreads, openThread, closeThread, threadStatuses };
 }
+
+/** The source that holds a thread id, or null. */
+const sourceOfId = (id) => sources().find((s) => sourceIds(s).has(id)) ?? null;
+
+/** Open a thread for the board (an open call becomes a task in the tree). It goes beside its parent, else in `source`. Returns its id. */
+function openThread({ source, text, parent = null, kind = null, ctx, tool }) {
+  const home = (parent && sourceOfId(parent)) || source;
+  const id = newId(allIds());
+  inSource(home, () => writeEvent({ type: "open", id, parent: parent && sourceOfId(parent) === home ? parent : null, text, ctx, tool, ...(kind ? { kind } : {}) }));
+  return id;
+}
+
+/** Close a thread for the board, in whichever source holds it. False when no source does. */
+function closeThread(id, status, note) {
+  const home = sourceOfId(id);
+  if (!home) return false;
+  inSource(home, () => writeEvent({ type: "close", id, status, note }));
+  return true;
+}
+
+/** Every live thread's status, across sources: id -> open | parked | done | dropped. */
+function threadStatuses() {
+  const out = new Map();
+  for (const s of sources()) inSource(s, () => { for (const n of buildTree(readEvents()).values()) out.set(n.id, n.status); });
+  return out;
+}
+
+// Who holds each thread on the board, read once per command when a view needs it.
+let HOLDERS = null;
+const holderOf = (id) => {
+  if (!HOLDERS) {
+    try {
+      HOLDERS = holders(boardHelpers());
+    } catch {
+      HOLDERS = new Map();
+    }
+  }
+  return HOLDERS.get(id);
+};
 
 /** Open threads with nothing open beneath them, in a source and every source beneath it, newest first: work to pick up. */
 function openThreads(scope) {

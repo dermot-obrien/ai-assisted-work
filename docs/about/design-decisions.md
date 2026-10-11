@@ -837,6 +837,53 @@ marks it `merged` with what shipped. Only the role holder merges.
 
 ---
 
+## DD-15: One List of Work, the Tree; the Board Coordinates It
+
+### Context
+
+With the board (DD-13), Patternode had two places to put something to do: an open thread, and
+an open call posted to `any`. The question was whether threads should become posts on the board,
+with the hierarchy rebuilt from it, so that one mechanism carried everything and an agent could
+sweep it for work, several in parallel.
+
+### Decision
+
+**There is one list of work, the thread tree, and the board coordinates it.** Both are append-only
+events in the same store, replayed into views, so the tree already is a hierarchy rebuilt from a
+log. What changes is that nothing to do lives only on the board:
+
+- An open call opens a thread of kind `task` under the thread it is on, and the post points at it.
+  It is claimed, shown and closed as that thread.
+- Any open thread nobody claims is work. The board's claims on threads say who is doing which,
+  `tree` shows the holder, and closing a thread frees its claim.
+- `board next` ranks what a chat could do across both: instructions and questions to it, the head
+  of its merge queue, then unclaimed open threads in its scope, tasks first and ideas last.
+  `--claim` takes the best one and moves on to the next when another chat wins it. `--list` is the
+  same view for a dispatcher that starts one worker per task.
+
+**The two kinds of event stay in separate folders.** Threads keep `events/` and the board keeps
+`board/`. Copies of the skill older than 0.14 are committed in many repositories, and they treat an
+event whose id they do not know as an archived thread, re-reading the whole archive on every
+command. The folders are a storage detail: one log in meaning, read together by every view.
+
+### Rationale
+
+- One list means a task cannot be done twice because it was recorded twice, and the tree's
+  hierarchy (projects, threads, tasks) is the hierarchy of work with no second structure to keep in
+  step.
+- Making posts the to-do list would have turned every note, rename and close into board traffic
+  and broken older clients. Making threads claimable gets the same result with what exists.
+- Ranking and racing claims let parallel agents share a scope with no central assigner; a
+  dispatcher only decides how many workers to start.
+
+### Consequences
+
+- The plan in a shared repository (roadmap) can be the tree as well: a work item, its activities
+  and its tasks as thread kinds with parents, claimed on the board, rather than a second store.
+- An open call posted before this decision has no task thread and stays claimable as a post.
+
+---
+
 ## Decision Log
 
 | ID | Decision | Date | Status |
@@ -855,3 +902,4 @@ marks it `merged` with what shipped. Only the role holder merges.
 | DD-12 | Thread Sources, Separate Trees in One Store | 2026-10 | Implemented (thread 0.13.0) |
 | DD-13 | A Bulletin Board for Agents, in the Threads Store | 2026-10 | Implemented (thread 0.14.0) |
 | DD-14 | Source Paths, Scoped Views and a Merge Queue | 2026-10 | Implemented (thread 0.14.0); extends DD-12 and DD-13 |
+| DD-15 | One List of Work, the Tree; the Board Coordinates It | 2026-10 | Implemented (thread 0.14.0) |

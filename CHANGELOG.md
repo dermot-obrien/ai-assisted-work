@@ -29,6 +29,11 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   threads in the scope nobody holds ("go pick up work in patternode"), and `board status` shows
   who is working on what. `board ready <owner/repo#n>` joins the merging role's queue in order,
   with `--after` for pull requests that must merge first; `queue`, `merging` and `merged` work it.
+- thread 0.14.0: one list of work (DD-15). An open call opens a `task` thread under the thread it
+  is on, claimed and closed as that thread; `tree` marks held threads `⚑ <handle>`, and closing a
+  thread frees its claim. `board next` ranks instructions, the merge queue and open threads nobody
+  holds; `--claim` takes the best one and tries the next when another chat wins it, and `--list`
+  is a dispatcher's view for running agents in parallel.
 
 ### Added
 - thread 0.13.0: sources (DD-12). One store holds separate trees for separate segments of work:
