@@ -37,8 +37,9 @@ if (process.argv[2]) {
 
 const skillDir = process.env.SKILL_DIR || path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const skill = path.basename(skillDir);
-// These skills create the work item or initiative folder when it is missing.
-const creates = new Set(["aaw-start-work", "aaw-start-initiative"]);
+// The work skill creates the work item or initiative folder when it is missing (its start and
+// initiative flows); the names before the merge are kept so an older install still checks.
+const creates = new Set(["work", "aaw-start-work", "aaw-start-initiative"]);
 
 const root = process.cwd();
 const problems = [];
@@ -92,7 +93,7 @@ if (!existsSync(configFile)) {
   // missing is a workspace with no work in it yet, which is only worth a warning.
   checkDir("work_items_path", "./change/work-items/", Boolean(cfg.work_items_path));
   // Initiatives are optional, so a missing folder is only worth a warning.
-  if (cfg.initiatives_path || skill === "aaw-start-initiative") {
+  if (cfg.initiatives_path || skill === "aaw-start-initiative" || skill === "work") {
     checkDir("initiatives_path", "./change/initiatives/", false);
   }
   if (cfg.deliverables_register) {

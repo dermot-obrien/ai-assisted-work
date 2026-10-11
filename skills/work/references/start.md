@@ -1,14 +1,3 @@
----
-name: aaw-start-work
-description: Classify a new piece of work and open only the workspace it earns, then scope, research and plan it. Triages a request into chore, change, intervention or inquiry, and for an intervention creates a WI-NNN work item that names the products it will leave behind and derives its activities and tasks from them. Use when asked to start work, start or scope a work item, open a WI, plan a piece of work before building it, or when a request needs classifying before any ceremony is applied.
-license: CC-BY-4.0
-compatibility: Reads .aaw-config.yaml at the workspace root for work_items_path, initiatives_path and the optional deliverables_register. No runtime dependencies; the optional aaw CLI used to verify the result needs Node.js 18 or newer.
-metadata:
-  author: dermot-obrien
-  framework: aaw
-  version: "2.5.0"
----
-
 # Start Work
 
 Classify the work first, then apply only the ceremony that class earns. Most requests are
@@ -28,14 +17,14 @@ Reaches beyond one unit (shared / many / safety)?
 
 Default to the lightest answer. Ask the user only when genuinely ambiguous. For the three
 axes behind this tree, the full class definitions, the class-versus-substrate distinction
-and re-triage rules, read [references/work-classification.md](references/work-classification.md).
+and re-triage rules, read [references/work-classification.md](work-classification.md).
 
 | Class | Action | Then |
 |-------|--------|------|
 | Chore (default) | Branch `chore/{kebab-desc}`, do the work, add a changelog line (patch). | Done. No `WI-NNN/`, no scope, plan or progress file. |
 | Change | Assign `WI-NNN`. Minimal workspace: short `progress.yaml` plus a one-paragraph plan. Branch `wi/WI-NNN-…`. | Skip to Phase 3 (light), then Phase 4. |
 | Intervention | Assign `WI-NNN`. Full workspace. | Continue to Phase 1. |
-| Inquiry | Hand to research: invoke AAR `/aar-start-hypothesis`. | Re-triage the outcome when research concludes, or close it as a lesson. |
+| Inquiry | Hand to research: where a research skill is installed (AI-Assisted Research's `/aar-start-hypothesis`), invoke it; otherwise write the question down where open questions live (a thread, a note) and stop. | Re-triage the outcome when research concludes, or close it as a lesson. |
 
 Do not create a work-item folder unless the class is intervention or change.
 
@@ -95,7 +84,7 @@ once the user has confirmed.
 5. Create the work item and its scope documents (see "Creating the work item" below).
 
 Full question set, the confirmation script, the JIRA prompt and the rules for splitting
-content between `scope.md` and `scope-ai.md` are in [references/scoping.md](references/scoping.md).
+content between `scope.md` and `scope-ai.md` are in [references/scoping.md](scoping.md).
 
 ### Phase 2: Discovery
 
@@ -107,7 +96,7 @@ update, or work where the user has already specified the approach. Record the sk
 Otherwise research the workspace and the web, present two or three options with trade-offs
 and a recommendation, and record the user's choice. Document every web source with a URL
 and a retrieval date. Procedure, the research matrix by work type and the option-presentation
-format are in [references/discovery.md](references/discovery.md).
+format are in [references/discovery.md](discovery.md).
 
 ### Phase 3: Planning
 
@@ -128,13 +117,13 @@ Plan the products first, then derive the work. In order:
 
 Never start from a list of things to do and look for products afterwards. Complexity
 thresholds, the product description contract, activity design rules and the approval script
-are in [references/planning.md](references/planning.md).
+are in [references/planning.md](planning.md).
 
 ### Phase 4: Execution
 
 1. Set `status: in_progress` in `progress.yaml`.
 2. Claim an activity with no unmet dependencies by creating a lock file in `locks/`.
-3. Hand off: invoke `/aaw-progress-work WI-NNN` for the implementation loop.
+3. Hand off: invoke `/work progress WI-NNN` for the implementation loop.
 
 This skill stops at the first claimed activity. It does not implement the plan.
 
@@ -168,7 +157,7 @@ This skill stops at the first claimed activity. It does not implement the plan.
    | `notes.md` | any | — | optional | optional |
 
 Worked examples for development, architecture and consultancy work are in
-[references/examples.md](references/examples.md).
+[references/examples.md](start-examples.md).
 
 ## Rules
 
@@ -187,10 +176,3 @@ Worked examples for development, architecture and consultancy work are in
    in separate activities, cross-activity dependencies minimised. The activity graph is
    derived from the product flow; where they disagree, the product flow is right.
 9. Tasks are atomic and specific.
-
-## Related skills
-
-- `/aaw-progress-work` executes the plan this skill produces.
-- `/aaw-work-status` reports on work items already open.
-- `/aaw-next-task` picks the next task within an open work item.
-- `/aaw-start-initiative` groups several work items under one initiative.

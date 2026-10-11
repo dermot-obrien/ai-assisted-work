@@ -8628,7 +8628,7 @@ AI tools detected: ${detectedNames || "none"}
     process4.stdout.write(
       `
 Done. Try this in your AI tool:
-    /aaw-start-work add a new feature
+    /work start add a new feature
 
 Or from the shell:
     node ${cliPath} status
@@ -9844,7 +9844,7 @@ Usage:
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
 'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
-var VERSION = true ? "3.2.0" : "0.0.0-dev";
+var VERSION = true ? "4.0.0" : "0.0.0-dev";
 function resolveAawRoot2() {
   const self = fileURLToPath2(import.meta.url);
   const dir = path11.dirname(self);

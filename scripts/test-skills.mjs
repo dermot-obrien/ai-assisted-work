@@ -30,11 +30,11 @@ function fixture() {
   const work = path.join(root, "src-thread");
   mkdirSync(work);
   execFileSync("git", ["init", "--quiet", "--initial-branch=main", work]);
-  skillFolder(work, "thread", "1.0.0");
+  skillFolder(path.join(work, "skills", "thread"), "thread", "1.0.0");
   execFileSync("git", ["-C", work, "add", "-A"], { env: GIT_ENV });
   execFileSync("git", ["-C", work, "commit", "-qm", "v1"], { env: GIT_ENV });
   execFileSync("git", ["-C", work, "tag", "v1.0.0"], { env: GIT_ENV });
-  skillFolder(work, "thread", "1.1.0");
+  skillFolder(path.join(work, "skills", "thread"), "thread", "1.1.0");
   execFileSync("git", ["-C", work, "commit", "-qam", "v1.1"], { env: GIT_ENV });
   execFileSync("git", ["-C", work, "tag", "v1.1.0"], { env: GIT_ENV });
   const remote = path.join(root, "thread.git");
@@ -45,7 +45,7 @@ function fixture() {
   writeFileSync(
     path.join(bundle, "bundle.json"),
     JSON.stringify({ name: "test-bundle", skills: [
-      { name: "thread", path: "skills/thread", version: "1.0.0", source: { repo: remote, ref: "v1.0.0", path: "." } },
+      { name: "thread", path: "skills/thread", version: "1.0.0", source: { repo: remote, ref: "v1.0.0" } },
       { name: "work", path: "skills/work", version: "3.0.0" },
     ] }, null, 2),
   );
@@ -153,6 +153,18 @@ test("a skill that still names a requirement is reported, never pulled in", () =
     const out = f.ok("install", "work", "--bundle", f.bundle);
     assert.match(out, /note: work says it needs thread, which is not installed/);
     assert.ok(!existsSync(path.join(f.ws, ".agents", "skills", "thread")));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("requirements in purl form are read by skill name: met ones are quiet, missing ones reported", () => {
+  const f = fixture();
+  try {
+    skillFolder(path.join(f.bundle, "skills", "work"), "work", "3.0.0", '  x-skill-requires: "pkg:generic/someone/thread-repo/thread ^1.0.0, pkg:generic/someone/x/absent ^2.0.0"\n');
+    const out = f.ok("install", "--bundle", f.bundle);
+    assert.match(out, /note: work says it needs absent, which is not installed/);
+    assert.doesNotMatch(out, /needs thread/);
   } finally {
     f.cleanup();
   }

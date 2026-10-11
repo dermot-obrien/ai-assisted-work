@@ -65,7 +65,7 @@ When you `aaw init` from this fork, the init script copies both the upstream ski
 Add organisation-specific fields without breaking the core schema. The work item `progress.yaml` template supports an `org_metadata` extension point:
 
 ```yaml
-# skills/aaw-start-work/assets/templates/progress.yaml (your fork)
+# skills/work start/assets/templates/progress.yaml (your fork)
 work_item_id: WI-NNN
 title: "{title}"
 type: development

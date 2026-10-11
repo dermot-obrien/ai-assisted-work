@@ -378,6 +378,15 @@ export function checkBundle(dir, registry) {
 
   b.skills.forEach((s, i) => {
     const at = `/skills/${i}`;
+    if (s.source) {
+      // A skill from a repository of its own is checked there; here only its identity.
+      const m = /[/:]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/.exec(s.source.repo);
+      if (!m) return where(`${at}/source/repo`, `${s.source.repo} does not end in <owner>/<repository>`);
+      const home = `pkg:generic/${m[1]}/${m[2]}/${s.name}@${s.version}`;
+      if (s.purl !== home) where(`${at}/purl`, `${s.purl} should be ${home}, its home bundle's`);
+      if (path.basename(s.path) !== s.name) where(`${at}/path`, `the directory ${s.path} is not named ${s.name}`);
+      return;
+    }
     const sdir = path.join(dir, s.path);
     const skillMd = path.join(sdir, "SKILL.md");
     if (!existsSync(skillMd)) return where(`${at}/path`, `${s.path}/SKILL.md does not exist`);
@@ -511,6 +520,10 @@ export function runChecks(bundleDir, workspace, skillsDir) {
       continue;
     }
     const skillDir = path.resolve(skillsDir, s.name);
+    if (s.source && !existsSync(skillDir)) {
+      console.log(`  --   ${s.name}: from ${s.source.repo}, not installed here`);
+      continue;
+    }
     let argv = s.check.command;
     if (s.check.runtime) {
       const rt = resolveRuntime(s.check.runtime);

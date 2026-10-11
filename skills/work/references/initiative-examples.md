@@ -55,7 +55,7 @@ Phase 1 (Scoping):
 Phase 2 (Creation):
 - ID: IN-003
 
-Then, via /aaw-start-work:
+Then, via /work start:
   WI-040 (workstream) Identity and access      — durable, accretes scope
     WI-041 (epic, Q1-FY27) Federation baseline — bounded, one period
     WI-042 (epic, Q2-FY27) Agent identity      — bounded, one period
@@ -73,5 +73,5 @@ User: "Create an initiative to fix the login timeout bug"
 ```
 
 This is a chore or at most a change, not an initiative. It is bounded, single-unit and has one
-product. Say so and route it to `/aaw-start-work`, which will triage it correctly. An
+product. Say so and route it to `/work start`, which will triage it correctly. An
 initiative with one member is overhead pretending to be structure.

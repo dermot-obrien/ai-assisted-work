@@ -30,7 +30,7 @@ import path from "node:path";
 import { createHash, randomBytes } from "node:crypto";
 
 // Leases. An agent's presence, a role and a claim each last this long unless renewed.
-// A claim matches an agent's activity lock in aaw-progress-work (one hour).
+// A claim matches an agent's activity lock in the work skill (one hour).
 const LEASE = { hello: "8h", role: "8h", claim: "1h" };
 const KINDS = ["instruction", "question", "info", "ready", "standing", "answer", "dump"];
 // What a curator files a dump as. The first group becomes a thread of that kind.

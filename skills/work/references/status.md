@@ -1,14 +1,3 @@
----
-name: aaw-work-status
-description: Report the status of AAW work items and initiatives, showing activity progress, product states, the activity graph, lock and recovery state, parallel work opportunities and stale items. Use when asked for work status, what is in flight, how a WI or initiative is tracking, what is blocked or stale, what can be worked in parallel, or for a progress summary across work items.
-license: CC-BY-4.0
-compatibility: Reads .aaw-config.yaml at the workspace root for work_items_path and initiatives_path. No runtime dependencies.
-metadata:
-  author: dermot-obrien
-  framework: aaw
-  version: "2.3.0"
----
-
 # Work Status
 
 Read-only. This skill reports; it never writes to `progress.yaml`, never claims an activity
@@ -86,7 +75,7 @@ Activities:
       → WI-001-A3-T2: Add E2E tests (in progress)
       ○ WI-001-A3-T3: Update test documentation
 
-Use /aaw-progress-work WI-001 to continue.
+Use /work progress WI-001 to continue.
 ```
 
 Report product state and activity progress as two separate lines, because they mean different
@@ -126,16 +115,10 @@ Progress: 1/5 work items done (20%)
 - **Parallel opportunities.** Activities with no unmet dependencies and no live lock, which
   could be picked up now by another worker.
 - **Lock state.** Active locks with time remaining, and expired locks, which indicate an
-  interrupted worker and need recovery via `/aaw-progress-work`.
+  interrupted worker and need recovery via `/work progress`.
 - **Stale work items.** `updated` older than 7 days while status is not `done`, `abandoned` or
   `blocked`. Recommend resuming or closing with a reason; do not close anything yourself.
 - **Blocked items.** Name the blocker from the `blockers:` array, not just the status.
 
 Status values, activity states, the symbol legend and lock durations are in
-[references/status-reference.md](references/status-reference.md).
-
-## Related skills
-
-- `/aaw-next-task` picks the next task inside one work item.
-- `/aaw-progress-work` executes work and clears expired locks.
-- `/aaw-start-initiative` creates the initiative this view groups by.
+[references/status-reference.md](status-reference.md).

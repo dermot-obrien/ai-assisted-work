@@ -4,7 +4,7 @@
 
 Move every skill out of AI-Assisted Work into a repository of its own, each installable on its own with no dependency on any other skill, and turn this repository into a bundle: a README, a manifest of the skills it offers and a small installer that picks them up. A skill can then be brought into a constrained environment, such as a work laptop with no access to personal repositories, by itself.
 
-Status: scoped, not yet planned. The local threads store this needs (`threads_home:` and `threads_remote: local`) is already built, in thread 0.14.0.
+Status: in progress, started 11 October 2026 with the recommended decisions (one `work` skill; repositories `thread` and `work`; each skill versioned on its own; AAA and AAR to follow; the bundle keeps its name). The local threads store this needs (`threads_home:` and `threads_remote: local`) is already built, in thread 0.14.0.
 
 ## Intent
 
@@ -83,3 +83,17 @@ Each workspace's change goes through that repository's own pull request rules an
 | A7 Move each workspace over (platform, business, architecture, Life Guide), through its own pull request | One pull request per workspace | A6 |
 | A8 Try it in a constrained environment: install from a folder, local threads store, no network beyond git | A short record of what was tried | A6 |
 | A9 Follow-on: AAA and AAR on the same installer | Their own work items | A6, decision 4 |
+
+## Progress
+
+| Activity | State |
+|---|---|
+| A1 Inventory | Done. `cross-reference` lives in architecture-pattern. `pattern` and `use-case` there still declare requirements on `model` and `markdown-deck` |
+| A2 Installer | Done: `bin/skills.mjs`, tested, and run against the real bundle (all eight skills install and check) |
+| A3 `thread` repository | Built with its history (36 commits), its docs, tests and CI, tagged `v0.14.0`; waiting for the empty `dermot-obrien/thread` repository to be created, which this session's GitHub access cannot do |
+| A4 `work` | Done in this repository: one skill, five flows, every reference and template kept. Its own repository can follow the same way as `thread` |
+| A5 Optional mentions | Done for `thread` and `work` |
+| A6 The bundle | Done: README, `bundle.json` with sources, version 4.0.0. `thread` switches to its repository when that exists |
+| A7 Workspaces | Not started |
+| A8 Constrained trial | Not started; the installer's `--from` and the local threads store are tested |
+| A9 AAA and AAR | Not started |

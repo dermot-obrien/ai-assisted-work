@@ -1,19 +1,8 @@
----
-name: aaw-progress-work
-description: Execute an AAW work item that has been scoped and planned, claiming activities under a lock, working their tasks in order, moving the named products through drafted, in_review and accepted, and recovering safely after an interruption. Use when asked to progress, continue, execute, implement or resume work on a WI, to pick up where a previous session stopped, or to run the execution phase of a work item.
-license: CC-BY-4.0
-compatibility: Reads .aaw-config.yaml at the workspace root for work_items_path. Needs a verifiable system clock for lock expiry. Git is needed only for the development work type.
-metadata:
-  author: dermot-obrien
-  framework: aaw
-  version: "2.4.0"
----
-
 # Progress Work
 
 Phase 4, execution, for a work item that already has `scope.md`, `plan.md` and
 `progress.yaml`. Applies to intervention and change work items. A chore has no work item to
-progress; it was a branch and a changelog line finished in one pass by `/aaw-start-work`.
+progress; it was a branch and a changelog line finished in one pass by `/work start`.
 
 ## The essential path
 
@@ -96,7 +85,7 @@ Note the `version`, check `locks/`, then find an activity that is:
   `actor: human`
 
 If nothing is available, say which of these applies to each activity rather than reporting a
-bare "nothing to do". Details in [references/concurrency.md](references/concurrency.md).
+bare "nothing to do". Details in [references/concurrency.md](concurrency.md).
 
 ### Step 3: Claim it
 
@@ -127,19 +116,19 @@ bare "nothing to do". Details in [references/concurrency.md](references/concurre
    ```
 
 The full lock decision tree and the pre-claim checklist are in
-[references/concurrency.md](references/concurrency.md).
+[references/concurrency.md](concurrency.md).
 
 ### Step 4: Work the tasks, in order
 
 For each task:
 
 1. **Check the actor.** `agent` or `any`, execute. `human`, mark `awaiting_human` and handle
-   it per [references/actors.md](references/actors.md).
+   it per [references/actors.md](actors.md).
 2. **Update the lock** with `task_id`, `task_acquired` and `task_expires`, so a recovering
    worker knows where you stopped.
 3. **Do the work**, and advance the product the activity `produces`. Execution moves named
    products through their states; it does not invent new ones. See
-   [references/products.md](references/products.md).
+   [references/products.md](products.md).
 4. **Mark the task complete** in `progress.yaml` with a version check: re-read, confirm your
    lock is still valid, increment `version`, set `status`, `completed_by`, `completed_at` and
    a one-line `notes`.
@@ -204,14 +193,8 @@ recent.
 
 | Topic | File |
 |-------|------|
-| Locks, optimistic locking, conflicts, scaling limits | [references/concurrency.md](references/concurrency.md) |
-| Actor model, mixed activities, manual tasks report | [references/actors.md](references/actors.md) |
-| Product states, acceptance, older schema versions | [references/products.md](references/products.md) |
-| Interruption recovery, blockers, error handling | [references/recovery.md](references/recovery.md) |
-| Development, architecture and consultancy specifics | [references/work-types.md](references/work-types.md) |
-
-## Related skills
-
-- `/aaw-start-work` created this work item and its plan.
-- `/aaw-next-task` identifies the next task without executing it.
-- `/aaw-work-status` reports across work items.
+| Locks, optimistic locking, conflicts, scaling limits | [references/concurrency.md](concurrency.md) |
+| Actor model, mixed activities, manual tasks report | [references/actors.md](actors.md) |
+| Product states, acceptance, older schema versions | [references/products.md](products.md) |
+| Interruption recovery, blockers, error handling | [references/recovery.md](recovery.md) |
+| Development, architecture and consultancy specifics | [references/work-types.md](work-types.md) |

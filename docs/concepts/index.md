@@ -26,7 +26,7 @@ repository does in `change/work-items/`.
 
 ## 3. Triage first: most work is a chore
 
-`/aaw-start-work` classifies every request before it creates anything:
+`/work start` classifies every request before it creates anything:
 
 | Class | When | What it gets |
 |-------|------|--------------|
@@ -82,10 +82,10 @@ Scoping → Discovery → Planning → Execution → Done
 
 | Phase | Skill | Leaves behind |
 |-------|-------|---------------|
-| Scoping | `/aaw-start-work` | `scope.md` for people, `scope-ai.md` with the verbatim request and the reasoning for agents |
-| Discovery (skipped when the approach is obvious) | `/aaw-start-work` | `research.md`, `decisions.md` |
-| Planning | `/aaw-start-work` | `plan.md`, `progress.yaml`, `changes.md` |
-| Execution | `/aaw-progress-work` | the deliverables, under `deliverables/` |
+| Scoping | `/work start` | `scope.md` for people, `scope-ai.md` with the verbatim request and the reasoning for agents |
+| Discovery (skipped when the approach is obvious) | `/work start` | `research.md`, `decisions.md` |
+| Planning | `/work start` | `plan.md`, `progress.yaml`, `changes.md` |
+| Execution | `/work progress` | the deliverables, under `deliverables/` |
 
 Each phase starts read-only, in dialogue with you, and writes only after you confirm.
 `status` in `progress.yaml` follows the work: `scoping`, `discovery`, `planning`,
@@ -107,7 +107,7 @@ The file's shape is defined by the work ontology, `schemas/work.schema.json`; fr
 Before working an activity a worker claims it by creating `locks/<activity-id>.lock` with an
 exclusive create. The lock names the holder and an expiry: an hour for an agent, eight hours
 for a human. A live lock means someone else is working; an expired one means a worker was
-interrupted, and `/aaw-progress-work` recovers from it. The one rule that matters most:
+interrupted, and `/work progress` recovers from it. The one rule that matters most:
 update `progress.yaml` before deleting your lock.
 
 Each activity and task has an `actor`: `agent`, `human` or `any`. Agents skip human-only
@@ -117,15 +117,15 @@ report lists. See [Work management](work-management.md) and
 
 ## 9. Seeing where things are
 
-`/aaw-work-status` reports every work item, one work item or one initiative, including
+`/work status` reports every work item, one work item or one initiative, including
 parallel opportunities, live and expired locks, and items not updated for seven days.
-`/aaw-next-task` presents the next task with its context without doing it. The `aaw` CLI
+`/work next` presents the next task with its context without doing it. The `aaw` CLI
 gives the same view from the shell (`aaw status`, `aaw next-task`, `aaw lint`). See
 [Commands](../reference/commands.md).
 
 ## 10. Initiatives and the optional OKR layer
 
-`/aaw-start-initiative` creates an `IN-NNN` container with a goal, a time horizon and
+`/work initiative` creates an `IN-NNN` container with a goal, a time horizon and
 success criteria, and registers work items into it. Membership is recorded on the work item
 (`initiative_id`); the initiative's list is a cache.
 

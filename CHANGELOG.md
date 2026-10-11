@@ -7,6 +7,21 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (breaking, 4.0.0)
+- AI-Assisted Work is now a bundle of standalone skills (WI-004, DD-17). The five work-item skills
+  (`aaw-start-work`, `aaw-progress-work`, `aaw-work-status`, `aaw-next-task`,
+  `aaw-start-initiative`) are one skill, `work` 3.0.0, with five flows (`/work start`, `progress`,
+  `status`, `next`, `initiative`), their references and templates merged and nothing lost; its
+  description still answers to the old names. `bundle.json` lists `work`, `thread` and the six
+  skills that live in repositories of their own, pinned to their tags, with a new optional
+  `source` per skill (bundle schema). Migrate by installing `work` and removing the five old
+  folders from `.agents/skills` and `.claude/skills`.
+
+### Added
+- `bin/skills.mjs`: one installer for standalone skills, from a bundle or one repository, with a
+  lock file, `list`, `install`, `update`, `check` and `remove`; `--from <folder>` for machines with
+  no network and `SKILLS_BASE_URL` for a mirror. Tests in `scripts/test-skills.mjs`, run in CI.
+
 ### Added
 - thread 0.14.0: a local store for constrained environments. `threads_home:` in `.aaw-config.yaml`
   (relative to that file) says where the store is, and `threads_remote: local` (or `thread init

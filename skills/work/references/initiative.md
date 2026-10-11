@@ -1,14 +1,3 @@
----
-name: aaw-start-initiative
-description: Create an AAW initiative, the strategic container that groups related work items toward a shared goal, capturing the goal, time horizon and success criteria and registering any existing work items into it. Use when asked to start or create an initiative, group work items under a shared goal or programme, open an IN-NNN, or set up a container for work that will be planned as several work items.
-license: CC-BY-4.0
-compatibility: Reads .aaw-config.yaml at the workspace root for initiatives_path and work_items_path. No runtime dependencies.
-metadata:
-  author: dermot-obrien
-  framework: aaw
-  version: "2.2.0"
----
-
 # Start Initiative
 
 An initiative is a strategic container grouping related work items toward a shared goal. It is
@@ -111,7 +100,7 @@ Documents Created:
   ✓ scope.md
   ✓ progress.yaml
 
-Ready to create work items? Use /aaw-start-work, which will set
+Ready to create work items? Use /work start, which will set
 initiative_id: {IN-NNN} on what it creates.
 ```
 
@@ -151,9 +140,4 @@ objectives works exactly as before.
 6. Success criteria are measurable or they are not criteria. "Improve reliability" is not one;
    "zero auth-related incidents for a quarter" is.
 
-Worked examples are in [references/examples.md](references/examples.md).
-
-## Related skills
-
-- `/aaw-start-work` creates the work items that go inside this initiative.
-- `/aaw-work-status IN-NNN` reports the initiative and its members.
+Worked examples are in [references/examples.md](initiative-examples.md).

@@ -1,7 +1,7 @@
 # Command reference
 
 Every command AAW ships, checked against its `--help`. Skills are invoked in your agent
-(`/aaw-start-work`, `/thread` and so on) and are described in [Skills](../skills/index.md);
+(`/work start`, `/thread` and so on) and are described in [Skills](../skills/index.md);
 this page covers what runs in a shell.
 
 - [aaw](#aaw), the CLI
@@ -136,7 +136,7 @@ aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
 Creates `locks/<ACTIVITY_ID>.lock` in the work item's folder with an exclusive create. An
 expired lock is replaced. Exit 1 with `is held by <holder>` when a live lock exists. It does
 not change the activity's status; the skills do that. Mostly for testing and for
-interventions: in normal use `/aaw-progress-work` claims for itself.
+interventions: in normal use `/work progress` claims for itself.
 
 ### aaw release
 
@@ -284,7 +284,7 @@ Each skill ships `bin/check.mjs`, which tests the workspace configuration the sk
 on. Run it from the workspace root:
 
 ```
-node .agents/skills/aaw-start-work/bin/check.mjs
+node .agents/skills/work start/bin/check.mjs
 ```
 
 The five `aaw-*` checks are one file, copied into each skill. They check that

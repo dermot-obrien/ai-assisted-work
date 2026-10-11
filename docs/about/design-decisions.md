@@ -170,11 +170,11 @@ every tool reads. See DD-10.
 
 ```
 skills/
-├── aaw-start-work/
+├── /work start/
 │   ├── SKILL.md            # the definition every tool reads
 │   ├── references/         # loaded on demand
 │   └── assets/templates/
-└── aaw-progress-work/
+└── /work progress/
     └── ...
 ```
 
@@ -774,7 +774,7 @@ ends picks up new instructions without the user returning to it.
   are archived daily to `board-archive/`, as the tree's closed branches are.
 - Anyone who can push to the store can post as anyone. The store is private to the user, and
   agents still apply their workspace's rules to every post.
-- Work item activity locks (aaw-progress-work) can be taken on the board, which makes them
+- Work item activity locks (/work progress) can be taken on the board, which makes them
   hold across clones. Moving the work items themselves into a shared repository, so a work
   item can span repositories and any agent can find the plan from the same pointer, is the
   next step on the roadmap.
@@ -928,6 +928,34 @@ author; the author's `sent` shows where it went; questions and answers stay on t
 
 ---
 
+## DD-17: Standalone Skills, AI-Assisted Work as a Bundle
+
+### Context
+
+AAW installed as a framework: six skills, an install engine shared with AI-Assisted Architecture and Research, packages and a CLI. Four skills had already left for repositories of their own. A workspace that needed one skill, such as a work laptop with no npm registry and no access to personal repositories, still had to take the framework, and the five work-item skills depended on each other through the files they share.
+
+### Decision
+
+**Every skill stands alone.** It installs by itself, names no other skill as a requirement, and says what to do with or without another skill installed. Configuration stays in `.aaw-config.yaml`, a workspace file each skill reads only its own keys from.
+
+**The five work-item skills are one skill, `work`,** with five flows. They are one method over one set of files, so splitting them would mean five copies of the format kept in step. The old names stay in its description so they still trigger it.
+
+**The repository is a bundle.** `bundle.json` lists each skill with its version and, for one that lives elsewhere, a `source` (repository and tag); `bin/skills.mjs` installs from it, from one repository, from a mirror or from a local folder, with a lock file.
+
+### Rationale
+
+- One skill can now be brought into a constrained environment without the rest.
+- A lock file with hashes makes drift visible without a framework owning the copies.
+- `--from` and a mirror cover machines that cannot reach the repositories.
+
+### Consequences
+
+- `thread` moves to its own repository; until then the bundle carries it.
+- AI-Assisted Architecture and Research still install through `aaw install`; they follow (WI-004 A9).
+- `pattern` and `use-case` still declare requirements; the installer reports them and fetches nothing.
+
+---
+
 ## Decision Log
 
 | ID | Decision | Date | Status |
@@ -948,3 +976,4 @@ author; the author's `sent` shows where it went; questions and answers stay on t
 | DD-14 | Source Paths, Scoped Views and a Merge Queue | 2026-10 | Implemented (thread 0.14.0); extends DD-12 and DD-13 |
 | DD-15 | One List of Work, the Tree; the Board Coordinates It | 2026-10 | Implemented (thread 0.14.0) |
 | DD-16 | Capture and Curation, the Flow Kept Apart from the Plan | 2026-10 | Implemented (thread 0.14.0) |
+| DD-17 | Standalone Skills, AI-Assisted Work as a Bundle | 2026-10 | Implemented (4.0.0); `thread` repository pending |

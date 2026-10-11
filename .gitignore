@@ -38,3 +38,6 @@ bin/aaw.js.map
 # Python bytecode, from the skills that ship Python
 __pycache__/
 *.pyc
+
+# Clones made by bin/skills.mjs
+.agents/.skill-sources/

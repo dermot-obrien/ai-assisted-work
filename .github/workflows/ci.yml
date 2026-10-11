@@ -96,13 +96,6 @@ jobs:
       - name: The protocol types agree with the work schema
         run: node scripts/check-protocol-schema.mjs
 
-      # Each aaw-* skill ships its own copy of the check, so it is complete on its own.
-      - name: The aaw-* post-install checks are one file
-        run: |
-          for f in skills/aaw-*/bin/check.mjs; do
-            cmp skills/aaw-start-work/bin/check.mjs "$f" || { echo "::error::$f differs from skills/aaw-start-work/bin/check.mjs"; exit 1; }
-          done
-
       - name: Install skills into a scratch workspace
         run: |
           mkdir -p /tmp/ws/.claude && cd /tmp/ws && git init -q .
@@ -111,7 +104,7 @@ jobs:
       - name: Check the installed skills resolve
         run: |
           node "$GITHUB_WORKSPACE/scripts/validate-skills.mjs" /tmp/ws/.agents/skills
-          for s in /tmp/ws/.claude/skills/aaw-*; do
+          for s in /tmp/ws/.claude/skills/work /tmp/ws/.claude/skills/thread; do
             test -f "$s/SKILL.md" || { echo "::error::$s does not resolve"; exit 1; }
           done
 
@@ -134,7 +127,7 @@ jobs:
 
       - name: An edited copy is caught
         run: |
-          echo "# edited in the workspace" >> /tmp/ws/.agents/skills/aaw-start-work/SKILL.md
+          echo "# edited in the workspace" >> /tmp/ws/.agents/skills/work/SKILL.md
           if node "$GITHUB_WORKSPACE/bin/aaw.js" check-skills --workspace /tmp/ws --framework "$GITHUB_WORKSPACE"; then
             echo "::error::check-skills passed on an edited copy"; exit 1
           fi

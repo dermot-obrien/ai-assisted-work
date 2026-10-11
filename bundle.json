@@ -2,70 +2,10 @@
   "$schema": "pkg:generic/dermot-obrien/ai-assisted-work/bundle-schema@1.0.0",
   "name": "ai-assisted-work",
   "owner": "dermot-obrien",
-  "description": "AI-Assisted Work: domain-agnostic work management as Agent Skills (work items, activities, tasks, initiatives and the products they leave behind), and the work layer of the ontology.",
+  "description": "AI-Assisted Work, now a bundle of standalone Agent Skills: work (work items, activities, tasks, initiatives), thread (a tree of intents and a bulletin board for agents), and the skills that left it for repositories of their own. Each installs on its own with bin/skills.mjs.",
   "license": "CC-BY-4.0 AND Apache-2.0",
   "homepage": "https://github.com/dermot-obrien/ai-assisted-work",
   "skills": [
-    {
-      "name": "aaw-next-task",
-      "path": "skills/aaw-next-task",
-      "version": "2.2.0",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-next-task@2.2.0",
-      "requires": [],
-      "check": {
-        "command": ["node", "bin/check.mjs"],
-        "runtime": "node",
-        "description": ".aaw-config.yaml is present and work_items_path resolves to a folder"
-      }
-    },
-    {
-      "name": "aaw-progress-work",
-      "path": "skills/aaw-progress-work",
-      "version": "2.4.0",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-progress-work@2.4.0",
-      "requires": [],
-      "check": {
-        "command": ["node", "bin/check.mjs"],
-        "runtime": "node",
-        "description": ".aaw-config.yaml is present and work_items_path resolves to a folder"
-      }
-    },
-    {
-      "name": "aaw-start-initiative",
-      "path": "skills/aaw-start-initiative",
-      "version": "2.2.0",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-start-initiative@2.2.0",
-      "requires": [],
-      "check": {
-        "command": ["node", "bin/check.mjs"],
-        "runtime": "node",
-        "description": ".aaw-config.yaml is present and its work item and initiative paths resolve"
-      }
-    },
-    {
-      "name": "aaw-start-work",
-      "path": "skills/aaw-start-work",
-      "version": "2.5.0",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-start-work@2.5.0",
-      "requires": [],
-      "check": {
-        "command": ["node", "bin/check.mjs"],
-        "runtime": "node",
-        "description": ".aaw-config.yaml is present, and work_items_path and any deliverables_register resolve"
-      }
-    },
-    {
-      "name": "aaw-work-status",
-      "path": "skills/aaw-work-status",
-      "version": "2.3.0",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/aaw-work-status@2.3.0",
-      "requires": [],
-      "check": {
-        "command": ["node", "bin/check.mjs"],
-        "runtime": "node",
-        "description": ".aaw-config.yaml is present and work_items_path resolves to a folder"
-      }
-    },
     {
       "name": "thread",
       "path": "skills/thread",
@@ -73,9 +13,115 @@
       "purl": "pkg:generic/dermot-obrien/ai-assisted-work/thread@0.14.0",
       "requires": [],
       "check": {
-        "command": ["node", "bin/check.mjs"],
+        "command": [
+          "node",
+          "bin/check.mjs"
+        ],
         "runtime": "node",
         "description": "git is on the PATH, and the thread store is a git clone or has a remote to clone"
+      }
+    },
+    {
+      "name": "work",
+      "path": "skills/work",
+      "version": "3.0.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/work@3.0.0",
+      "requires": [],
+      "check": {
+        "command": [
+          "node",
+          "bin/check.mjs"
+        ],
+        "runtime": "node",
+        "description": ".aaw-config.yaml, when present, names work item and initiative paths that resolve, and any deliverables_register exists"
+      }
+    },
+    {
+      "name": "markdown-deck",
+      "path": "skills/markdown-deck",
+      "version": "0.6.8",
+      "purl": "pkg:generic/dermot-obrien/markdown-deck/markdown-deck@0.6.8",
+      "requires": [],
+      "source": {
+        "repo": "https://github.com/dermot-obrien/markdown-deck.git",
+        "ref": "markdown-deck--v0.6.8"
+      }
+    },
+    {
+      "name": "model",
+      "path": "skills/model",
+      "version": "0.8.2",
+      "purl": "pkg:generic/dermot-obrien/diagram-model/model@0.8.2",
+      "requires": [],
+      "source": {
+        "repo": "https://github.com/dermot-obrien/diagram-model.git",
+        "ref": "model--v0.8.2"
+      }
+    },
+    {
+      "name": "pattern",
+      "path": "skills/pattern",
+      "version": "0.10.3",
+      "purl": "pkg:generic/dermot-obrien/architecture-pattern/pattern@0.10.3",
+      "requires": [
+        {
+          "purl": "pkg:generic/dermot-obrien/diagram-model/model",
+          "range": "^0.8.2"
+        },
+        {
+          "purl": "pkg:generic/dermot-obrien/markdown-deck/markdown-deck",
+          "range": "^0.6.0"
+        }
+      ],
+      "source": {
+        "repo": "https://github.com/dermot-obrien/architecture-pattern.git",
+        "ref": "pattern--v0.10.3"
+      }
+    },
+    {
+      "name": "use-case",
+      "path": "skills/use-case",
+      "version": "0.2.0",
+      "purl": "pkg:generic/dermot-obrien/architecture-pattern/use-case@0.2.0",
+      "requires": [
+        {
+          "purl": "pkg:generic/dermot-obrien/architecture-pattern/pattern",
+          "range": "^0.10.3"
+        },
+        {
+          "purl": "pkg:generic/dermot-obrien/diagram-model/model",
+          "range": "^0.8.2"
+        },
+        {
+          "purl": "pkg:generic/dermot-obrien/markdown-deck/markdown-deck",
+          "range": "^0.6.0"
+        }
+      ],
+      "source": {
+        "repo": "https://github.com/dermot-obrien/architecture-pattern.git",
+        "ref": "use-case--v0.2.0"
+      }
+    },
+    {
+      "name": "cross-reference",
+      "path": "skills/cross-reference",
+      "version": "0.2.0",
+      "purl": "pkg:generic/dermot-obrien/architecture-pattern/cross-reference@0.2.0",
+      "requires": [],
+      "source": {
+        "repo": "https://github.com/dermot-obrien/architecture-pattern.git",
+        "ref": "cross-reference--v0.2.0"
+      }
+    },
+    {
+      "name": "quarter-planning",
+      "path": "skills/quarter-planning",
+      "version": "3.6.0",
+      "purl": "pkg:generic/dermot-obrien/delivery-planning/quarter-planning@3.6.0",
+      "requires": [],
+      "source": {
+        "repo": "https://github.com/dermot-obrien/delivery-planning.git",
+        "ref": "quarter-planning--v3.6.0"
       }
     }
   ],

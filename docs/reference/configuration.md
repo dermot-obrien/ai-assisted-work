@@ -106,11 +106,11 @@ The folder holding `WI-NNN-<slug>/` work item folders. `aaw install` creates it.
 | Type | path, expanded as above |
 | Default at install | an `initiatives` folder beside `work_items_path` |
 | Default when the key is missing | `./change/initiatives` |
-| Read by | `aaw-start-initiative`, `aaw-work-status`, `aaw-start-work`, the CLI |
+| Read by | `/work initiative`, `/work status`, `/work start`, the CLI |
 | Example | `initiatives_path: ~/aaw/{tenant}/{repo}/initiatives` |
 
 The folder holding `IN-NNN-<slug>/` initiative folders. It is created on first use by
-`/aaw-start-initiative`; until then the checks print a warning, not an error.
+`/work initiative`; until then the checks print a warning, not an error.
 
 #### deliverables_register
 
@@ -118,7 +118,7 @@ The folder holding `IN-NNN-<slug>/` initiative folders. It is created on first u
 |---|---|
 | Type | path, or a map (below) |
 | Default | unset: products carry their quality criteria and approver inline |
-| Read by | `aaw-start-work`, `aaw-progress-work`, the post-install checks (plain path form only) |
+| Read by | `/work start`, `/work progress`, the post-install checks (plain path form only) |
 | Example | `deliverables_register: governance/deliverable-types.csv` |
 
 A CSV or YAML catalogue of the kinds of product your organisation makes. A product then sets
@@ -249,7 +249,7 @@ every key below.
 
 | Key | Type | Required | Rule | Example |
 |-----|------|----------|------|---------|
-| `name` | string | yes | At most 64 characters, lowercase letters, digits and single hyphens, equal to the folder name | `name: aaw-start-work` |
+| `name` | string | yes | At most 64 characters, lowercase letters, digits and single hyphens, equal to the folder name | `name: /work start` |
 | `description` | string | yes | At most 1,024 characters. Says what the skill does and when to use it | |
 | `license` | string | no | SPDX id | `license: CC-BY-4.0` |
 | `compatibility` | string | no | At most 500 characters. What the skill needs from its environment | |
@@ -301,7 +301,7 @@ data_dirs: []
 
 A work item's state. Its keys are defined by the work ontology, `schemas/work.schema.json`,
 and every key is explained where it appears in the template,
-[skills/aaw-start-work/assets/templates/progress.yaml](../../skills/aaw-start-work/assets/templates/progress.yaml).
+[skills/work start/assets/templates/progress.yaml](../../skills/work start/assets/templates/progress.yaml).
 The ones the CLI checks with `aaw lint`:
 
 | Key | Values |
@@ -314,4 +314,4 @@ The ones the CLI checks with `aaw lint`:
 | `activities[].depends_on` | ids of activities on the same work item; no cycles |
 
 Initiatives have their own template,
-[skills/aaw-start-initiative/assets/templates/initiative-progress.yaml](../../skills/aaw-start-initiative/assets/templates/initiative-progress.yaml).
+[skills/work initiative/assets/templates/initiative-progress.yaml](../../skills/work initiative/assets/templates/initiative-progress.yaml).

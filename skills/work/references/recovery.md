@@ -66,21 +66,21 @@ All remaining activities have unresolved blockers:
   WI-001-A3: Blocked by WI-001-B1 - "Need API credentials"
   WI-001-A4: Depends on WI-001-A3 (blocked)
 
-Blockers require user action. Use /aaw-work-status WI-001 for details.
+Blockers require user action. Use /work status WI-001 for details.
 ```
 
 ## Missing files
 
 | Missing | Action |
 |---------|--------|
-| `progress.yaml` | Stop. Run `/aaw-start-work` to create the work item properly |
+| `progress.yaml` | Stop. Run `/work start` to create the work item properly |
 | `scope.md` | Stop. Scoping never finished |
 | `plan.md` | Stop. The work item is still in discovery; planning must complete first |
 | `scope-ai.md` | Proceed. It is optional. Rely on `scope.md` and ask if anything is unclear |
 
 ```
 Cannot proceed with WI-XXX: missing required file {filename}.
-The work item appears incomplete. Run /aaw-start-work to create it properly.
+The work item appears incomplete. Run /work start to create it properly.
 ```
 
 ## Malformed progress.yaml
@@ -96,7 +96,7 @@ Checking for other available activities...
 
 [found] Claiming WI-001-A3 instead.
 [none]  No activities currently available. All are either locked by other
-        workers or blocked on dependencies. Use /aaw-work-status WI-001.
+        workers or blocked on dependencies. Use /work status WI-001.
 ```
 
 ## Version conflict

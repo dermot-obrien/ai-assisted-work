@@ -80,7 +80,7 @@ function readBundle(flags) {
 function singleSkill(flags) {
   const repo = flags.repo;
   const name = typeof flags.name === "string" ? flags.name : path.basename(String(repo)).replace(/\.git$/, "");
-  return { name, path: ".", source: { repo, ref: typeof flags.ref === "string" ? flags.ref : undefined, path: typeof flags.path === "string" ? flags.path : "." } };
+  return { name, path: typeof flags.path === "string" ? flags.path : `skills/${name}`, source: { repo, ref: typeof flags.ref === "string" ? flags.ref : undefined } };
 }
 
 /** A repository URL, moved onto the mirror in $SKILLS_BASE_URL when one is set. */
@@ -99,7 +99,7 @@ function locate(skill, bundle, ws, flags) {
   if (typeof flags.from === "string") {
     const from = path.resolve(flags.from);
     const repoName = src ? path.basename(src.repo).replace(/\.git$/, "") : null;
-    const tries = [path.join(from, skill.name), repoName && path.join(from, repoName, src.path || "."), repoName && path.join(from, repoName, "skills", skill.name)].filter(Boolean);
+    const tries = [path.join(from, skill.name), repoName && path.join(from, repoName, skill.path), repoName && path.join(from, repoName), path.join(from, skill.path)].filter(Boolean);
     const hit = tries.find((d) => existsSync(path.join(d, "SKILL.md")));
     if (!hit) die(`${skill.name}: not found under ${from} (looked in ${tries.map((t) => path.relative(from, t) || ".").join(", ")})`);
     return { dir: hit, commit: null, origin: `folder ${from}` };
@@ -128,8 +128,9 @@ function locate(skill, bundle, ws, flags) {
   } catch (e) {
     die(`${skill.name}: could not fetch ${url}${src.ref ? ` at ${src.ref}` : ""}:\n${String(e.stderr || e.message).trim()}\n  In a constrained environment, copy the skill onto the machine and pass --from <folder>, or set SKILLS_BASE_URL to a mirror.`);
   }
-  const dir = path.join(cache, src.path || ".");
-  if (!existsSync(path.join(dir, "SKILL.md"))) die(`${skill.name}: no SKILL.md at ${src.path || "."} in ${url}`);
+  // A repository holds its skill at the entry's path (skills/<name>), or a lone skill at its root.
+  const dir = [path.join(cache, skill.path || "."), cache].find((d) => existsSync(path.join(d, "SKILL.md")));
+  if (!dir) die(`${skill.name}: no SKILL.md at ${skill.path} in ${url}`);
   return { dir, commit: git(["rev-parse", "HEAD"], cache), origin: url };
 }
 
@@ -162,7 +163,13 @@ function frontMatter(dir) {
   const name = /^name:\s*["']?([^"'\s]+)/m.exec(head)?.[1] || null;
   const version = /^\s+version:\s*["']?([^"'\s]+)/m.exec(head)?.[1] || null;
   const req = /x-skill-requires:\s*["']?([^"'\n]*)/.exec(head)?.[1]?.trim() || "";
-  return { name, version, requires: req ? req.split(/[,\s]+/).filter(Boolean) : [] };
+  // x-skill-requires is "<purl> <range>, ..." (or bare names); the skill is the purl's last segment.
+  const requires = req
+    .split(",")
+    .map((e) => e.trim().split(/\s+/)[0])
+    .filter(Boolean)
+    .map((p) => p.split("/").pop().split("@")[0]);
+  return { name, version, requires };
 }
 
 function linkClaude(ws, name, target, copy) {
@@ -210,7 +217,7 @@ function installOne(skill, bundle, ws, flags, lock) {
     version: fm.version,
     source: skill.source ? skill.source.repo : typeof flags.from === "string" ? "folder" : "bundle",
     ref: skill.source?.ref ?? null,
-    path: skill.source ? skill.source.path || "." : skill.path,
+    path: skill.path,
     commit,
     hash: hashDir(target),
   };
@@ -237,7 +244,7 @@ const commands = {
     writeLock(ws, lock);
     // Skills are standalone: anything one still says it needs is reported, never pulled in.
     for (const [name, fm] of installed) {
-      const missing = (fm?.requires || []).filter((r) => !existsSync(path.join(ws, ".agents", "skills", r.split("@")[0])));
+      const missing = (fm?.requires || []).filter((r) => !existsSync(path.join(ws, ".agents", "skills", r)));
       if (missing.length) say(`note: ${name} says it needs ${missing.join(", ")}, which is not installed`);
     }
   },
@@ -305,7 +312,7 @@ const commands = {
 
   skills list [--bundle <file|dir>] [--json]        the bundle's skills; ● installed here
   skills install [<name>...] [--bundle <file|dir>]  install all, or the ones named
-  skills install --repo <url> [--ref <tag>] [--path <dir>] [--name <skill>]   one skill from its own repository
+  skills install --repo <url> [--ref <tag>] [--path skills/<name>] [--name <skill>]   one skill from its own repository
   skills update [<name>...]                         fetch each installed skill again and reinstall it
   skills check                                      ✓ or ✗ per installed skill; exit 1 when one changed or is missing
   skills remove <name>...

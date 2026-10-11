@@ -15,11 +15,11 @@ things up.
 
 | Skill | Page |
 |-------|------|
-| `aaw-start-work` | [Start work](skills/aaw-start-work.md) |
-| `aaw-progress-work` | [Progress work](skills/aaw-progress-work.md) |
-| `aaw-work-status` | [Work status](skills/aaw-work-status.md) |
-| `aaw-next-task` | [Next task](skills/aaw-next-task.md) |
-| `aaw-start-initiative` | [Start initiative](skills/aaw-start-initiative.md) |
+| `/work start` | [Start work](skills/work.md#start-work-start) |
+| `/work progress` | [Progress work](skills/work.md#progress-work-progress) |
+| `/work status` | [Work status](skills/work.md#status-work-status) |
+| `/work next` | [Next task](skills/work.md#next-work-next) |
+| `/work initiative` | [Start initiative](skills/work.md#initiative-work-initiative) |
 | `thread` | [Thread](skills/thread.md) |
 
 [All skills](skills/index.md) has what they share: arguments, configuration and the

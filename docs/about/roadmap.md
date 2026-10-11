@@ -88,9 +88,10 @@ The work plane (work items, activities, tasks) is separate from the architecture
 ## Skills extracted, AI-Assisted Work as a bundle (WI-004)
 
 - [x] A local threads store with no remote, for constrained environments (thread 0.14.0)
-- [ ] `thread` and a merged `work` skill in repositories of their own, with no dependency between skills
-- [ ] One installer for bundles and single skills, from a repository, a mirror or a local folder, with a lock file
-- [ ] This repository as a bundle: README, `bundle.json` pointing at the skill repositories, the installer
+- [x] The five work-item skills merged into one `work` skill, with no dependency between skills (4.0.0)
+- [ ] `thread` in its own repository (built, waiting for the repository to be created)
+- [x] One installer for bundles and single skills, from a repository, a mirror or a local folder, with a lock file (`bin/skills.mjs`)
+- [x] This repository as a bundle: README, `bundle.json` pointing at the skill repositories, the installer (4.0.0)
 
 ## Medium-term (v3.x)
 

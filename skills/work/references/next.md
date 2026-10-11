@@ -1,18 +1,7 @@
----
-name: aaw-next-task
-description: Identify and present the next task to work on inside an AAW work item, respecting activity dependencies and the product flow, and gathering the scope and plan context needed to start it. Use when asked what to do next, what the next task or next step is, what is ready to pick up, or to resume work on a WI without yet executing it.
-license: CC-BY-4.0
-compatibility: Reads .aaw-config.yaml at the workspace root for work_items_path. No runtime dependencies.
-metadata:
-  author: dermot-obrien
-  framework: aaw
-  version: "2.2.0"
----
-
 # Next Task
 
 Find the next task and present it with enough context to start. This skill reads and reports.
-It does not execute the task; `/aaw-progress-work` does that.
+It does not execute the task; `/work progress` does that.
 
 ## Arguments
 
@@ -72,9 +61,3 @@ for agents. For the product this task advances, read its `quality_criteria` from
 `deliverables:` block, because that is what the work will be judged against.
 
 Present the relevant details alongside the task summary rather than dumping the documents.
-
-## Related skills
-
-- `/aaw-progress-work` executes the task this skill identifies.
-- `/aaw-work-status` reports across work items rather than inside one.
-- `/aaw-start-work` creates the work item in the first place.

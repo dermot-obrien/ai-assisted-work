@@ -1,16 +1,11 @@
 # Skills
 
-AAW ships six Agent Skills. Five manage work; `thread` is general tooling that stands on its
-own.
+This repository is a bundle of standalone skills; the two kept here are below, and the others are listed in the [README](../../README.md#the-skills). Each depends on no other.
 
 | Skill | Version | Use it to | Writes |
 |-------|---------|-----------|--------|
-| [aaw-start-work](aaw-start-work.md) | 2.5.0 | Triage a request and, when it earns one, scope and plan a work item | a work item folder |
-| [aaw-progress-work](aaw-progress-work.md) | 2.4.0 | Execute a planned work item, one claimed activity at a time | `progress.yaml`, locks, deliverables |
-| [aaw-work-status](aaw-work-status.md) | 2.3.0 | Report on work items and initiatives | nothing |
-| [aaw-next-task](aaw-next-task.md) | 2.2.0 | Present the next task with its context, without doing it | nothing |
-| [aaw-start-initiative](aaw-start-initiative.md) | 2.2.0 | Create an initiative that groups work items under one goal | an initiative folder |
-| [thread](thread.md) | 0.8.2 | Keep a tree of why each chat exists, across machines and agents | events in your thread store |
+| [work](work.md) | 3.0.0 | Work items: [`/work start`](work.md#start-work-start) triages and plans, [`/work progress`](work.md#progress-work-progress) executes one claimed activity at a time, [`/work status`](work.md#status-work-status) reports, [`/work next`](work.md#next-work-next) presents the next task, [`/work initiative`](work.md#initiative-work-initiative) groups work items under a goal | work item and initiative folders, `progress.yaml`, locks, deliverables |
+| [thread](thread.md) | 0.14.0 | Keep a tree of why each chat exists, and a bulletin board for agents, across machines and tools | events in your thread store |
 
 The versions are each skill's `metadata.version`, also listed in `bundle.json`.
 
@@ -20,13 +15,13 @@ Invoking. Type `/<skill>` followed by any arguments, or describe the job and let
 choose: each skill's description says when to use it. The skills take an id (`WI-017`,
 `IN-002`) or free text; none take flags.
 
-Configuration. The `aaw-*` skills read `.aaw-config.yaml` at the workspace root:
+Configuration. `work` reads `.aaw-config.yaml` at the workspace root:
 `work_items_path`, `initiatives_path`, and `deliverables_register` where set. With no config
 they fall back to `./change/work-items/` and `./change/initiatives/`. `thread` reads
 `threads_remote` and `threads_project`, and its environment variables. Every key is in
 [Configuration](../reference/configuration.md).
 
-Runtime. The `aaw-*` skills are instructions only and need nothing installed; their checks
+Runtime. `work` is instructions only and need nothing installed; its check
 and the optional `aaw` CLI need Node.js 18 or newer. `thread` needs Node.js 18 or newer and
 git.
 
@@ -40,11 +35,11 @@ The `SKILL.md` files stay short on purpose; this documentation is for people.
 ## A typical flow
 
 ```
-/aaw-start-initiative   (optional) a goal and a container
-/aaw-start-work         triage; for an intervention: scope, discovery, plan
-/aaw-progress-work      claim an activity, work its tasks, advance its product; repeat
-/aaw-work-status        at any point: what is in flight, blocked, stale or parallelisable
-/aaw-next-task          at any point: what to pick up next, with context
+/work initiative   (optional) a goal and a container
+/work start         triage; for an intervention: scope, discovery, plan
+/work progress      claim an activity, work its tasks, advance its product; repeat
+/work status        at any point: what is in flight, blocked, stale or parallelisable
+/work next          at any point: what to pick up next, with context
 ```
 
 ## Skills that used to live here

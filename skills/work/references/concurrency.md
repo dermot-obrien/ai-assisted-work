@@ -102,7 +102,7 @@ No activities currently available. Status:
 - WI-001-A3: blocked on WI-001-A2
 - WI-001-A1: completed
 
-Use /aaw-work-status WI-001 for details.
+Use /work status WI-001 for details.
 ```
 
 ## Pre-claim checklist
