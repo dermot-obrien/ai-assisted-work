@@ -190,7 +190,7 @@ export async function runInit(input: InitInput): Promise<number> {
     );
 
     process.stdout.write(
-      "\nDone. Try this in your AI tool:\n    /aaw-start-work add a new feature\n\n" +
+      "\nDone. Try this in your AI tool:\n    /work start add a new feature\n\n" +
         `Or from the shell:\n    node ${cliPath} status\n\n` +
         "For shorter commands, set up an alias (one-time):\n" +
         `  PowerShell ($PROFILE):  function aaw { node \"${cliPath}\" @args }\n` +

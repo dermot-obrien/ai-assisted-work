@@ -11,11 +11,11 @@ Every supported tool then discovers them natively, with no per-tool file to main
 
 | Skill | Invoke |
 |-------|--------|
-| `aaw-start-work` | `/aaw-start-work` |
-| `aaw-progress-work` | `/aaw-progress-work` |
-| `aaw-work-status` | `/aaw-work-status` |
-| `aaw-next-task` | `/aaw-next-task` |
-| `aaw-start-initiative` | `/aaw-start-initiative` |
+| `/work start` | `/work start` |
+| `/work progress` | `/work progress` |
+| `/work status` | `/work status` |
+| `/work next` | `/work next` |
+| `/work initiative` | `/work initiative` |
 
 ## Where each tool looks
 
@@ -39,12 +39,12 @@ Because the second path is a link to the first, both entries are the same conten
 
 A skill carries a `description`, so an assistant can invoke it when a request matches rather
 than only when you type the command. Ask an assistant to "start a work item for the auth
-migration" and it can reach for `aaw-start-work` on its own.
+migration" and it can reach for `/work start` on its own.
 
 A skill also loads progressively. At startup the assistant sees only each skill's name and
 description, roughly 100 tokens. The `SKILL.md` body loads when the skill activates, and the
 files under `references/` load only when a branch of the workflow reaches them. That is why
-`aaw-progress-work` can hold a full concurrency protocol, an actor model and a recovery
+`/work progress` can hold a full concurrency protocol, an actor model and a recovery
 procedure without costing anything until it is used.
 
 ## Naming
@@ -54,7 +54,7 @@ is what keeps them from colliding with other skills in a workspace.
 
 If a tool namespaces skills itself, follow the tool. Claude Code, for example, namespaces
 plugin-supplied skills as `/plugin-name:skill-name`, but skills installed into
-`.claude/skills/` are invoked by their directory name, so `/aaw-start-work` is correct.
+`.claude/skills/` are invoked by their directory name, so `/work start` is correct.
 
 ## Verifying an install
 

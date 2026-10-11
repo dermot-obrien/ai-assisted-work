@@ -7,6 +7,72 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (breaking, 4.0.0)
+- AI-Assisted Work is now a bundle of standalone skills (WI-004, DD-17). The five work-item skills
+  (`aaw-start-work`, `aaw-progress-work`, `aaw-work-status`, `aaw-next-task`,
+  `aaw-start-initiative`) are one skill, `work` 3.0.0, with five flows (`/work start`, `progress`,
+  `status`, `next`, `initiative`), their references and templates merged and nothing lost; its
+  description still answers to the old names. `bundle.json` lists `work`, `thread` and the six
+  skills that live in repositories of their own, pinned to their tags, with a new optional
+  `source` per skill (bundle schema). Migrate by installing `work` and removing the five old
+  folders from `.agents/skills` and `.claude/skills`.
+
+### Added
+- `bin/skills.mjs`: one installer for standalone skills, from a bundle or one repository, with a
+  lock file, `list`, `install`, `update`, `check` and `remove`; `--from <folder>` for machines with
+  no network and `SKILLS_BASE_URL` for a mirror. Tests in `scripts/test-skills.mjs`, run in CI.
+
+### Added
+- thread 0.14.0: a local store for constrained environments. `threads_home:` in `.aaw-config.yaml`
+  (relative to that file) says where the store is, and `threads_remote: local` (or `thread init
+  --local`) creates it as a git repository with no remote: every command commits and nothing is
+  pushed. A remote can be added later. The post-install check accepts both.
+
+### Fixed
+- thread 0.14.0: the post-install check accepts a source path such as `patternode/platform`, with
+  the same rule as the script (no reserved segment names). An open call whose task thread was
+  closed counts as finished everywhere, so it leaves the board's status, `sent` and `next`, and
+  `prune` archives it.
+
+### Fixed
+- thread 0.14.0: events written in the same millisecond (an open and its describe, when a curator
+  files a dump) could replay out of order and lose the description; each process now writes
+  strictly increasing timestamps, on the tree and the board.
+
+### Added
+- thread 0.14.0: the board (DD-13), a bulletin board for agents in the threads store under
+  `board/`. `thread board start` gives a chat a handle, takes any roles named (such as
+  `master:patternode-platform`) and prints a briefing: standing orders, instructions for it,
+  open calls, what it holds and who else is working, so a new agent needs only a one-line
+  pointer. Posts go to handles, roles, `*`, `any` (an open call the first claimant takes),
+  `repo:<name>` or a thread (`--on`). Instructions from the user are accepted, done or
+  declined with a note, and `sent` shows the outcome; agents relay the user's instructions
+  with `--for-user`, and a person can post a Markdown file by hand. Claims on any key under a
+  lease, ordered by git's history rather than clocks; `wait` blocks until something arrives
+  and renews leases; a read-only `start --hook` for session-start hooks; a daily prune to
+  `board-archive/`. `thread show` lists a thread's posts. The store README documents the
+  board for agents without the skill. Procedure in `skills/thread/references/board.md`;
+  tests in `scripts/test-board.mjs`, run in CI.
+- thread 0.14.0: source paths, scoped views and a merge queue (DD-14). A source is a path
+  (`patternode/platform`); `status`, `tree` and `list` of `patternode` include every source
+  beneath it, and writes go only to the source named. A board chat joins at a path: its handle
+  and roles are reached from anywhere, broadcasts, open calls and standing orders from its path,
+  the paths above and below. Claims and roles hold across the store. The briefing lists open
+  threads in the scope nobody holds ("go pick up work in patternode"), and `board status` shows
+  who is working on what. `board ready <owner/repo#n>` joins the merging role's queue in order,
+  with `--after` for pull requests that must merge first; `queue`, `merging` and `merged` work it.
+- thread 0.14.0: one list of work (DD-15). An open call opens a `task` thread under the thread it
+  is on, claimed and closed as that thread; `tree` marks held threads `⚑ <handle>`, and closing a
+  thread frees its claim. `board next` ranks instructions, the merge queue and open threads nobody
+  holds; `--claim` takes the best one and tries the next when another chat wins it, and `--list`
+  is a dispatcher's view for running agents in parallel.
+- thread 0.14.0: capture and curation (DD-16). `board dump` captures anything (stdin with `-`, a
+  bare Markdown file, no handle needed); a `curator` role triages, asks authors when unclear
+  (`ask`), and files each dump as a chore, task, bug, feature, improvement or idea thread, a note,
+  a duplicate, a reflection, or drops it, with where it came from. `thread link` and `--plan` tie a
+  thread to an activity or task, refusing a bare work item. `tidy` sweeps for unfiled, unanswered,
+  unlinked, orphaned and doubled work.
+
 ### Added
 - thread 0.13.0: sources (DD-12). One store holds separate trees for separate segments of work:
   the default source at its root, named ones under `sources/<name>/`. A workspace picks one

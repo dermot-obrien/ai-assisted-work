@@ -97,7 +97,7 @@ keep them if that was the right place. Newer versions print the help and stop.
 ### `No work items or initiatives in <path>`
 
 The folder `work_items_path` resolves to holds no `WI-NNN-<slug>/progress.yaml`. Either
-there is no work yet (use `/aaw-start-work`), or the path is not where your work items are:
+there is no work yet (use `/work start`), or the path is not where your work items are:
 check `work_items_path` in `.aaw-config.yaml`, and that you are running from the right
 workspace. With no `.aaw-config.yaml` at all, the CLI looks in `./change/work-items`.
 

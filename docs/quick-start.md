@@ -63,10 +63,10 @@ You should see, among other lines (on macOS and Linux the paths use `/`):
 ...
 ▸ Installing AI-Assisted Work (aaw@3.2.0)
   ▸ skills: installed 6 → .agents\skills/
-      aaw-next-task, aaw-progress-work, aaw-start-initiative, aaw-start-work, aaw-work-status, thread
+      /work next, /work progress, /work initiative, /work start, /work status, thread
 ...
 Done. Try this in your AI tool:
-    /aaw-start-work add a new feature
+    /work start add a new feature
 ```
 
 With `.claude/` present there is one more line, `▸ claude: linked 6 → .claude\skills/`.
@@ -87,7 +87,7 @@ with `Every installed skill matches the framework that owns it.`
 ## 5. Add a tiny work item
 
 A work item is a folder named `WI-NNN-<slug>` holding a `progress.yaml`. An agent writes
-these for you with `/aaw-start-work`; here you write a small one by hand so there is
+these for you with `/work start`; here you write a small one by hand so there is
 something to drive. It names one product (a deliverable) and two activities that produce
 it: one for an agent, and one for a human that waits on the first.
 
@@ -180,7 +180,7 @@ EOF
 ```
 
 The full template, with every field explained, is
-[skills/aaw-start-work/assets/templates/progress.yaml](../skills/aaw-start-work/assets/templates/progress.yaml).
+[skills/work start/assets/templates/progress.yaml](../skills/work start/assets/templates/progress.yaml).
 
 ## 6. Read it back
 
@@ -246,15 +246,15 @@ Open the `aaw-demo` folder in your agent and start a new chat, so it loads the s
 `/` and the `aaw-*` skills and `thread` should be listed. Then try:
 
 ```
-/aaw-work-status WI-001
-/aaw-next-task WI-001
-/aaw-start-work write a one-page guide to our release process
+/work status WI-001
+/work next WI-001
+/work start write a one-page guide to our release process
 ```
 
 The first two read the work item you wrote. The third triages a new request: most requests
 are chores and get no work item at all; one that earns a work item gets scoped with you,
 planned from the products it will leave behind, and written to `work-items/WI-002-...`.
-`/aaw-progress-work WI-001` would then claim `WI-001-A1` and work it. If the skills are not
+`/work progress WI-001` would then claim `WI-001-A1` and work it. If the skills are not
 listed, see [Troubleshooting](troubleshooting.md#a-skill-is-not-listed-in-the-agent).
 
 ## 9. Optional: try `thread`

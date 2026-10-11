@@ -9,8 +9,9 @@ check these in order and fix what's missing.
 **In the repo:**
 
 1. **This skill committed at `.claude/skills/thread/`** (`SKILL.md`, `bin/` and `references/`). Claude Code
-   and Cursor both load skills from there. The AAW installer makes it a link to the installed
-   copy; git stores the real files through it. Without AAW, copy this directory there. If
+   and Cursor both load skills from there. A skills installer (such as `skills install thread`)
+   makes it a link to the installed copy; git stores the real files through it. Without one,
+   copy this directory there. If
    `.claude/` is ignored, un-ignore down to the skill:
 
    ```gitignore
@@ -24,7 +25,7 @@ check these in order and fix what's missing.
    `.claude/skills/*` plus the `!` line.)
 2. **`threads_remote: <store url>` in `.aaw-config.yaml`** at the repo root (a file with
    just that line is fine), so no environment variables are needed.
-3. **Refresh the committed copy** whenever this skill is updated: re-run the AAW install, or
+3. **Refresh the committed copy** whenever this skill is updated: re-run the installer, or
    copy it again, then commit.
 
 **Claude Code on the web:**
@@ -44,7 +45,7 @@ check these in order and fix what's missing.
 
 1. **Skill:** Cursor loads project skills from `.agents/skills/`, `.cursor/skills/` and, for
    compatibility, `.claude/skills/`, so the committed `.claude/skills/thread/` is found in
-   the agent's clone. Don't depend on `.agents/skills/` there: AAW installs it and it is
+   the agent's clone. Don't depend on `.agents/skills/` there: installers fill it and it is
    usually gitignored. Cursor's "Sync Skills for Cloud Agents" setting only syncs
    `~/.cursor/skills/`, so it isn't needed for a committed skill.
 2. **Environment:** the agent runs on an Ubuntu machine with GitHub reachable by default.
@@ -70,3 +71,35 @@ repo (Contents: read and write):
 **Check it works:** `/thread <id>` of something opened locally shows up in the cloud, and a
 `/thread note` made in the cloud appears locally on the next `/thread`. `NOT PUSHED` means no
 write access; events not pushed are lost when the cloud container ends, so fix access first.
+
+## The board at session start
+
+The board needs nothing more than the store. To have every new chat see the board before its
+first turn (standing orders, open calls, posts for its repository), add a session-start hook.
+It only reads, and prints nothing when no store is configured. In Claude Code, in
+`.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node .claude/skills/thread/bin/thread.mjs board start --hook" }] }
+    ]
+  }
+}
+```
+
+The chat still joins with `board start` when the user points it at the board; the hook only
+shows it what is there. In a tool without hooks, the pointer the user gives (for example
+"Join the board as master:patternode-platform") does the same job.
+
+## A local store, with no remote
+
+Where the workspace cannot reach a shared store (a work laptop with no access to personal repositories, a machine offline), keep the threads in a git repository of its own on that machine. In `.aaw-config.yaml`:
+
+```yaml
+threads_home: ../threads-work     # a folder for the store, relative to this file (or ~/...)
+threads_remote: local             # no remote: every command commits, nothing is pushed
+```
+
+or run `thread init --local` with `THREADS_HOME` set. The first command creates the store, with a README, and says where it is. The board works the same way in it. Keep the store outside the workspace's own repository, or add it to that repository's `.gitignore`. To share it later, `git -C <store> remote add origin <git-url>`; the next command pushes.

@@ -67,6 +67,10 @@ jobs:
           node bin/aaw.js --version
           node bin/aaw.js --help
 
+      - name: CLI tests (install without a terminal, retired skills removed)
+        working-directory: packages/cli
+        run: npm test
+
   skills:
     name: Agent Skills validation
     runs-on: ubuntu-latest
@@ -87,15 +91,14 @@ jobs:
       - name: The thread script's tests pass
         run: node --test scripts/test-thread.mjs
 
+      - name: The board's tests pass
+        run: node --test scripts/test-board.mjs
+
+      - name: The skills installer's tests pass
+        run: node --test scripts/test-skills.mjs
+
       - name: The protocol types agree with the work schema
         run: node scripts/check-protocol-schema.mjs
-
-      # Each aaw-* skill ships its own copy of the check, so it is complete on its own.
-      - name: The aaw-* post-install checks are one file
-        run: |
-          for f in skills/aaw-*/bin/check.mjs; do
-            cmp skills/aaw-start-work/bin/check.mjs "$f" || { echo "::error::$f differs from skills/aaw-start-work/bin/check.mjs"; exit 1; }
-          done
 
       - name: Install skills into a scratch workspace
         run: |
@@ -105,7 +108,7 @@ jobs:
       - name: Check the installed skills resolve
         run: |
           node "$GITHUB_WORKSPACE/scripts/validate-skills.mjs" /tmp/ws/.agents/skills
-          for s in /tmp/ws/.claude/skills/aaw-*; do
+          for s in /tmp/ws/.claude/skills/work /tmp/ws/.claude/skills/thread; do
             test -f "$s/SKILL.md" || { echo "::error::$s does not resolve"; exit 1; }
           done
 
@@ -128,7 +131,7 @@ jobs:
 
       - name: An edited copy is caught
         run: |
-          echo "# edited in the workspace" >> /tmp/ws/.agents/skills/aaw-start-work/SKILL.md
+          echo "# edited in the workspace" >> /tmp/ws/.agents/skills/work/SKILL.md
           if node "$GITHUB_WORKSPACE/bin/aaw.js" check-skills --workspace /tmp/ws --framework "$GITHUB_WORKSPACE"; then
             echo "::error::check-skills passed on an edited copy"; exit 1
           fi
@@ -155,7 +158,8 @@ jobs:
       # lists therefore covers exactly the skills aaw install places.
       - name: Validate every skill bundle.json lists
         run: |
-          paths=$(node -e 'for (const s of require("./bundle.json").skills) console.log(s.path)')
+          # A skill with a source lives in a repository of its own and is validated there.
+          paths=$(node -e 'for (const s of require("./bundle.json").skills) if (!s.source) console.log(s.path)')
           test -n "$paths" || { echo "::error::bundle.json lists no skills"; exit 1; }
           failed=0
           for p in $paths; do
@@ -169,3 +173,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: fsfe/reuse-action@v6
+
+  extract:
+    name: Each skill builds as a repository of its own
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the extraction keeps each skill's history
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Extract thread and work, then validate each
+        run: |
+          git config --global user.name ci && git config --global user.email ci@localhost
+          for s in thread work; do
+            node scripts/extract-skill.mjs "$s" "/tmp/extract/$s"
+            (cd "/tmp/extract/$s" && node scripts/validate-skills.mjs skills && node scripts/validate-bundle.mjs .)
+          done

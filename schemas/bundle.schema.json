@@ -4,7 +4,14 @@
   "title": "Skill bundle manifest",
   "description": "bundle.json at the root of a bundle: a repository holding one or more Agent Skills (agentskills.io) and an optional ontology module. Neutral: it names no agent and no host. An agent's own packaging, such as a Claude Code plugin marketplace, is an adapter generated from it. See DD-11 in AI-Assisted Work.",
   "type": "object",
-  "required": ["name", "owner", "description", "license", "homepage", "skills"],
+  "required": [
+    "name",
+    "owner",
+    "description",
+    "license",
+    "homepage",
+    "skills"
+  ],
   "additionalProperties": false,
   "properties": {
     "$schema": {
@@ -39,14 +46,19 @@
     "derived_from": {
       "description": "Lineage: each source this bundle was taken from, as a URL naming the source path at the source commit. Each skill's SKILL.md records its own as metadata.x-derived-from.",
       "type": "array",
-      "items": { "type": "string", "format": "uri" },
+      "items": {
+        "type": "string",
+        "format": "uri"
+      },
       "uniqueItems": true
     },
     "skills": {
       "description": "Every skill in the bundle. Every skills/<name>/ directory holding a SKILL.md must be listed, and nothing else.",
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/Skill" }
+      "items": {
+        "$ref": "#/$defs/Skill"
+      }
     },
     "ontology": {
       "$ref": "#/$defs/OntologyModule"
@@ -54,8 +66,12 @@
     "adapters": {
       "description": "Agent-specific packagings, each generated from this manifest and never the source of anything in it. Keyed by adapter name, valued by the path of the adapter's file in the bundle.",
       "type": "object",
-      "propertyNames": { "pattern": "^[a-z][a-z0-9-]*$" },
-      "additionalProperties": { "$ref": "#/$defs/RelativePath" },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/RelativePath"
+      },
       "properties": {
         "claude-plugin": {
           "description": "A Claude Code plugin marketplace, one plugin per skill, such as .claude-plugin/marketplace.json.",
@@ -94,11 +110,18 @@
     "Requirement": {
       "description": "A dependency on another skill or ontology module: its identifier without a version, and a range.",
       "type": "object",
-      "required": ["purl", "range"],
+      "required": [
+        "purl",
+        "range"
+      ],
       "additionalProperties": false,
       "properties": {
-        "purl": { "$ref": "#/$defs/UnversionedPurl" },
-        "range": { "$ref": "#/$defs/SemVerRange" }
+        "purl": {
+          "$ref": "#/$defs/UnversionedPurl"
+        },
+        "range": {
+          "$ref": "#/$defs/SemVerRange"
+        }
       }
     },
     "RelativePath": {
@@ -114,7 +137,13 @@
     },
     "Skill": {
       "type": "object",
-      "required": ["name", "path", "version", "purl", "requires"],
+      "required": [
+        "name",
+        "path",
+        "version",
+        "purl",
+        "requires"
+      ],
       "additionalProperties": false,
       "properties": {
         "name": {
@@ -122,7 +151,7 @@
           "$ref": "#/$defs/Name"
         },
         "path": {
-          "description": "The skill's directory, relative to the bundle root, such as skills/model.",
+          "description": "The skill's directory, relative to the bundle root (or, with a source, to that repository's root), such as skills/model.",
           "$ref": "#/$defs/RelativePath"
         },
         "version": {
@@ -136,28 +165,61 @@
         "requires": {
           "description": "The skills this one needs, equal to metadata.x-skill-requires in its SKILL.md. Empty when it needs none.",
           "type": "array",
-          "items": { "$ref": "#/$defs/Requirement" }
+          "items": {
+            "$ref": "#/$defs/Requirement"
+          }
         },
-        "check": { "$ref": "#/$defs/Check" }
+        "check": {
+          "$ref": "#/$defs/Check"
+        },
+        "source": {
+          "description": "Where a skill that lives in a repository of its own comes from. With a source, path is the skill's folder in that repository, the skill is checked there, and its purl is its home bundle's: pkg:generic/<owner>/<repository>/<name>@<version>.",
+          "type": "object",
+          "required": [
+            "repo",
+            "ref"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "repo": {
+              "description": "A git URL the skill can be cloned from.",
+              "type": "string",
+              "minLength": 1
+            },
+            "ref": {
+              "description": "The tag (or branch) to install, such as <skill>--v<version>.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
       }
     },
     "Check": {
       "description": "The skill's post-install check. An installer runs it straight after installing the skill and on demand. Run from the workspace root (the working directory is the repository the skill is installed into) with SKILL_DIR set to the installed skill's directory. Exit 0: the skill and the workspace configuration it depends on are correct. Exit 1: problems, each printed as one line saying what is wrong, where, and how to fix it. Exit 2: a usage or environment error, such as a missing runtime. It must be fast, offline and read-only, and must not require optional tools: their absence is a warning, and the exit stays 0.",
       "type": "object",
-      "required": ["command"],
+      "required": [
+        "command"
+      ],
       "additionalProperties": false,
       "properties": {
         "command": {
           "description": "The command as an argument vector, never a shell string. Paths in it are relative to the installed skill's directory. When runtime is set, the first element names that runtime, and an installer may substitute the interpreter it resolved for it, such as python3 or py -3 for python.",
           "type": "array",
           "minItems": 1,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "runtime": {
           "description": "The runtime the command needs, so an installer can report its absence as exit 2 without running anything.",
           "type": "string",
           "pattern": "^[a-z][a-z0-9-]*$",
-          "examples": ["python", "node"]
+          "examples": [
+            "python",
+            "node"
+          ]
         },
         "description": {
           "description": "What the check verifies, in one line.",
@@ -168,7 +230,10 @@
     "OntologyModule": {
       "description": "The bundle's ontology module: a JSON Schema whose $id is a purl naming the module as a component of this bundle. Resolved from the installed bundle, never fetched from a host.",
       "type": "object",
-      "required": ["id", "path"],
+      "required": [
+        "id",
+        "path"
+      ],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -182,7 +247,9 @@
         "extends": {
           "description": "The ontology modules this one builds on by $ref, each named without a version and given a range. Empty for the bottom layer.",
           "type": "array",
-          "items": { "$ref": "#/$defs/Requirement" }
+          "items": {
+            "$ref": "#/$defs/Requirement"
+          }
         }
       }
     }

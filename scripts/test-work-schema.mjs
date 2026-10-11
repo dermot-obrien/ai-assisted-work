@@ -43,10 +43,9 @@ function expect(label, value, name, ok) {
 }
 
 const templates = [
-  ["skills/aaw-start-work/assets/templates/progress.yaml", "WorkItem"],
-  ["skills/aaw-progress-work/assets/templates/progress.yaml", "WorkItem"],
-  ["skills/aaw-start-initiative/assets/templates/initiative-progress.yaml", "Initiative"],
-  ["skills/aaw-start-initiative/assets/templates/objective-progress.yaml", "Objective"],
+  ["skills/work/assets/templates/progress.yaml", "WorkItem"],
+  ["skills/work/assets/templates/initiative-progress.yaml", "Initiative"],
+  ["skills/work/assets/templates/objective-progress.yaml", "Objective"],
 ];
 for (const [file, name] of templates) expect(`${file} matches $defs/${name}`, load(file), name, true);
 

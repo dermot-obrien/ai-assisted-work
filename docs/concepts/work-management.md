@@ -28,7 +28,7 @@ An optional, **context-free** outcome layer so work can ladder to measurable goa
 
 So: an **Initiative** (multi-quarter) ladders to several Objectives; an **Epic** (Work Item, <= quarter) advances **one** quarter's KRs; a **sprint/week goal** is a *step that advances* a KR — it is **not** the Objective (keep them distinct).
 
-This layer is **optional and additive** — work items function with or without it, and it carries **no domain/tenant vocabulary** (a host context maps its own Strategic Themes, value areas, etc. onto Objectives/KRs). Records live alongside work items, e.g. `objectives/OBJ-NNN/`. Templates ship with the `/aaw-start-initiative` skill, at `skills/aaw-start-initiative/assets/templates/objective-progress.yaml` and `cadence.yaml`, because an Objective is a strategic container like an Initiative.
+This layer is **optional and additive** — work items function with or without it, and it carries **no domain/tenant vocabulary** (a host context maps its own Strategic Themes, value areas, etc. onto Objectives/KRs). Records live alongside work items, e.g. `objectives/OBJ-NNN/`. Templates ship with the `/work initiative` skill, at `skills/work initiative/assets/templates/objective-progress.yaml` and `cadence.yaml`, because an Objective is a strategic container like an Initiative.
 
 ## Work Items
 
@@ -807,10 +807,10 @@ If scope changes after work has started:
 - [agent-boundaries.md](agent-boundaries.md) - **Critical rules for AI agents** (read first)
 - [work-classification.md](work-classification.md) - **Work classes & ceremony** — classify work by certainty × impact × kind (chore / change / intervention / inquiry); ceremony scales with class
 - [scaling-limits.md](scaling-limits.md) - Scaling limits and system constraints
-- the `/aaw-start-initiative` skill - Creating initiatives (strategic containers)
-- the `/aaw-start-work` skill - Creating work items (Scoping → Discovery → Planning)
-- the `/aaw-progress-work` skill - Executing work items (Implementation phase)
-- the `/aaw-work-status` skill - Checking work item and initiative status
-- the `/aaw-next-task` skill - Identifying the next task to work on
+- the `/work initiative` skill - Creating initiatives (strategic containers)
+- the `/work start` skill - Creating work items (Scoping → Discovery → Planning)
+- the `/work progress` skill - Executing work items (Implementation phase)
+- the `/work status` skill - Checking work item and initiative status
+- the `/work next` skill - Identifying the next task to work on
 - [architecture-work.md](architecture-work.md) - **Architecture work type guidance** (deliverables, diagrams, ADRs)
 - `skills/<name>/assets/templates/` - template files, bundled with the skill that writes them

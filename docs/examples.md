@@ -24,9 +24,9 @@ is a research write-up of the kind discovery produces.
 
 | File | Shows |
 |------|-------|
-| [aaw-start-work: references/examples.md](../skills/aaw-start-work/references/examples.md) | A development, an architecture and a consultancy intervention, which phases ran and what each left behind, and a chore for contrast |
-| [aaw-start-initiative: references/examples.md](../skills/aaw-start-initiative/references/examples.md) | A research, a platform and an enabler initiative, and when not to create one |
-| [aaw-progress-work: assets/locks/](../skills/aaw-progress-work/assets/locks/README.md) | A lock file and the lock format |
+| [/work start: references/examples.md](../skills/work/references/start-examples.md) | A development, an architecture and a consultancy intervention, which phases ran and what each left behind, and a chore for contrast |
+| [/work initiative: references/examples.md](../skills/work/references/initiative-examples.md) | A research, a platform and an enabler initiative, and when not to create one |
+| [/work progress: assets/locks/](../skills/work progress/assets/locks/README.md) | A lock file and the lock format |
 
 ## Templates
 
@@ -34,14 +34,14 @@ Every field is explained in a comment where it appears.
 
 | Template | Used for |
 |----------|----------|
-| [progress.yaml](../skills/aaw-start-work/assets/templates/progress.yaml) | A work item's state: deliverables, activities, tasks, blockers |
-| [scope.md](../skills/aaw-start-work/assets/templates/scope.md), [scope-ai.md](../skills/aaw-start-work/assets/templates/scope-ai.md) | Scope for people, and the verbatim request and reasoning for agents |
-| [plan.md](../skills/aaw-start-work/assets/templates/plan.md) | The product breakdown, product flow and activities |
-| [research.md](../skills/aaw-start-work/assets/templates/research.md), [decisions.md](../skills/aaw-start-work/assets/templates/decisions.md) | Discovery |
-| [changes.md](../skills/aaw-start-work/assets/templates/changes.md), [notes.md](../skills/aaw-start-work/assets/templates/notes.md) | A pull request summary; session notes |
-| [D01-template.md](../skills/aaw-progress-work/assets/templates/deliverables/D01-template.md) | A deliverable |
-| [initiative-progress.yaml](../skills/aaw-start-initiative/assets/templates/initiative-progress.yaml), [initiative-scope.md](../skills/aaw-start-initiative/assets/templates/initiative-scope.md) | An initiative |
-| [objective-progress.yaml](../skills/aaw-start-initiative/assets/templates/objective-progress.yaml), [cadence.yaml](../skills/aaw-start-initiative/assets/templates/cadence.yaml) | The optional OKR layer |
+| [progress.yaml](../skills/work start/assets/templates/progress.yaml) | A work item's state: deliverables, activities, tasks, blockers |
+| [scope.md](../skills/work start/assets/templates/scope.md), [scope-ai.md](../skills/work start/assets/templates/scope-ai.md) | Scope for people, and the verbatim request and reasoning for agents |
+| [plan.md](../skills/work start/assets/templates/plan.md) | The product breakdown, product flow and activities |
+| [research.md](../skills/work start/assets/templates/research.md), [decisions.md](../skills/work start/assets/templates/decisions.md) | Discovery |
+| [changes.md](../skills/work start/assets/templates/changes.md), [notes.md](../skills/work start/assets/templates/notes.md) | A pull request summary; session notes |
+| [D01-template.md](../skills/work progress/assets/templates/deliverables/D01-template.md) | A deliverable |
+| [initiative-progress.yaml](../skills/work initiative/assets/templates/initiative-progress.yaml), [initiative-scope.md](../skills/work initiative/assets/templates/initiative-scope.md) | An initiative |
+| [objective-progress.yaml](../skills/work initiative/assets/templates/objective-progress.yaml), [cadence.yaml](../skills/work initiative/assets/templates/cadence.yaml) | The optional OKR layer |
 
 ## Configuration examples
 

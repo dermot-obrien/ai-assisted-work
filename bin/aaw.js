@@ -8048,7 +8048,7 @@ var import_yaml4 = __toESM(require_dist(), 1);
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir as mkdir2, readdir as readdir2, readFile as readFile4, rm, stat as stat2, symlink, writeFile as writeFile2 } from "node:fs/promises";
+import { copyFile, lstat, mkdir as mkdir2, readdir as readdir2, readFile as readFile4, rm, stat as stat2, symlink, writeFile as writeFile2 } from "node:fs/promises";
 import path4 from "node:path";
 var noopLog = () => {
 };
@@ -8058,6 +8058,14 @@ var TOOL_DETECT_DIR = {
   copilot: ".github",
   gemini: ".gemini"
 };
+async function entryExists(p) {
+  try {
+    await lstat(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
 async function pathExists(p) {
   try {
     await stat2(p);
@@ -8192,6 +8200,29 @@ var LEGACY_SHIM_DESTS = {
     path4.join(".gemini", "skills", "aar")
   ]
 };
+var RETIRED_SKILLS = {
+  aaw: ["aaw-start-work", "aaw-progress-work", "aaw-work-status", "aaw-next-task", "aaw-start-initiative"]
+};
+async function removeRetiredSkills(opts) {
+  const { manifest, workspaceRoot } = opts;
+  const log = opts.log ?? noopLog;
+  const removed = [];
+  for (const name of RETIRED_SKILLS[manifest.id] ?? []) {
+    for (const dir of [SKILLS_INTEROP_DIR, SKILLS_CLAUDE_DIR]) {
+      const dest = path4.join(workspaceRoot, dir, name);
+      if (await entryExists(dest)) {
+        await rm(dest, { recursive: true, force: true });
+        removed.push(path4.join(dir, name));
+      }
+    }
+  }
+  if (removed.length > 0) {
+    log(`  \u25B8 removed ${removed.length} retired skill cop(ies), replaced by \`work\`:`);
+    for (const r of removed)
+      log(`      ${r}`);
+  }
+  return removed;
+}
 var LEGACY_SHIM_PROMPT_PREFIX = {
   aaw: "aaw-",
   aaa: "aaa-",
@@ -8415,6 +8446,7 @@ async function installFramework(opts) {
   };
   const skills = await wireSkills(opts, selection);
   const removedLegacyShims = await removeLegacyShims(opts);
+  const removedRetiredSkills = await removeRetiredSkills(opts);
   const seededConfig = await seedConfig(opts);
   const dataDirs = await ensureDataDirs(opts);
   const pythonInstalled = await runToolSetup(opts, warnings);
@@ -8434,6 +8466,7 @@ async function installFramework(opts) {
     version: manifest.version,
     skills,
     removedLegacyShims,
+    removedRetiredSkills,
     seededConfig,
     dataDirs,
     pythonInstalled,
@@ -8628,7 +8661,7 @@ AI tools detected: ${detectedNames || "none"}
     process4.stdout.write(
       `
 Done. Try this in your AI tool:
-    /aaw-start-work add a new feature
+    /work start add a new feature
 
 Or from the shell:
     node ${cliPath} status
@@ -9844,7 +9877,7 @@ Usage:
 Workspace config lives at .aaw-config.yaml (created by 'aaw install').
 'aaw init' is kept as a compatibility alias for 'aaw install'.
 `;
-var VERSION = true ? "3.2.0" : "0.0.0-dev";
+var VERSION = true ? "4.0.0" : "0.0.0-dev";
 function resolveAawRoot2() {
   const self = fileURLToPath2(import.meta.url);
   const dir = path11.dirname(self);

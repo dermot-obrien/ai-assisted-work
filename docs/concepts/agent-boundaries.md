@@ -286,7 +286,7 @@ This keeps the convenience cache in sync without requiring real-time updates dur
 
 ## See Also
 
-- the `/aaw-progress-work` skill - Full execution protocol
-- the `/aaw-start-work` skill - Creating work items
+- the `/work progress` skill - Full execution protocol
+- the `/work start` skill - Creating work items
 - [scaling-limits.md](scaling-limits.md) - Scaling limits and constraints
 - [work-management.md](work-management.md) - Core concepts and lifecycle

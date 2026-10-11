@@ -27,10 +27,11 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { homedir, hostname } from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
+import { holders, postsOn, releaseOnClose, runBoard } from "./board.mjs";
 
 // STORE is the git clone. HOME is the selected source's folder inside it: the store's root
 // for the default source, sources/<name>/ for a named one. It is set once, in main.
-const STORE = process.env.THREADS_HOME || path.join(homedir(), ".threads");
+const STORE = storeHome();
 let SOURCE = "default";
 let HOME = STORE;
 // Automatic prune: the first write of a new day archives every branch closed before that
@@ -41,7 +42,7 @@ const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
-const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources"]);
+const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources", "take", "hook", "for-user", "release", "claim", "list", "more", "local"]);
 
 function parseArgs(argv) {
   const flags = {};
@@ -87,21 +88,41 @@ function tryGit(args, opts) {
 const hasRemote = () => tryGit(["remote"]).out.split("\n").includes("origin");
 const hasCommits = () => tryGit(["rev-parse", "--verify", "HEAD"]).ok;
 
-/** A top-level `key:` in the nearest .aaw-config.yaml above cwd, or null. A quoted value may hold spaces. */
-function workspaceSetting(key) {
+/** A top-level `key:` in the nearest .aaw-config.yaml above cwd, with the folder of that file, or null. A quoted value may hold spaces. */
+function workspaceSettingAt(key) {
   let dir = process.cwd();
   const re = new RegExp(`^${key}:\\s*(?:"([^"]*)"|'([^']*)'|([^\\s#]+))`, "m");
   for (;;) {
     const f = path.join(dir, ".aaw-config.yaml");
     if (existsSync(f)) {
       const m = readFileSync(f, "utf8").match(re);
-      if (m) return m[1] ?? m[2] ?? m[3];
+      if (m) return { value: m[1] ?? m[2] ?? m[3], dir };
     }
     const up = path.dirname(dir);
     if (up === dir) return null;
     dir = up;
   }
 }
+
+/** A top-level `key:` in the nearest .aaw-config.yaml above cwd, or null. */
+function workspaceSetting(key) {
+  return workspaceSettingAt(key)?.value ?? null;
+}
+
+/**
+ * Where the store is: $THREADS_HOME, else threads_home: in the nearest .aaw-config.yaml (a
+ * path relative to that file, or starting with ~), else ~/.threads. A workspace that cannot
+ * reach a shared store keeps its threads in a folder of its own this way.
+ */
+function storeHome() {
+  if (process.env.THREADS_HOME) return process.env.THREADS_HOME;
+  const at = workspaceSettingAt("threads_home");
+  if (at) return path.resolve(at.dir, at.value.replace(/^~(?=$|[\\/])/, homedir()));
+  return path.join(homedir(), ".threads");
+}
+
+/** A remote of "local" or "none" means a store with no remote: every command commits and nothing is pushed. */
+const isLocalOnly = (remote) => remote === "local" || remote === "none";
 
 /** Find `threads_remote:` in the nearest .aaw-config.yaml above cwd. */
 const remoteFromWorkspace = () => workspaceSetting("threads_remote");
@@ -113,10 +134,21 @@ const remoteFromWorkspace = () => workspaceSetting("threads_remote");
  */
 const projectDefault = () => process.env.THREAD_PROJECT || workspaceSetting("threads_project");
 
-/** A source name is one lowercase word or hyphenated words; "default" is the store's root. */
+// Folder names a source keeps its own data in, so they cannot name a source beneath it.
+const RESERVED = new Set(["events", "archive", "board", "board-archive", "sources"]);
+
+/**
+ * A source name is a path of lowercase words or hyphenated words, such as patternode or
+ * patternode/platform; "default" is the store's root. A source beneath another lives in a
+ * folder inside it, and a view of a source includes every source beneath it.
+ */
 function sourceArg(raw, what = "a source") {
-  const s = String(raw).trim().toLowerCase();
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(s)) die(`${what} is one lowercase word or hyphenated words, such as image-and-video (got "${raw}")`);
+  const s = String(raw).trim().toLowerCase().replace(/^\/+|\/+$/g, "");
+  const parts = s.split("/");
+  if (!s || !parts.every((p) => /^[a-z0-9][a-z0-9-]*$/.test(p)))
+    die(`${what} is a path of lowercase words or hyphenated words, such as image-and-video or patternode/platform (got "${raw}")`);
+  if (parts.some((p) => RESERVED.has(p))) die(`${what} cannot use ${[...RESERVED].join(", ")} in its path (got "${raw}")`);
+  if (s !== "default" && s !== "all" && parts[0] === "default") die(`default is the store's root and has no sources beneath it; use a path such as ${parts.slice(1).join("/") || "work"}`);
   return s;
 }
 
@@ -130,16 +162,25 @@ function sourceChoice(flags) {
   return raw ? sourceArg(raw) : "default";
 }
 
-const sourceDir = (name) => (name === "default" ? STORE : path.join(STORE, "sources", name));
+const sourceDir = (name) => (name === "default" ? STORE : path.join(STORE, "sources", ...name.split("/")));
 
-/** Every source in the store: the default first, then the named ones. */
+/** Every source in the store: the default first, then the named ones as paths, each before those beneath it. */
 function sources() {
-  const dir = path.join(STORE, "sources");
-  const named = existsSync(dir)
-    ? readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort()
-    : [];
+  const named = [];
+  const walk = (dir, prefix) => {
+    if (!existsSync(dir)) return;
+    for (const e of readdirSync(dir, { withFileTypes: true }).filter((x) => x.isDirectory() && !RESERVED.has(x.name) && !x.name.startsWith(".")).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      const name = prefix ? `${prefix}/${e.name}` : e.name;
+      named.push(name);
+      walk(path.join(dir, e.name), name);
+    }
+  };
+  walk(path.join(STORE, "sources"), "");
   return ["default", ...named];
 }
+
+/** A source and every source beneath it; "all" is every source. */
+const under = (name) => (name === "all" ? sources() : sources().filter((s) => s === name || s.startsWith(name + "/")));
 
 /** Point HOME at a source. */
 function useSource(name) {
@@ -185,9 +226,10 @@ function movedIds(events) {
   return moved;
 }
 
-function ensureStore(remoteArg) {
+function ensureStore(remoteArg, local = false) {
   if (existsSync(path.join(STORE, ".git"))) return;
   const remote = remoteArg || process.env.THREADS_REMOTE || remoteFromWorkspace();
+  if (local || isLocalOnly(remote)) return initLocal();
   if (!remote) {
     die(
       `no threads store at ${STORE}, and no remote configured to clone it from.\n` +
@@ -197,6 +239,7 @@ function ensureStore(remoteArg) {
         "                                   export THREADS_REMOTE=<git-url>        (macOS/Linux, in your shell profile)\n" +
         "    • just this workspace:         add  threads_remote: <git-url>  to .aaw-config.yaml\n" +
         "    • once, right now:             thread init <git-url>\n" +
+        "    • no remote at all (local):    threads_remote: local  in .aaw-config.yaml, or  thread init --local\n" +
         "  In a cloud session, the environment also needs push access to that repo.",
     );
   }
@@ -208,6 +251,24 @@ function ensureStore(remoteArg) {
     git(["config", "user.name", "thread"]);
     git(["config", "user.email", "thread@localhost"]);
   }
+}
+
+/** Create the store as a git repository with no remote, for a workspace that cannot reach a shared one. */
+function initLocal() {
+  mkdirSync(STORE, { recursive: true });
+  const r = tryGit(["init", "--quiet"], { cwd: STORE });
+  if (!r.ok) die(`could not create a local store at ${STORE}:\n${r.out}`);
+  tryGit(["symbolic-ref", "HEAD", "refs/heads/main"]);
+  if (!tryGit(["config", "user.email"]).ok) {
+    git(["config", "user.name", "thread"]);
+    git(["config", "user.email", "thread@localhost"]);
+  }
+  writeFileSync(path.join(STORE, "README.md"), README);
+  mkdirSync(path.join(STORE, "events"), { recursive: true });
+  writeFileSync(path.join(STORE, "events", ".gitkeep"), "");
+  git(["add", "-A"]);
+  git(["commit", "--quiet", "-m", "Initialise a local threads store"]);
+  warn(`started a local threads store at ${STORE}, with no remote; to share it later: git -C "${STORE}" remote add origin <git-url>`);
 }
 
 /**
@@ -281,8 +342,16 @@ function readEvents() {
   return sortEvents(out);
 }
 
+// Each event written by this process gets a later timestamp than the one before, so two
+// events written in the same millisecond (an open and its describe) replay in order.
+let LAST_TS = 0;
+function nextTs() {
+  LAST_TS = Math.max(Date.now(), LAST_TS + 1);
+  return new Date(LAST_TS).toISOString();
+}
+
 function writeEvent(ev) {
-  const ts = new Date().toISOString();
+  const ts = nextTs();
   const host = hostname().toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 20) || "host";
   const stamp = ts.replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
   const dir = path.join(HOME, "events", localDay());
@@ -447,6 +516,7 @@ function buildTree(events) {
           titles: [],
           description: null,
           kind: ev.kind ?? null,
+          link: ev.link ?? null,
           status: "open",
           ctx: ev.ctx,
           tool: ev.tool,
@@ -484,6 +554,9 @@ function buildTree(events) {
         break;
       case "kind":
         if (n) Object.assign(n, { kind: ev.kind || null, last: ev.ts });
+        break;
+      case "link":
+        if (n) Object.assign(n, { link: ev.ref || null, last: ev.ts });
         break;
       case "transfer":
         // The thread and its branches now live in another source; this one forgets them.
@@ -584,7 +657,9 @@ function renderForest(views, { focus } = {}) {
     const tail = [n.ctx, ago(n.lastDeep)].filter(Boolean).join(" · ");
     const outcome = n.outcome ? ` — ${n.outcome}` : "";
     const here = focus && n.id === focus ? "   ← here" : "";
-    lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${tag(n)}${outcome}   ${tail}${here}`);
+    const held = isUnfinished(n) && holderOf(n.id) ? ` ⚑ ${holderOf(n.id)}` : "";
+    const link = n.link ? ` → ${n.link}` : "";
+    lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${tag(n)}${link}${held}${outcome}   ${tail}${here}`);
   };
   const walk = ({ n, kids }, prefix, branch, childPrefix) => {
     line(n, prefix, branch);
@@ -630,6 +705,8 @@ function renderJson(views, source) {
     description: n.description,
     outcome: n.outcome,
     notes: n.notes.map((x) => x.text),
+    link: n.link,
+    holder: (isUnfinished(n) && holderOf(n.id)) || null,
     opened: n.opened,
     last: n.lastDeep,
     ago: ago(n.lastDeep),
@@ -668,7 +745,9 @@ brings that thread back: copy its archived events back to their \`src\` paths.
 
 The store can hold several sources, separate trees for separate segments of work. The default
 source is \`events/\` and \`archive/\` at the root; a named source is the same pair under
-\`sources/<name>/\`, with \`src\` paths relative to that folder. Each source is replayed on its
+\`sources/<name>/\`, with \`src\` paths relative to that folder. A name is a path such as
+\`patternode/platform\`, kept at \`sources/patternode/platform/\`; a view of \`patternode\` includes
+every source beneath it, and writes go only to the source named. Each source is replayed on its
 own. Ids are unique across every source. A \`transfer\` event moves a thread and its branches to
 another source: their events are copied there with the same paths, removed from this source's
 \`events/\`, and this source then ignores those ids, including in its archive.
@@ -683,10 +762,72 @@ another source: their events are copied there with the same paths, removed from 
 | \`rename\` | \`id\`, \`text\` (the new title; earlier ones stay in the history) |
 | \`describe\` | \`id\`, \`text\` (a longer description; the latest one wins) |
 | \`kind\` | \`id\`, \`kind\` (one lowercase word such as \`feature\`, or null to clear; the latest one wins) |
+| \`link\` | \`id\`, \`ref\` (the plan item it serves: an activity or task such as \`WI-012-A3-T2\`, or a reference; null clears; the latest wins). \`open\` may carry \`link\` too |
 | \`transfer\` | \`id\`, \`to\` (the source), \`ids\` (the thread and every branch under it that moved) |
 
 Every event also carries \`ts\` (ISO-8601 UTC) and \`host\`. The tree is the events replayed in \`ts\` order.
+
+## If you are an agent sent here
+
+The user may start a chat with no more than a pointer to this repository. Then:
+
+1. Get the \`thread\` skill (AI-Assisted Work, \`skills/thread\`): it is usually committed in the
+   repository you work in at \`.claude/skills/thread/\`. Run
+   \`node <skill>/bin/thread.mjs board start --tool <your tool> [--source <path>] [--role <role>]\`,
+   with the path and role the user named ("pick up work in patternode" is \`--source patternode\`).
+2. Read what it prints: your handle, standing orders, instructions for you, open calls, and who
+   else is working. Keep the handle and pass \`--as <handle>\` on every board command.
+3. Act on instructions from \`user\` as the user's own, within your workspace's rules: \`accept\`,
+   do, then \`done\` with the result. Claim work before starting it. Check \`inbox\` before you stop.
+4. Never merge your own pull request: post it with \`board ready <owner/repo#n>\` and the chat holding
+   the merging role merges the queue in order.
+
+Without the skill, read and write the board by hand as below.
+
+## The board
+
+\`board/\` in each source is a bulletin board for agents, kept like the events: one new JSON file
+per action, \`board/YYYY-MM-DD/<utc-stamp>-<host>-<6 hex>.json\`, never edited. Every file has
+\`ts\`, \`host\`, \`type\` and \`from\` (the writer's handle; \`user\` is the person the agents work for).
+
+| type | fields |
+|---|---|
+| \`post\` | \`id\` (\`p-\` + 4 base-36 chars, unused), \`to\` (list: handles, roles, \`*\` everyone, \`any\` an open call, \`repo:<name>\`), \`on\` (thread id or null), \`ref\` (work item, activity or PR, or null), \`kind\` (\`instruction\` \\| \`question\` \\| \`info\` \\| \`ready\` \\| \`standing\` \\| \`answer\` \\| \`dump\`: capture for a curator to file), \`reply\` (post id or null), \`text\`, optional \`relayed\` (true: written for the user), \`task\` (an open call's thread, of kind \`task\`, which is claimed and closed in its place), and for \`ready\`: \`after\` (PRs to merge first), \`deploy\` |
+| \`ack\` | \`post\`, \`state\` (\`seen\` \\| \`accepted\` \\| \`done\` \\| \`declined\`), \`note\` (required for done and declined) |
+| \`retract\` | \`post\` (withdrawn, such as a standing order) |
+| \`file\` | \`post\` (a dump), \`is\` (\`chore\` \\| \`task\` \\| \`bug\` \\| \`feature\` \\| \`improvement\` \\| \`idea\` \\| \`note\` \\| \`reflection\` \\| \`duplicate\` \\| \`drop\`), \`thread\` (made or noted), \`of\`, \`plan\`, \`note\`, optional \`more\` (part filed; the dump stays open) |
+| \`hello\` | \`tool\`, \`ctx\` (repo), \`scope\` (the source path the agent works in), \`threads\` (followed), \`note\`, \`until\` (presence lasts until then) |
+| \`bye\` | (presence, roles and claims end) |
+| \`claim\` | \`key\` (an activity, thread, post id, or \`role:<name>\`), \`until\`, optional \`take\`, \`note\` |
+| \`release\` | \`key\`, optional \`take\` |
+
+Claims are replayed in the order git first added their files to \`main\`, not by \`ts\`: a claim
+holds when no other unexpired claim on the key came before it (or it has \`take\`), and the holder
+renews with another claim. A claim counts once it is pushed. The to-do list is the tree: an open
+thread nobody claims is work any agent may take, and closing a thread releases its claim. Claims, roles and presence are replayed
+across every source together. Posts to a handle or role reach it from any source; other posts reach
+agents whose scope is that source, a path above it or a path below it. Acks and retracts are filed
+beside their post. The merge queue for a role is its \`ready\` posts not done or declined, one per PR,
+in the order each PR's first ready post was added, a later one for the same PR replacing the earlier
+in place; a PR waits for every \`after\` PR still queued. A \`.md\` file under \`board/\` is a post written by hand, from \`user\`
+unless its front matter (\`to\`, \`kind\`, \`on\`, \`from\`) says otherwise: with \`to:\` an instruction,
+with only text a dump. \`board-archive/*.jsonl\` holds settled board files pruned out of \`board/\`, one
+per line with \`src\`.
 `;
+
+/**
+ * A thread's link to the formal plan: an activity (WI-012-A3) or a task (WI-012-A3-T2), or
+ * any other reference (IMP-004, owner/repo#12, an issue URL). A work item or epic on its own
+ * (WI-012, IN-003) is too big to hold a chore, so it is refused: place the chore under one of
+ * its activities or tasks. "none" clears the link.
+ */
+function linkArg(raw) {
+  const ref = String(raw ?? "").trim();
+  if (!ref || ref === "true") die("link to what? an activity (WI-012-A3), a task (WI-012-A3-T2), or a reference such as IMP-004 or owner/repo#12");
+  if (ref === "none") return null;
+  if (/^(WI|IN)-\d+$/i.test(ref)) die(`${ref} is a whole work item or initiative, too big to hold a chore: link one of its activities (${ref}-A1) or tasks (${ref}-A1-T1)`);
+  return ref;
+}
 
 /**
  * The refine convention: the first sentence is the title and the rest is the description.
@@ -701,8 +842,8 @@ function splitRefinement(raw) {
 }
 
 const commands = {
-  init(pos) {
-    ensureStore(pos[0]);
+  init(pos, flags = {}) {
+    ensureStore(pos[0], Boolean(flags.local));
     pull();
     if (!existsSync(path.join(HOME, "README.md"))) {
       writeFileSync(path.join(HOME, "README.md"), README);
@@ -730,8 +871,9 @@ const commands = {
     // An archived id is still taken: the full tree replays the archive too.
     const kind = kindArg(flags.kind);
     if (kind === "none") die("--kind none only makes sense on thread kind; leave --kind off instead");
+    const link = typeof flags.link === "string" ? linkArg(flags.link) : null;
     const id = newId(allIds());
-    writeEvent({ type: "open", id, parent, text, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL, ...(kind ? { kind } : {}) });
+    writeEvent({ type: "open", id, parent, text, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL, ...(kind ? { kind } : {}), ...(link ? { link } : {}) });
     commitAndPush(`open ${id}: ${text}`);
     const tree = buildTree(readEvents());
     const n = tree.get(id);
@@ -777,7 +919,17 @@ const commands = {
     const chain = pathTo(nodes, n);
     if (chain.length > 1) console.log(`   path: ${chain.map((p) => `${p.id} ${p.text}`).join(" › ")}`);
     console.log(`   ${n.kind ? `${n.kind}, ` : ""}${n.status}, opened ${ago(n.opened)}${n.outcome ? ` — ${n.outcome}` : ""}`);
+    if (n.link) console.log(`   for ${n.link} in the plan`);
+    if (isUnfinished(n) && holderOf(n.id)) console.log(`   held on the board by ${holderOf(n.id)}`);
     for (const note of n.notes) console.log(`   · ${note.text}  (${ago(note.ts)})`);
+    const posts = postsOn(boardHelpers(), n.id);
+    if (posts.length) {
+      console.log(`   board: ${posts.length} post(s) on this thread${posts.length > 3 ? ", the latest 3" : ""} (thread board read --on ${n.id})`);
+      for (const p of posts.slice(-3)) {
+        const state = p.acks.length ? p.acks[p.acks.length - 1].state : "unacknowledged";
+        console.log(`     ${p.id} ${p.kind} from ${p.from} → ${p.to.join(", ") || n.id}, ${ago(p.ts)}, ${state}: ${p.text.split("\n")[0].slice(0, 100)}`);
+      }
+    }
     if (n.children.length) {
       console.log("   branches:");
       for (const c of n.children) console.log(`     ${MARK[c.status]} ${c.id} ${c.text}${tag(c)}${c.outcome ? ` — ${c.outcome}` : ""}`);
@@ -790,6 +942,8 @@ const commands = {
     // Every close carries a one-line resolution, so the tree says how each thread ended.
     if (!note) die(`a resolution is required: thread ${{ done: "done", parked: "park", dropped: "drop" }[status]} ${n.id} "<what was decided, delivered, or why it stopped>"`);
     writeEvent({ type: "close", id: n.id, status, note });
+    // A closed thread is no longer anyone's to work: its claim on the board ends with it.
+    releaseOnClose(boardHelpers(), n.id);
     commitAndPush(`${status} ${n.id}${note ? `: ${note}` : ""}`);
     const tree = buildTree(readEvents());
     console.log(`${MARK[status]} ${n.id} ${n.text} — ${status}${note ? `: ${note}` : ""}`);
@@ -842,6 +996,14 @@ const commands = {
     writeEvent({ type: "note", id: n.id, text });
     commitAndPush(`note ${n.id}`);
     console.log(`noted on ${n.id}`);
+  },
+
+  link(pos, flags, nodes) {
+    const n = need(nodes, pos[0]);
+    const ref = linkArg(pos[1]);
+    writeEvent({ type: "link", id: n.id, ref });
+    commitAndPush(`link ${n.id} ${ref ?? "none"}`);
+    console.log(ref ? `${n.id} ${n.text} → ${ref}` : `${n.id} ${n.text}: link cleared`);
   },
 
   kind(pos, flags, nodes) {
@@ -1056,8 +1218,11 @@ const commands = {
                                   closed before today; THREADS_AUTO_PRUNE=0 turns that off
   thread sources                  every source in the store, with its open trees
   thread transfer <id> --to <source>   move a thread and its branches to another source
-  thread init [<git-url>]         clone/seed the store at ${STORE}
+  thread init [<git-url>] [--local]         clone/seed the store at ${STORE}
   thread sync                     push anything left unpushed
+  thread link <id> <ref>|none     link a thread to the plan: an activity or task (not a whole work item)
+  thread board <command>          the bulletin board for agents: start, post, inbox, claim, wait...
+                                  (thread board help)
 
   --source <name> on any command picks the source (a separate tree in the same store); else
   $THREAD_SOURCE, else threads_source: in .aaw-config.yaml, else the default. An id held by
@@ -1068,6 +1233,96 @@ const commands = {
   },
 };
 
+/** What board.mjs needs from the store, so the board and the tree share one clone and one source. */
+function boardHelpers(scope = SOURCE) {
+  return { STORE, SCOPE: scope, git, tryGit, commitAndPush, pull, context, die, warn, sources, sourceDir, openThreads, openThread, closeThread, threadStatuses, noteThread, linkThread, threadInfo };
+}
+
+/** The source that holds a thread id, or null. */
+const sourceOfId = (id) => sources().find((s) => sourceIds(s).has(id)) ?? null;
+
+/** Open a thread for the board (an open call becomes a task in the tree). It goes beside its parent, else in `source`. Returns its id. */
+function openThread({ source, text, parent = null, kind = null, ctx, tool, description = null, link = null }) {
+  const home = (parent && sourceOfId(parent)) || source;
+  const ref = link ? linkArg(link) : null;
+  const id = newId(allIds());
+  inSource(home, () => {
+    writeEvent({ type: "open", id, parent: parent && sourceOfId(parent) === home ? parent : null, text, ctx, tool, ...(kind ? { kind } : {}), ...(ref ? { link: ref } : {}) });
+    if (description) writeEvent({ type: "describe", id, text: description });
+  });
+  return id;
+}
+
+/** Add a note to a thread, or link it to the plan, in whichever source holds it. False when no source does. */
+function noteThread(id, text) {
+  const home = sourceOfId(id);
+  if (!home) return false;
+  inSource(home, () => writeEvent({ type: "note", id, text }));
+  return true;
+}
+function linkThread(id, ref) {
+  const home = sourceOfId(id);
+  if (!home) return false;
+  const r = linkArg(ref);
+  inSource(home, () => writeEvent({ type: "link", id, ref: r }));
+  return true;
+}
+
+/** Close a thread for the board, in whichever source holds it. False when no source does. */
+function closeThread(id, status, note) {
+  const home = sourceOfId(id);
+  if (!home) return false;
+  inSource(home, () => writeEvent({ type: "close", id, status, note }));
+  return true;
+}
+
+/** Every live thread across sources, with what tidying needs: id -> { id, text, kind, link, status, ctx, source, last, parent, leaf }. */
+function threadInfo() {
+  const out = new Map();
+  for (const s of sources()) {
+    inSource(s, () => {
+      for (const n of buildTree(readEvents()).values()) {
+        out.set(n.id, { id: n.id, text: n.text, kind: n.kind, link: n.link, status: n.status, ctx: n.ctx, source: s, last: n.lastDeep, parent: n.parent, leaf: !n.children.some(isUnfinished) });
+      }
+    });
+  }
+  return out;
+}
+
+/** Every live thread's status, across sources: id -> open | parked | done | dropped. */
+function threadStatuses() {
+  const out = new Map();
+  for (const s of sources()) inSource(s, () => { for (const n of buildTree(readEvents()).values()) out.set(n.id, n.status); });
+  return out;
+}
+
+// Who holds each thread on the board, read once per command when a view needs it.
+let HOLDERS = null;
+const holderOf = (id) => {
+  if (!HOLDERS) {
+    try {
+      HOLDERS = holders(boardHelpers());
+    } catch {
+      HOLDERS = new Map();
+    }
+  }
+  return HOLDERS.get(id);
+};
+
+/** Open threads with nothing open beneath them, in a source and every source beneath it, newest first: work to pick up. */
+function openThreads(scope) {
+  const out = [];
+  for (const s of under(scope)) {
+    inSource(s, () => {
+      for (const n of buildTree(readEvents()).values()) {
+        if (n.status !== "open" || n.kind === "project" || n.children.some(isUnfinished)) continue;
+        out.push({ id: n.id, text: n.text, ctx: n.ctx, kind: n.kind || null, link: n.link || null, source: s, last: n.lastDeep });
+      }
+    });
+  }
+  return out.sort((a, b) => (a.last < b.last ? 1 : -1));
+}
+
 // ---------------------------------------------------------------- main
 
 const { pos, flags } = parseArgs(process.argv.slice(2));
@@ -1077,8 +1332,21 @@ if (["help", "-h"].includes(cmd) || flags.help) {
   process.exit(0);
 }
 if (cmd === "init") {
-  commands.init(pos);
+  commands.init(pos, flags);
   process.exit(0);
+}
+if (cmd === "board") {
+  // A session-start hook must not fail a session that has no store configured.
+  if (flags.hook && !existsSync(path.join(STORE, ".git")) && !process.env.THREADS_REMOTE && !remoteFromWorkspace()) process.exit(0);
+  ensureStore();
+  pull();
+  const scope = flags["all-sources"] ? "all" : sourceChoice(flags);
+  useSource(scope === "all" ? "default" : scope);
+  // The store's README documents the board for agents without the skill; start commits it with the hello.
+  const readme = path.join(STORE, "README.md");
+  if ((pos[0] ?? "start") === "start" && !flags.hook && hasCommits() && (!existsSync(readme) || readFileSync(readme, "utf8") !== README)) writeFileSync(readme, README);
+  runBoard(pos, flags, boardHelpers(scope));
+  process.exit(process.exitCode ?? 0);
 }
 if (/^t-[0-9a-z]+$/.test(cmd)) {
   pos.unshift(cmd);
@@ -1102,11 +1370,15 @@ pull();
 
 const isId = (x) => typeof x === "string" && /^t-[0-9a-z]+$/.test(x);
 const choice = flags["all-sources"] ? "all" : sourceChoice(flags);
-if (choice === "all") {
-  // A view across every source, one after another; JSON views come back as one array.
-  if (!["status", "tree", "list"].includes(cmd)) die("--source all is only a view: use it with status, tree or list");
+const VIEWS = ["status", "tree", "list"];
+if (choice === "all" && !VIEWS.includes(cmd)) die("--source all is only a view: use it with status, tree or list");
+// A view of a source with sources beneath it shows them too, each in turn: patternode shows
+// patternode/platform and patternode/business. Writes go to the source named, and nowhere else.
+const scoped = under(choice);
+if (VIEWS.includes(cmd) && (choice === "all" || (choice !== "default" && scoped.length > 1))) {
+  // JSON views come back as one array.
   const out = [];
-  sources().forEach((s, i) => {
+  scoped.forEach((s, i) => {
     useSource(s);
     let evs = readEvents();
     if ((cmd === "tree" && flags.all) || (cmd === "list" && flags.all)) evs = mergeEvents(evs);
