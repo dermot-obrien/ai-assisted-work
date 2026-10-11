@@ -7,6 +7,15 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- `skills.mjs sync`: the lock records a bundle by the repository the declaration names, not
+  the `SKILLS_BASE_URL` mirror it was fetched from, so `sync --locked` behind a mirror finds the
+  committed pins (it stopped with "the lock has no commit"); locks written with a mirrored URL
+  are still read. `sync --locked --from <folder>` keeps each skill's locked source and commit
+  instead of rewriting them as "folder", so an offline install leaves the committed lock
+  unchanged and the next locked sync still works. Both found by review on
+  patternode/patternode-platform#476.
+
 ### Added
 - `skills.mjs sync`: a workspace commits `.agents/skills.json`, listing bundles by repository
   and ref (all their skills, or the ones named) and single skills, and `sync` installs them,

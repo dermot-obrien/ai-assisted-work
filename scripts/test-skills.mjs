@@ -307,3 +307,40 @@ test("sync installs a skill the workspace keeps in its own folder, also with --l
     f.cleanup();
   }
 });
+
+test("with a mirror set, the lock records the declared repository, and sync --locked finds its pins", () => {
+  const f = fixture();
+  try {
+    bundleRepo(f); // f.root/bundle.git is the mirror's copy of https://example.invalid/you/bundle.git
+    declare(f, [{ bundle: "https://example.invalid/you/bundle.git", ref: "main", skills: ["work"] }]);
+    const env = { ...GIT_ENV, SKILLS_BASE_URL: f.root };
+    const run = (...args) => spawnSync(process.execPath, [SCRIPT, ...args, "--workspace", f.ws], { cwd: f.ws, env, encoding: "utf8" });
+    let r = run("sync");
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(lockOf(f).skills.work.bundle, "https://example.invalid/you/bundle.git");
+    rmSync(path.join(f.ws, ".agents", "skills"), { recursive: true, force: true });
+    r = run("sync", "--locked");
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /installed work 3\.0\.0/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("sync --locked --from keeps the lock as it is, so the next locked sync still works", () => {
+  const f = fixture();
+  try {
+    const bundle = bundleRepo(f);
+    declare(f, [{ bundle, ref: "main", skills: ["work"] }]);
+    f.ok("sync");
+    const before = readFileSync(path.join(f.ws, ".agents", "skills.lock.json"), "utf8");
+    const from = path.join(f.root, "usb");
+    mkdirSync(from);
+    execFileSync("cp", ["-r", f.bundle, path.join(from, "bundle")]);
+    assert.match(f.ok("sync", "--locked", "--from", from), /keeping its locked source/);
+    assert.equal(readFileSync(path.join(f.ws, ".agents", "skills.lock.json"), "utf8"), before, "the committed lock is unchanged");
+    assert.match(f.ok("sync", "--locked"), /installed work 3\.0\.0/);
+  } finally {
+    f.cleanup();
+  }
+});
