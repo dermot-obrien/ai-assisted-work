@@ -96,4 +96,18 @@ Each workspace's change goes through that repository's own pull request rules an
 | A6 The bundle | Done: README, `bundle.json` with sources, version 4.0.0. `thread` switches to its repository when that exists |
 | A7 Workspaces | Not started |
 | A8 Constrained trial | Done, 11 October 2026: [trial-constrained.sh](trial-constrained.sh), eight steps on a machine whose git may use only local files, with an empty home and no threads remote. All pass. It found one flaw, fixed: a fetch that failed left an empty clone cache behind |
-| A9 AAA and AAR | Not started |
+| A9 AAA and AAR | Inventoried, 11 October 2026 (below). Both bundles install and check with `bin/skills.mjs` today (9 and 12 skills); making them standalone is work in their own repositories |
+
+## A9 findings: AI-Assisted Architecture and AI-Assisted Research
+
+Both bundles install with `bin/skills.mjs install --bundle <clone>` and pass `check` (9 and 12 skills). What still ties them:
+
+| Framework | Tie | What standalone needs |
+|---|---|---|
+| AAA | Skills read standards from the framework's clone: `.ai-assisted-architecture/standards/` (8 references), `standards/capabilities/standard-definition-ladder.md`, `standards/aaw-work-seam.md`, and run `ontology/validate.cjs` | Carry what each skill needs in its own `references/` (or a single `aaa-standards` skill that the others mention as optional), and the validator in the skill that runs it |
+| AAA | `framework.manifest.yaml` `depends: [aaw]`, for the install engine only | List its skills in a bundle and install with `bin/skills.mjs`; drop the dependency |
+| AAR | Seven skills run another skill's scripts: `<skills>/research-dag/bin/dag_store.py`, `dag_update.py`, `validate_dag_references.py`, `generate_dashboard.py`, `generate_node_index.py`, `branch_manager.py`, and `<skills>/aar-reconcile/scripts/reconcile.py` | Fold the DAG tools into the skills that use them, or merge the research skills that share the DAG into one skill, as the work skills were |
+| AAR | `aar-start-hypothesis`, `aar-start-research`, `aar-sync-research-result` and `aar-progress-research` declare or name `aaw-start-work` and `aaw-start-initiative`, retired in 4.0.0 | Name `work` (`/work start`, `/work initiative`) and make the handoff optional, as `work` now does for research |
+| AAR | Python packages (`requirements.txt`) | State them per skill in its `compatibility`, and in its check |
+
+These changes belong to the AAA and AAR repositories, through their own pull requests; this bundle lists their skills once they stand alone.
