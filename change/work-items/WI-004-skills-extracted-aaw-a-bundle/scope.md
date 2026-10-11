@@ -90,10 +90,10 @@ Each workspace's change goes through that repository's own pull request rules an
 |---|---|
 | A1 Inventory | Done. `cross-reference` lives in architecture-pattern. `pattern` and `use-case` there still declare requirements on `model` and `markdown-deck` |
 | A2 Installer | Done: `bin/skills.mjs`, tested, and run against the real bundle (all eight skills install and check) |
-| A3 `thread` repository | Built with its history (36 commits), its docs, tests and CI, tagged `v0.14.0`; waiting for the empty `dermot-obrien/thread` repository to be created, which this session's GitHub access cannot do |
-| A4 `work` | Done in this repository: one skill, five flows, every reference and template kept. Its own repository can follow the same way as `thread` |
+| A3 `thread` repository | `scripts/extract-skill.mjs thread <dir>` builds it with its history, docs, tests (31 pass there) and CI, tagged `v0.14.0`; CI rebuilds it on every run. Waiting for the empty `dermot-obrien/thread` repository, which this session's GitHub access cannot create |
+| A4 `work` | Done: one skill, five flows, every reference and template kept. `scripts/extract-skill.mjs work <dir>` builds its own repository the same way; waiting for `dermot-obrien/work` to be created. `aaw install` removes the five retired copies from upgraded workspaces |
 | A5 Optional mentions | Done for `thread` and `work` |
 | A6 The bundle | Done: README, `bundle.json` with sources, version 4.0.0. `thread` switches to its repository when that exists |
 | A7 Workspaces | Not started |
-| A8 Constrained trial | Not started; the installer's `--from` and the local threads store are tested |
+| A8 Constrained trial | Done, 11 October 2026: [trial-constrained.sh](trial-constrained.sh), eight steps on a machine whose git may use only local files, with an empty home and no threads remote. All pass. It found one flaw, fixed: a fetch that failed left an empty clone cache behind |
 | A9 AAA and AAR | Not started |

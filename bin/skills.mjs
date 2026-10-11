@@ -126,6 +126,10 @@ function locate(skill, bundle, ws, flags) {
       git(["checkout", "--quiet", "--force", "FETCH_HEAD"], cache);
     }
   } catch (e) {
+    // Leave nothing behind from a fetch that failed: no half clone, no empty cache folder.
+    if (!existsSync(path.join(cache, ".git", "HEAD"))) rmSync(cache, { recursive: true, force: true });
+    const parent = path.dirname(cache);
+    if (existsSync(parent) && !readdirSync(parent).length) rmSync(parent, { recursive: true, force: true });
     die(`${skill.name}: could not fetch ${url}${src.ref ? ` at ${src.ref}` : ""}:\n${String(e.stderr || e.message).trim()}\n  In a constrained environment, copy the skill onto the machine and pass --from <folder>, or set SKILLS_BASE_URL to a mirror.`);
   }
   // A repository holds its skill at the entry's path (skills/<name>), or a lone skill at its root.
