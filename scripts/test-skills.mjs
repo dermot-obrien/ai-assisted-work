@@ -291,3 +291,18 @@ test("sync --from installs a declared bundle from a folder on the machine, with 
     f.cleanup();
   }
 });
+
+test("sync installs a skill the workspace keeps in its own folder, also with --locked", () => {
+  const f = fixture();
+  try {
+    skillFolder(path.join(f.ws, "skills", "briefing"), "briefing", "1.2.0");
+    declare(f, [{ folder: "skills/briefing" }]);
+    assert.match(f.ok("sync"), /installed briefing 1\.2\.0/);
+    assert.equal(lockOf(f).skills.briefing.source, "workspace");
+    rmSync(path.join(f.ws, ".agents", "skills"), { recursive: true, force: true });
+    assert.match(f.ok("sync", "--locked"), /installed briefing 1\.2\.0/);
+    assert.match(f.ok("check"), /✓ briefing 1\.2\.0/);
+  } finally {
+    f.cleanup();
+  }
+});

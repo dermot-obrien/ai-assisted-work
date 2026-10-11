@@ -157,8 +157,9 @@ const declFile = (ws) => path.join(ws, ".agents", "skills.json");
 /**
  * The workspace's .agents/skills.json: the skills it wants, as a list of sources. A source is
  * a bundle ({ "bundle": "<repository>", "ref": "<tag or branch>", "skills": [<names>] }, all
- * of its skills when "skills" is left out) or one skill ({ "repo": "<repository>", "ref": ...,
- * "name": "<skill>", "path": "skills/<skill>" }).
+ * of its skills when "skills" is left out), one skill ({ "repo": "<repository>", "ref": ...,
+ * "name": "<skill>", "path": "skills/<skill>" }), or a skill kept in the workspace itself
+ * ({ "folder": "skills/<skill>" }), which is copied from there and never fetched.
  */
 function readDecl(ws) {
   const f = declFile(ws);
@@ -166,8 +167,9 @@ function readDecl(ws) {
   const decl = JSON.parse(readFileSync(f, "utf8"));
   if (!Array.isArray(decl.sources)) die(`${path.relative(ws, f)}: "sources" must be a list`);
   decl.sources.forEach((src, i) => {
-    if (!src.bundle === !src.repo) die(`${path.relative(ws, f)}: sources[${i}] needs exactly one of "bundle" or "repo"`);
+    if ([src.bundle, src.repo, src.folder].filter(Boolean).length !== 1) die(`${path.relative(ws, f)}: sources[${i}] needs exactly one of "bundle", "repo" or "folder"`);
     if (src.repo && !src.name) src.name = path.basename(src.repo).replace(/\.git$/, "");
+    if (src.folder && !src.name) src.name = path.basename(src.folder);
   });
   return decl;
 }
@@ -266,8 +268,8 @@ function installOne(skill, bundle, ws, flags, lock) {
   const linked = linkClaude(ws, skill.name, target, flags.copy);
   lock.skills[skill.name] = {
     version: fm.version,
-    source: skill.source ? skill.source.repo : typeof flags.from === "string" ? "folder" : "bundle",
-    ...(bundle.url && bundle.url !== "folder" ? { bundle: bundle.url, bundleRef: bundle.ref ?? null } : {}),
+    source: skill.source ? skill.source.repo : typeof flags.from === "string" ? "folder" : bundle.url === "workspace" ? "workspace" : "bundle",
+    ...(bundle.url && bundle.url !== "folder" && bundle.url !== "workspace" ? { bundle: bundle.url, bundleRef: bundle.ref ?? null } : {}),
     ref: skill.source?.ref ?? null,
     path: skill.path,
     commit,
@@ -323,6 +325,11 @@ const commands = {
           const skill = entry?.commit ? { ...s, source: { ...s.source, commit: entry.commit } } : s;
           installed.push([s.name, installOne(skill, bundle, ws, flags, lock)]);
         }
+      } else if (src.folder) {
+        // A skill this workspace keeps itself: copied from its folder, never fetched or locked to a commit.
+        wanted.add(src.name);
+        const root = path.join(ws, path.dirname(src.folder));
+        installed.push([src.name, installOne({ name: src.name, path: path.basename(src.folder) }, { name: "workspace", root, url: "workspace" }, ws, { ...flags, from: undefined }, lock)]);
       } else {
         wanted.add(src.name);
         const entry = locked ? lock.skills[src.name] : null;
@@ -427,7 +434,8 @@ const commands = {
   The lock file is .agents/skills.lock.json; .agents/.skill-sources/ holds the clones (gitignore it).
   .agents/skills.json, committed, declares a workspace's skills:
     { "sources": [ { "bundle": "<repository>", "ref": "main", "skills": ["thread", "work"] },
-                   { "repo": "<repository>", "ref": "<tag>", "name": "<skill>" } ] }`);
+                   { "repo": "<repository>", "ref": "<tag>", "name": "<skill>" },
+                   { "folder": "skills/<skill>" } ] }`);
   },
 };
 

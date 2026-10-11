@@ -13,7 +13,7 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   records each commit in `.agents/skills.lock.json` and removes any skill it installed that the
   file no longer lists, never one it did not install. `sync --locked` installs exactly the
   locked commits, for a session start. `--from` and `SKILLS_BASE_URL` work as for `install`.
-  Tests in `scripts/test-skills.mjs` (13). WI-005 step 2c.
+  A source can also be a skill the workspace keeps in a folder of its own (`{ "folder": "skills/<name>" }`). Tests in `scripts/test-skills.mjs` (14). WI-005 step 2c.
 
 ### Added
 - A framework's `framework.manifest.yaml` may list `retired_skills`: names of skills it shipped
