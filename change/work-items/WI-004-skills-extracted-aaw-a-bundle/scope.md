@@ -4,7 +4,7 @@
 
 Move every skill out of AI-Assisted Work into a repository of its own, each installable on its own with no dependency on any other skill, and turn this repository into a bundle: a README, a manifest of the skills it offers and a small installer that picks them up. A skill can then be brought into a constrained environment, such as a work laptop with no access to personal repositories, by itself.
 
-Status: in progress, started 11 October 2026 with the recommended decisions (one `work` skill; repositories `thread` and `work`; each skill versioned on its own; AAA and AAR to follow; the bundle keeps its name). The local threads store this needs (`threads_home:` and `threads_remote: local`) is already built, in thread 0.14.0.
+Status: done, 11 October 2026, apart from A3, which moved to WI-005. Started 11 October 2026 with the recommended decisions (one `work` skill; repositories `thread` and `work`; each skill versioned on its own; AAA and AAR to follow; the bundle keeps its name). The local threads store this needs (`threads_home:` and `threads_remote: local`) is already built, in thread 0.14.0.
 
 ## Intent
 
@@ -90,13 +90,13 @@ Each workspace's change goes through that repository's own pull request rules an
 |---|---|
 | A1 Inventory | Done. `cross-reference` lives in architecture-pattern. `pattern` and `use-case` there still declare requirements on `model` and `markdown-deck` |
 | A2 Installer | Done: `bin/skills.mjs`, tested, and run against the real bundle (all eight skills install and check) |
-| A3 `thread` repository | `scripts/extract-skill.mjs thread <dir>` builds it with its history, docs, tests (31 pass there) and CI, tagged `v0.14.0`; CI rebuilds it on every run. Waiting for the empty `dermot-obrien/thread` repository, which this session's GitHub access cannot create |
-| A4 `work` | Done: one skill, five flows, every reference and template kept. `scripts/extract-skill.mjs work <dir>` builds its own repository the same way; waiting for `dermot-obrien/work` to be created. `aaw install` removes the five retired copies from upgraded workspaces |
+| A3 `thread` repository | Deferred to [WI-005](../WI-005-retire-ai-assisted-work/scope.md) step 4, 11 October 2026. `thread` and `work` are one bundle, mostly used together, and stay in this repository until AI-Assisted Architecture and AI-Assisted Research no longer install through it. `scripts/extract-skill.mjs thread <dir>` still builds the repository with its history, docs, tests (33 pass there) and CI, tagged `v0.14.0`, and CI rebuilds it on every run |
+| A4 `work` | Done: one skill, five flows, every reference and template kept. `scripts/extract-skill.mjs work <dir>` builds its own repository the same way; where it lives is WI-005 step 4. `aaw install` removes the five retired copies from upgraded workspaces |
 | A5 Optional mentions | Done for `thread` and `work` |
-| A6 The bundle | Done: README, `bundle.json` with sources, version 4.0.0. `thread` switches to its repository when that exists |
-| A7 Workspaces | Pull requests open, 11 October 2026: patternode/patternode-platform#474, patternode/patternode-business#89, patternode/life-guide-internal#98 and patternode/patternode-architecture#128 refresh the committed `thread` to 0.14.0 and name `work`. No install mechanism changes: `aaw install` 4.0.0 installs `work` and removes the retired copies. Merge after this repository's #58 |
+| A6 The bundle | Done: README, `bundle.json` with sources, version 4.0.0, merged in #58 |
+| A7 Workspaces | Pull requests open, 11 October 2026: patternode/patternode-platform#474, patternode/patternode-business#89, patternode/life-guide-internal#98 and patternode/patternode-architecture#128 refresh the committed `thread` to 0.14.0 and name `work`. No install mechanism changes: `aaw install` 4.0.0 installs `work` and removes the retired copies. All merged, 11 October 2026; patternode-platform's lock pins AI-Assisted Work 4.0.0 |
 | A8 Constrained trial | Done, 11 October 2026: [trial-constrained.sh](trial-constrained.sh), eight steps on a machine whose git may use only local files, with an empty home and no threads remote. All pass. It found one flaw, fixed: a fetch that failed left an empty clone cache behind |
-| A9 AAA and AAR | Inventoried, 11 October 2026 (below). Both bundles install and check with `bin/skills.mjs` today (9 and 12 skills); making them standalone is work in their own repositories |
+| A9 AAA and AAR | Inventoried, 11 October 2026 (below), and carried on as [WI-005](../WI-005-retire-ai-assisted-work/scope.md). Both bundles install and check with `bin/skills.mjs` today (9 and 12 skills); making them standalone is work in their own repositories |
 
 ## A9 findings: AI-Assisted Architecture and AI-Assisted Research
 

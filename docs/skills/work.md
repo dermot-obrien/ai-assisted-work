@@ -15,16 +15,16 @@ Work items, activities, tasks and initiatives held in plain files: triage, scope
 Was `aaw-start-work`.
 
 Classify a new piece of work and open only the workspace it earns, then scope, research and
-plan it. Version 2.5.0. Source: [skills/aaw-start-work/](../../skills/work/SKILL.md).
+plan it. Source: [skills/work/references/start.md](../../skills/work/references/start.md).
 
 ### Use it when
 
 You have a new request and want it done properly: "start a work item for the auth
-migration", "scope this before we build it", or `/aaw-start-work <what you want>`.
+migration", "scope this before we build it", or `/work start <what you want>`.
 
 ```
-/aaw-start-work add rate limiting to the public API
-/aaw-start-work write a one-page guide to our release process
+/work start add rate limiting to the public API
+/work start write a one-page guide to our release process
 ```
 
 The argument is free text: the request, in your words. It is recorded verbatim.
@@ -52,7 +52,7 @@ The argument is free text: the request, in your words. It is recorded verbatim.
    them, and only then derives the activities. It writes `plan.md`, `progress.yaml` and
    `changes.md` and asks you to approve the product breakdown and the activity graph.
 5. It sets `status: in_progress`, claims the first available activity, and hands over to
-   `/aaw-progress-work`. It does not implement the plan.
+   `/work progress`. It does not implement the plan.
 
 ### What it writes
 
@@ -87,7 +87,7 @@ criteria from). See [Configuration](../reference/configuration.md).
 
 ### Related
 
-- [aaw-progress-work](#progress-work-progress) executes the plan
+- [/work progress](#progress-work-progress) executes the plan
 - [Concepts](../concepts/index.md), sections 3 to 6
 - [Work classification](../concepts/work-classification.md)
 
@@ -97,8 +97,7 @@ Was `aaw-progress-work`.
 
 Execute a work item that has been scoped and planned: claim an activity under a lock, work
 its tasks in order, move its product through `drafted`, `in_review` and `accepted`, and
-recover safely after an interruption. Version 2.4.0. Source:
-[skills/aaw-progress-work/](../../skills/work/SKILL.md).
+recover safely after an interruption. Source: [skills/work/references/progress.md](../../skills/work/references/progress.md).
 
 ### Use it when
 
@@ -106,12 +105,12 @@ A work item has a `plan.md` and a `progress.yaml`, and you want the work done or
 "continue WI-004", "pick up where the last session stopped", or:
 
 ```
-/aaw-progress-work WI-004
-/aaw-progress-work
+/work progress WI-004
+/work progress
 ```
 
 With no id it lists the work items not yet `done` and works the most recent. A chore has no
-work item to progress; `/aaw-start-work` finishes it in one pass.
+work item to progress; `/work start` finishes it in one pass.
 
 ### The loop
 
@@ -174,7 +173,7 @@ See [Commands](../reference/commands.md#aaw-claim).
 
 ### Related
 
-- [aaw-next-task](#next-work-next) shows the next task without doing it
+- [/work next](#next-work-next) shows the next task without doing it
 - [Concepts](../concepts/index.md), sections 7 and 8
 - [Work management](../concepts/work-management.md) for the full concurrency and recovery model
 
@@ -183,17 +182,16 @@ See [Commands](../reference/commands.md#aaw-claim).
 Was `aaw-work-status`.
 
 Report the status of work items and initiatives: activity progress, product states, the
-activity graph, locks, parallel work and stale items. Read-only. Version 2.3.0. Source:
-[skills/aaw-work-status/](../../skills/work/SKILL.md).
+activity graph, locks, parallel work and stale items. Read-only. Source: [skills/work/references/status.md](../../skills/work/references/status.md).
 
 ### Use it when
 
 You want to know what is in flight, how something is tracking, or what is blocked:
 
 ```
-/aaw-work-status              every active work item, grouped by initiative
-/aaw-work-status WI-001       one work item in detail
-/aaw-work-status IN-002       one initiative and its members
+/work status              every active work item, grouped by initiative
+/work status WI-001       one work item in detail
+/work status IN-002       one initiative and its members
 ```
 
 ### What it shows
@@ -212,7 +210,7 @@ Without being asked it also surfaces:
 
 - parallel opportunities: activities with no unmet dependencies and no live lock
 - lock state: live locks with time left, and expired locks that need recovery through
-  `/aaw-progress-work`
+  `/work progress`
 - stale work items: not updated for seven days and not `done`, `abandoned` or `blocked`
 - blocked items, naming the blocker
 
@@ -232,8 +230,8 @@ the lock durations.
 
 ### Related
 
-- [aaw-next-task](#next-work-next) for what to do next inside one work item
-- [aaw-progress-work](#progress-work-progress) to act on what the report shows
+- [/work next](#next-work-next) for what to do next inside one work item
+- [/work progress](#progress-work-progress) to act on what the report shows
 
 ## Next: `/work next`
 
@@ -241,15 +239,15 @@ Was `aaw-next-task`.
 
 Identify the next task inside a work item and present it with the context needed to start,
 respecting activity dependencies and the product flow. It reads and reports; it does not do
-the task. Version 2.2.0. Source: [skills/aaw-next-task/](../../skills/work/SKILL.md).
+the task. Source: [skills/work/references/next.md](../../skills/work/references/next.md).
 
 ### Use it when
 
 You want to know what to pick up next, or to get your bearings before resuming:
 
 ```
-/aaw-next-task WI-017
-/aaw-next-task
+/work next WI-017
+/work next
 ```
 
 With no id it infers the work item from the git branch name (`wi/WI-017-...`), then recent
@@ -284,8 +282,8 @@ and it counts only `completed` dependencies. See
 
 ### Related
 
-- [aaw-progress-work](#progress-work-progress) does the task this skill finds
-- [aaw-work-status](#status-work-status) reports across work items
+- [/work progress](#progress-work-progress) does the task this skill finds
+- [/work status](#status-work-status) reports across work items
 
 ## Initiative: `/work initiative`
 
@@ -293,15 +291,15 @@ Was `aaw-start-initiative`.
 
 Create an initiative: the container that groups related work items toward one goal, with its
 time horizon and success criteria, registering any existing work items into it. Version
-2.2.0. Source: [skills/aaw-start-initiative/](../../skills/work/SKILL.md).
+2.2.0. Source: [skills/work/references/initiative.md](../../skills/work/references/initiative.md).
 
 ### Use it when
 
 Several work items serve one goal and you want them tracked together:
 
 ```
-/aaw-start-initiative move every service onto the new identity platform
-/aaw-start-initiative group WI-004, WI-007 and WI-009 under the data migration
+/work initiative move every service onto the new identity platform
+/work initiative group WI-004, WI-007 and WI-009 under the data migration
 ```
 
 If the thing asked for is itself bounded and fits in one planning period, it is an epic, not
@@ -325,7 +323,7 @@ an initiative, and the skill says so rather than creating a container with one m
    `work_items` list, which is a cache.
 
 An initiative has no plan, deliverables or locks: those belong to its work items. New work
-items join it when `/aaw-start-work` sets their `initiative_id`.
+items join it when `/work start` sets their `initiative_id`.
 
 Initiative statuses: `proposed`, `active`, `on_hold`, `completed`, `done`, `cancelled`.
 
@@ -351,5 +349,5 @@ use it.
 
 ### Related
 
-- [aaw-start-work](#start-work-start) creates the member work items
-- [aaw-work-status](#status-work-status) with `IN-NNN` reports on the initiative
+- [/work start](#start-work-start) creates the member work items
+- [/work status](#status-work-status) with `IN-NNN` reports on the initiative

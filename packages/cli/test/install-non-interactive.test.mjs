@@ -171,3 +171,34 @@ test("removes the five retired work-item skills, links included, and leaves othe
   assert.ok(existsSync(path.join(ws, ".agents", "skills", "my-own", "SKILL.md")), "a skill it never installed is kept");
   assert.ok(existsSync(path.join(ws, ".agents", "skills", "work", "SKILL.md")));
 });
+
+test("removes the skills another framework's manifest retires, never one it still ships", () => {
+  const ws = workspace();
+  const fw = mkdtempSync(path.join(tmpdir(), "aaw-fw-"));
+  mkdirSync(path.join(fw, "skills", "kept"), { recursive: true });
+  writeFileSync(path.join(fw, "skills", "kept", "SKILL.md"), "---\nname: kept\ndescription: kept\n---\nkept\n");
+  writeFileSync(
+    path.join(fw, "framework.manifest.yaml"),
+    "id: zz\nname: Test framework\nversion: 2.0.0\nruntime: node\nskills: { src: skills }\nretired_skills: [old-flow, kept]\n",
+  );
+  for (const name of ["old-flow", "kept", "my-own"]) {
+    mkdirSync(path.join(ws, ".agents", "skills", name), { recursive: true });
+    writeFileSync(path.join(ws, ".agents", "skills", name, "SKILL.md"), "x\n");
+  }
+  const r = install(ws, ["--framework", fw, "--yes", "--no-python"]);
+  assert.equal(r.status, 0, r.stderr + r.stdout);
+  assert.ok(!existsSync(path.join(ws, ".agents", "skills", "old-flow")), "a retired skill is removed");
+  assert.ok(existsSync(path.join(ws, ".agents", "skills", "kept", "SKILL.md")), "a retired name the framework still ships is kept");
+  assert.ok(existsSync(path.join(ws, ".agents", "skills", "my-own", "SKILL.md")), "a skill it never installed is kept");
+  rmSync(fw, { recursive: true, force: true });
+});
+
+test("a retired skill name that is a path is refused", () => {
+  const ws = workspace();
+  const fw = mkdtempSync(path.join(tmpdir(), "aaw-fw-"));
+  writeFileSync(path.join(fw, "framework.manifest.yaml"), "id: zz\nname: T\nversion: 1.0.0\nruntime: node\nretired_skills: [../escape]\n");
+  const r = install(ws, ["--framework", fw, "--yes", "--no-python"]);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr + r.stdout, /must be a skill name/);
+  rmSync(fw, { recursive: true, force: true });
+});

@@ -85,6 +85,11 @@ export interface FrameworkManifest {
   toolSetup?: ToolSetup;
   /** Standalone Agent Skills to install. */
   skills?: SkillsMapping;
+  /**
+   * Names of skills this framework shipped and has since retired. Install removes their copies
+   * from the workspace, unless the framework still ships a skill by that name.
+   */
+  retiredSkills: string[];
   /** Config files to seed (idempotent). */
   config: ConfigSeed[];
   /** Data dirs to create in the workspace (committed homes for generated artefacts). */
@@ -105,6 +110,15 @@ function asStringArray(value: unknown, where: string): string[] {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value)) throw new Error(`manifest: ${where} must be a list`);
   return value.map((v, i) => asString(v, `${where}[${i}]`));
+}
+
+/** A skill name: lowercase words or hyphenated words, never a path. */
+function asSkillNames(value: unknown, where: string): string[] {
+  const names = asStringArray(value, where);
+  names.forEach((n, i) => {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(n)) throw new Error(`manifest: ${where}[${i}] must be a skill name, such as aar-housekeep (got "${n}")`);
+  });
+  return names;
 }
 
 function parseSkills(value: unknown): SkillsMapping | undefined {
@@ -176,6 +190,7 @@ export function parseManifest(text: string, frameworkRoot: string): FrameworkMan
     runtime,
     toolSetup: parseToolSetup(raw.tool_setup),
     skills: parseSkills(raw.skills),
+    retiredSkills: asSkillNames(raw.retired_skills, "retired_skills"),
     config: parseConfig(raw.config),
     dataDirs: asStringArray(raw.data_dirs, "data_dirs"),
     seed: parseSeed(raw.seed),

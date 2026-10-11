@@ -4,7 +4,7 @@
 
 Prove that the `thread` skill and its board (thread 0.14.0, DD-13 to DD-16) work the same on every major cloud agent platform, and on the cheapest ones, so that work can be spread across many subscriptions with no dependence on any one provider. One platform does the thinking (design, curation, merging); many others do the work, each claiming tasks from the same board with the same one-line pointer.
 
-Status: scoped, not yet planned. Plan it with `/aaw-start-work` once the decisions below are made.
+Status: scoped, not yet planned. Plan it with `/work start` once the decisions below are made.
 
 ## Intent
 

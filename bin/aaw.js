@@ -7957,6 +7957,14 @@ function asStringArray(value, where) {
     throw new Error(`manifest: ${where} must be a list`);
   return value.map((v, i) => asString(v, `${where}[${i}]`));
 }
+function asSkillNames(value, where) {
+  const names = asStringArray(value, where);
+  names.forEach((n, i) => {
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(n))
+      throw new Error(`manifest: ${where}[${i}] must be a skill name, such as aar-housekeep (got "${n}")`);
+  });
+  return names;
+}
 function parseSkills(value) {
   if (value === void 0 || value === null)
     return void 0;
@@ -8031,6 +8039,7 @@ function parseManifest(text, frameworkRoot) {
     runtime,
     toolSetup: parseToolSetup(raw.tool_setup),
     skills: parseSkills(raw.skills),
+    retiredSkills: asSkillNames(raw.retired_skills, "retired_skills"),
     config: parseConfig(raw.config),
     dataDirs: asStringArray(raw.data_dirs, "data_dirs"),
     seed: parseSeed(raw.seed),
@@ -8207,7 +8216,17 @@ async function removeRetiredSkills(opts) {
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
   const removed = [];
-  for (const name of RETIRED_SKILLS[manifest.id] ?? []) {
+  const shipped = /* @__PURE__ */ new Set();
+  if (manifest.skills) {
+    const src = path4.join(manifest.frameworkRoot, manifest.skills.src);
+    if (await entryExists(src)) {
+      for (const e of await readdir2(src, { withFileTypes: true }))
+        if (e.isDirectory())
+          shipped.add(e.name);
+    }
+  }
+  const retired = [.../* @__PURE__ */ new Set([...RETIRED_SKILLS[manifest.id] ?? [], ...manifest.retiredSkills ?? []])].filter((n) => !shipped.has(n));
+  for (const name of retired) {
     for (const dir of [SKILLS_INTEROP_DIR, SKILLS_CLAUDE_DIR]) {
       const dest = path4.join(workspaceRoot, dir, name);
       if (await entryExists(dest)) {
@@ -8217,7 +8236,7 @@ async function removeRetiredSkills(opts) {
     }
   }
   if (removed.length > 0) {
-    log(`  \u25B8 removed ${removed.length} retired skill cop(ies), replaced by \`work\`:`);
+    log(`  \u25B8 removed ${removed.length} retired skill cop(ies), replaced by ${manifest.name}'s current skills:`);
     for (const r of removed)
       log(`      ${r}`);
   }
