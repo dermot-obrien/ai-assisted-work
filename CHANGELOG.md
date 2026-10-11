@@ -7,6 +7,13 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- A framework's `framework.manifest.yaml` may list `retired_skills`: names of skills it shipped
+  and has since retired. `aaw install --framework <it>` removes their copies from
+  `.agents/skills` and `.claude/skills`, never a name the framework still ships. AI-Assisted
+  Research 2.0.0 uses it for the eleven skills it merged into `research` (WI-005). Older engines
+  ignore the key.
+
 ### Changed (breaking, 4.0.0)
 - AI-Assisted Work is now a bundle of standalone skills (WI-004, DD-17). The five work-item skills
   (`aaw-start-work`, `aaw-progress-work`, `aaw-work-status`, `aaw-next-task`,

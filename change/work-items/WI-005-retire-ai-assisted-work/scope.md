@@ -42,8 +42,8 @@ AAR's step 1 is small and closes the only breakage found. Steps 2a and 2b are ea
 ## Decisions for the user
 
 1. Step 4: rename this repository, or move the skills out and archive it. Recommendation: rename, because nothing then needs extracting again and every existing link keeps working. The new name follows the skills' subject (intents, threads and work), not the word "skills".
-2. Step 2a: how AI-Assisted Architecture's shared standards travel with its skills. A copy in each skill keeps every skill standalone at the cost of duplication; one standards skill named as optional keeps one copy but means the others work less well without it.
-3. Step 2b: fold the research-graph scripts into each skill that uses them, or merge the research skills that share the graph into one. The work skills chose to merge, for the same reason.
+2. Step 2a, decided 11 October 2026: a copy of each standard in each skill. A workspace copy still wins, so the organisation keeps governing them, and CI checks each copy against the framework's `standards/`.
+3. Step 2b, decided 11 October 2026: merge the research skills that share the graph into one, `research`.
 4. Where `bin/skills.mjs` lives after step 4. It installs any skill from any bundle, so it may deserve a repository of its own rather than travelling with `thread` and `work`.
 
 ## Progress
@@ -51,4 +51,6 @@ AAR's step 1 is small and closes the only breakage found. Steps 2a and 2b are ea
 | Step | State |
 |---|---|
 | 1 | Done on AI-Assisted Research's branch `claude/agent-bulletin-board-9xglra`, 11 October 2026: six skills and the docs renamed, `bundle.json` requirements updated, versions bumped, validators and checks pass after installing AI-Assisted Work 4.0.0. Not pushed: this session's GitHub access does not reach that repository |
-| 2a to 4 | Not started |
+| 2a | Decided 11 October 2026: a copy of each standard in each skill. In progress |
+| 2b | Decided 11 October 2026: merge. Done on AI-Assisted Research's same branch: ten research skills and `research-dag` are one skill, `research` 3.0.0, with eleven flows; `literature-discovery` stays separate; AI-Assisted Research 2.0.0. Its manifest lists the eleven old names in `retired_skills`, which this repository's engine now honours, so an upgraded workspace keeps only `research` and `literature-discovery`. Tested by upgrading a workspace from 1.2.0, by installing with `bin/skills.mjs`, with CI's tool runs and the unit tests. Not pushed, for the same reason as step 1 |
+| 2c to 4 | Not started |

@@ -279,7 +279,8 @@ const LEGACY_SHIM_DESTS: Record<string, string[]> = {
  * Skills a framework shipped and has since retired, by framework id. AAW 4.0.0 merged its
  * five work-item skills into one, `work`; a workspace upgraded from an earlier release still
  * holds the five copies, which would trigger on the same requests as `work`. Install removes
- * them. Only names this installer put there are listed, so nothing else is touched.
+ * them. Only names this installer put there are listed, so nothing else is touched. Another
+ * framework lists its own in its manifest's `retired_skills`.
  */
 const RETIRED_SKILLS: Record<string, string[]> = {
   aaw: ["aaw-start-work", "aaw-progress-work", "aaw-work-status", "aaw-next-task", "aaw-start-initiative"],
@@ -290,7 +291,14 @@ export async function removeRetiredSkills(opts: InstallOptions): Promise<string[
   const { manifest, workspaceRoot } = opts;
   const log = opts.log ?? noopLog;
   const removed: string[] = [];
-  for (const name of RETIRED_SKILLS[manifest.id] ?? []) {
+  // A name the framework still ships is never removed, whatever the lists say.
+  const shipped = new Set<string>();
+  if (manifest.skills) {
+    const src = path.join(manifest.frameworkRoot, manifest.skills.src);
+    if (await entryExists(src)) for (const e of await readdir(src, { withFileTypes: true })) if (e.isDirectory()) shipped.add(e.name);
+  }
+  const retired = [...new Set([...(RETIRED_SKILLS[manifest.id] ?? []), ...(manifest.retiredSkills ?? [])])].filter((n) => !shipped.has(n));
+  for (const name of retired) {
     for (const dir of [SKILLS_INTEROP_DIR, SKILLS_CLAUDE_DIR]) {
       const dest = path.join(workspaceRoot, dir, name);
       if (await entryExists(dest)) {
@@ -300,7 +308,7 @@ export async function removeRetiredSkills(opts: InstallOptions): Promise<string[
     }
   }
   if (removed.length > 0) {
-    log(`  ▸ removed ${removed.length} retired skill cop(ies), replaced by \`work\`:`);
+    log(`  ▸ removed ${removed.length} retired skill cop(ies), replaced by ${manifest.name}'s current skills:`);
     for (const r of removed) log(`      ${r}`);
   }
   return removed;
