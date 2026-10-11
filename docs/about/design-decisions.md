@@ -884,6 +884,50 @@ command. The folders are a storage detail: one log in meaning, read together by 
 
 ---
 
+## DD-16: Capture and Curation, the Flow Kept Apart from the Plan
+
+### Context
+
+Work arrives in two shapes. Some is planned: work items (epics and workstreams), activities and
+tasks. Much more is not: chores, fireflies, bugs noticed in passing, reflections, pasted notes.
+Asking whoever has the thought to also decide where it belongs in the plan slows them down and
+gets it wrong, and leaving it as loose threads lets the tree drift from the plan.
+
+### Decision
+
+**Anyone dumps; a curator files.** `board dump` captures anything with no structure, from the user
+without a handle, from a paste on stdin, or as a bare Markdown file in the store. A chat holding a
+`curator` role (scoped like any other by path) triages the dumps in its scope, asks the author when
+the intent is unclear, and files each one: as a thread of kind `chore`, `task`, `bug`, `feature`,
+`improvement` or `idea`, as a note on an existing thread, as a duplicate, as a reflection kept
+outside the plan, or as noise. `tidy` sweeps for what has come loose.
+
+**Threads link to the plan at the level work is done.** `thread link <id> <ref>` (and `--plan` when
+filing) ties a thread to an activity or task. A whole work item or initiative is refused, because a
+chore filed against an epic says nothing about which part of it moves. Other references (an
+improvement, an issue, a pull request) are accepted as they are.
+
+**What was said stays traceable.** A filed thread's description carries the dump and its post and
+author; the author's `sent` shows where it went; questions and answers stay on the board under it.
+
+### Rationale
+
+- Separating capture from curation keeps capture cheap enough to use for everything, and puts the
+  judgement of where something belongs in one place that can be consistent.
+- Asking the author, through the same board, settles ambiguity at the source, and works the same
+  whether the author is the user or another agent.
+- Linking at the activity or task keeps the plan's own rule: every piece of work names the
+  product it advances.
+
+### Consequences
+
+- A curator is just a chat with the role; it can run continuously (`wait`), on a schedule, or when
+  the user asks, and several can split a store by path.
+- Until the plan itself lives in the store (roadmap), a link is a reference the curator checks by
+  hand against the plan's own files.
+
+---
+
 ## Decision Log
 
 | ID | Decision | Date | Status |
@@ -903,3 +947,4 @@ command. The folders are a storage detail: one log in meaning, read together by 
 | DD-13 | A Bulletin Board for Agents, in the Threads Store | 2026-10 | Implemented (thread 0.14.0) |
 | DD-14 | Source Paths, Scoped Views and a Merge Queue | 2026-10 | Implemented (thread 0.14.0); extends DD-12 and DD-13 |
 | DD-15 | One List of Work, the Tree; the Board Coordinates It | 2026-10 | Implemented (thread 0.14.0) |
+| DD-16 | Capture and Curation, the Flow Kept Apart from the Plan | 2026-10 | Implemented (thread 0.14.0) |

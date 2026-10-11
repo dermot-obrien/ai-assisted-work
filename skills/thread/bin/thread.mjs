@@ -42,7 +42,7 @@ const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
-const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources", "take", "hook", "for-user", "release"]);
+const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources", "take", "hook", "for-user", "release", "claim", "list", "more"]);
 
 function parseArgs(argv) {
   const flags = {};
@@ -468,6 +468,7 @@ function buildTree(events) {
           titles: [],
           description: null,
           kind: ev.kind ?? null,
+          link: ev.link ?? null,
           status: "open",
           ctx: ev.ctx,
           tool: ev.tool,
@@ -505,6 +506,9 @@ function buildTree(events) {
         break;
       case "kind":
         if (n) Object.assign(n, { kind: ev.kind || null, last: ev.ts });
+        break;
+      case "link":
+        if (n) Object.assign(n, { link: ev.ref || null, last: ev.ts });
         break;
       case "transfer":
         // The thread and its branches now live in another source; this one forgets them.
@@ -606,7 +610,8 @@ function renderForest(views, { focus } = {}) {
     const outcome = n.outcome ? ` — ${n.outcome}` : "";
     const here = focus && n.id === focus ? "   ← here" : "";
     const held = isUnfinished(n) && holderOf(n.id) ? ` ⚑ ${holderOf(n.id)}` : "";
-    lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${tag(n)}${held}${outcome}   ${tail}${here}`);
+    const link = n.link ? ` → ${n.link}` : "";
+    lines.push(`${prefix}${branch}${MARK[n.status]} ${n.id} ${n.text}${tag(n)}${link}${held}${outcome}   ${tail}${here}`);
   };
   const walk = ({ n, kids }, prefix, branch, childPrefix) => {
     line(n, prefix, branch);
@@ -652,6 +657,7 @@ function renderJson(views, source) {
     description: n.description,
     outcome: n.outcome,
     notes: n.notes.map((x) => x.text),
+    link: n.link,
     holder: (isUnfinished(n) && holderOf(n.id)) || null,
     opened: n.opened,
     last: n.lastDeep,
@@ -708,6 +714,7 @@ another source: their events are copied there with the same paths, removed from 
 | \`rename\` | \`id\`, \`text\` (the new title; earlier ones stay in the history) |
 | \`describe\` | \`id\`, \`text\` (a longer description; the latest one wins) |
 | \`kind\` | \`id\`, \`kind\` (one lowercase word such as \`feature\`, or null to clear; the latest one wins) |
+| \`link\` | \`id\`, \`ref\` (the plan item it serves: an activity or task such as \`WI-012-A3-T2\`, or a reference; null clears; the latest wins). \`open\` may carry \`link\` too |
 | \`transfer\` | \`id\`, \`to\` (the source), \`ids\` (the thread and every branch under it that moved) |
 
 Every event also carries \`ts\` (ISO-8601 UTC) and \`host\`. The tree is the events replayed in \`ts\` order.
@@ -737,9 +744,10 @@ per action, \`board/YYYY-MM-DD/<utc-stamp>-<host>-<6 hex>.json\`, never edited. 
 
 | type | fields |
 |---|---|
-| \`post\` | \`id\` (\`p-\` + 4 base-36 chars, unused), \`to\` (list: handles, roles, \`*\` everyone, \`any\` an open call, \`repo:<name>\`), \`on\` (thread id or null), \`ref\` (work item, activity or PR, or null), \`kind\` (\`instruction\` \\| \`question\` \\| \`info\` \\| \`ready\` \\| \`standing\` \\| \`answer\`), \`reply\` (post id or null), \`text\`, optional \`relayed\` (true: written for the user), \`task\` (an open call's thread, of kind \`task\`, which is claimed and closed in its place), and for \`ready\`: \`after\` (PRs to merge first), \`deploy\` |
+| \`post\` | \`id\` (\`p-\` + 4 base-36 chars, unused), \`to\` (list: handles, roles, \`*\` everyone, \`any\` an open call, \`repo:<name>\`), \`on\` (thread id or null), \`ref\` (work item, activity or PR, or null), \`kind\` (\`instruction\` \\| \`question\` \\| \`info\` \\| \`ready\` \\| \`standing\` \\| \`answer\` \\| \`dump\`: capture for a curator to file), \`reply\` (post id or null), \`text\`, optional \`relayed\` (true: written for the user), \`task\` (an open call's thread, of kind \`task\`, which is claimed and closed in its place), and for \`ready\`: \`after\` (PRs to merge first), \`deploy\` |
 | \`ack\` | \`post\`, \`state\` (\`seen\` \\| \`accepted\` \\| \`done\` \\| \`declined\`), \`note\` (required for done and declined) |
 | \`retract\` | \`post\` (withdrawn, such as a standing order) |
+| \`file\` | \`post\` (a dump), \`is\` (\`chore\` \\| \`task\` \\| \`bug\` \\| \`feature\` \\| \`improvement\` \\| \`idea\` \\| \`note\` \\| \`reflection\` \\| \`duplicate\` \\| \`drop\`), \`thread\` (made or noted), \`of\`, \`plan\`, \`note\`, optional \`more\` (part filed; the dump stays open) |
 | \`hello\` | \`tool\`, \`ctx\` (repo), \`scope\` (the source path the agent works in), \`threads\` (followed), \`note\`, \`until\` (presence lasts until then) |
 | \`bye\` | (presence, roles and claims end) |
 | \`claim\` | \`key\` (an activity, thread, post id, or \`role:<name>\`), \`until\`, optional \`take\`, \`note\` |
@@ -753,11 +761,25 @@ across every source together. Posts to a handle or role reach it from any source
 agents whose scope is that source, a path above it or a path below it. Acks and retracts are filed
 beside their post. The merge queue for a role is its \`ready\` posts not done or declined, one per PR,
 in the order each PR's first ready post was added, a later one for the same PR replacing the earlier
-in place; a PR waits for every \`after\` PR still queued. A \`.md\` file under \`board/\` with
-front matter (\`to\`, \`kind\`, \`on\`, \`from\`) is a post written by hand, from \`user\` unless it
-says otherwise. \`board-archive/*.jsonl\` holds settled board files pruned out of \`board/\`, one
+in place; a PR waits for every \`after\` PR still queued. A \`.md\` file under \`board/\` is a post written by hand, from \`user\`
+unless its front matter (\`to\`, \`kind\`, \`on\`, \`from\`) says otherwise: with \`to:\` an instruction,
+with only text a dump. \`board-archive/*.jsonl\` holds settled board files pruned out of \`board/\`, one
 per line with \`src\`.
 `;
+
+/**
+ * A thread's link to the formal plan: an activity (WI-012-A3) or a task (WI-012-A3-T2), or
+ * any other reference (IMP-004, owner/repo#12, an issue URL). A work item or epic on its own
+ * (WI-012, IN-003) is too big to hold a chore, so it is refused: place the chore under one of
+ * its activities or tasks. "none" clears the link.
+ */
+function linkArg(raw) {
+  const ref = String(raw ?? "").trim();
+  if (!ref || ref === "true") die("link to what? an activity (WI-012-A3), a task (WI-012-A3-T2), or a reference such as IMP-004 or owner/repo#12");
+  if (ref === "none") return null;
+  if (/^(WI|IN)-\d+$/i.test(ref)) die(`${ref} is a whole work item or initiative, too big to hold a chore: link one of its activities (${ref}-A1) or tasks (${ref}-A1-T1)`);
+  return ref;
+}
 
 /**
  * The refine convention: the first sentence is the title and the rest is the description.
@@ -801,8 +823,9 @@ const commands = {
     // An archived id is still taken: the full tree replays the archive too.
     const kind = kindArg(flags.kind);
     if (kind === "none") die("--kind none only makes sense on thread kind; leave --kind off instead");
+    const link = typeof flags.link === "string" ? linkArg(flags.link) : null;
     const id = newId(allIds());
-    writeEvent({ type: "open", id, parent, text, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL, ...(kind ? { kind } : {}) });
+    writeEvent({ type: "open", id, parent, text, ctx: context(flags), tool: flags.tool || process.env.THREAD_TOOL, ...(kind ? { kind } : {}), ...(link ? { link } : {}) });
     commitAndPush(`open ${id}: ${text}`);
     const tree = buildTree(readEvents());
     const n = tree.get(id);
@@ -848,6 +871,7 @@ const commands = {
     const chain = pathTo(nodes, n);
     if (chain.length > 1) console.log(`   path: ${chain.map((p) => `${p.id} ${p.text}`).join(" › ")}`);
     console.log(`   ${n.kind ? `${n.kind}, ` : ""}${n.status}, opened ${ago(n.opened)}${n.outcome ? ` — ${n.outcome}` : ""}`);
+    if (n.link) console.log(`   for ${n.link} in the plan`);
     if (isUnfinished(n) && holderOf(n.id)) console.log(`   held on the board by ${holderOf(n.id)}`);
     for (const note of n.notes) console.log(`   · ${note.text}  (${ago(note.ts)})`);
     const posts = postsOn(boardHelpers(), n.id);
@@ -924,6 +948,14 @@ const commands = {
     writeEvent({ type: "note", id: n.id, text });
     commitAndPush(`note ${n.id}`);
     console.log(`noted on ${n.id}`);
+  },
+
+  link(pos, flags, nodes) {
+    const n = need(nodes, pos[0]);
+    const ref = linkArg(pos[1]);
+    writeEvent({ type: "link", id: n.id, ref });
+    commitAndPush(`link ${n.id} ${ref ?? "none"}`);
+    console.log(ref ? `${n.id} ${n.text} → ${ref}` : `${n.id} ${n.text}: link cleared`);
   },
 
   kind(pos, flags, nodes) {
@@ -1140,6 +1172,7 @@ const commands = {
   thread transfer <id> --to <source>   move a thread and its branches to another source
   thread init [<git-url>]         clone/seed the store at ${STORE}
   thread sync                     push anything left unpushed
+  thread link <id> <ref>|none     link a thread to the plan: an activity or task (not a whole work item)
   thread board <command>          the bulletin board for agents: start, post, inbox, claim, wait...
                                   (thread board help)
 
@@ -1154,18 +1187,37 @@ const commands = {
 
 /** What board.mjs needs from the store, so the board and the tree share one clone and one source. */
 function boardHelpers(scope = SOURCE) {
-  return { STORE, SCOPE: scope, git, tryGit, commitAndPush, pull, context, die, warn, sources, sourceDir, openThreads, openThread, closeThread, threadStatuses };
+  return { STORE, SCOPE: scope, git, tryGit, commitAndPush, pull, context, die, warn, sources, sourceDir, openThreads, openThread, closeThread, threadStatuses, noteThread, linkThread, threadInfo };
 }
 
 /** The source that holds a thread id, or null. */
 const sourceOfId = (id) => sources().find((s) => sourceIds(s).has(id)) ?? null;
 
 /** Open a thread for the board (an open call becomes a task in the tree). It goes beside its parent, else in `source`. Returns its id. */
-function openThread({ source, text, parent = null, kind = null, ctx, tool }) {
+function openThread({ source, text, parent = null, kind = null, ctx, tool, description = null, link = null }) {
   const home = (parent && sourceOfId(parent)) || source;
+  const ref = link ? linkArg(link) : null;
   const id = newId(allIds());
-  inSource(home, () => writeEvent({ type: "open", id, parent: parent && sourceOfId(parent) === home ? parent : null, text, ctx, tool, ...(kind ? { kind } : {}) }));
+  inSource(home, () => {
+    writeEvent({ type: "open", id, parent: parent && sourceOfId(parent) === home ? parent : null, text, ctx, tool, ...(kind ? { kind } : {}), ...(ref ? { link: ref } : {}) });
+    if (description) writeEvent({ type: "describe", id, text: description });
+  });
   return id;
+}
+
+/** Add a note to a thread, or link it to the plan, in whichever source holds it. False when no source does. */
+function noteThread(id, text) {
+  const home = sourceOfId(id);
+  if (!home) return false;
+  inSource(home, () => writeEvent({ type: "note", id, text }));
+  return true;
+}
+function linkThread(id, ref) {
+  const home = sourceOfId(id);
+  if (!home) return false;
+  const r = linkArg(ref);
+  inSource(home, () => writeEvent({ type: "link", id, ref: r }));
+  return true;
 }
 
 /** Close a thread for the board, in whichever source holds it. False when no source does. */
@@ -1174,6 +1226,19 @@ function closeThread(id, status, note) {
   if (!home) return false;
   inSource(home, () => writeEvent({ type: "close", id, status, note }));
   return true;
+}
+
+/** Every live thread across sources, with what tidying needs: id -> { id, text, kind, link, status, ctx, source, last, parent, leaf }. */
+function threadInfo() {
+  const out = new Map();
+  for (const s of sources()) {
+    inSource(s, () => {
+      for (const n of buildTree(readEvents()).values()) {
+        out.set(n.id, { id: n.id, text: n.text, kind: n.kind, link: n.link, status: n.status, ctx: n.ctx, source: s, last: n.lastDeep, parent: n.parent, leaf: !n.children.some(isUnfinished) });
+      }
+    });
+  }
+  return out;
 }
 
 /** Every live thread's status, across sources: id -> open | parked | done | dropped. */
@@ -1203,7 +1268,7 @@ function openThreads(scope) {
     inSource(s, () => {
       for (const n of buildTree(readEvents()).values()) {
         if (n.status !== "open" || n.kind === "project" || n.children.some(isUnfinished)) continue;
-        out.push({ id: n.id, text: n.text, ctx: n.ctx, kind: n.kind || null, source: s, last: n.lastDeep });
+        out.push({ id: n.id, text: n.text, ctx: n.ctx, kind: n.kind || null, link: n.link || null, source: s, last: n.lastDeep });
       }
     });
   }

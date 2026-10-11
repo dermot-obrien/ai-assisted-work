@@ -34,6 +34,12 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   thread frees its claim. `board next` ranks instructions, the merge queue and open threads nobody
   holds; `--claim` takes the best one and tries the next when another chat wins it, and `--list`
   is a dispatcher's view for running agents in parallel.
+- thread 0.14.0: capture and curation (DD-16). `board dump` captures anything (stdin with `-`, a
+  bare Markdown file, no handle needed); a `curator` role triages, asks authors when unclear
+  (`ask`), and files each dump as a chore, task, bug, feature, improvement or idea thread, a note,
+  a duplicate, a reflection, or drops it, with where it came from. `thread link` and `--plan` tie a
+  thread to an activity or task, refusing a bare work item. `tidy` sweeps for unfiled, unanswered,
+  unlinked, orphaned and doubled work.
 
 ### Added
 - thread 0.13.0: sources (DD-12). One store holds separate trees for separate segments of work:

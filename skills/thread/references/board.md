@@ -48,6 +48,56 @@ may take, so the hierarchy of to-dos (projects, threads, tasks, and later work i
 activities as kinds) is the tree, and who is doing what is the board's claims on it. `tree`
 marks a held thread `⚑ <handle>`, and closing a thread frees its claim.
 
+## Capture and curation: the flow and the plan kept apart
+
+Two streams meet on the board. The flow is whatever comes up: a chore, a firefly, a bug noticed
+in passing, a reflection, a paste of meeting notes. The plan is the formal structure: work items
+(epics or workstreams), their activities and their tasks. Anyone, the user or an agent, puts
+flow on the board without deciding where it goes; a curator turns it into the plan.
+
+**Dumping.** One line, no structure:
+
+```bash
+thread.mjs board dump "the dashboard times out after the deploy, look at it sometime"
+pbpaste | thread.mjs board dump -          # a long paste, from stdin
+```
+
+It needs no handle: without `--as` it is from `user`. A Markdown file holding only text, added
+under `board/` from the GitHub app, is a dump too. When the user says "dump: ...", "note this
+for later", "park this thought", or pastes something to keep, post it with `--for-user`, give
+the post id in one line, and carry on: a dump is never a reason to switch.
+
+**Curating.** A chat holding a `curator` role (`curator`, or `curator:<path>` for one scope)
+keeps the board clean. It may run all the time: `wait` wakes it when a dump arrives.
+
+1. `triage` lists every dump not yet filed, oldest first, with what was asked about it and the
+   open threads it looks like.
+2. When it is unclear what was meant, `ask <post> "<question>"` asks its author (the user, for
+   their own dumps or ones relayed for them). The answer comes back to the curator's inbox and
+   shows under the dump in `triage`. Do not guess at intent that changes where work goes.
+3. `file <post> --is <what>` settles it:
+
+   | `--is` | Becomes |
+   |---|---|
+   | `chore`, `task`, `bug`, `feature`, `improvement`, `idea` | A thread of that kind, under `--under <thread>` (else the thread the dump was on), titled `--title` or by the dump's first line, described by the dump with where it came from |
+   | `note` | A note on `--into <thread>` |
+   | `duplicate` | Nothing new; a note on `--of <thread>` that it came up again |
+   | `reflection` | Kept on the board as said, outside the plan |
+   | `drop` | Nothing; noise, or already done |
+
+   `--plan <activity or task>` links the thread to the formal plan. A chore belongs to an
+   activity (`WI-012-A3`) or a task (`WI-012-A3-T2`); a whole work item or epic is too big to hold
+   one and is refused, so pick the activity it advances. `--more` files part of a dump and leaves
+   the rest for another `file`.
+4. `tidy` sweeps the scope: dumps not yet filed, questions unanswered for a day, chores, tasks and
+   bugs not linked to the plan, work held by agents no longer on the board, instructions nobody
+   picked up, and open threads that look the same. Fix what can be fixed; ask the user about the
+   rest.
+
+Every thread a curator makes says which post and author it came from, so anyone can go back to
+what was said, and `sent` shows each author where their dumps went. The curator files and asks;
+it does not do the work it files, and it never merges.
+
 ## Picking up work
 
 When the user says "go pick up work in patternode" (or "on the board", or names a role):

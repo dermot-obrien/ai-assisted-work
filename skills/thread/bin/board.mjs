@@ -32,11 +32,14 @@ import { createHash, randomBytes } from "node:crypto";
 // Leases. An agent's presence, a role and a claim each last this long unless renewed.
 // A claim matches an agent's activity lock in aaw-progress-work (one hour).
 const LEASE = { hello: "8h", role: "8h", claim: "1h" };
-const KINDS = ["instruction", "question", "info", "ready", "standing", "answer"];
+const KINDS = ["instruction", "question", "info", "ready", "standing", "answer", "dump"];
+// What a curator files a dump as. The first group becomes a thread of that kind.
+const AS_THREAD = ["chore", "task", "bug", "feature", "improvement", "idea"];
+const FILE_AS = [...AS_THREAD, "note", "reflection", "duplicate", "drop"];
 const STATES = ["seen", "accepted", "done", "declined"];
 // Kinds that wait on someone: they stay in the inbox until acknowledged, and are not
 // pruned until done or declined.
-const PENDING = new Set(["instruction", "question", "ready"]);
+const PENDING = new Set(["instruction", "question", "ready", "dump"]);
 
 let H; // helpers from thread.mjs: { STORE, SCOPE, git, tryGit, commitAndPush, pull, context, die, warn, sources, sourceDir, openThreads }
 
@@ -128,10 +131,11 @@ function readMarkdown(file, rel, source) {
     ts: ts || new Date(0).toISOString(),
     host: "by-hand",
     from: head.from ? nameArg(head.from, "from:") : "user",
-    to: list(head.to || "*").map((t) => nameArg(t, "to:")),
+    // A file with only text in it is a dump, for the curator to file. With to: it is an instruction.
+    to: list(head.to || (head.kind && head.kind !== "dump" ? "*" : "curator")).map((t) => nameArg(t, "to:")),
     on: head.on || null,
     ref: head.ref || null,
-    kind: KINDS.includes(head.kind) ? head.kind : "instruction",
+    kind: KINDS.includes(head.kind) ? head.kind : head.to ? "instruction" : "dump",
     text,
     _md: true,
   };
@@ -219,7 +223,7 @@ function replay(events, now = Date.now()) {
     seen(e.from);
     switch (e.type) {
       case "post":
-        posts.set(e.id, { ...e, after: e.after || [], acks: [] });
+        posts.set(e.id, { ...e, after: e.after || [], acks: [], filed: [] });
         break;
       case "ack": {
         const p = posts.get(e.post);
@@ -229,6 +233,11 @@ function replay(events, now = Date.now()) {
       case "retract":
         retracted.add(e.post);
         break;
+      case "file": {
+        const p = posts.get(e.post);
+        if (p) p.filed.push(e);
+        break;
+      }
       case "hello":
         // A hello written before paths existed works in the source it was filed in.
         agents.get(e.from).hello = { ...e, scope: e.scope || e._source };
@@ -282,18 +291,23 @@ function audience(state, who) {
 
 const ackedBy = (p, who) => p.acks.some((a) => a.from === who);
 const closed = (p) => p.acks.some((a) => a.state === "done" || a.state === "declined");
-const finished = (p) => closed(p) || Boolean(p.superseded);
+// A dump is settled once a curator has filed it (a filing marked --more leaves it open for more).
+const settled = (p) => p.kind === "dump" && p.filed.some((f) => !f.more);
+const finished = (p) => closed(p) || Boolean(p.superseded) || settled(p);
+const curates = (state, who) => state.rolesOf(who).some((r) => r === "curator" || r.startsWith("curator:"));
 
 /** Unread posts for a handle: to it or its roles, or to everyone, its repo or its threads in its scope, or replies to it; and open calls in its scope. */
 function inbox(state, who) {
   const { direct, broad, threads, scope } = audience(state, who);
+  const curator = curates(state, who);
   const mine = new Set([...state.posts.values()].filter((p) => p.from === who).map((p) => p.id));
   const forMe = [];
   const open = [];
   for (const p of state.posts.values()) {
-    if (p.from === who || p.retracted || p.superseded || ackedBy(p, who)) continue;
+    if (p.from === who || p.retracted || p.superseded || ackedBy(p, who) || settled(p)) continue;
     const near = inScope(scope, p._source);
-    const addressed = p.to.some((t) => direct.has(t)) || (p.reply && mine.has(p.reply)) || (near && (p.to.some((t) => broad.has(t)) || (p.on && threads.has(p.on))));
+    if (p.kind === "dump" && !(curator && near) && !p.to.some((t) => direct.has(t))) continue;
+    const addressed = (p.kind === "dump" && curator && near) || p.to.some((t) => direct.has(t)) || (p.reply && mine.has(p.reply)) || (near && (p.to.some((t) => broad.has(t)) || (p.on && threads.has(p.on))));
     if (addressed) forMe.push(p);
     else if (near && p.to.includes("any") && !finished(p) && !taskClosed(p)) {
       const c = state.claims.get(p.task || p.id);
@@ -373,6 +387,57 @@ function queueLines(state, entries) {
   return { out, next };
 }
 
+/** Dumps in a scope that no curator has filed yet, oldest first. */
+const unfiled = (state, scope) => [...state.posts.values()].filter((p) => p.kind === "dump" && !p.retracted && !settled(p) && inScope(scope, p._source));
+
+/** The posts that answer or follow up a post, depth first: questions asked about it and the replies to them. */
+function conversation(state, root) {
+  const out = [];
+  const walk = (id, depth) => {
+    for (const p of state.posts.values()) {
+      if (p.reply !== id) continue;
+      out.push({ p, depth });
+      walk(p.id, depth + 1);
+    }
+  };
+  walk(root.id, 1);
+  return out;
+}
+
+const words = (t) => new Set(String(t).toLowerCase().match(/[a-z0-9][a-z0-9-]{2,}/g) || []);
+function similarity(a, b) {
+  const x = words(a);
+  const y = words(b);
+  if (!x.size || !y.size) return 0;
+  let both = 0;
+  for (const w of x) if (y.has(w)) both++;
+  return both / (x.size + y.size - both);
+}
+
+/** Open threads in a scope that look like a piece of text, best first: where a dump might belong. */
+function lookalikes(text, scope, threads, limit = 3) {
+  return [...threads.values()]
+    .filter((t) => (t.status === "open" || t.status === "parked") && inScope(scope, t.source))
+    .map((t) => [t, similarity(text, t.text)])
+    .filter(([, sc]) => sc >= 0.15)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([t]) => t);
+}
+
+/** The text of a command: its words, or stdin when it is "-" or nothing was given and input is piped. */
+function textArg(pos) {
+  const t = pos.join(" ").trim();
+  if (t === "-" || (!t && !process.stdin.isTTY)) {
+    try {
+      return readFileSync(0, "utf8").trim();
+    } catch {
+      return "";
+    }
+  }
+  return t;
+}
+
 // ---------------------------------------------------------------- writing
 
 function newPostId(events) {
@@ -420,6 +485,7 @@ function line(p, { to = true } = {}) {
   return `${p.id} · ${bits.join(" · ")}\n    ${p.text.replace(/\n/g, "\n    ")}`;
 }
 
+const fileLine = (f) => `    ↳ filed by ${f.from} ${ago(f.ts)} as ${f.is}${f.thread ? ` ${f.thread}` : ""}${f.of ? ` of ${f.of}` : ""}${f.plan ? ` → ${f.plan}` : ""}${f.note ? `: ${f.note}` : ""}`;
 const ackLine = (a) => `    ↳ ${a.state} by ${a.from} ${ago(a.ts)}${a.note ? `: ${a.note}` : ""}`;
 
 const toJson = (p) => {
@@ -468,6 +534,7 @@ function nextUp(state, who) {
     for (const p of inbox(state, who).forMe) {
       if (p.kind === "instruction" || p.kind === "question") out.push({ what: p.kind, id: p.id, text: p.text, post: p });
     }
+    if (curates(state, who)) for (const p of unfiled(state, scopeOf(state, who))) out.push({ what: "dump", id: p.id, text: p.text, post: p });
   }
   const roles = who ? state.rolesOf(who) : [...new Set(queue(state).flatMap((e) => e.to))];
   for (const role of roles) {
@@ -599,7 +666,7 @@ function prune(events, days, dry) {
     if (e._md) return true; // written by hand; left for its author to remove
     switch (e.type) {
       case "post": return keepPost.has(e.id);
-      case "ack": case "retract": return keepPost.has(e.post) || (e.ts >= cutoff && !state.posts.has(e.post));
+      case "ack": case "retract": case "file": return keepPost.has(e.post) || (e.ts >= cutoff && !state.posts.has(e.post));
       case "hello": return lastHello.get(e.from) === e && (Date.parse(e.until) > Date.now() || e.ts >= cutoff);
       case "claim": case "release": return liveKeys.has(e.key) || e.ts >= cutoff;
       default: return e.ts >= cutoff;
@@ -635,7 +702,7 @@ function autoPrune() {
 
 // ---------------------------------------------------------------- commands
 
-const WRITES = new Set(["next", "start", "post", "reply", "ready", "ack", "accept", "done", "decline", "merging", "merged", "claim", "release", "role", "retract", "renew", "bye"]);
+const WRITES = new Set(["dump", "file", "ask", "next", "start", "post", "reply", "ready", "ack", "accept", "done", "decline", "merging", "merged", "claim", "release", "role", "retract", "renew", "bye"]);
 
 /** The latest queue entry for a pull request, for merging and merged. */
 function entryFor(state, ref) {
@@ -723,6 +790,11 @@ const commands = {
         console.log(last ? ackLine(last) : "    ↳ not yet picked up");
       }
     }
+    const loose = unfiled(state, scope);
+    if (loose.length) {
+      const curator = [...state.claims.values()].find((c) => c.key.startsWith("role:curator") && state.live(c));
+      console.log("", `Dumps not yet filed: ${loose.length}, the oldest ${ago(loose[0].ts)} (${curator ? `${curator.who} curates` : "no curator on the board"}).`);
+    }
     const threads = unclaimedThreads(state, scope);
     if (threads.length) {
       console.log("", `Open threads nobody holds (${threads.length}${threads.length > 15 ? ", the latest 15" : ""}):`);
@@ -778,6 +850,122 @@ const commands = {
     commands.post(pos.slice(1), { ...flags, as: who, to: orig.relayed ? "user" : orig.from, on: orig.on ?? undefined, ref: orig.ref ?? undefined, reply: orig.id, kind: flags.kind ?? "answer" });
   },
 
+  dump(pos, flags) {
+    // Capture, no ceremony: anything, by anyone, for a curator to file. Text may be piped in.
+    const who = me(flags, { required: false }) || "user";
+    const text = textArg(pos);
+    if (!text) H.die('dump what? thread board dump "<anything>", or pipe text in with thread board dump -');
+    const events = readBoard();
+    const state = replay(events);
+    const home = homeFor(state, who, flags);
+    const p = write({ type: "post", id: newPostId(events), from: who, to: ["curator"], on: typeof flags.on === "string" ? flags.on : null, ref: typeof flags.ref === "string" ? flags.ref : null, kind: "dump", reply: null, relayed: flags["for-user"] ? true : undefined, text }, home);
+    save(`${who} dumps ${p.id}`);
+    const curator = [...state.claims.values()].find((c) => c.key.startsWith("role:curator") && state.live(c));
+    console.log(`📥 ${p.id} · dump${home !== "default" ? ` · in ${home}` : ""} · ${curator ? `${curator.who} curates` : "no curator on the board now; it waits for one"}`);
+  },
+
+  triage(pos, flags) {
+    // The curator's worklist: every unfiled dump in scope, what was asked about it, and where it might go.
+    const state = replay(readBoard());
+    const scope = viewScope(state, flags);
+    const rows = unfiled(state, scope);
+    if (flags.json) return console.log(JSON.stringify(rows.map(toJson), null, 2));
+    if (!rows.length) return console.log("Nothing to file.");
+    const threads = H.threadInfo();
+    for (const p of rows) {
+      console.log(line(p, { to: false }));
+      for (const { p: q, depth } of conversation(state, p)) console.log(`${"    ".repeat(depth)}↳ ${q.kind} from ${q.relayed ? "user" : q.from} ${ago(q.ts)}: ${q.text.split("\n")[0]}`);
+      for (const f of p.filed) console.log(fileLine(f));
+      const like = lookalikes(p.text, scopeOf(state, p.from) === "default" ? scope : scope, threads);
+      if (like.length) console.log(`    looks like: ${like.map((t) => `${t.id} ${t.text.slice(0, 60)}${t.link ? ` → ${t.link}` : ""}`).join(" · ")}`);
+      const author = state.agents.get(p.from);
+      if (p.from !== "user" && !(author?.hello && Date.parse(author.hello.until) > Date.now())) console.log(`    (${p.from} is not on the board now: a question to it may wait; ask the user instead)`);
+    }
+    console.log(`\n${rows.length} to file. thread board file <post> --is <${FILE_AS.join("|")}> [--under <thread>] [--plan <activity or task>] [--into <thread>]; thread board ask <post> "<question>" when it is unclear.`);
+  },
+
+  file(pos, flags) {
+    const who = me(flags);
+    const state = replay(readBoard());
+    const p = state.posts.get(pos[0]);
+    if (!p) H.die(`no post ${pos[0]} on the board`);
+    const is = typeof flags.is === "string" ? flags.is.toLowerCase() : null;
+    if (!FILE_AS.includes(is)) H.die(`file it as what? --is ${FILE_AS.join(" | ")}`);
+    const author = p.relayed ? "user" : p.from;
+    const from = `board ${p.id}, ${author}, ${p.ts.slice(0, 10)}`;
+    const ev = { type: "file", from: who, post: p.id, is, note: typeof flags.note === "string" ? flags.note : undefined, more: flags.more ? true : undefined };
+    if (AS_THREAD.includes(is)) {
+      const title = (typeof flags.title === "string" ? flags.title : p.text.split("\n")[0]).slice(0, 140);
+      const description = `${p.text}\n\nFrom ${from}.`;
+      ev.thread = H.openThread({ source: p._source, text: title, parent: typeof flags.under === "string" ? flags.under : p.on, kind: is, ctx: H.context(flags), description, link: typeof flags.plan === "string" ? flags.plan : null });
+      ev.plan = typeof flags.plan === "string" ? flags.plan : undefined;
+    } else if (is === "note") {
+      const into = typeof flags.into === "string" ? flags.into : p.on;
+      if (!into) H.die("a note goes into a thread: --into <thread>");
+      if (!H.noteThread(into, `${p.text.replace(/\s+/g, " ").slice(0, 600)} (from ${from})`)) H.die(`no thread ${into}`);
+      if (typeof flags.plan === "string") H.linkThread(into, flags.plan);
+      ev.thread = into;
+      ev.plan = typeof flags.plan === "string" ? flags.plan : undefined;
+    } else if (is === "duplicate") {
+      const of = typeof flags.of === "string" ? flags.of : null;
+      if (!of) H.die("a duplicate of what? --of <thread or post>");
+      if (/^t-[0-9a-z]+$/.test(of)) H.noteThread(of, `raised again in ${from}`);
+      ev.of = of;
+    }
+    write(ev, p._source);
+    save(`${who} files ${p.id} as ${is}${ev.thread ? ` ${ev.thread}` : ""}`);
+    console.log(`🗂 ${p.id} → ${is}${ev.thread ? ` ${ev.thread}` : ""}${ev.of ? ` of ${ev.of}` : ""}${ev.plan ? ` → ${ev.plan}` : ""}${flags.more ? " (still open for more)" : ""}`);
+    if (AS_THREAD.includes(is) && !ev.plan && is !== "idea") console.log(`   not linked to the plan yet: thread link ${ev.thread} <activity or task> when you know where it belongs`);
+  },
+
+  ask(pos, flags) {
+    // A curator's question goes back to whoever said it, so ambiguity is settled at the source.
+    const who = me(flags);
+    const state = replay(readBoard());
+    const p = state.posts.get(pos[0]);
+    if (!p) H.die(`no post ${pos[0]} on the board`);
+    const q = pos.slice(1).join(" ").trim();
+    if (!q) H.die(`ask what? thread board ask ${p.id} "<question>"`);
+    const author = p.relayed ? "user" : p.from;
+    commands.post([q], { ...flags, as: who, to: author, on: p.on ?? undefined, reply: p.id, kind: "question" });
+    write({ type: "ack", from: who, post: p.id, state: "seen", note: "asked its author" }, p._source);
+    save(`${who} asks ${author} about ${p.id}`);
+    const a = state.agents.get(author);
+    if (author !== "user" && !(a?.hello && Date.parse(a.hello.until) > Date.now())) console.log(`(${author} is not on the board now; it will see this when it comes back. If it matters sooner, ask the user.)`);
+  },
+
+  tidy(pos, flags) {
+    // The curator's sweep: what is loose, unlinked, orphaned or doubled, with the command for each.
+    const state = replay(readBoard());
+    const scope = viewScope(state, flags);
+    const threads = H.threadInfo();
+    const day = 86400e3;
+    const now = Date.now();
+    const out = [];
+    const section = (title, rows) => {
+      if (!rows.length) return;
+      out.push("", `${title} (${rows.length}${rows.length > 10 ? ", the first 10" : ""}):`, ...rows.slice(0, 10).map((r) => "  " + r));
+    };
+    const loose = unfiled(state, scope);
+    section("Dumps not yet filed", loose.map((p) => `${p.id} · ${p.from} · ${ago(p.ts)} · ${p.text.split("\n")[0].slice(0, 80)}  → thread board triage`));
+    const qs = [...state.posts.values()].filter((p) => p.kind === "question" && !p.retracted && inScope(scope, p._source) && now - Date.parse(p.ts) > day && ![...state.posts.values()].some((r) => r.reply === p.id));
+    section("Questions unanswered for a day", qs.map((p) => `${p.id} · to ${p.to.join(", ")} · ${ago(p.ts)} · ${p.text.split("\n")[0].slice(0, 80)}  → ask the user`));
+    const unlinked = [...threads.values()].filter((t) => t.status === "open" && inScope(scope, t.source) && ["chore", "task", "bug"].includes(t.kind) && !t.link);
+    section("Chores, tasks and bugs not linked to the plan", unlinked.map((t) => `${t.id} · ${t.kind} · ${t.text.slice(0, 80)}  → thread link ${t.id} <activity or task>`));
+    const orphans = [...state.claims.values()].filter((c) => state.live(c) && !c.key.startsWith("role:") && inScope(scope, c._source) && !state.present.some((a) => a.handle === c.who));
+    section("Held by an agent no longer on the board", orphans.map((c) => `${c.key} · ${c.who} · ${until(c.until)}  → it frees itself; ask ${c.who} or the user before --take`));
+    const stale = [...state.posts.values()].filter((p) => p.kind === "instruction" && !p.retracted && !finished(p) && inScope(scope, p._source) && !p.acks.length && now - Date.parse(p.ts) > day);
+    section("Instructions nobody has picked up for a day", stale.map((p) => `${p.id} · → ${p.to.join(", ")} · ${ago(p.ts)} · ${p.text.split("\n")[0].slice(0, 80)}`));
+    const open = [...threads.values()].filter((t) => t.status === "open" && t.leaf && t.kind !== "project" && inScope(scope, t.source));
+    const pairs = [];
+    for (let i = 0; i < open.length && pairs.length < 20; i++) {
+      for (let j = i + 1; j < open.length; j++) if (similarity(open[i].text, open[j].text) >= 0.6) pairs.push(`${open[i].id} and ${open[j].id} · ${open[i].text.slice(0, 60)}  → keep one, drop the other with where it went`);
+    }
+    section("Open threads that look the same", pairs);
+    if (!out.length) return console.log("The board is tidy.");
+    console.log(`🧹 board${scope !== "default" ? ` · ${scope}` : ""}${out.join("\n")}`);
+  },
+
   next(pos, flags) {
     // One ranked list of what to do next. --claim takes the best open task, racing safely:
     // when another chat wins it, the next one is tried. --list is the dispatcher's view.
@@ -793,6 +981,10 @@ const commands = {
       return;
     }
     const first = items[0];
+    if (first && first.what === "dump") {
+      console.log(`First, ${items.filter((i) => i.what === "dump").length} dump(s) to file: thread board triage --as ${who}.`);
+      return;
+    }
     if (first && (first.what === "instruction" || first.what === "question")) {
       console.log(`First, the ${first.what} for you: ${first.id}. Accept it, act on it, then done or reply:\n  ${line(first.post)}`);
       return;
@@ -923,6 +1115,7 @@ const commands = {
     for (const p of rows) {
       console.log(line(p) + (p.retracted ? "\n    (retracted)" : ""));
       for (const a of p.acks) console.log(ackLine(a));
+      for (const f of p.filed) console.log(fileLine(f));
     }
   },
 
@@ -934,8 +1127,9 @@ const commands = {
     for (const p of rows.slice(-Number(flags.limit ?? 30))) {
       console.log(line(p));
       if (p.superseded) console.log(`    ↳ superseded by ${p.superseded}`);
-      else if (!p.acks.length) console.log("    ↳ not yet acknowledged");
+      else if (!p.acks.length && !p.filed.length) console.log(p.kind === "dump" ? "    ↳ not yet filed" : "    ↳ not yet acknowledged");
       for (const a of p.acks) console.log(ackLine(a));
+      for (const f of p.filed) console.log(fileLine(f));
     }
   },
 
@@ -1067,6 +1261,12 @@ const commands = {
   thread board reply <post> "<text>"
   thread board inbox                 unread for this handle and its roles, and what reaches its scope
   thread board accept|done|decline <post> ["<note>"]   (ack <post> <state> also works)
+  thread board dump "<anything>" | -  capture for the curator to file (stdin with -); --as optional, default user
+  thread board triage                the curator's list: unfiled dumps, what was asked, where each might go
+  thread board file <post> --is <chore|task|bug|feature|improvement|idea|note|reflection|duplicate|drop>
+                         [--under <thread>] [--plan <activity or task>] [--title "..."] [--into <thread>] [--of <id>] [--more]
+  thread board ask <post> "<question>"   ask the post's author, when it is unclear
+  thread board tidy                  the curator's sweep: unfiled, unanswered, unlinked, orphaned, doubled
   thread board next [--claim] [--list] [--limit 5]   what to do next, best first; --claim takes the best
                                      open task (racing safely); --list is the dispatcher's view of the scope
   thread board ready <owner/repo#n> "<what it changes>" [--to <role>] [--after <refs>] [--deploy "<what>"]

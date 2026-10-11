@@ -381,3 +381,79 @@ test("next ranks instructions, then tasks, then ideas; --claim takes the best ta
     f.cleanup();
   }
 });
+
+test("a dump waits for a curator, who files it as a chore linked to an activity; the author sees where it went", () => {
+  const f = fixture();
+  try {
+    const parent = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "trading ops"))[1];
+    f.a.run("board", "start", "--as", "cur", "--role", "curator:patternode");
+    const id = /📥 (p-[0-9a-z]+)/.exec(f.human.run("board", "dump", "the dashboard times out after the deploy, look at it sometime"))[1];
+    assert.match(f.a.run("board", "inbox", "--as", "cur"), new RegExp(id));
+    assert.match(f.a.run("board", "triage", "--as", "cur"), new RegExp(`${id}[\\s\\S]*1 to file`));
+    // An epic on its own cannot hold a chore.
+    assert.notEqual(f.a.raw("board", "file", id, "--is", "chore", "--plan", "WI-012", "--as", "cur").status, 0);
+    const out = f.a.run("board", "file", id, "--is", "chore", "--under", parent, "--plan", "WI-012-A3", "--title", "Dashboard times out after deploy", "--as", "cur");
+    const chore = /→ chore (t-[0-9a-z]+)/.exec(out)[1];
+    assert.match(f.a.run("tree"), new RegExp(`${chore} Dashboard times out after deploy \\[chore\\] → WI-012-A3`));
+    assert.match(f.a.run("show", chore), new RegExp(`From board ${id}, user`));
+    assert.match(f.a.run("board", "triage", "--as", "cur"), /Nothing to file/);
+    assert.match(f.human.run("board", "sent", "--as", "user"), new RegExp(`filed by cur .* as chore ${chore} → WI-012-A3`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("the curator asks the author when a dump is unclear, and the answer comes back to it", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "cur", "--role", "curator");
+    f.b.run("board", "start", "--as", "w1");
+    const id = /📥 (p-[0-9a-z]+)/.exec(f.b.run("board", "dump", "fix the thing from yesterday", "--as", "w1"))[1];
+    f.a.run("board", "ask", id, "Which thing: the retry bug or the timeout?", "--as", "cur");
+    const q = /(p-[0-9a-z]+) · question/.exec(f.b.run("board", "inbox", "--as", "w1"))[1];
+    f.b.run("board", "reply", q, "The timeout.", "--as", "w1");
+    assert.match(f.a.run("board", "inbox", "--as", "cur"), /The timeout/);
+    assert.match(f.a.run("board", "triage", "--as", "cur"), /↳ question from cur[\s\S]*↳ answer from w1 .*The timeout/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("a dump can be piped in, and a bare Markdown file is a dump", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "cur", "--role", "curator");
+    const r = spawnSync(process.execPath, [SCRIPT, "board", "dump", "-"], { cwd: f.root, env: { ...process.env, THREADS_HOME: f.human.store, THREADS_REMOTE: f.remote, BOARD_AS: "", GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" }, input: "line one of a long paste\nline two\n", encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    const dir = path.join(f.human.store, "board", "by-hand");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "20261011T090000Z-note.md"), "Book the flights before Friday.\n");
+    execFileSync("git", ["-C", f.human.store, "add", "-A"]);
+    execFileSync("git", ["-C", f.human.store, "commit", "-qm", "by hand"], { env: { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" } });
+    execFileSync("git", ["-C", f.human.store, "push", "-q", "origin", "HEAD:main"]);
+    const t = f.a.run("board", "triage", "--as", "cur");
+    assert.match(t, /line one of a long paste\n\s+line two/);
+    assert.match(t, /Book the flights before Friday/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("tidy lists unlinked chores and work held by agents that have gone", () => {
+  const f = fixture();
+  try {
+    const chore = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "rotate the logs", "--kind", "chore"))[1];
+    const linked = /🧵 (t-[0-9a-z]+)/.exec(f.a.run("open", "rename the job", "--kind", "chore", "--link", "WI-012-A3-T1"))[1];
+    // A claim from an agent whose session was lost: it never said hello, so it is not on the board.
+    const dir = path.join(f.a.store, "board", "2026-10-11");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "20261011T100000Z-x-aaaaaa.json"), JSON.stringify({ ts: new Date().toISOString(), host: "x", type: "claim", from: "ghost", key: linked, until: new Date(Date.now() + 3600e3).toISOString() }));
+    execFileSync("git", ["-C", f.a.store, "add", "-A"]);
+    execFileSync("git", ["-C", f.a.store, "commit", "-qm", "ghost"], { env: { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" } });
+    const tidy = f.a.run("board", "tidy");
+    assert.match(tidy, new RegExp(`not linked to the plan \\(1\\):\\n  ${chore}`));
+    assert.match(tidy, new RegExp(`no longer on the board \\(1\\):\\n  ${linked} · ghost`));
+  } finally {
+    f.cleanup();
+  }
+});

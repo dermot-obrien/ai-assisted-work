@@ -218,6 +218,7 @@ node .agents/skills/thread/bin/thread.mjs <command> [args] [flags]
 | `thread move <id> --parent <id> \| --root` | Move a thread in the tree |
 | `thread kind <id> <kind>\|none` | Tag a thread (improvement, bug, project...) or clear the tag |
 | `thread list [--kind <kind>] [--all] [--json]` | Every thread of that kind, across all trees |
+| `thread link <id> <ref>\|none` | Link a thread to the plan: an activity (`WI-012-A3`) or task (`WI-012-A3-T2`), or a reference such as `IMP-004`. A whole work item is refused (DD-16) |
 | `thread fork <id>` | The header for handing a thread to a new chat |
 | `thread tree [<id>] [--all] [--mermaid\|--json]` | Open and parked threads; `--all` (or `tree all`) adds finished and archived ones |
 | `thread prune [--days <n>] [--dry-run]` | Archive closed branches into a new `archive/` file. Alias `archive` |
@@ -239,6 +240,11 @@ for a chat take `--as <handle>` or `$BOARD_AS`. `--to` takes a comma list of han
 |---------|------|
 | `thread board start [--as <h>] [--source <path>] [--tool <t>] [--role <r>] [--thread <id>] [--note "..."] [--take]` | Join: records presence (8h), takes the roles named, prints the briefing. A new handle unless `--as` |
 | `thread board status [--source <path\|all>] [--json]` | For the user: who is working on what, merge queues, instructions not yet done, open threads nobody holds |
+| `thread board dump "<text>" \| -` | Capture anything for a curator; `-` reads stdin. Without `--as` it is from `user` |
+| `thread board triage [--json]` | For a curator: unfiled dumps, questions asked about them, and threads they look like |
+| `thread board file <post> --is <what> [--under <thread>] [--plan <ref>] [--title "..."] [--into <thread>] [--of <id>] [--more]` | File a dump as a chore, task, bug, feature, improvement or idea thread, a note, a duplicate, a reflection, or drop it |
+| `thread board ask <post> "<question>"` | Ask a post's author; the answer returns to the asker |
+| `thread board tidy` | The curator's sweep: unfiled, unanswered, unlinked, orphaned and doubled |
 | `thread board next [--claim] [--list] [--limit 5] [--json]` | What to do next, best first. `--claim` takes the best open thread, trying the next when another chat wins it; `--list` is the scope's view for a dispatcher (DD-15) |
 | `thread board ready <owner/repo#n> "<what it changes>" [--to <role>] [--after <refs>] [--deploy "<what>"]` | Join the merge queue of `master:<repo>` or the role named. An update keeps its place |
 | `thread board queue [--to <role>] [--json]` | The merge queue in order, with what waits for what and what is next |

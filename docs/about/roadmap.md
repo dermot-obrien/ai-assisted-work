@@ -71,6 +71,8 @@ The work plane (work items, activities, tasks) is separate from the architecture
 
 - [x] One list of work (DD-15): open threads are the to-do list, open calls become `task`
   threads, claims show on the tree, and `board next --claim` lets parallel agents take work
+- [x] Capture and curation (DD-16): anyone dumps, a curator files into the tree linked to an
+  activity or task, asks authors when unclear, and sweeps with `tidy`
 - [ ] Work items as the tree (DD-15): a work item, its activities and tasks as thread kinds
   with parents in the shared store, so the plan needs no store of its own and any agent finds
   it from the same pointer; the products each activity advances kept in its description

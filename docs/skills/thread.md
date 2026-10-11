@@ -87,6 +87,14 @@ open thread nobody holds is work an agent may take; the tree marks the ones take
 A worker runs `thread board next --claim` and gets the best task free, so several agents can
 work one path in parallel without doubling up, and a dispatcher chat can start one per task.
 
+Keep the flow apart from the plan. Dump anything as it comes, with no structure:
+`thread board dump "<text>"`, a paste piped in with `thread board dump -`, a bare Markdown file
+under `board/` from the GitHub app, or "dump: ..." in any chat. A chat holding the `curator` role
+files each dump into the tree (a chore, task, bug, note, reflection or duplicate), links it to an
+activity or task in your plan, and asks whoever wrote it when it is unclear. Start one with "Be
+the curator for patternode and keep the board clean". `thread board sent --as user` shows where
+each of your dumps went.
+
 Pull requests merge in order. A chat whose pull request is ready posts
 `thread board ready owner/repo#n "<what it changes>"`, with `--after` for any that must merge
 first, and only the chat holding that repository's merging role (`master:<repo>`) merges, top of

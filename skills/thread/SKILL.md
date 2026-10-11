@@ -81,6 +81,9 @@ don't nag.
 | `/thread tree all sources`, "threads in every source" | `tree --source all` (also `status`, `list`) | Show the output as-is |
 | `/thread board`, "join the board", "you are <role>", "pick up your instructions", "go pick up work in <path>" | `board start --tool … [--source <path>] [--role <role>] [--thread <id>]` | Show the 📋 anchor and the briefing, then act on it: take the first thing that fits. See "The board" |
 | "who is working on what?", "what's going on in <path>?" | `board status [--source <path>]` | Show the output as-is |
+| `/thread dump <text>`, "dump: ...", "note this for later", a paste to keep | `board dump "<text>" --for-user --as <handle>` (or `board dump -` for a long paste) | One line with the post id; carry on with what you were doing |
+| "keep the board clean", "be the curator" | `board start --role curator[:<path>]`, then `board triage` | See "Capture and curation" in references/board.md |
+| `/thread link <id> <activity or task>` | `link <id> <ref>` | One-line acknowledgement. A whole work item is refused: pick its activity |
 | "pick up the next thing", "take the next task" | `board next --claim --as <handle>` | Do what it says first (an instruction, the merge queue), else work the thread it took |
 | "hand out the work", "run agents on <path> in parallel" | `board next --list --source <path>` | See "Dispatching in parallel" in references/board.md |
 | A pull request this chat opened is ready to merge | `board ready <owner/repo#n> "<what it changes>" [--after <refs>] [--deploy "<what>"]` | One line: its place in the queue. Never merge it yourself |
@@ -188,6 +191,8 @@ everything from one pointer.
 - **Checking.** Read the inbox before replying at the end of each piece of work, and act on
   anything new first. When idle in a tool that wakes the chat when a background command ends,
   run `board wait` in the background.
+- **Flow and plan.** Anyone dumps whatever comes up (`board dump`); a curator files each dump
+  into the tree, linked to an activity or task in the plan, and asks its author when unclear.
 - **Work is the tree.** Open threads are the to-do list, an open call becomes a `task` thread,
   and the board's claims say who is doing which. `board next --claim` takes the best one free.
 - **Scope.** A chat joins at a source path (`--source patternode`), and sees what is posted
