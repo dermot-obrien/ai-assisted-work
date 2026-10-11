@@ -29,6 +29,12 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pushed. A remote can be added later. The post-install check accepts both.
 
 ### Fixed
+- thread 0.14.0: the post-install check accepts a source path such as `patternode/platform`, with
+  the same rule as the script (no reserved segment names). An open call whose task thread was
+  closed counts as finished everywhere, so it leaves the board's status, `sent` and `next`, and
+  `prune` archives it.
+
+### Fixed
 - thread 0.14.0: events written in the same millisecond (an open and its describe, when a curator
   files a dump) could replay out of order and lose the description; each process now writes
   strictly increasing timestamps, on the tree and the board.

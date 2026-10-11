@@ -293,7 +293,8 @@ const ackedBy = (p, who) => p.acks.some((a) => a.from === who);
 const closed = (p) => p.acks.some((a) => a.state === "done" || a.state === "declined");
 // A dump is settled once a curator has filed it (a filing marked --more leaves it open for more).
 const settled = (p) => p.kind === "dump" && p.filed.some((f) => !f.more);
-const finished = (p) => closed(p) || Boolean(p.superseded) || settled(p);
+// An open call whose task thread was closed is finished too, so status, sent and prune agree with the inbox.
+const finished = (p) => closed(p) || Boolean(p.superseded) || settled(p) || taskClosed(p);
 const curates = (state, who) => state.rolesOf(who).some((r) => r === "curator" || r.startsWith("curator:"));
 
 /** Unread posts for a handle: to it or its roles, or to everyone, its repo or its threads in its scope, or replies to it; and open calls in its scope. */
@@ -309,7 +310,7 @@ function inbox(state, who) {
     if (p.kind === "dump" && !(curator && near) && !p.to.some((t) => direct.has(t))) continue;
     const addressed = (p.kind === "dump" && curator && near) || p.to.some((t) => direct.has(t)) || (p.reply && mine.has(p.reply)) || (near && (p.to.some((t) => broad.has(t)) || (p.on && threads.has(p.on))));
     if (addressed) forMe.push(p);
-    else if (near && p.to.includes("any") && !finished(p) && !taskClosed(p)) {
+    else if (near && p.to.includes("any") && !finished(p)) {
       const c = state.claims.get(p.task || p.id);
       if (!c || !state.live(c) || c.who === who) open.push(p);
     }

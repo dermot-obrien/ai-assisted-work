@@ -219,3 +219,21 @@ test("thread init --local starts a store with no remote", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("the post-install check accepts a source path and refuses a bad or reserved one", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "thread-check-"));
+  try {
+    const store = path.join(root, "store");
+    execFileSync("git", ["init", "--quiet", store]);
+    const check = (source) =>
+      spawnSync(process.execPath, [path.join(path.dirname(SCRIPT), "check.mjs")], {
+        cwd: root,
+        env: { ...process.env, SKILL_DIR: path.dirname(path.dirname(SCRIPT)), THREADS_HOME: store, THREADS_REMOTE: "", THREAD_SOURCE: source },
+        encoding: "utf8",
+      });
+    for (const ok of ["image-and-video", "patternode/platform", "patternode/business/brand"]) assert.equal(check(ok).status, 0, `${ok}: ${check(ok).stdout}`);
+    for (const bad of ["Bad Name", "patternode//platform", "patternode/board", "events"]) assert.equal(check(bad).status, 1, bad);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

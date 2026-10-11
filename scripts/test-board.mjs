@@ -349,6 +349,22 @@ test("an open call is a task in the tree: claimed as the thread, shown with its 
   }
 });
 
+test("an open call whose task thread is closed is finished: it leaves the board's status and prune archives it", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const out = f.human.run("board", "post", "Tidy the README", "--to", "any", "--kind", "instruction", "--as", "user");
+    const task = /task (t-[0-9a-z]+) in the tree/.exec(out)[1];
+    assert.match(f.a.run("board", "status"), /Tidy the README/);
+    f.a.run("done", task, "tidied by hand");
+    assert.doesNotMatch(f.a.run("board", "status"), /Tidy the README/);
+    assert.doesNotMatch(f.a.run("board", "next", "--list", "--as", "a1"), /Tidy the README/);
+    assert.match(f.a.run("board", "prune", "--days", "0", "--dry-run"), /[1-9]\d* /);
+  } finally {
+    f.cleanup();
+  }
+});
+
 test("closing a thread frees its claim", () => {
   const f = fixture();
   try {

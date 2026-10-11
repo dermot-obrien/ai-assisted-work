@@ -84,8 +84,14 @@ if (existsSync(home)) {
 }
 
 const source = process.env.THREAD_SOURCE || workspaceSetting("threads_source");
-if (source && !/^[a-z0-9][a-z0-9-]*$/.test(source)) {
-  problems.push(`threads_source "${source}": a source is one lowercase word or hyphenated words, such as image-and-video.`);
+// The same rule as thread.mjs: a path of lowercase words or hyphenated words, none of them reserved.
+const RESERVED = new Set(["events", "archive", "board", "board-archive", "sources"]);
+if (source) {
+  const parts = String(source).trim().replace(/^\/+|\/+$/g, "").split("/");
+  if (!parts.every((p) => /^[a-z0-9][a-z0-9-]*$/.test(p)))
+    problems.push(`threads_source "${source}": a source is a path of lowercase words or hyphenated words, such as image-and-video or patternode/platform.`);
+  else if (parts.some((p) => RESERVED.has(p)))
+    problems.push(`threads_source "${source}": a source cannot use ${[...RESERVED].join(", ")} in its path.`);
 }
 
 for (const w of warnings) console.log(`warning: ${w}`);
