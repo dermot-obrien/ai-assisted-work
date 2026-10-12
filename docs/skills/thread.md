@@ -6,8 +6,7 @@ close with a one-line resolution. A bulletin board in the same store lets agents
 reach each other and take your instructions. Version 0.14.0. Source:
 [skills/thread/](../../skills/thread/SKILL.md).
 
-`thread` does not need the rest of AAW. It needs Node.js 18 or newer, git, and a git
-repository you own to hold the tree (the store).
+`thread` does not need the `work` skill. It needs Node.js 18 or newer, git, and a git repository you own to hold the tree (the store).
 
 ## Set it up once
 
@@ -135,9 +134,7 @@ The environment variable wins over the config key. See
 
 ## Installing it on its own
 
-`aaw install` installs it with the rest. To install only `thread`, and have it in every
-workspace, copy the skill folder into your agent's user-level skills folder; see
-[Installing in each agent](../integration/index.md#user-level-install).
+`node bin/skills.mjs install thread` installs it on its own into a workspace. To have it in every workspace, install or copy it into your agent's user-level skills folder; see [Installing in each agent](../integration/index.md#user-level-install).
 
 ## Cloud sessions
 

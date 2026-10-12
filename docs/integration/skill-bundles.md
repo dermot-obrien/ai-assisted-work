@@ -65,9 +65,7 @@ An installer runs every installed skill's check straight after installing it, an
 
 A bundle without checks is valid but discouraged.
 
-`aaw install` does not run the checks yet. Until it does, run them the way an installer
-would with `validate-bundle.mjs --run-checks`, below, or one at a time with
-`node .agents/skills/<skill>/bin/check.mjs` from the workspace root.
+`bin/skills.mjs` does not run the checks yet. Run them the way an installer would with `validate-bundle.mjs --run-checks`, below, or one at a time with `node .agents/skills/<skill>/bin/check.mjs` from the workspace root.
 
 ## Checking a bundle
 
@@ -76,13 +74,13 @@ node scripts/validate-bundle.mjs .                        # the manifest, agains
 node scripts/validate-bundle.mjs --run-checks <workspace> .   # run each skill's check as an installer would
 ```
 
-The validator has no dependencies. A bundle outside AAW keeps a copy of it and of the
-schema under `scripts/vendor/`, which says which AAW commit it was taken from.
+The validator has no dependencies. A bundle in another repository keeps a copy of it and of the schema under `scripts/vendor/`, which says which commit of this repository it was taken from.
+
+This repository's `bundle.json` lists only the skills it holds, `thread` and `work`. A skill that lives in a repository of its own is listed in that repository's bundle, and a workspace declares it by repository in `.agents/skills.json` ([Installing the skills](../../DEPLOYMENT.md#declare-a-workspaces-skills)).
 
 ## The work ontology
 
-`schemas/work.schema.json`, `pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0`,
-defines WorkItem, Activity, Task, Initiative, Deliverable, Stakeholder, Objective and the
+`skills/work/assets/work.schema.json`, `pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0`, ships inside the `work` skill and defines WorkItem, Activity, Task, Initiative, Deliverable, Stakeholder, Objective and the
 shared primitives as `progress.yaml` holds them. It is the bottom layer. The delivery layer
 (delivery-planning) and the architecture layer (AI-Assisted Architecture) reference it by
 `$ref` and extend its types with `allOf`:
@@ -99,5 +97,4 @@ shared primitives as `progress.yaml` holds them. It is the bottom layer. The del
 - From `schema_version: 3`, every activity names the deliverable it `produces`.
 - Objects are open, so a higher layer's fields validate against the work layer.
 
-`packages/protocol/src/schema.ts` is its camelCase projection, and CI fails when they
-disagree.
+Until 5.0.0 the schema was `schemas/work.schema.json`, with a camelCase projection in the protocol package that CI kept in step. The package is gone, and the identifier is unchanged, so a layer that references it by `$id` needs no change; one that references the file by path updates the path.

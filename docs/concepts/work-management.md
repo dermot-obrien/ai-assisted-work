@@ -28,7 +28,7 @@ An optional, **context-free** outcome layer so work can ladder to measurable goa
 
 So: an **Initiative** (multi-quarter) ladders to several Objectives; an **Epic** (Work Item, <= quarter) advances **one** quarter's KRs; a **sprint/week goal** is a *step that advances* a KR — it is **not** the Objective (keep them distinct).
 
-This layer is **optional and additive** — work items function with or without it, and it carries **no domain/tenant vocabulary** (a host context maps its own Strategic Themes, value areas, etc. onto Objectives/KRs). Records live alongside work items, e.g. `objectives/OBJ-NNN/`. Templates ship with the `/work initiative` skill, at `skills/work initiative/assets/templates/objective-progress.yaml` and `cadence.yaml`, because an Objective is a strategic container like an Initiative.
+This layer is optional and additive: work items function with or without it, and it carries no domain or tenant vocabulary (a host context maps its own Strategic Themes, value areas, etc. onto Objectives/KRs). Records live alongside work items, e.g. `objectives/OBJ-NNN/`. Templates ship with the `work` skill, at `skills/work/assets/templates/objective-progress.yaml` and `cadence.yaml`, beside the initiative templates, because an Objective is a strategic container like an Initiative.
 
 ## Work Items
 
@@ -103,7 +103,7 @@ This isolation ensures:
 
 ### Work Item Location
 
-Work items live at a single configured path. By default, this path is **outside the artefact repo** so work-state never pollutes the artefact repo's history. The path is set in `.aaw-config.yaml` at the workspace root:
+Work items live at a single configured path, set in `.aaw-config.yaml` at the workspace root. Pointing it outside the artefact repo keeps work-state out of the artefact repo's history:
 
 ```yaml
 # .aaw-config.yaml
@@ -113,7 +113,7 @@ work_items_path: ~/aaw/{tenant}/{repo}/work-items/
 initiatives_path: ~/aaw/{tenant}/{repo}/initiatives/
 ```
 
-If a workspace has no config, agents fall back to `./change/work-items/` and `./change/initiatives/` in the artefact repo (legacy default).
+If a workspace has no config, or the config sets no path, agents use the defaults, `./change/work-items/` and `./change/initiatives/` in the artefact repo.
 
 There is **one numbering series** for work items (`WI-NNN`) and **one for initiatives** (`IN-NNN`). The deliverables and outputs of a work item can still be committed to the artefact repo as decisions, ADRs, code, or other deliverables — those are produced *by* the work item, not stored *as* it.
 

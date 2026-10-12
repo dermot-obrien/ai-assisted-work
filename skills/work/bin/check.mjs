@@ -3,17 +3,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Post-install check for an AAW work-management skill (DD-11).
+ * Post-install check for the work skill (DD-11).
  *
  * Run from the workspace root, with SKILL_DIR set to the installed skill's directory.
- * Checks that .aaw-config.yaml is there and that the locations it names resolve:
+ * Checks that the locations .aaw-config.yaml names resolve, or their defaults when it is absent:
  * work_items_path, initiatives_path where set, and deliverables_register where set.
  *
  * Exit 0: correct (warnings may be printed). Exit 1: problems, one line each.
  * Exit 2: usage or environment error. Offline and read-only.
  *
- * The same file ships in every aaw-* skill, so each skill is complete on its own;
- * CI checks the copies are identical.
  */
 
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -62,12 +60,12 @@ function topLevel(text) {
 }
 
 const configFile = path.join(root, ".aaw-config.yaml");
+// The file is optional: without it every key takes its default.
 if (!existsSync(configFile)) {
-  problems.push(
-    `.aaw-config.yaml: not found in ${root}. Run the AAW installer in the workspace root, or create it with work_items_path: <folder for work items>.`,
-  );
-} else {
-  const cfg = topLevel(readFileSync(configFile, "utf8"));
+  warnings.push(`.aaw-config.yaml: not found in ${root}, so the defaults apply. Create it to set work_items_path and the other keys.`);
+}
+{
+  const cfg = existsSync(configFile) ? topLevel(readFileSync(configFile, "utf8")) : {};
   const tenant = cfg.tenant || "local";
   const expand = (p) =>
     path.resolve(

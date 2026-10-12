@@ -134,7 +134,7 @@ Classification is provisional and cheap to revise:
 - The README's "When to Skip Discovery" decision tree is **subsumed** by triage, with its
   polarity flipped (skip is the default; include is earned).
 
-## Relationship to sibling frameworks
+## Relationship to AI-Assisted Research and AI-Assisted Architecture
 
 - **AAR (research)** is the home of the `inquiry` class — an inquiry *is* a hypothesis.
   Research concludes, then the work re-triages into a delivery class (or a lesson).

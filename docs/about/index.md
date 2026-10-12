@@ -7,7 +7,7 @@ Background, vision, and design decisions for the project.
 AI-Assisted Work provides domain-agnostic AI agents for work management and productivity tasks. This project is designed to be:
 
 - **Reusable** across any domain or project type
-- **Embeddable** as an independent clone installed into domain-specific repositories
+- **Installable** skill by skill into any repository, with `bin/skills.mjs`
 - **Customizable** for organizational needs
 - **Community-driven** with contributions welcome
 
@@ -20,7 +20,7 @@ AI-Assisted Work provides domain-agnostic AI agents for work management and prod
 
 ## Relationship to Domain-Specific Projects
 
-AI-Assisted Work is designed as a **foundation layer**:
+AI-Assisted Work holds the domain-agnostic work model. Domain-specific bundles of skills, such as AI-Assisted Architecture and AI-Assisted Research, build on that model (the work ontology) but do not depend on AI-Assisted Work being installed: each installs on its own with the same installer.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────┐
@@ -40,9 +40,9 @@ AI-Assisted Work is designed as a **foundation layer**:
 │   ┌──────────────────────────────────────────────────────────────────────────┐ │
 │   │                        AI-Assisted Work                                  │ │
 │   │                                                                          │ │
-│   │   Work Management Agents  │  Common Templates                           │ │
+│   │   work and thread skills  │  Common Templates  │  Work ontology          │ │
 │   │                                                                          │ │
-│   │   (Domain-agnostic foundation - independent clone, installed in)         │ │
+│   │   (Domain-agnostic work model; each skill installs on its own)           │ │
 │   └──────────────────────────────────────────────────────────────────────────┘ │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```

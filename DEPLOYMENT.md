@@ -1,128 +1,113 @@
-# Deployment Guide
+# Installing the skills
 
-How to install, update, remove and migrate AI-Assisted Work (AAW) in a workspace. For a
-first install, the [quick start](docs/quick-start.md) is faster; for your agent's folders and
-user-level installs, see [Installing in each agent](docs/integration/index.md).
+How to install, declare, update, check and remove the `work` and `thread` skills, and skills from other repositories, with [`bin/skills.mjs`](bin/skills.mjs). For a first install the [quick start](docs/quick-start.md) is faster; for the folder each agent reads and user-level installs, see [Installing in each agent](docs/integration/index.md). `node bin/skills.mjs --help` lists every command and flag, and [Commands](docs/reference/commands.md#skillsmjs) explains them.
 
-## Install
+`skills.mjs` is one file with no dependencies. It needs Node.js 18 or newer, and git for anything it clones. It works the same on Windows, macOS and Linux.
 
-```bash
+## Install from a clone
+
+```
 git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
-node .ai-assisted-work/bin/aaw.js install
+node .ai-assisted-work/bin/skills.mjs install work thread
+node .ai-assisted-work/bin/skills.mjs check
 ```
 
-Requires Node.js 18 or newer (20 recommended) and git. `bin/aaw.js` is a self-contained
-bundle in the clone, so no npm registry access is needed. It works the same on Windows,
-macOS and Linux.
+With no names, `install` installs every skill in the bundle. It reads the `bundle.json` beside the script unless `--bundle <bundle.json or its folder>` names another, and installs into the git root above the current directory unless `--workspace <dir>` names another. One clone can therefore serve several workspaces.
 
-The installer asks for the workspace, tenant, mode and work items folder (or takes them from
-flags, with `--yes` to ask nothing), then writes `.aaw-config.yaml`, creates the work items
-folder, installs the skills to `.agents/skills/`, links `.claude/skills/` at them when
-`.claude/` exists, and records itself under `modules`. Every flag is in the
-[command reference](docs/reference/commands.md#aaw-install).
+One skill from a repository of its own:
+
+```
+node .ai-assisted-work/bin/skills.mjs install --repo https://github.com/dermot-obrien/diagram-model.git --ref model--v0.8.2 --path skills/model --name model
+```
 
 ## What gets created
 
 ```
 your-repo/
-├── .ai-assisted-work/          the AAW clone: skills, CLI, docs
-├── .aaw-config.yaml            workspace config (commit this)
-├── .agents/skills/<name>/      installed skills (generated; gitignore them)
-├── .claude/skills/<name>       links to the above, for Claude Code
+├── .agents/skills/<name>/      the installed skills
+├── .agents/skills.lock.json    where each came from: source, ref, commit and a hash of what was installed
+├── .agents/.skill-sources/     clones made by skills.mjs (gitignore it)
+├── .claude/skills/<name>       links to .agents/skills/<name>, only when .claude/ exists
 └── your files                  untouched
-
-~/aaw/<tenant>/<repo>/
-├── work-items/                 WI-NNN-<slug>/ folders, outside the repository
-└── initiatives/                IN-NNN-<slug>/ folders, created on first use
 ```
 
-Work items live outside the repository by default, so progress state, locks and scope notes
-stay out of its history. To publish one, copy a cleaned snapshot into the repository as a
-deliberate step, or point `work_items_path` inside the repository. Every key in
-`.aaw-config.yaml` is in the [configuration reference](docs/reference/configuration.md).
+On Windows the `.claude/skills/<name>` links are directory junctions. Pass `--copy` to write copies instead, which suits a repository that commits `.claude/skills/` or a filesystem that refuses links.
 
-## Shell alias
+The installer writes no configuration. The `work` skill reads `.aaw-config.yaml` at the workspace root when it is there and uses its defaults when it is not (work items in `./change/work-items/`, initiatives in `./change/initiatives/`); `thread` reads its store settings from the same file or from environment variables. See the [configuration reference](docs/reference/configuration.md).
 
-The clone does not put `aaw` on your PATH. Type the path, or add an alias once.
+## Declare a workspace's skills
 
-PowerShell, in `$PROFILE` (create it with
-`if (!(Test-Path $PROFILE)) { New-Item -Type File -Force $PROFILE }`, then `notepad $PROFILE`):
+A workspace that wants the same skills on every machine and in every session commits `.agents/skills.json`. Each source is a `bundle`, a single skill's `repo`, or a `folder` in the workspace:
 
-```powershell
-function aaw { node ".ai-assisted-work/bin/aaw.js" @args }
+```json
+{
+  "sources": [
+    { "bundle": "https://github.com/dermot-obrien/ai-assisted-work.git", "ref": "main", "skills": ["work", "thread"] },
+    { "repo": "https://github.com/dermot-obrien/architecture-pattern.git", "ref": "pattern--v0.10.3", "name": "pattern", "path": "skills/pattern" },
+    { "folder": "skills/my-own-skill" }
+  ]
+}
 ```
 
-bash or zsh, in `~/.bashrc` or `~/.zshrc`:
+A skill that lives in its own repository is declared with `{ "repo": "https://github.com/dermot-obrien/<repo>.git", "ref": "<skill>--v<version>", "name": "<skill>", "path": "skills/<skill>" }`:
 
-```sh
-alias aaw='node .ai-assisted-work/bin/aaw.js'
+| Skill | Repository |
+|-------|------------|
+| `markdown-deck` | `dermot-obrien/markdown-deck` |
+| `model` | `dermot-obrien/diagram-model` |
+| `pattern`, `use-case`, `cross-reference` | `dermot-obrien/architecture-pattern` |
+| `quarter-planning` | `dermot-obrien/delivery-planning` |
+
+Then:
+
+```
+node bin/skills.mjs sync              # install what the file declares, record each commit in the lock
+node bin/skills.mjs sync --locked     # install exactly the commits in the lock
 ```
 
-Reload with `. $PROFILE` or `source ~/.bashrc`, or open a new shell. The path is relative to
-the current directory, so `aaw status` works in any workspace with AAW cloned at
-`.ai-assisted-work/`.
+`sync` also removes any skill it installed that the file no longer lists. Commit both `.agents/skills.json` and `.agents/skills.lock.json`. A session-start hook runs `sync --locked` (with `--copy` where links are unwelcome), so every session gets the same commits; to move to newer ones, run `sync` without `--locked`, check the result, and commit the new lock.
 
-## Verify
+A workspace usually keeps a copy of `skills.mjs` (for example as `scripts/skills.mjs`) so its hook needs no clone of this repository. Copy `bin/skills.mjs` over it to update it.
 
-```bash
-node .ai-assisted-work/bin/aaw.js verify
-node .ai-assisted-work/bin/aaw.js check-skills
+## Constrained environments
+
+| Where you are | How |
+|---|---|
+| No access to GitHub, or no access to personal repositories | Copy the skill folders (or clones) onto the machine and pass `--from <folder>`; nothing is fetched |
+| A mirror of the repositories | Set `SKILLS_BASE_URL=<base>`; each clone comes from `<base>/<repository>.git` |
+| No shared thread store | `threads_remote: local` and `threads_home: <folder>` in `.aaw-config.yaml` ([thread setup](skills/thread/references/setup.md#a-local-store-with-no-remote)) |
+| Without any installer | Copy `skills/<name>/` to `.agents/skills/<name>/` (and `.claude/skills/<name>/`) |
+
+`--dry-run` on any command says what would be installed and changes nothing.
+
+## Check and update
+
+```
+node bin/skills.mjs check             # ✓ or ✗ per installed skill; exit 1 when one changed or is missing
+node bin/skills.mjs update            # fetch each installed skill again and reinstall it
+node bin/skills.mjs update work       # just that one
 ```
 
-`verify` checks the config and that the work items folder can be written and listed.
-`check-skills` confirms the installed skills match the clone. Then type `/` in your agent:
-the `aaw-*` skills and `thread` should be listed.
-
-## Update
-
-```bash
-git -C .ai-assisted-work pull
-node .ai-assisted-work/bin/aaw.js install --yes
-```
-
-The install is idempotent: it keeps your config values and comments, and replaces the
-installed skills with the new versions. With one clone serving several workspaces, pull once
-and install into each with `--workspace <path>`.
+`check` compares each installed skill with the hash in the lock, so an edit made to an installed copy is caught. An edit made there is lost at the next install: change the skill at its source instead. Each skill also ships a post-install check, `bin/check.mjs`, for the configuration it depends on; see [Commands](docs/reference/commands.md#post-install-checks).
 
 ## Remove
 
-```bash
-rm -rf .ai-assisted-work .agents/skills/aaw-* .agents/skills/thread .claude/skills/aaw-* .claude/skills/thread
-rm .aaw-config.yaml
+```
+node bin/skills.mjs remove work thread
 ```
 
-PowerShell:
+This removes the installed copies, their `.claude/skills/` links and their lock entries. Your work items and your thread store are not touched.
 
-```powershell
-Remove-Item -Recurse -Force .ai-assisted-work, .agents/skills/aaw-*, .agents/skills/thread, .claude/skills/aaw-*, .claude/skills/thread
-Remove-Item .aaw-config.yaml
-```
+## Coming from `aaw install`
 
-Your work items under `~/aaw/<tenant>/<repo>/` are not touched. Delete them yourself if you
-no longer want them.
+Versions up to 4.0.0 installed with `node .ai-assisted-work/bin/aaw.js install`, which wrote `.aaw-config.yaml` with a `modules` section and installed the skills. To move to `skills.mjs`:
 
-## Migrating from v1
+1. Keep `.aaw-config.yaml`: the skills still read `work_items_path`, `initiatives_path`, `deliverables_register` and the `threads_*` keys. The `modules` section is no longer read and can be deleted.
+2. Remove the old installed skills, including any `aaw-*` ones from before `work` replaced them, from `.agents/skills/` and `.claude/skills/`.
+3. Install with `skills.mjs install work thread`, or declare them in `.agents/skills.json` and run `sync`.
 
-v1 kept work items in the repository, in `change/work-items/` and an optional
-`change/work-items-private/`, with private items numbered `WIP-NNN`. v2 reads one configured
-folder. After `aaw install`:
-
-```bash
-node .ai-assisted-work/bin/aaw.js migrate v1 --dry-run   # see the plan
-node .ai-assisted-work/bin/aaw.js migrate v1             # move and renumber
-```
-
-It moves every work item and initiative into the configured folders, renumbers `WIP-` and
-`INP-` items into the shared series, and rewrites the ids inside their files. Review and
-remove the emptied `change/` folders yourself.
-
-## Cloud mode
-
-`mode: cloud` is reserved for coordinating several machines through a separate coordinator
-service built on `@aaw/protocol`. It is not generally available; the CLI accepts the value
-but still reads local files. Watch [CHANGELOG.md](CHANGELOG.md).
+AI-Assisted Architecture and AI-Assisted Research are plain bundles of skills too, and install the same way. A workspace that still needs the old installer, or the `aaw status`, `aaw lint` and `aaw claim` commands, pins the `v4.0.0` tag of this repository.
 
 ## Troubleshooting
 
-See [Troubleshooting](docs/troubleshooting.md), which is keyed to the messages the tools
-print.
+See [Troubleshooting](docs/troubleshooting.md), which is keyed to the messages the tools print.

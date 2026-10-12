@@ -5,7 +5,24 @@ All notable changes to AI-Assisted Work.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## 5.0.0
+
+AI-Assisted Work is no longer a framework. The repository holds two standalone skills, `work` and `thread`, and `bin/skills.mjs`, the installer for standalone skills from any bundle. WI-005 step 3.
+
+### Removed (breaking)
+- The `aaw` command (`bin/aaw.js`) and every subcommand: `install`, `init`, `check-skills`, `status`, `next-task`, `claim`, `release`, `lint`, `verify`, `runner start` and `migrate v1`. The skills do the same work in the agent: `/work status`, `/work next` and `/work progress`, which claims and releases its own locks.
+- The install engine and the packages behind it (`packages/cli`, `packages/installer`, `packages/protocol`, the npm workspace), `framework.manifest.yaml`, the Changesets setup, `PUBLISHING.md`, the release workflow and `scripts/check-protocol-schema.mjs`. No framework installs through AI-Assisted Work any more: AI-Assisted Architecture and AI-Assisted Research are plain bundles of skills too, installed with `skills.mjs`.
+- Nothing writes `.aaw-config.yaml` any more, and its `modules` section is not read. The skills still read the file, which is optional, and `modules` can be deleted.
+
+### Changed (breaking)
+- Install with `node bin/skills.mjs install [<name>...]`, or declare the skills in a committed `.agents/skills.json` and run `node bin/skills.mjs sync --locked --copy`. See [Installing the skills](DEPLOYMENT.md). A workspace that still needs the old installer pins the `v4.0.0` tag, the last commit with the framework.
+- `bundle.json` lists `thread` and `work` only. The skills that live in repositories of their own (`markdown-deck`, `model`, `pattern`, `use-case`, `cross-reference`, `quarter-planning`) are no longer listed with a `source`: a workspace declares each by repository, as `{ "repo": "https://github.com/dermot-obrien/<repo>.git", "ref": "<skill>--v<version>", "name": "<skill>", "path": "skills/<skill>" }`.
+- The work ontology moved from `schemas/work.schema.json` into the work skill, at `skills/work/assets/work.schema.json`. Its identifier, `pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0`, is unchanged; a layer that referenced the file by path updates the path.
+
+### Fixed
+- work 3.1.0: the post-install check passes in a workspace with no `.aaw-config.yaml`. It warns, and checks the default locations (`./change/work-items/` and `./change/initiatives/`) instead of failing.
+
+## 4.0.0
 
 ### Fixed
 - `skills.mjs sync`: the lock records a bundle by the repository the declaration names, not

@@ -1,28 +1,16 @@
 # Concepts
 
-The ideas you need to use AAW, in the order you meet them. Each section is short and links
-to the long-form page where one exists.
+The ideas you need to use the skills, in the order you meet them. Each section is short and links to the long-form page where one exists.
 
 ## 1. Skills, and the workspace they run in
 
-AAW is a set of [Agent Skills](https://agentskills.io): folders holding a `SKILL.md` that an
-agent loads when a request matches its description, or when you type `/<name>`. The agent
-sees only each skill's name and description at first; the body loads when the skill is
-used, and the files under `references/` only when a branch of the procedure reaches them.
+AI-Assisted Work is two [Agent Skills](https://agentskills.io), `work` and `thread`: folders holding a `SKILL.md` that an agent loads when a request matches its description, or when you type `/<name>`. The agent sees only each skill's name and description at first; the body loads when the skill is used, and the files under `references/` only when a branch of the procedure reaches them.
 
-A workspace is the folder you open in your agent, usually a git repository. `aaw install`
-puts the skills in the workspace's `.agents/skills/` (and links `.claude/skills/` at them
-for Claude Code) and writes `.aaw-config.yaml` at its root. The skills read that file to
-find where work lives. See [Installing in each agent](../integration/index.md) and
-[Configuration](../reference/configuration.md).
+A workspace is the folder you open in your agent, usually a git repository. `bin/skills.mjs` puts the skills in the workspace's `.agents/skills/` (and links `.claude/skills/` at them for Claude Code). The skills read `.aaw-config.yaml` at the workspace root, when there is one, to find where work lives. See [Installing the skills](../../DEPLOYMENT.md), [Installing in each agent](../integration/index.md) and [Configuration](../reference/configuration.md).
 
-## 2. Work lives outside the repository
+## 2. Where work lives
 
-By default work items live under `~/aaw/<tenant>/<repo>/work-items/`, outside the
-repository, so scope notes, progress state and locks stay out of its history. The
-`tenant` is your namespace across repositories and machines. Point `work_items_path` inside
-the repository instead when you want the work committed alongside the code, as this
-repository does in `change/work-items/`.
+Work items can live outside the repository, for example under `~/aaw/<tenant>/<repo>/work-items/`, so scope notes, progress state and locks stay out of its history. Set `work_items_path` in `.aaw-config.yaml` to put them there; the `tenant` is your namespace across repositories and machines. Without the setting they live in the repository, in `change/work-items/`, committed alongside the code, as this repository's do.
 
 ## 3. Triage first: most work is a chore
 
@@ -93,14 +81,9 @@ Each phase starts read-only, in dialogue with you, and writes only after you con
 
 ## 7. `progress.yaml` is the source of truth
 
-Everything an agent or the CLI knows about a work item is in its `progress.yaml`. It carries
-a `version` that every writer increments: read it, do the work, re-read it, and write only
-if the version is unchanged. That is optimistic locking, and it is what lets several agents
-share one file. `changelog.log` beside it is append-only.
+Everything an agent knows about a work item is in its `progress.yaml`. It carries a `version` that every writer increments: read it, do the work, re-read it, and write only if the version is unchanged. That is optimistic locking, and it is what lets several agents share one file. `changelog.log` beside it is append-only.
 
-The file's shape is defined by the work ontology, `schemas/work.schema.json`; from
-`schema_version: 3` every activity must name what it `produces`. See
-[Skill bundles](../integration/skill-bundles.md#the-work-ontology).
+The file's shape is defined by the work ontology, `skills/work/assets/work.schema.json`; from `schema_version: 3` every activity must name what it `produces`. See [Skill bundles](../integration/skill-bundles.md#the-work-ontology).
 
 ## 8. Claims and actors
 
@@ -117,11 +100,7 @@ report lists. See [Work management](work-management.md) and
 
 ## 9. Seeing where things are
 
-`/work status` reports every work item, one work item or one initiative, including
-parallel opportunities, live and expired locks, and items not updated for seven days.
-`/work next` presents the next task with its context without doing it. The `aaw` CLI
-gives the same view from the shell (`aaw status`, `aaw next-task`, `aaw lint`). See
-[Commands](../reference/commands.md).
+`/work status` reports every work item, one work item or one initiative, including parallel opportunities, live and expired locks, and items not updated for seven days. `/work next` presents the next task with its context without doing it.
 
 ## 10. Initiatives and the optional OKR layer
 
@@ -142,10 +121,7 @@ tree, so you can always find what a chat was for. See [the thread skill](../skil
 
 ## 12. Keeping installs honest
 
-The installed skills are copies. An edit made to a copy is lost at the next install without
-review, so `aaw check-skills` reports any installed skill that no longer matches its
-framework. Each skill also ships a post-install check (`bin/check.mjs`) that tests the
-workspace configuration it depends on. See [Skill bundles](../integration/skill-bundles.md).
+The installed skills are copies. An edit made to a copy is lost at the next install without review, so `skills.mjs check` reports any installed skill that no longer matches what was installed, from the hash in `.agents/skills.lock.json`. Each skill also ships a post-install check (`bin/check.mjs`) that tests the workspace configuration it depends on. See [Skill bundles](../integration/skill-bundles.md).
 
 ## Going deeper
 

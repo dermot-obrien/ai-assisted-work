@@ -9,6 +9,7 @@ things up.
 |------|--------------|
 | [Quick start](quick-start.md) | You want a working install and a first work item in ten minutes |
 | [Concepts](concepts/index.md) | You want the ideas behind the skills, in the order you need them |
+| [Installing the skills](../DEPLOYMENT.md) | You want to install, declare, update or remove skills with `bin/skills.mjs` |
 | [Installing in each agent](integration/index.md) | You use VS Code with GitHub Copilot, Cursor, Claude Code, Codex or Gemini CLI, at workspace or user level |
 
 ## The skills
@@ -29,13 +30,12 @@ post-install check.
 
 | Page | Covers |
 |------|--------|
-| [Configuration](reference/configuration.md) | Every `.aaw-config.yaml` key, environment variable, `SKILL.md` front matter key and manifest key, with type, default, precedence and an example |
-| [Commands](reference/commands.md) | Every `aaw` command and flag, `thread.mjs`, the post-install checks and the repository scripts |
+| [Configuration](reference/configuration.md) | Every `.aaw-config.yaml` key, environment variable and `SKILL.md` front matter key, with type, default, precedence and an example |
+| [Commands](reference/commands.md) | `skills.mjs`, `thread.mjs`, the post-install checks and the repository scripts |
 | [Troubleshooting](troubleshooting.md) | The real error and warning messages, and what to do about each |
 | [Examples](examples.md) | Where the worked examples and templates are |
 | [Skill bundles](integration/skill-bundles.md) | `bundle.json`, post-install checks and the work ontology |
 | [Command discovery](integration/command-discovery.md) | How each agent finds and invokes the skills |
-| [Protocol](../packages/protocol/README.md) | The contract every backend implements |
 
 ## Background
 
@@ -46,5 +46,4 @@ post-install check.
 | [Agent boundaries](concepts/agent-boundaries.md), [Scaling limits](concepts/scaling-limits.md) | What agents may do on their own, and how far parallel work goes |
 | [Development work](concepts/development-work.md), [Architecture work](concepts/architecture-work.md) | How the method applies to each kind of work |
 | [About](about/index.md) | Vision, design decisions (DD-01 onwards), adoption and roadmap |
-| [DEPLOYMENT.md](../DEPLOYMENT.md) | Updating, removing and migrating an install |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | Building from source, tests, validators and releases |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | Tests, validators and versioning |
