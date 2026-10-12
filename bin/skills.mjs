@@ -21,7 +21,7 @@
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -70,7 +70,7 @@ function workspaceOf(flags) {
 /** Read a bundle: --bundle <file or folder>, else the bundle.json beside this script's repository. */
 function readBundle(flags) {
   let file = typeof flags.bundle === "string" ? path.resolve(flags.bundle) : path.join(HERE, "..", "bundle.json");
-  if (existsSync(file) && lstatSync(file).isDirectory()) file = path.join(file, "bundle.json");
+  if (existsSync(file) && statSync(file).isDirectory()) file = path.join(file, "bundle.json");
   if (!existsSync(file)) die(`no bundle at ${file}. Pass --bundle <bundle.json or its folder>, or --repo <url> for one skill.`);
   const bundle = JSON.parse(readFileSync(file, "utf8"));
   return { ...bundle, root: path.dirname(file) };

@@ -20,6 +20,7 @@ AI-Assisted Work is no longer a framework. The repository holds two standalone s
 - The work ontology moved from `schemas/work.schema.json` into the work skill, at `skills/work/assets/work.schema.json`. Its identifier, `pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0`, is unchanged; a layer that referenced the file by path updates the path.
 
 ### Fixed
+- `skills.mjs install --bundle <folder>` follows a symbolic link to the folder instead of failing with EISDIR.
 - work 3.1.0: the post-install check passes in a workspace with no `.aaw-config.yaml`. It warns, and checks the default locations (`./change/work-items/` and `./change/initiatives/`) instead of failing.
 
 ## 4.0.0
