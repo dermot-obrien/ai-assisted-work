@@ -15,15 +15,15 @@ Most existing answers are partial: project-management tools (Jira, Linear) for h
 
 ## The vision
 
-AAW is a thin, opinionated framework for **work coordination**, designed so the same skills, schema, and protocol work regardless of which AI tool runs the agent or where state is stored.
+AI-Assisted Work is a thin, opinionated set of skills for work coordination, designed so the same skills and schema work regardless of which AI tool runs the agent or where state is stored.
 
 ### Two ideas
 
 **1. Decouple the work model from the transport.**
 
-There's a small set of operations every agent needs against a shared work store: list claimable work, claim an activity, update a task, release. AAW packages these as a versioned **protocol** (`@aaw/protocol`) that any backend can implement: filesystem (today), Cloud Run + Firestore (next), GitHub Projects (later), Temporal (eventually).
+There's a small set of operations every agent needs against a shared work store: list claimable work, claim an activity, update a task, release. The `work` skill does them over plain files, and their shape is one schema, the work ontology (`skills/work/assets/work.schema.json`), that any tool can read. Coordination across machines and tools is moving to the board in the `thread` store, a git repository every agent already reaches.
 
-A skill that knows the protocol can run against any backend without modification.
+Up to 4.0.0 the operations were also a TypeScript protocol package with a filesystem backend and plans for cloud ones. That package was removed in 5.0.0, because the skills never used it, and coordination across machines is being taken up by the board instead.
 
 **2. Decouple the schema from any specific work-management methodology.**
 
@@ -35,7 +35,7 @@ The hierarchy — Initiative → Work Item → Activity → Task — is structur
 |-----------|-------------|
 | **Domain-agnostic** | Initiative/Work Item/Activity/Task is structure, not method |
 | **Tool-neutral** | The same skills run in Copilot, Cursor, Claude Code, Codex, Gemini |
-| **Transport-pluggable** | One protocol, multiple backends |
+| **Store-neutral** | One schema over plain files, in any folder or repository |
 | **Permissive by default** | CC BY 4.0 + Apache-2.0; no copyleft; trademark on the name only |
 | **Cross-platform** | Mac, Linux, Windows; no symlink/junction tricks |
 
@@ -50,8 +50,8 @@ The hierarchy — Initiative → Work Item → Activity → Task — is structur
 
 - Work coordination: claim, update, release, audit
 - Skill definitions consumed by AI tools
-- A CLI for shell-driven and headless use
-- A protocol that bridges filesystem and cloud transports
+- An installer for standalone skills, `bin/skills.mjs`
+- A schema for the work model, which other layers extend
 
 ## What's not in scope
 
@@ -66,9 +66,9 @@ The hierarchy — Initiative → Work Item → Activity → Task — is structur
 
 | Horizon | Direction |
 |---------|-----------|
-| **Short-term** | Cloud mode (Cloud Run + Firestore) and the npm publish lane |
-| **Medium-term** | A web console for human-readable views; headless agent runners on cloud workers |
-| **Long-term** | Backends for GitHub Projects and Temporal; a budget-aware scheduler that maximises parallel work within a fixed subscription cap |
+| **Short-term** | `thread` in a repository of its own; deciding where the remaining skills and the installer live (WI-005) |
+| **Medium-term** | The plan in the shared threads store, with activity claims on the board in place of local lock files |
+| **Long-term** | A budget-aware scheduler that maximises parallel work within a fixed subscription cap |
 
 See [roadmap.md](roadmap.md) for the version-by-version plan.
 
@@ -76,4 +76,3 @@ See [roadmap.md](roadmap.md) for the version-by-version plan.
 
 - Try the agents on a real project, file issues at github.com/dermot-obrien/ai-assisted-work
 - Fork and customise for your organisation; contribute generic improvements back
-- Build a backend (e.g. for your team's PM tool) — the protocol is small enough to implement in a weekend

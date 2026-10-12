@@ -1,44 +1,30 @@
 # Configuration reference
 
-Everything that configures AAW, where it is read, and what wins when two sources disagree.
+Everything that configures the skills, where it is read, and what wins when two sources disagree.
 
-AAW's skills declare no `inputs.toml` bindings. A workspace configures them in one file,
-`.aaw-config.yaml` at the workspace root, plus a few environment variables for `thread`.
+The skills declare no `inputs.toml` bindings. A workspace configures them in one optional file, `.aaw-config.yaml` at the workspace root, plus a few environment variables for `thread`. The installer, `bin/skills.mjs`, has its own flags and files, described in [Commands](commands.md#skillsmjs) and [Installing the skills](../../DEPLOYMENT.md).
 
 - [.aaw-config.yaml](#aaw-configyaml)
 - [Environment variables](#environment-variables)
 - [SKILL.md front matter](#skillmd-front-matter)
 - [bundle.json](#bundlejson)
-- [framework.manifest.yaml](#frameworkmanifestyaml)
 - [progress.yaml](#progressyaml)
 
 ## .aaw-config.yaml
 
-`aaw install` writes it. It is plain YAML, meant to be committed and edited by hand; the
-installer edits it in place, keeps your comments and other keys, and leaves it untouched
-when nothing changed.
+Plain YAML, written by hand and meant to be committed. Nothing writes it: until 4.0.0 `aaw install` did, and since 5.0.0 the file is optional. Without it every key takes its default, and the `work` skill keeps its work items in `./change/work-items/`.
 
 ```yaml
 tenant: demo
-mode: local-fs
 work_items_path: ~/aaw/{tenant}/{repo}/work-items
 initiatives_path: ~/aaw/{tenant}/{repo}/initiatives
 threads_remote: https://github.com/you/threads.git
-modules:
-  aaw:
-    name: AI-Assisted Work
-    version: 3.2.0
-    runtime: node
-    source_root: .ai-assisted-work
 ```
 
 ### Where it is found
 
-- The `aaw` CLI walks up from the current directory to the first folder holding
-  `.aaw-config.yaml` or `.git`, and treats that as the workspace root.
-- The `aaw-*` skills and their post-install checks read it at the workspace root.
-- `thread` reads `threads_remote`, `threads_source` and `threads_project` from the nearest
-  `.aaw-config.yaml` above the current directory.
+- The `work` skill and its post-install check read it at the workspace root.
+- `thread` reads `threads_remote`, `threads_home`, `threads_source` and `threads_project` from the nearest `.aaw-config.yaml` above the current directory.
 
 ### Path expansion
 
@@ -46,18 +32,6 @@ Every path key below is expanded the same way before use: a leading `~` becomes 
 folder, `{tenant}` becomes the `tenant` value, `{repo}` becomes the workspace folder's name,
 and a relative path is taken from the workspace root. The file keeps the path as written, so
 it stays portable between machines.
-
-### Precedence during `aaw install`
-
-For `tenant`, `mode` and `work_items_path`, the first of these that has a value wins:
-
-1. the flag (`--tenant`, `--mode`, `--work-items-path`)
-2. your answer at the prompt, in a terminal without `--yes`
-3. the value already in `.aaw-config.yaml`
-4. the default in the table below
-
-Without a terminal, or with `--yes`, step 2 is skipped. `initiatives_path` has no flag: it
-keeps the existing value, or defaults to an `initiatives` folder beside `work_items_path`.
 
 ### Keys
 
@@ -67,7 +41,7 @@ keeps the existing value, or defaults to an `initiatives` folder beside `work_it
 |---|---|
 | Type | string |
 | Default | `local` |
-| Read by | the CLI (for `{tenant}`), the installer, the post-install checks |
+| Read by | `work` and its post-install check, for `{tenant}` |
 | Example | `tenant: acme` |
 
 Your namespace across repositories and machines. It appears in the default paths through
@@ -79,38 +53,32 @@ Your namespace across repositories and machines. It appears in the default paths
 |---|---|
 | Type | `local-fs` or `cloud` |
 | Default | `local-fs` |
-| Read by | the CLI, the installer, the post-install checks |
+| Read by | `work`'s post-install check |
 | Example | `mode: local-fs` |
 
-`local-fs` keeps work items as files on this machine. `cloud` is reserved for a
-multi-machine coordinator that is not generally available; the CLI accepts it but still
-reads the local files. Any other value is an error (see
-[Troubleshooting](../troubleshooting.md#aaw-status-lint-claim-and-the-other-commands)).
+Work items are files, so `local-fs` is the only mode in use. `cloud` was reserved for a multi-machine coordinator that was never built, and is accepted for older files. The check refuses any other value. The key can be left out.
 
 #### work_items_path
 
 | | |
 |---|---|
 | Type | path, expanded as above |
-| Default at install | `~/aaw/<tenant>/<repo>/work-items` (written out in full) |
-| Default when the key is missing | `./change/work-items` (the version 1 layout) |
-| Read by | every `aaw-*` skill, the CLI, the post-install checks |
+| Default | `./change/work-items` |
+| Read by | every `work` flow, the post-install check |
 | Example | `work_items_path: ~/aaw/{tenant}/{repo}/work-items` |
 
-The folder holding `WI-NNN-<slug>/` work item folders. `aaw install` creates it.
+The folder holding `WI-NNN-<slug>/` work item folders. `work` creates it on first use. A path outside the repository, such as the example, keeps scope notes, progress state and locks out of its history.
 
 #### initiatives_path
 
 | | |
 |---|---|
 | Type | path, expanded as above |
-| Default at install | an `initiatives` folder beside `work_items_path` |
-| Default when the key is missing | `./change/initiatives` |
-| Read by | `/work initiative`, `/work status`, `/work start`, the CLI |
+| Default | `./change/initiatives` |
+| Read by | `/work initiative`, `/work status`, `/work start`, the post-install check |
 | Example | `initiatives_path: ~/aaw/{tenant}/{repo}/initiatives` |
 
-The folder holding `IN-NNN-<slug>/` initiative folders. It is created on first use by
-`/work initiative`; until then the checks print a warning, not an error.
+The folder holding `IN-NNN-<slug>/` initiative folders. It is created on first use by `/work initiative`; until then the check prints a warning, not an error.
 
 #### deliverables_register
 
@@ -123,7 +91,7 @@ The folder holding `IN-NNN-<slug>/` initiative folders. It is created on first u
 
 A CSV or YAML catalogue of the kinds of product your organisation makes. A product then sets
 `type` to a row's id and inherits that row's quality criteria, quality method and approver.
-The plain path form expects the register's columns to carry AAW's field names. When they do
+The plain path form expects the register's columns to carry the skill's field names. When they do
 not, use the map form:
 
 ```yaml
@@ -133,7 +101,7 @@ deliverables_register:
   standard_only: true          # only commit to rows marked standard
   standard_column: standard_type
   standard_true: "Yes"         # the value that marks a row standard
-  columns:                     # AAW field: the register's column name
+  columns:                     # the skill's field: the register's column name
     name: title
     purpose: purpose
     composition: composition
@@ -153,9 +121,9 @@ deliverables_register:
 | `standard_only` | boolean | When true, a work item may commit only to standard rows |
 | `standard_column` | string | Column that says whether a row is standard |
 | `standard_true` | string | The value in `standard_column` that means standard |
-| `columns` | map | AAW field name to register column name. AAW needs `name`, `quality_criteria`, `quality_method` and `responsibilities`; the rest are used when present. Unmapped columns are ignored |
+| `columns` | map | The skill's field name to the register's column name. The skill needs `name`, `quality_criteria`, `quality_method` and `responsibilities`; the rest are used when present. Unmapped columns are ignored |
 
-The CLI does not read this key. AAW ships no register and no schema for one.
+The skill ships no register and no schema for one.
 
 #### threads_remote
 
@@ -195,29 +163,9 @@ Which tree in the store this workspace reads and writes (DD-12). A named source 
 
 The project a root thread opened in this workspace goes under.
 
-#### endpoint
+#### modules and endpoint
 
-| | |
-|---|---|
-| Type | URL |
-| Default | unset |
-| Read by | the CLI, for `mode: cloud` |
-| Example | `endpoint: https://coordinator.example.com` |
-
-Reserved for the cloud coordinator. Nothing uses it yet.
-
-#### modules
-
-| | |
-|---|---|
-| Type | map of framework id to `{ name, version, runtime, source_root }` |
-| Written by | the installer, once per framework installed |
-| Read by | `aaw check-skills`, and other frameworks' installers to find their dependencies |
-| Example | see the file at the top of this page |
-
-A registry of the frameworks installed into this workspace. `source_root` is the framework
-clone, relative to the workspace, so a workspace can find the clone it was installed from.
-Do not edit it by hand; run the installer again instead.
+`aaw install` wrote a `modules` section, a registry of the frameworks it installed, up to 4.0.0; `endpoint` was reserved for the cloud coordinator. Nothing reads either now, and both can be deleted. `bin/skills.mjs` records what it installed in `.agents/skills.lock.json` instead.
 
 ## Environment variables
 
@@ -235,7 +183,6 @@ Do not edit it by hand; run the installer again instead.
 | `THREAD_CTX` | `thread` | the git repository's folder name | The project context recorded on a new thread. `--ctx` beats it |
 | `THREAD_TOOL` | `thread` | unset | The tool recorded on a new thread. `--tool` beats it |
 | `SKILL_DIR` | post-install checks | the check's own skill folder | The installed skill's folder, set by whoever runs the check |
-| `AAW_DEBUG` | `aaw` | unset | Any value prints the stack trace with an error |
 
 To set one for every new terminal: `setx THREADS_REMOTE <url>` on Windows (then open a new
 terminal), or `export THREADS_REMOTE=<url>` in your shell profile on macOS and Linux. For
@@ -249,16 +196,14 @@ every key below.
 
 | Key | Type | Required | Rule | Example |
 |-----|------|----------|------|---------|
-| `name` | string | yes | At most 64 characters, lowercase letters, digits and single hyphens, equal to the folder name | `name: /work start` |
+| `name` | string | yes | At most 64 characters, lowercase letters, digits and single hyphens, equal to the folder name | `name: work` |
 | `description` | string | yes | At most 1,024 characters. Says what the skill does and when to use it | |
 | `license` | string | no | SPDX id | `license: CC-BY-4.0` |
 | `compatibility` | string | no | At most 500 characters. What the skill needs from its environment | |
 | `metadata` | map of strings | no | Values are strings, so versions are quoted | `version: "2.5.0"` |
 | `allowed-tools` | string | no | Tools the skill may use without asking, where the agent supports it | |
 
-AAW sets these `metadata` keys: `author`, `framework` (`aaw`), and `version`, which must equal
-the skill's `version` in `bundle.json`. A skill that needs another sets `x-skill-requires`.
-A value holding `: ` must be quoted, or strict YAML readers reject the file.
+This repository's skills set these `metadata` keys: `author`, and `version`, which must equal the skill's `version` in `bundle.json`. A `framework` key, left from before 5.0.0, is not read. A skill that needs another sets `x-skill-requires`. A value holding `: ` must be quoted, or strict YAML readers reject the file.
 
 ## bundle.json
 
@@ -267,42 +212,9 @@ version, a package URL and a post-install check for each, and the ontology modul
 is described in [Skill bundles](../integration/skill-bundles.md#bundlejson), and the schema
 is `schemas/bundle.schema.json`.
 
-## framework.manifest.yaml
-
-What `aaw install --framework <path>` reads from a framework's root. AAW's own is small:
-
-```yaml
-id: aaw
-name: AI-Assisted Work
-version: 3.2.0
-depends: []
-runtime: node
-skills: { src: skills }
-config: []
-data_dirs: []
-```
-
-| Key | Type | Required | Meaning |
-|-----|------|----------|---------|
-| `id` | string | yes | Short namespace, recorded under `modules` |
-| `name` | string | yes | Shown by the installer |
-| `version` | string | yes | Recorded under `modules` |
-| `depends` | list of ids | no, default none | Frameworks that must be installed first. A missing one is a warning |
-| `runtime` | `node` or `python` | yes | What the framework's tooling runs in |
-| `skills.src` | path | no | Folder of skill folders to install. Each one with a `SKILL.md` is installed |
-| `config` | list of `{ file, template }` | no | Files seeded into the workspace only if absent |
-| `data_dirs` | list of paths | no | Folders created in the workspace |
-| `tool_setup.python` | `{ requirements, optional }` | no | A `requirements.txt` to `pip install`; `optional: true` turns failure into a warning. `--no-python` skips it |
-| `seed` | `{ driver: node, entry, args }` | no | A content seeder, run only with `--seed` |
-
-`shims` and `source_token` from before 3.0.0 are ignored if present.
-
 ## progress.yaml
 
-A work item's state. Its keys are defined by the work ontology, `schemas/work.schema.json`,
-and every key is explained where it appears in the template,
-[skills/work start/assets/templates/progress.yaml](../../skills/work start/assets/templates/progress.yaml).
-The ones the CLI checks with `aaw lint`:
+A work item's state. Its keys are defined by the work ontology, [`skills/work/assets/work.schema.json`](../../skills/work/assets/work.schema.json), and every key is explained where it appears in the template, [skills/work/assets/templates/progress.yaml](../../skills/work/assets/templates/progress.yaml). The values the skill accepts for the keys it checks most often:
 
 | Key | Values |
 |-----|--------|
@@ -313,5 +225,4 @@ The ones the CLI checks with `aaw lint`:
 | `activities[].actor`, `tasks[].actor` | `agent`, `human`, `any` (the default) |
 | `activities[].depends_on` | ids of activities on the same work item; no cycles |
 
-Initiatives have their own template,
-[skills/work initiative/assets/templates/initiative-progress.yaml](../../skills/work initiative/assets/templates/initiative-progress.yaml).
+Initiatives have their own template, [skills/work/assets/templates/initiative-progress.yaml](../../skills/work/assets/templates/initiative-progress.yaml).

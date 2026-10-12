@@ -2,7 +2,7 @@
   "$schema": "pkg:generic/dermot-obrien/ai-assisted-work/bundle-schema@1.0.0",
   "name": "ai-assisted-work",
   "owner": "dermot-obrien",
-  "description": "AI-Assisted Work, now a bundle of standalone Agent Skills: work (work items, activities, tasks, initiatives), thread (a tree of intents and a bulletin board for agents), and the skills that left it for repositories of their own. Each installs on its own with bin/skills.mjs.",
+  "description": "AI-Assisted Work as a bundle of two standalone Agent Skills: work (work items, activities, tasks and initiatives in plain files) and thread (a tree of intents and a bulletin board for agents). Each installs on its own with bin/skills.mjs.",
   "license": "CC-BY-4.0 AND Apache-2.0",
   "homepage": "https://github.com/dermot-obrien/ai-assisted-work",
   "skills": [
@@ -24,8 +24,8 @@
     {
       "name": "work",
       "path": "skills/work",
-      "version": "3.0.0",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/work@3.0.0",
+      "version": "3.1.0",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/work@3.1.0",
       "requires": [],
       "check": {
         "command": [
@@ -35,99 +35,11 @@
         "runtime": "node",
         "description": ".aaw-config.yaml, when present, names work item and initiative paths that resolve, and any deliverables_register exists"
       }
-    },
-    {
-      "name": "markdown-deck",
-      "path": "skills/markdown-deck",
-      "version": "0.6.8",
-      "purl": "pkg:generic/dermot-obrien/markdown-deck/markdown-deck@0.6.8",
-      "requires": [],
-      "source": {
-        "repo": "https://github.com/dermot-obrien/markdown-deck.git",
-        "ref": "markdown-deck--v0.6.8"
-      }
-    },
-    {
-      "name": "model",
-      "path": "skills/model",
-      "version": "0.8.2",
-      "purl": "pkg:generic/dermot-obrien/diagram-model/model@0.8.2",
-      "requires": [],
-      "source": {
-        "repo": "https://github.com/dermot-obrien/diagram-model.git",
-        "ref": "model--v0.8.2"
-      }
-    },
-    {
-      "name": "pattern",
-      "path": "skills/pattern",
-      "version": "0.10.3",
-      "purl": "pkg:generic/dermot-obrien/architecture-pattern/pattern@0.10.3",
-      "requires": [
-        {
-          "purl": "pkg:generic/dermot-obrien/diagram-model/model",
-          "range": "^0.8.2"
-        },
-        {
-          "purl": "pkg:generic/dermot-obrien/markdown-deck/markdown-deck",
-          "range": "^0.6.0"
-        }
-      ],
-      "source": {
-        "repo": "https://github.com/dermot-obrien/architecture-pattern.git",
-        "ref": "pattern--v0.10.3"
-      }
-    },
-    {
-      "name": "use-case",
-      "path": "skills/use-case",
-      "version": "0.2.0",
-      "purl": "pkg:generic/dermot-obrien/architecture-pattern/use-case@0.2.0",
-      "requires": [
-        {
-          "purl": "pkg:generic/dermot-obrien/architecture-pattern/pattern",
-          "range": "^0.10.3"
-        },
-        {
-          "purl": "pkg:generic/dermot-obrien/diagram-model/model",
-          "range": "^0.8.2"
-        },
-        {
-          "purl": "pkg:generic/dermot-obrien/markdown-deck/markdown-deck",
-          "range": "^0.6.0"
-        }
-      ],
-      "source": {
-        "repo": "https://github.com/dermot-obrien/architecture-pattern.git",
-        "ref": "use-case--v0.2.0"
-      }
-    },
-    {
-      "name": "cross-reference",
-      "path": "skills/cross-reference",
-      "version": "0.2.0",
-      "purl": "pkg:generic/dermot-obrien/architecture-pattern/cross-reference@0.2.0",
-      "requires": [],
-      "source": {
-        "repo": "https://github.com/dermot-obrien/architecture-pattern.git",
-        "ref": "cross-reference--v0.2.0"
-      }
-    },
-    {
-      "name": "quarter-planning",
-      "path": "skills/quarter-planning",
-      "version": "3.6.0",
-      "purl": "pkg:generic/dermot-obrien/delivery-planning/quarter-planning@3.6.0",
-      "requires": [],
-      "source": {
-        "repo": "https://github.com/dermot-obrien/delivery-planning.git",
-        "ref": "quarter-planning--v3.6.0"
-      }
     }
   ],
   "ontology": {
     "id": "pkg:generic/dermot-obrien/ai-assisted-work/work-ontology@1.0.0",
-    "path": "schemas/work.schema.json",
+    "path": "skills/work/assets/work.schema.json",
     "extends": []
   }
 }

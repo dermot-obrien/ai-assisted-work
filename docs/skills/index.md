@@ -1,6 +1,6 @@
 # Skills
 
-This repository is a bundle of standalone skills; the two kept here are below, and the others are listed in the [README](../../README.md#the-skills). Each depends on no other.
+This repository holds two standalone skills, below. Each depends on no other, and installs with `bin/skills.mjs` ([Installing the skills](../../DEPLOYMENT.md)).
 
 | Skill | Version | Use it to | Writes |
 |-------|---------|-----------|--------|
@@ -21,9 +21,7 @@ they fall back to `./change/work-items/` and `./change/initiatives/`. `thread` r
 `threads_remote` and `threads_project`, and its environment variables. Every key is in
 [Configuration](../reference/configuration.md).
 
-Runtime. `work` is instructions only and need nothing installed; its check
-and the optional `aaw` CLI need Node.js 18 or newer. `thread` needs Node.js 18 or newer and
-git.
+Runtime. `work` is instructions only and needs nothing installed; its check needs Node.js 18 or newer. `thread` needs Node.js 18 or newer and git.
 
 Post-install check. Each skill has `bin/check.mjs`, which confirms the configuration it
 depends on. See [Commands](../reference/commands.md#post-install-checks).
@@ -44,11 +42,11 @@ The `SKILL.md` files stay short on purpose; this documentation is for people.
 
 ## Skills that used to live here
 
-Three skills began in this repository and now live in their own, so they install without
-AAW. Each repository's `NOTICE` records the commit here it was taken from.
+Six skills began in this repository and now live in their own. The `NOTICE` in markdown-deck, diagram-model and delivery-planning records the commit here each was taken from. They are not listed in this repository's `bundle.json`: a workspace declares each by repository in `.agents/skills.json` ([format](../../DEPLOYMENT.md#declare-a-workspaces-skills)).
 
 | Skill | Repository |
 |-------|------------|
 | `markdown-deck` | [markdown-deck](https://github.com/dermot-obrien/markdown-deck) |
 | `model` | [diagram-model](https://github.com/dermot-obrien/diagram-model) |
+| `pattern`, `use-case`, `cross-reference` | [architecture-pattern](https://github.com/dermot-obrien/architecture-pattern) |
 | `quarter-planning` | [delivery-planning](https://github.com/dermot-obrien/delivery-planning) |

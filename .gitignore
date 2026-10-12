@@ -1,6 +1,5 @@
-# Agent configs that contributors might run against this repo locally —
-# don't pollute the repo with one author's tool setup. The shipped tool
-# shims live in skills-for-agents/ and packages/skills/.
+# Agent configs that contributors might run against this repo locally:
+# don't pollute the repo with one author's tool setup.
 CLAUDE.md
 /.cursor/
 /.claude/
@@ -18,22 +17,8 @@ CLAUDE.md
 change/work-items-private/
 change/work-items-private
 
-# Node / TypeScript build output.
+# The test dependency.
 node_modules/
-packages/*/dist/
-packages/*/node_modules/
-*.tsbuildinfo
-
-# Bundled CLI output: bin/aaw.js IS committed (ships in the submodule
-# install path; see DEPLOYMENT.md). The sourcemap is regenerated and
-# noisy, so it's ignored.
-bin/aaw.js.map
-
-# Bundled CLI dependency cache.
-.aaw-cache/
-
-# npm pack output
-*.tgz
 
 # Python bytecode, from the skills that ship Python
 __pycache__/

@@ -1,21 +1,15 @@
 # Command Discovery Across AI Assistants
 
-How AI-Assisted Work surfaces in each AI assistant, and why it now works the same way in all
-of them.
+How the `work` and `thread` skills surface in each AI assistant, and why they work the same way in all of them.
 
 ## The short version
 
-AAW ships its workflows as standalone [Agent Skills](https://agentskills.io). `aaw install`
-puts them in `.agents/skills/<name>/` and links `.claude/skills/<name>` at the same directory.
-Every supported tool then discovers them natively, with no per-tool file to maintain.
+The workflows are standalone [Agent Skills](https://agentskills.io). `bin/skills.mjs` puts them in `.agents/skills/<name>/` and links `.claude/skills/<name>` at the same directory. Every supported tool then discovers them natively, with no per-tool file to maintain.
 
 | Skill | Invoke |
 |-------|--------|
-| `/work start` | `/work start` |
-| `/work progress` | `/work progress` |
-| `/work status` | `/work status` |
-| `/work next` | `/work next` |
-| `/work initiative` | `/work initiative` |
+| `work` | `/work start`, `/work progress`, `/work status`, `/work next`, `/work initiative` |
+| `thread` | `/thread`, `/thread board` and the rest |
 
 ## Where each tool looks
 
@@ -49,24 +43,18 @@ procedure without costing anything until it is used.
 
 ## Naming
 
-Skills are named `aaw-*`, and the Agent Skills format has no namespacing of its own. The prefix
-is what keeps them from colliding with other skills in a workspace.
+The Agent Skills format has no namespacing of its own, so a skill's name is its folder's name, and two skills of the same name in one workspace collide. Until 4.0.0 the work-item skills carried an `aaw-` prefix to avoid that; the single `work` skill that replaced them is named for what it does, and still answers to the old names.
 
-If a tool namespaces skills itself, follow the tool. Claude Code, for example, namespaces
-plugin-supplied skills as `/plugin-name:skill-name`, but skills installed into
-`.claude/skills/` are invoked by their directory name, so `/work start` is correct.
+If a tool namespaces skills itself, follow the tool. Claude Code, for example, namespaces plugin-supplied skills as `/plugin-name:skill-name`, but skills installed into `.claude/skills/` are invoked by their directory name, so `/work start` is correct.
 
 ## Verifying an install
 
-Type `/` in your assistant. The five `/aaw-*` skills and `thread` should appear. If they do not:
+Type `/` in your assistant. `work` and `thread` should appear. If they do not:
 
 1. Restart the assistant. Several tools cache the skill list at startup.
 2. Check `.agents/skills/` exists and holds a directory per skill, each with a `SKILL.md`.
-3. For Claude Code, check `.claude/skills/<name>` exists and resolves. On Windows it is a
-   directory junction; if the filesystem refused both a symlink and a junction, the installer
-   falls back to a copy and says so in its output.
-4. Confirm the `SKILL.md` frontmatter parses: `name` must match the directory name exactly, and
-   both `name` and `description` are required.
+3. For Claude Code, check `.claude/skills/<name>` exists and resolves. On Windows it is a directory junction; where links are refused, install with `--copy`.
+4. Confirm the `SKILL.md` frontmatter parses: `name` must match the directory name exactly, and both `name` and `description` are required.
 
 ## Legacy command shims
 
@@ -80,12 +68,10 @@ pointing at instructions elsewhere in the framework:
 | GitHub Copilot | `.github/prompts/aaw-*.prompt.md` |
 | Gemini CLI | `.gemini/skills/aaw/` |
 
-They were removed in 3.0.0, and `aaw install` deletes any an earlier install wrote, because
-they point at instruction files that no longer exist. If you still see `/aaw:start-work`,
-install again.
+They were removed in 3.0.0, because they point at instruction files that no longer exist. Until 5.0.0 `aaw install` deleted any an earlier install wrote; nothing does now, so if you still see `/aaw:start-work`, delete those files by hand.
 
 ## See also
 
-- [Integration Guide](index.md) — per-tool notes and shell access
-- [DEPLOYMENT.md](../../DEPLOYMENT.md) — full install and migration guide
+- [Installing in each agent](index.md): per-tool notes and shell access
+- [Installing the skills](../../DEPLOYMENT.md): the full install and migration guide
 - [Agent Skills specification](https://agentskills.io/specification)

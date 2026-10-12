@@ -3,8 +3,8 @@ version = 1
 # AI-Assisted Work is dual-licensed:
 #   - Documentation, Agent Skills, templates, and examples are licensed
 #     under CC BY 4.0.
-#   - Executable code (TypeScript / JavaScript / build scripts) is
-#     licensed under Apache-2.0.
+#   - Executable code (the installer, the scripts and the skills' scripts)
+#     is licensed under Apache-2.0.
 #
 # This file follows the REUSE Specification 3.3 (https://reuse.software/).
 # It applies bulk licensing rules to files where adding an SPDX header in
@@ -35,14 +35,12 @@ SPDX-License-Identifier = "CC-BY-4.0"
 # --- Executable code (override the broad rule above) ---
 [[annotations]]
 path = [
-  "packages/cli/src/**.ts",
-  "packages/cli/build.mjs",
   "scripts/**.mjs",
-  "packages/protocol/src/**.ts",
-  "bin/**.js",
+  "bin/**.mjs",
   # The bundle manifest and the schemas are declarations tooling reads.
   "bundle.json",
   "schemas/**",
+  "skills/work/assets/work.schema.json",
   # A skill's prose is CC BY 4.0; the code and declarations it ships with are
   # executable and are licensed the same way as the rest of the tooling.
   "skills/**/bin/**",
@@ -62,9 +60,6 @@ path = [
   "LICENSE",
   "package.json",
   "package-lock.json",
-  "**/package.json",
-  "**/tsconfig.json",
-  ".changeset/**",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Dermot O'Brien"

@@ -34,6 +34,8 @@ Keep all agents and templates **completely domain-agnostic**:
 
 > **Superseded 2026-09.** The original decision was submodule-first. See the revision below.
 
+> Note, 5.0.0: the clone stands, but `aaw install`, `bin/aaw.js` and `packages/` are gone. `bin/skills.mjs` installs the skills from the clone, records what it installed in `.agents/skills.lock.json` rather than in `.aaw-config.yaml`, and a workspace can declare its skills in `.agents/skills.json` instead of keeping a clone at all (DD-17). The text below is kept as the record of the 2026-09 decision.
+
 ### Context
 
 Need to share agents across repositories without duplication, in organisations where npm
@@ -71,6 +73,7 @@ each records the source path in its own `.aaw-config.yaml`.
 |------|----------|
 | 2026-02 | Submodule-first |
 | 2026-09 | Independent clone plus `aaw install`; submodules no longer recommended |
+| 2026-10 | 5.0.0: `aaw install` removed; `bin/skills.mjs` installs from a clone, a declaration or a local folder |
 
 ### Alternatives Considered
 
@@ -170,11 +173,11 @@ every tool reads. See DD-10.
 
 ```
 skills/
-├── /work start/
+├── work/
 │   ├── SKILL.md            # the definition every tool reads
 │   ├── references/         # loaded on demand
 │   └── assets/templates/
-└── /work progress/
+└── thread/
     └── ...
 ```
 
@@ -330,6 +333,8 @@ status: "{STATUS}"
 
 ## DD-10: Agent Skills as the Distribution Format
 
+> Note, 5.0.0: the decision stands. What places the skills changed: `bin/skills.mjs` replaced `aaw install`, and the install-time sweep of old shims went with it (DD-17). Statements below about `aaw install` describe the framework up to 4.0.0.
+
 ### Context
 
 AAW originally shipped each workflow as a canonical Markdown instruction file plus one thin
@@ -390,6 +395,8 @@ content.
 - Skills are validated against the spec with `skills-ref validate`.
 
 ## DD-11: Skill Bundles, Versioned Skill Identifiers and a Layered Ontology
+
+> Note, 5.0.0: the single installer this decision called for is `bin/skills.mjs`, and `aaw install` is removed. The protocol package and its `schema.ts` projection are gone with the rest of `packages/`, so `scripts/check-protocol-schema.mjs` is too, and the work ontology moved from `schemas/work.schema.json` into the work skill, at `skills/work/assets/work.schema.json`, with the same identifier. The text below is kept as the record of the decision.
 
 ### Context
 
@@ -930,6 +937,8 @@ author; the author's `sent` shows where it went; questions and answers stay on t
 
 ## DD-17: Standalone Skills, AI-Assisted Work as a Bundle
 
+> Note, 5.0.0: the framework scaffolding is removed (WI-005 step 3): `bin/aaw.js`, `packages/`, `framework.manifest.yaml`, the npm workspace, changesets and the release workflow. `bundle.json` lists `thread` and `work` only; the skills that live elsewhere are no longer listed with a `source`, and a workspace declares them by repository in `.agents/skills.json`. AI-Assisted Architecture and AI-Assisted Research are plain bundles of skills installed with `skills.mjs`, so no framework depends on AI-Assisted Work. The last commit with the framework is tagged `v4.0.0`.
+
 ### Context
 
 AAW installed as a framework: six skills, an install engine shared with AI-Assisted Architecture and Research, packages and a CLI. Four skills had already left for repositories of their own. A workspace that needed one skill, such as a work laptop with no npm registry and no access to personal repositories, still had to take the framework, and the five work-item skills depended on each other through the files they share.
@@ -961,7 +970,7 @@ AAW installed as a framework: six skills, an install engine shared with AI-Assis
 | ID | Decision | Date | Status |
 |----|----------|------|--------|
 | DD-01 | Domain-Agnostic Design | 2026-02 | Implemented |
-| DD-02 | Independent Clone, Installed In | 2026-09 | Implemented (supersedes the 2026-02 submodule-first model) |
+| DD-02 | Independent Clone, Installed In | 2026-09 | Implemented (supersedes the 2026-02 submodule-first model); `aaw install` replaced by `bin/skills.mjs` in 5.0.0 |
 | DD-03 | File-Based Tracking | 2026-02 | Implemented |
 | DD-04 | Single-Responsibility | 2026-02 | Implemented |
 | DD-05 | Tool-Neutral | 2026-02 | Implemented |
@@ -976,4 +985,4 @@ AAW installed as a framework: six skills, an install engine shared with AI-Assis
 | DD-14 | Source Paths, Scoped Views and a Merge Queue | 2026-10 | Implemented (thread 0.14.0); extends DD-12 and DD-13 |
 | DD-15 | One List of Work, the Tree; the Board Coordinates It | 2026-10 | Implemented (thread 0.14.0) |
 | DD-16 | Capture and Curation, the Flow Kept Apart from the Plan | 2026-10 | Implemented (thread 0.14.0) |
-| DD-17 | Standalone Skills, AI-Assisted Work as a Bundle | 2026-10 | Implemented (4.0.0); `thread` repository pending |
+| DD-17 | Standalone Skills, AI-Assisted Work as a Bundle | 2026-10 | Implemented (4.0.0); framework scaffolding removed (5.0.0); `thread` repository pending |

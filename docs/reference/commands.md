@@ -1,197 +1,47 @@
 # Command reference
 
-Every command AAW ships, checked against its `--help`. Skills are invoked in your agent
-(`/work start`, `/thread` and so on) and are described in [Skills](../skills/index.md);
-this page covers what runs in a shell.
+Every command this repository ships, checked against its `--help`. Skills are invoked in your agent (`/work start`, `/thread` and so on) and are described in [Skills](../skills/index.md); this page covers what runs in a shell.
 
-- [aaw](#aaw), the CLI
+- [skills.mjs](#skillsmjs), the installer
 - [thread.mjs](#threadmjs), the script behind the `thread` skill
 - [Post-install checks](#post-install-checks)
 - [Repository scripts](#repository-scripts)
 
-Exit codes follow one rule throughout: 0 success, 1 a problem was found or the operation
-failed, 2 a usage or environment error.
+Exit codes follow one rule throughout: 0 success, 1 a problem was found or the operation failed, 2 a usage or environment error.
 
-## aaw
+The `aaw` command (`aaw install`, `aaw status`, `aaw claim` and the rest) was removed in 5.0.0. Its work is done in the agent by the `work` skill: `/work status`, `/work next`, and `/work progress`, which claims and releases its own locks. A workspace that still needs it pins the `v4.0.0` tag.
 
-The CLI is one self-contained file, `bin/aaw.js`, in the AAW clone. There is no global
-install; run it with Node:
+## skills.mjs
 
-```
-node .ai-assisted-work/bin/aaw.js <command> [flags]
-```
-
-To type `aaw` instead, add a shell function or alias. PowerShell (`notepad $PROFILE`):
-
-```powershell
-function aaw { node ".ai-assisted-work/bin/aaw.js" @args }
-```
-
-bash or zsh (`~/.bashrc` or `~/.zshrc`):
-
-```bash
-alias aaw='node .ai-assisted-work/bin/aaw.js'
-```
-
-Both resolve the path from the current directory, so they work in any workspace with AAW
-cloned at `.ai-assisted-work/`. With the npm git dependency (`npm i
-github:dermot-obrien/ai-assisted-work`), use `npx aaw` instead.
-
-`aaw --help` (also `-h`, `help`, or no command) prints the usage. `aaw <command> --help`
-prints the same usage and does nothing else. `aaw --version` (also `-v`) prints the version.
-Set `AAW_DEBUG=1` to see a stack trace with an error.
-
-Every command except `install`, `init` and `check-skills` needs a workspace: the CLI walks up
-from the current directory to the first folder holding `.aaw-config.yaml` or `.git`, and
-reads the config there. With no config it uses `./change/work-items` and
-`./change/initiatives`.
-
-### aaw install
-
-Set up a workspace: write `.aaw-config.yaml`, create the work items folder, install the
-skills, and record the install under `modules`. Safe to run again: it keeps existing values
-and rewrites nothing that has not changed.
+The installer is one file with no dependencies, `bin/skills.mjs`. Run it with Node.js 18 or newer, from a clone of this repository or from a copy kept in the workspace:
 
 ```
-aaw install [--workspace PATH] [--yes] [--tenant NAME] [--mode local-fs|cloud] [--work-items-path PATH]
-aaw install --framework PATH [--workspace PATH] [--yes] [--no-python] [--seed]
+node .ai-assisted-work/bin/skills.mjs <command> [flags]
 ```
 
-| Flag | Default | Effect |
-|------|---------|--------|
-| `--workspace PATH` | the git root above the current directory, or the current directory | Install into that workspace. In a terminal without it, you are asked |
-| `--yes`, `-y`, `--non-interactive` | on when there is no terminal | Ask nothing: take each value from its flag, then the existing config, then the default, and print them on one line |
-| `--tenant NAME` | existing, else `local` | Sets `tenant` |
-| `--mode local-fs\|cloud` | existing, else `local-fs` | Sets `mode`. Anything else exits 2 |
-| `--work-items-path PATH` | existing, else `~/aaw/<tenant>/<repo>/work-items` | Sets `work_items_path`. `~`, `{tenant}` and `{repo}` are expanded when the folder is created; the config keeps what you typed |
-| `--framework PATH` | AAW itself | Install another AAW-family framework from its `framework.manifest.yaml`, without the bootstrap questions |
-| `--no-python` | off | With `--framework`: skip the framework's `tool_setup.python` |
-| `--seed` | off | With `--framework`: run the framework's content seeder |
+| Command | Does |
+|---------|------|
+| `list [--bundle <file\|dir>] [--json]` | The bundle's skills, `●` for those installed in this workspace and `○` for the rest |
+| `install [<name>...] [--bundle <file\|dir>]` | Install the skills named, or every skill in the bundle |
+| `install --repo <url> [--ref <tag>] [--path skills/<name>] [--name <skill>]` | Install one skill from a repository of its own. `--path` defaults to `skills/<name>`, and `--name` to the repository's name |
+| `sync [--locked]` | Install what `.agents/skills.json` declares, record each commit in the lock, and remove any skill it installed that the file no longer lists. `--locked` installs the commits already in the lock, as a session start should |
+| `update [<name>...]` | Fetch each installed skill again, or the ones named, and reinstall it |
+| `check` | `✓` or `✗` per installed skill. Exit 1 when one changed since it was installed or is missing |
+| `remove <name>...` | Remove the installed copies, their `.claude/skills/` links and their lock entries |
+| `help` (or `--help`) | The usage, including the format of `.agents/skills.json` |
 
-What it does to the workspace:
+| Flag or variable | Effect |
+|------------------|--------|
+| `--bundle <file\|dir>` | The bundle to read: a `bundle.json`, or the folder holding one. Default: the `bundle.json` beside the script's repository |
+| `--workspace <dir>` | The workspace to install into. Default: the git root above the current directory, else the current directory |
+| `--from <folder>` | Install from copies on this machine, with no network: a folder of skill folders, or of repository clones |
+| `--copy` | Copy into `.claude/skills/` instead of linking |
+| `--dry-run` | Say what would be installed, and change nothing |
+| `SKILLS_BASE_URL` | Clone from a mirror: each repository comes from `<base>/<repository>.git` |
 
-- `.agents/skills/<name>/` for every skill, read by Codex, Cursor, GitHub Copilot, VS Code
-  and Gemini CLI
-- `.claude/skills/<name>`, linked at the above, only when `.claude/` exists: a symlink, or a
-  directory junction on Windows; a copy if the filesystem refuses both
-- removes the per-tool command shims that installs before 3.0.0 wrote
+Skills go to `.agents/skills/<name>`, linked from `.claude/skills/<name>` when `.claude/` exists (a directory junction on Windows). The lock is `.agents/skills.lock.json`, and `.agents/.skill-sources/` holds the clones; gitignore the clones and commit the lock. The format of `.agents/skills.json` is in [Installing the skills](../../DEPLOYMENT.md#declare-a-workspaces-skills).
 
-Exit 0 on success. With `--framework`, exit 1 when there were warnings (a missing
-dependency, a failed Python install or seeder); each is printed with `⚠`.
-
-`aaw init` is a compatibility alias for `aaw install` without `--framework`.
-
-### aaw check-skills
-
-Report installed skills that no longer match the framework clone they came from.
-
-```
-aaw check-skills [--workspace PATH] [--framework PATH]
-```
-
-| Flag | Default | Effect |
-|------|---------|--------|
-| `--workspace PATH` | the workspace above the current directory | The workspace to check |
-| `--framework PATH` | every framework under `modules` in `.aaw-config.yaml` | Check only that framework clone |
-
-Each skill is reported `ok`, `CHANGED` (with up to ten differing files) or `MISSING`. Only
-skills the framework ships are compared. Exit 1 when anything differs, or when there is
-nothing to check; a framework whose recorded clone is gone is reported as skipped, not as
-drift.
-
-### aaw status
-
-```
-aaw status              every work item and initiative, grouped by initiative
-aaw status WI-NNN       one work item, with its activity and task tree
-aaw status IN-NNN       one initiative, with its member work items
-```
-
-Symbols: `→` in progress, `✓` done or completed, `✗` blocked, `⌛` awaiting a human, `○` anything else. A `progress.yaml` that cannot
-be read is skipped with a message on stderr (see [Troubleshooting](../troubleshooting.md)).
-
-### aaw next-task
-
-```
-aaw next-task [WI-NNN]
-```
-
-Print the next task: the first pending task in the first pending or in-progress activity
-whose dependencies are all completed. With no id it looks across every work item that is not
-`done` or `abandoned`. It does not check locks.
-A human-only task is shown with `Actor: human (agent should mark awaiting_human)`. Prints
-`No claimable task in WI-NNN.` when there is none.
-
-### aaw claim
-
-```
-aaw claim ACTIVITY_ID [--agent ID] [--ttl SECONDS]
-```
-
-| Flag | Default | Effect |
-|------|---------|--------|
-| `--agent ID` | `agent-<random>` | The holder recorded in the lock |
-| `--ttl SECONDS` | `3600` | How long the claim lasts |
-
-Creates `locks/<ACTIVITY_ID>.lock` in the work item's folder with an exclusive create. An
-expired lock is replaced. Exit 1 with `is held by <holder>` when a live lock exists. It does
-not change the activity's status; the skills do that. Mostly for testing and for
-interventions: in normal use `/work progress` claims for itself.
-
-### aaw release
-
-```
-aaw release ACTIVITY_ID [--reason REASON]
-```
-
-Deletes the activity's lock. Refused while the activity is `in_progress`: set a terminal
-status in `progress.yaml` first. `--reason` is accepted and not yet recorded.
-
-### aaw lint
-
-```
-aaw lint
-```
-
-Report duplicate work item or initiative numbers, status, actor and type values outside the
-allowed set, dependencies on unknown activities, and dependency cycles. Prints
-`aaw lint: no issues` and exits 0, or lists each issue and exits 1.
-
-### aaw verify
-
-```
-aaw verify
-```
-
-Check the workspace root, mode and tenant, that the work items folder can be written and
-read (it creates the folder if needed), and that the work items can be listed. Ends with
-`All checks passed.` (exit 0) or `Verification failed.` (exit 1).
-
-### aaw runner start
-
-```
-aaw runner start [--pool POOL] [--interval SECONDS]
-```
-
-| Flag | Default | Effect |
-|------|---------|--------|
-| `--pool POOL` | the tenant | The pool to poll |
-| `--interval SECONDS` | `30` | Seconds between polls |
-
-Polls for claimable activities and prints them until Ctrl-C. It claims nothing: it is the
-skeleton of a headless runner.
-
-### aaw migrate v1
-
-```
-aaw migrate v1 [--dry-run]
-```
-
-Move a version 1 layout (`change/work-items/`, `change/work-items-private/`,
-`change/initiatives/`, `change/initiatives-private/`) into the configured
-`work_items_path` and `initiatives_path`. Private `WIP-NNN` and `INP-NNN` items are
-renumbered into the shared series, and the ids inside their files are rewritten.
-`--dry-run` prints the plan and changes nothing.
+Errors are printed as `skills: <message>`; see [Troubleshooting](../troubleshooting.md#skillsmjs).
 
 ## thread.mjs
 
@@ -280,24 +130,16 @@ Every command that writes also archives, once a day, the branches closed before 
 
 ## Post-install checks
 
-Each skill ships `bin/check.mjs`, which tests the workspace configuration the skill depends
-on. Run it from the workspace root:
+Each skill ships `bin/check.mjs`, which tests the workspace configuration the skill depends on. Run it from the workspace root:
 
 ```
-node .agents/skills/work start/bin/check.mjs
+node .agents/skills/work/bin/check.mjs
+node .agents/skills/thread/bin/check.mjs
 ```
 
-The five `aaw-*` checks are one file, copied into each skill. They check that
-`.aaw-config.yaml` exists, that `work_items_path` (and `initiatives_path` where set) resolve
-to folders, that a plain `deliverables_register` path exists, and that `mode` is valid.
-`thread`'s check looks for git and for a store at `$THREADS_HOME`, or a remote to clone one
-from. Each prints `warning:` lines, one line per problem, then `<skill>: ok` when there are
-no problems. Exit 0 with no problems, 1 with any. `--help` (or `-h`) prints one line and
-exits 0: what the check reads for the `aaw-*` checks, the usage for `thread`'s. Any other
-argument exits 2.
+`work`'s check reads `.aaw-config.yaml` when it is there, and the defaults when it is not. It checks that `work_items_path` and `initiatives_path` resolve to folders and not to files (a missing folder is only a warning, since `work` creates it on first use), that a plain `deliverables_register` path exists, and that `mode`, when set, is valid. `thread`'s check looks for git and for a store at `$THREADS_HOME`, or a remote to clone one from. Each prints `warning:` lines, one line per problem, then `<skill>: ok` when there are no problems. Exit 0 with no problems, 1 with any. `--help` (or `-h`) prints one line and exits 0. Any other argument exits 2.
 
-`aaw install` does not run them yet. To run every skill's check the way an installer
-would, from a workspace with AAW cloned at `.ai-assisted-work/`:
+`skills.mjs` does not run them. To run every skill's check the way an installer would, from a workspace with this repository cloned at `.ai-assisted-work/`:
 
 ```
 node .ai-assisted-work/scripts/validate-bundle.mjs --run-checks . .ai-assisted-work
@@ -305,8 +147,7 @@ node .ai-assisted-work/scripts/validate-bundle.mjs --run-checks . .ai-assisted-w
 
 ## Repository scripts
 
-These live in the AAW repository's `scripts/` and are what CI runs. They need no install
-except `test-work-schema.mjs`, which needs `npm ci` first.
+These live in this repository's `scripts/` and are what CI runs. They need no install except `test-work-schema.mjs`, which needs `npm ci` first.
 
 | Command | Checks | Exit |
 |---------|--------|------|
@@ -314,19 +155,10 @@ except `test-work-schema.mjs`, which needs `npm ci` first.
 | `node scripts/validate-bundle.mjs [bundleDir ...]` | `bundle.json` against `schemas/bundle.schema.json`, and against the skills it lists: names, versions, purls, requires, check files, ontology | 1 on any error |
 | `node scripts/validate-bundle.mjs --run-checks <workspace> [--skills <dir>] [bundleDir]` | Runs each listed skill's post-install check in the workspace, with `SKILL_DIR` set. Skills default to `<workspace>/.agents/skills` | 1 if any check fails |
 | `node scripts/validate-bundle.mjs --instance <file.json> --schema <$id\|file>[#pointer]` | Validates any JSON file against a schema | 1 on errors, 2 on usage |
-| `node scripts/test-work-schema.mjs` | The `progress.yaml` templates against `schemas/work.schema.json`, and cases the schema must refuse | 1 on failure |
-| `node scripts/check-protocol-schema.mjs` | `packages/protocol/src/schema.ts` agrees with the work schema | 1 on disagreement |
+| `node scripts/test-work-schema.mjs` | The `progress.yaml` templates against `skills/work/assets/work.schema.json`, and cases the schema must refuse | 1 on failure |
+| `node --test scripts/test-thread.mjs scripts/test-board.mjs scripts/test-skills.mjs` | The thread script, the board and the installer | 1 on failure |
+| `node scripts/extract-skill.mjs <skill> <out-dir> [--owner <owner>]` | Builds one skill as a repository of its own, with its history, licences, validators, `bundle.json` and CI, and tags it. Pushes nothing. CI's extraction job runs it for each skill | 1 on failure |
 
-`validate-bundle.mjs` also takes `--schemas <dir>` in any form, to load more schemas, and
-`--help`. `validate-skills.mjs` takes `--help`.
+`validate-bundle.mjs` also takes `--schemas <dir>` in any form, to load more schemas, and `--help`. `validate-skills.mjs` takes `--help`.
 
-npm scripts at the repository root:
-
-| Command | Does |
-|---------|------|
-| `npm run build` | Builds every package's `dist/` |
-| `npm test` | The CLI's install tests, against `bin/aaw.js` |
-| `npm run release` | Builds, bundles and publishes through Changesets (see [PUBLISHING.md](../../PUBLISHING.md)) |
-
-In `packages/cli`, `npm run bundle` regenerates `bin/aaw.js`. See
-[CONTRIBUTING.md](../../CONTRIBUTING.md#development-setup) for the build order.
+`npm test` at the repository root runs the work schema test and the three `node --test` suites.

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Test the skills' YAML templates against schemas/work.schema.json, and the schema
+ * Test the skills' YAML templates against skills/work/assets/work.schema.json, and the schema
  * against a few cases it must refuse.
  *
  * A template carries placeholders where an identifier goes (WI-NNN); they are filled
@@ -23,7 +23,7 @@ import { Registry, validate } from "./validate-bundle.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const registry = new Registry();
-const WORK = registry.addFile(path.join(ROOT, "schemas/work.schema.json"));
+const WORK = registry.addFile(path.join(ROOT, "skills/work/assets/work.schema.json"));
 const def = (name) => registry.resolve(`${WORK}#/$defs/${name}`, null);
 
 const fill = (text) => text.replace(/\b(WI|IN|OBJ|KR|MS)-NNN\b/g, "$1-001");

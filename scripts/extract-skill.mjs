@@ -51,7 +51,7 @@ const SKILLS = {
     needs: "nothing to run; its post-install check needs Node.js 18 or newer. It needs no other skill",
     tests: ["test-work-schema.mjs"],
     testDeps: ["yaml"],
-    schemas: ["bundle.schema.json", "work.schema.json"],
+    schemas: ["bundle.schema.json"],
     guide: "docs/skills/work.md",
     commands: null,
     decisions: ["DD-03", "DD-06", "DD-11"],

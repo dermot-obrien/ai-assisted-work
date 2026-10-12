@@ -149,15 +149,7 @@ Details worth knowing:
 
 ### Doing it by hand
 
-The same claim and release are available from the shell, which is useful for testing and
-for clearing up:
-
-```
-node .ai-assisted-work/bin/aaw.js claim WI-004-A2 --agent me
-node .ai-assisted-work/bin/aaw.js release WI-004-A2
-```
-
-See [Commands](../reference/commands.md#aaw-claim).
+A lock is a plain file, so a person can clear one up without a tool: once the activity's status in `progress.yaml` is terminal (`completed`, `blocked`, `skipped` or `abandoned`), delete its `locks/<activity>.lock`. Never delete a live lock on an activity that is `in_progress`; the holder is still working. The lock format is in [assets/locks/](../../skills/work/assets/locks/README.md). The `aaw claim` and `aaw release` commands that did this from the shell were removed in 5.0.0.
 
 ### Inside the skill
 
@@ -218,11 +210,6 @@ It never writes to `progress.yaml`, never claims and never clears a lock.
 
 Symbols: `→` active, `✓` complete, `○` pending, `✗` blocked, `⌛` awaiting a human.
 
-### From the shell
-
-`aaw status`, `aaw status WI-NNN` and `aaw status IN-NNN` give a shorter version of the same
-views. See [Commands](../reference/commands.md#aaw-status).
-
 ### Inside the skill
 
 `references/status-reference.md` holds the status values, activity states, the legend and
@@ -273,12 +260,6 @@ summarises what matters.
 
 An activity with no `produces` on a `schema_version: 3` work item is reported as a planning
 defect.
-
-### From the shell
-
-`aaw next-task [WI-NNN]` gives a quick answer without the context. It does not check locks,
-and it counts only `completed` dependencies. See
-[Commands](../reference/commands.md#aaw-next-task).
 
 ### Related
 

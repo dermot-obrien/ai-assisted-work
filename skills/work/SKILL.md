@@ -5,7 +5,7 @@ license: CC-BY-4.0
 compatibility: Reads .aaw-config.yaml at the workspace root for work_items_path, initiatives_path and the optional deliverables_register; works with their defaults when the file is absent. No runtime dependencies; bin/check.mjs needs Node.js 18 or newer.
 metadata:
   author: dermot-obrien
-  version: "3.0.0"
+  version: "3.1.0"
 ---
 
 # Work
