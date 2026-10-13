@@ -46,6 +46,7 @@ post-install check.
 | [Work classification](concepts/work-classification.md) | The triage classes and why most work is a chore |
 | [Agent boundaries](concepts/agent-boundaries.md), [Scaling limits](concepts/scaling-limits.md) | What agents may do on their own, and how far parallel work goes |
 | [Development work](concepts/development-work.md), [Architecture work](concepts/architecture-work.md) | How the method applies to each kind of work |
+| [Architecture vision](architecture/architecture-vision.md) | How the board, the store, the plan, the watchers and the guardrails fit together, and how they grow |
 | [Agents working together](architecture/agent-coordination-vision.md) | The vision: many agents on many platforms working the same plans, the board, mission control and guardrails |
 | [About](about/index.md) | Vision, design decisions (DD-01 onwards), adoption and roadmap |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Tests, validators and versioning |
