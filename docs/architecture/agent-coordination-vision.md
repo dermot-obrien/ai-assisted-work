@@ -1,6 +1,6 @@
 # Agents working together: the vision
 
-Status: draft for Dermot's review, 13 October 2026. Source: Dermot's vision of 11 October 2026 (the handover for WI-005, thread t-021 under t-33i), WI-002 and WI-003, the board's design decisions DD-12 to DD-16, Life Guide WI-035 and WI-036, and the wave 0 trial of 13 October.
+Status: draft for Dermot's review, 13 October 2026. Source: Dermot's vision of 11 October 2026 (from the "Agent bulletin board coordination" session's handover, thread t-021 under t-33i), WI-002 and WI-003, the board's design decisions DD-12 to DD-16, and the wave 0 trial of 13 October.
 
 ## In one paragraph
 
@@ -45,8 +45,7 @@ This is how agents coordinate on the same plan.
 > Life Guide provides the personal infrastructure, with input channels: a work-context dump (formal work item, epic and story status as CSV), Asana as a "letterbox", Plaud, and so on. The end state is one simple chat interface (web and phone) for all open loops: drop a thought, note or feeling at any time.
 
 - Everything Dermot has to do, at work and in life, reaches the board through input channels, each landing as dumps or as minimal mirrors of the source system for the curator to file.
-- Work and personal content never share a store (Life Guide DEC-032): a separate store holds the work paths, with only minimal fields leaving the work systems.
-- The board is the back end; the front end is one conversation for every open loop (Life Guide WI-036), on the web and the phone, where a thought, a note or a feeling is dropped at any time and comes back as a filed item, an answer or a decision to make.
+- The board is the back end; the front end is one conversation for every open loop, on the web and the phone, where a thought, a note or a feeling is dropped at any time and comes back as a filed item, an answer or a decision to make.
 
 ### 5. Every major agent platform, and the cheapest ones
 
@@ -124,7 +123,7 @@ WI-003:
 | 1 Board | Built (thread 0.14.0, DD-13 to DD-16). Wave 0 with real agents found 13 problems; 12 fixed in thread 0.15.0 (PR #71) |
 | 2 Paths | Built: sources as paths, scoped views; a scope leak in `status` fixed in 0.15.0 |
 | 3 To-do list, curation, claims, merge queue | Built: dumps, curator, claims and leases, the merge queue. Proven in wave 0: real claim races with nothing taken twice, a dead agent's task finished by the next from its notes, every pull request posted ready and none merged by its author. Still to build: publishing a plan's activities onto the board with only those whose dependencies are done offered, and one view per plan |
-| 4 One system, Life Guide | Life Guide WI-035 (board intake, letterbox; DEC-032 accepted) and WI-036 (one conversation for open loops) |
+| 4 One system, Life Guide | Not started here; Life Guide supplies the channels and the chat |
 | 5 Platforms | Claude Code passed wave 0, cloud and local; cloud to cloud round trips of 14 s for a question and 36 s and 79 s for instructions. Seven fact sheets and the matrix written; wave 1 (Cursor, Copilot, Codex, Jules) waits on a trial store and a token limited to it |
 | 6 Mission control | WI-003, scoped |
 | 7 Local store | Built (`threads_remote: local`) |
