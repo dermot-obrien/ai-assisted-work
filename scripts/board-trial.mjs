@@ -3,12 +3,18 @@
  * board-trial — run the cross-platform board trial (WI-002) from evidence in the store.
  *
  *   node scripts/board-trial.mjs check [--source trial] [--store <dir>] [--json]
+ *   node scripts/board-trial.mjs race <thread> [--source trial] [--store <dir>] [--json]
  *
  * Grades the checklist in change/work-items/WI-002-cross-platform-agent-trial/scope.md for
  * every agent that joined the trial's scope, from the board and tree files alone, so a result
  * is what the agent left in the store and never what it says about itself. Checks that the
  * store cannot show (1 and 4, the skill found and the pointer enough; 9, waiting; 12, cost)
  * are left to the person running the trial and printed as such.
+ *
+ * race times a race: the open calls under one thread, taken by agents on different platforms at
+ * once. For each task it reports who took it, from which tool, the minutes from claim to ready and
+ * from claim to done, and the reviewer's score: a post with --ref the pull request whose text
+ * starts "review <n>/5".
  *
  * Zero dependencies; Node 18+. Reads a clone of the store ($THREADS_HOME or ~/.threads, or
  * --store), pulling it first.
@@ -25,8 +31,8 @@ const flag = (name, fallback) => {
   return i < 0 ? fallback : argv[i + 1];
 };
 const cmd = argv[0];
-if (cmd !== "check") {
-  console.log("usage: node scripts/board-trial.mjs check [--source trial] [--store <dir>] [--json]");
+if (cmd !== "check" && cmd !== "race") {
+  console.log("usage: node scripts/board-trial.mjs check|race <thread> [--source trial] [--store <dir>] [--json]");
   process.exit(cmd ? 1 : 0);
 }
 
@@ -114,6 +120,54 @@ const winners = new Map();
 for (const a of agents.values()) for (const k of a.won) {
   const t = taskOf(k) || k;
   winners.set(t, [...(winners.get(t) || []), a.handle]);
+}
+
+if (cmd === "race") race(argv[1]);
+
+/** The race under a thread: its tasks, who won each, how long to ready and done, the review. */
+function race(root) {
+  if (!threads.has(root)) {
+    console.error(`board-trial: no thread ${root} in source ${SOURCE}`);
+    process.exit(1);
+  }
+  const mins = (from, to) => (from && to ? Math.round((Date.parse(to) - Date.parse(from)) / 6e3) / 10 : null);
+  const tasks = [...threads.values()].filter((t) => t.parent === root);
+  const rows = tasks.map((t) => {
+    const call = [...posts.values()].find((p) => p.task === t.id);
+    const keys = [t.id, call?.id].filter(Boolean);
+    const won = board.find((r) => r.type === "claim" && keys.includes(r.key));
+    const who = won?.from || null;
+    const ready = who ? board.find((r) => r.type === "post" && r.kind === "ready" && r.from === who && r.ts >= won.ts) : null;
+    const closed = events.find((e) => e.id === t.id && e.type === "close");
+    const review = ready?.ref ? [...posts.values()].filter((p) => p.ref === ready.ref && /^review\s+\d\/5/i.test(p.text || "")).pop() : null;
+    return {
+      task: t.id,
+      text: t.text,
+      agent: who,
+      tool: who ? agents.get(who)?.tool || null : null,
+      claimed: won?.ts || null,
+      ready: ready?.ts || null,
+      ref: ready?.ref || null,
+      minutesToReady: mins(won?.ts, ready?.ts),
+      minutesToDone: closed?.status === "done" ? mins(won?.ts, closed.ts) : null,
+      score: review ? Number(/(\d)\/5/.exec(review.text)[1]) : null,
+      reviewer: review?.from || null,
+      review: review?.text || null,
+    };
+  });
+  rows.sort((a, b) => (a.minutesToReady ?? Infinity) - (b.minutesToReady ?? Infinity));
+  if (argv.includes("--json")) console.log(JSON.stringify({ source: SOURCE, race: root, tasks: rows }, null, 2));
+  else {
+    console.log(`race ${root} · ${threads.get(root).text} · ${rows.length} task(s)\n`);
+    console.log("tool        agent        claim→ready  claim→done  review  task");
+    for (const r of rows) {
+      const m = (v) => (v == null ? "–" : `${v} min`).padEnd(12);
+      console.log(`${(r.tool || "–").padEnd(12)}${(r.agent || "free").padEnd(13)}${m(r.minutesToReady)} ${m(r.minutesToDone)}${(r.score == null ? "–" : `${r.score}/5`).padEnd(8)}${r.task} ${r.text.slice(0, 50)}`);
+    }
+    const unreviewed = rows.filter((r) => r.ref && r.score == null).map((r) => r.ref);
+    if (unreviewed.length) console.log(`\nnot reviewed yet: ${unreviewed.join(", ")}`);
+  }
+  process.exit(0);
 }
 
 const PASS = "pass", FAIL = "FAIL", NA = "n/a", MANUAL = "by hand", WORKING = "working";

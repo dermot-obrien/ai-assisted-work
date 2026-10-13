@@ -146,3 +146,43 @@ test("trial grader still fails duplicate work and leaves agents that never claim
     f.cleanup();
   }
 });
+
+test("race reports, per task under the race thread, who took it, minutes to ready and done, and the review score", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1", "--tool", "codex", "--source", "trial");
+    f.b.run("board", "start", "--as", "b1", "--tool", "cursor", "--source", "trial");
+    const root = /🧵 (t-[0-9a-z]+)/.exec(f.human.run("open", "Race 1", "--root", "--source", "trial"))[1];
+    const one = f.human.run("board", "post", "Test decline", "--to", "any", "--on", root, "--as", "user", "--source", "trial");
+    const two = f.human.run("board", "post", "Test release", "--to", "any", "--on", root, "--as", "user", "--source", "trial");
+    f.human.run("board", "post", "Test renew", "--to", "any", "--on", root, "--as", "user", "--source", "trial");
+    const t1 = /task (t-[0-9a-z]+)/.exec(one)[1];
+    const t2 = /task (t-[0-9a-z]+)/.exec(two)[1];
+    f.a.run("board", "claim", postId(one), "--as", "a1");
+    f.b.run("board", "claim", postId(two), "--as", "b1");
+    const ref = "dermot-obrien/ai-assisted-work#90";
+    f.a.run("board", "ready", ref, "decline test", "--to", "master:board-trial", "--as", "a1");
+    f.a.run("done", t1, "test in #90");
+    f.human.run("board", "post", "review 4/5: the test fails when the release is removed", "--ref", ref, "--to", "master:board-trial", "--as", "reviewer", "--source", "trial");
+
+    const result = spawnSync(process.execPath, [GRADER, "race", root, "--json", "--store", f.a.store], { cwd: f.root, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr + result.stdout);
+    const { tasks } = JSON.parse(result.stdout);
+    assert.equal(tasks.length, 3);
+    const first = tasks.find((t) => t.task === t1);
+    assert.equal(first.agent, "a1");
+    assert.equal(first.tool, "codex");
+    assert.equal(first.ref, ref);
+    assert.equal(typeof first.minutesToReady, "number");
+    assert.equal(typeof first.minutesToDone, "number");
+    assert.equal(first.score, 4);
+    assert.equal(first.reviewer, "reviewer");
+    const second = tasks.find((t) => t.task === t2);
+    assert.equal(second.agent, "b1");
+    assert.equal(second.minutesToReady, null);
+    assert.equal(second.score, null);
+    assert.equal(tasks.filter((t) => !t.agent).length, 1);
+  } finally {
+    f.cleanup();
+  }
+});

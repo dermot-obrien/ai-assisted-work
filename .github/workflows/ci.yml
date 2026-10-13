@@ -51,6 +51,9 @@ jobs:
       - name: The board's tests pass
         run: node --test scripts/test-board.mjs
 
+      - name: The board's per-command tests pass
+        run: node --test scripts/board-tests/*.test.mjs
+
       - name: The board trial grader's tests pass
         run: node --test scripts/test-board-trial.mjs
 
