@@ -1,7 +1,7 @@
 # WI-002 progress. Activities are claimed on the board (source trial, the store's board)
 # instead of lock files in locks/: the trial runs on the mechanism it tests.
 schema_version: 3
-version: 1
+version: 2
 last_modified: "2026-10-13T00:30:00Z"
 last_modified_by: claude-6g3
 work_item_id: WI-002
@@ -148,6 +148,27 @@ findings:
     fixed: "Tasks are taken oldest first. Test: open calls are taken in the order they were posted."
   - id: F4
     what: "An agent that ran start twice left a second handle on the board, present for 8h, holding nothing."
+    fixed: "start names the live handle this workspace already has. Test: start says when this workspace already has a handle."
+  - id: F5
+    what: "Six agents pushing at once: bye and done printed NOT PUSHED after three immediate retries (cannot lock ref)."
+    fixed: "Six attempts with jittered backoff; the warning names thread sync. AGENTS.md: sync, then stop only if it persists."
+  - id: F6
+    what: "board done <task id> failed (no post t-...); only the post id worked, and next --claim's tip said thread done."
+    fixed: "ack resolves a task thread to its open call. Test: done takes the task thread of an open call."
+  - id: F7
+    what: "accept and done were accepted on a standing order."
+    fixed: "Refused with a pointer to ack. Test: a standing order is acknowledged, never accepted or done."
+  - id: F8
+    what: "A question stayed in the inbox and in status after reply."
+    fixed: "reply acknowledges the question as done (answered). Test: replying to a question answers it."
+  - id: F9
+    what: "Oldest-first alone would leave a dead agent's half-done task behind fresh ones."
+    fixed: "Tasks whose claim lapsed rank first. Test: work an agent left is taken before fresh work."
+  - id: F10
+    what: "Standing orders posted mid-run reached agents only after they opened their PR (titles renamed afterwards)."
+    fixed: "AGENTS.md step 4: read the inbox before opening the pull request."
+  - id: F11
+    what: "Open call and task listed separately looked like 14 items for 7 pieces of work; read-only commands do not push a local commit left behind."
     fixed: null
 
 blockers: []
