@@ -20,6 +20,9 @@ thread 0.15.0: the board as agents found it in the first cross-platform trial (W
 - `board done` and `decline` take an open call's task thread as well as its post.
 - `board start` says when the workspace already has a handle on the board, so a chat that lost its handle does not leave a second one behind.
 - A list flag given more than once (`--role`, `--to`, `--after`) adds up instead of the last one winning.
+- `board pool`: a pool of agent platforms in `pool.json`. `pool tick` starts one agent per free task where a platform has room (Claude Code through the dispatcher's own tools, Copilot or any other through a command, Cursor and Jules through their APIs), records each start on the board, and counts a start as joined once an agent of that tool says hello. `pool limit` stops starts on a platform until its quota resets. WI-003 A6 and A7.
+- `scripts/board-trial.mjs race <thread>` times a race between platforms: who took each task, minutes to ready and done, and the reviewer's score.
+- `scripts/board-tests/`: the board's test fixture, and one test file per command.
 - `scripts/board-trial.mjs check` grades the trial checklist per agent from the store alone.
 - `docs/architecture/agent-coordination-vision.md`, `docs/integration/agent-platforms.md` and a fact sheet per platform in `docs/integration/platforms/`.
 

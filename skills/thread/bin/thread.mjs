@@ -1355,7 +1355,7 @@ if (cmd === "board") {
   // The store's README documents the board for agents without the skill; start commits it with the hello.
   const readme = path.join(STORE, "README.md");
   if ((pos[0] ?? "start") === "start" && !flags.hook && hasCommits() && (!existsSync(readme) || readFileSync(readme, "utf8") !== README)) writeFileSync(readme, README);
-  runBoard(pos, flags, boardHelpers(scope));
+  await runBoard(pos, flags, boardHelpers(scope));
   process.exit(process.exitCode ?? 0);
 }
 if (/^t-[0-9a-z]+$/.test(cmd)) {

@@ -28,6 +28,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { hostname } from "node:os";
 import path from "node:path";
 import { createHash, randomBytes } from "node:crypto";
+import { checkPool, startAgent, varsFor } from "./pool.mjs";
 
 // Leases. An agent's presence, a role and a claim each last this long unless renewed.
 // A claim matches an agent's activity lock in the work skill (one hour).
@@ -708,6 +709,164 @@ function autoPrune() {
   }
 }
 
+
+// ---------------------------------------------------------------- the pool
+
+/**
+ * The pool (WI-003 A6): pool.json in the store says which platforms can be started, how, and how
+ * many may run at once. Nothing waits idle in it: the dispatcher starts an agent when a task is
+ * free and a platform has room, the agent takes one task and stops, and a task whose agent dies
+ * is freed when its claim lapses and started again. pool.json is read from the scope's folder,
+ * then each folder above it, then the store's root.
+ */
+function readPool(scope) {
+  const parts = scope === "all" || scope === "default" ? [] : scope.split("/");
+  for (let i = parts.length; i >= 0; i--) {
+    const dir = i ? H.sourceDir(parts.slice(0, i).join("/")) : H.STORE;
+    const file = path.join(dir, "pool.json");
+    if (!existsSync(file)) continue;
+    let pool;
+    try {
+      pool = JSON.parse(readFileSync(file, "utf8"));
+    } catch (e) {
+      H.die(`${path.relative(H.STORE, file)} is not valid JSON: ${e.message}`);
+    }
+    const problems = checkPool(pool);
+    if (problems.length) H.die(`${path.relative(H.STORE, file)}: ${problems.join("; ")}`);
+    return { pool, file: path.relative(H.STORE, file).split(path.sep).join("/") || "pool.json" };
+  }
+  H.die(`no pool.json for ${scope}: put one in the store (sources/<path>/pool.json or the root). thread board pool help shows the format`);
+}
+
+/**
+ * Each platform's load: agents of its tool now holding work, starts not yet joined (an agent
+ * started but not on the board), and whether a limit stops it. A start counts as joined when an
+ * agent of that tool says hello after it; one not joined within `pickup` minutes is taken as lost.
+ */
+function poolLoad(state, events, pool, now = Date.now()) {
+  const pickup = Number(pool.pickupMinutes ?? 15) * 60e3;
+  const toolOf = (p) => (p.tool || p.name).toLowerCase();
+  const hellos = events.filter((e) => e.type === "hello" && e.tool);
+  return pool.platforms.map((p) => {
+    const mine = (tool) => String(tool || "").toLowerCase().startsWith(toolOf(p));
+    const starts = events.filter((e) => e.type === "start" && e.platform === p.name && e.ok);
+    const recent = starts.filter((e) => now - Date.parse(e.ts) < pickup);
+    const joined = hellos.filter((h) => mine(h.tool) && recent.length && h.ts >= recent[0].ts).length;
+    const pending = Math.max(0, recent.length - joined);
+    const working = state.present.filter((a) => mine(a.hello.tool) && state.holding(a.handle).some((c) => !c.key.startsWith("role:"))).length;
+    const limit = events.filter((e) => e.type === "limit" && e.platform === p.name).pop();
+    const limitedUntil = limit && Date.parse(limit.until) > now ? limit.until : null;
+    const max = Number(p.max ?? 1);
+    return { platform: p, name: p.name, max, working, pending, room: limitedUntil ? 0 : Math.max(0, max - working - pending), limitedUntil, last: starts[starts.length - 1] || null };
+  });
+}
+
+/** Open tasks in the scope that nobody holds: the work the pool starts agents for. */
+const freeTasks = (state, scope) => unclaimedThreads(state, scope).filter((t) => t.kind === "task");
+
+async function startOne(pool, load, who, scope, flags) {
+  const p = load.platform;
+  const v = varsFor(pool, p, scope);
+  if (flags["dry-run"]) {
+    console.log(`would start ${p.name} (${p.starter}) on ${v.repo}@${v.branch}: ${v.prompt}`);
+    return true;
+  }
+  const r = await startAgent(pool, p, scope);
+  write({ type: "start", from: who, platform: p.name, starter: p.starter, ok: r.ok, asked: r.asked || undefined, id: r.id, url: r.url, error: r.error }, homeOf(scope));
+  if (!r.ok) console.log(`✗ ${p.name}: ${r.error}`);
+  else if (r.asked) console.log(`➜ ${p.name}: start it with your own tools, on ${v.repo} branch ${v.branch}, with the prompt:\n    ${v.prompt}`);
+  else console.log(`▶ ${p.name} started${r.id ? ` · ${r.id}` : ""}${r.url ? ` · ${r.url}` : ""}`);
+  return r.ok;
+}
+
+const POOL_HELP = `thread board pool — start agents from a pool of platforms when there is work
+
+  thread board pool [--json]                    each platform: max, working, starting, room; free tasks
+  thread board pool tick [--dry-run] [--limit n] start agents for free tasks, where platforms have room
+  thread board pool start <platform> [--dry-run] start one agent there now
+  thread board pool limit <platform> [--for 5h] ["<why>"]   no starts there until then (its quota ran out)
+
+  pool.json, in the store (sources/<path>/pool.json, or the root for every path):
+  {
+    "repo": "owner/repo", "branch": "base-branch",
+    "prompt": "Go pick up work in {source}. Work from branch {branch} ... Take one task only.",
+    "pickupMinutes": 15,
+    "platforms": [
+      { "name": "claude",  "starter": "ask",     "max": 2, "tool": "claude" },
+      { "name": "copilot", "starter": "command", "max": 2,
+        "run": ["gh", "agent-task", "create", "{prompt}", "--repo", "{repo}", "--base", "{branch}"] },
+      { "name": "cursor",  "starter": "cursor",  "max": 2, "key": "CURSOR_API_KEY" },
+      { "name": "jules",   "starter": "jules",   "max": 1, "key": "JULES_API_KEY" }
+    ]
+  }
+  Platforms are tried in this order. "tool" is what its agents give board start --tool (default
+  the name). Keys come from the environment variable named in "key", never from the file.`;
+
+const poolCommands = {
+  status(pos, flags) {
+    const events = readBoard();
+    const state = replay(events);
+    const scope = viewScope(state, flags);
+    const { pool, file } = readPool(scope);
+    const load = poolLoad(state, events, pool);
+    const tasks = freeTasks(state, scope);
+    if (flags.json) return console.log(JSON.stringify({ file, freeTasks: tasks.map((t) => t.id), platforms: load.map(({ platform, ...l }) => l) }, null, 2));
+    console.log(`pool · ${file} · ${tasks.length} free task(s) in ${scope}\n`);
+    for (const l of load) console.log(`${l.name.padEnd(10)} ${l.platform.starter.padEnd(8)} max ${l.max} · working ${l.working} · starting ${l.pending} · room ${l.room}${l.limitedUntil ? ` · limited ${until(l.limitedUntil)}` : ""}${l.last ? ` · last start ${ago(l.last.ts)}` : ""}`);
+  },
+
+  async tick(pos, flags) {
+    const who = me(flags);
+    const events = readBoard();
+    const state = replay(events);
+    const scope = scopeOf(state, who);
+    const { pool } = readPool(scope);
+    const load = poolLoad(state, events, pool);
+    const starting = load.reduce((n, l) => n + l.pending, 0);
+    let need = Math.max(0, freeTasks(state, scope).length - starting);
+    if (flags.limit !== undefined) need = Math.min(need, Number(flags.limit));
+    if (!need) return console.log(`Nothing to start: ${freeTasks(state, scope).length} free task(s), ${starting} agent(s) starting.`);
+    let started = 0;
+    for (const l of load) {
+      while (need && l.room) {
+        l.room--;
+        if (await startOne(pool, l, who, scope, flags)) {
+          need--;
+          started++;
+        } else break; // a platform that failed to start one is skipped for this tick
+      }
+    }
+    if (!flags["dry-run"] && started) save(`${who} starts ${started} agent(s)`);
+    if (need) console.log(`${need} task(s) still waiting: no platform has room.`);
+  },
+
+  async start(pos, flags) {
+    const who = me(flags);
+    const events = readBoard();
+    const state = replay(events);
+    const scope = scopeOf(state, who);
+    const { pool } = readPool(scope);
+    const l = poolLoad(state, events, pool).find((x) => x.name === pos[0]);
+    if (!l) H.die(`no platform ${pos[0] ?? "(none named)"} in the pool: ${pool.platforms.map((p) => p.name).join(", ")}`);
+    if (l.limitedUntil && !flags.force) H.die(`${l.name} is limited ${until(l.limitedUntil)}; --force starts it anyway`);
+    const ok = await startOne(pool, l, who, scope, flags);
+    if (!flags["dry-run"]) save(`${who} starts ${l.name}`);
+    if (!ok) process.exitCode = 1;
+  },
+
+  limit(pos, flags) {
+    const who = me(flags);
+    const name = pos[0];
+    const state = replay(readBoard());
+    const scope = scopeOf(state, who);
+    const { pool } = readPool(scope);
+    if (!pool.platforms.some((p) => p.name === name)) H.die(`no platform ${name ?? "(none named)"} in the pool`);
+    const ev = write({ type: "limit", from: who, platform: name, until: later(duration(flags.for, "5h")), note: pos.slice(1).join(" ").trim() || undefined }, homeOf(scope));
+    save(`${who} limits ${name}`);
+    console.log(`⏸ ${name}: no starts ${until(ev.until)}`);
+  },
+};
+
 // ---------------------------------------------------------------- commands
 
 const WRITES = new Set(["dump", "file", "ask", "next", "start", "post", "reply", "ready", "ack", "accept", "done", "decline", "merging", "merged", "claim", "release", "role", "retract", "renew", "bye"]);
@@ -1292,6 +1451,13 @@ const commands = {
     process.exitCode = 3;
   },
 
+  pool(pos, flags) {
+    const sub = pos.shift() ?? "status";
+    if (sub === "help") return console.log(POOL_HELP);
+    if (!poolCommands[sub]) H.die(`unknown pool command "${sub}". Try: thread board pool help`);
+    return poolCommands[sub](pos, flags);
+  },
+
   prune(pos, flags) {
     const r = prune(readBoard(), Number(flags.days ?? 7), flags["dry-run"]);
     if (flags["dry-run"]) return console.log(`would archive ${r.moved} settled board file(s)`);
@@ -1337,6 +1503,8 @@ const commands = {
   thread board retract <post>        withdraw a post, such as a standing order
   thread board bye                   leave: presence, roles and claims end
   thread board prune [--days 7] [--dry-run]
+  thread board pool [tick|start <platform>|limit <platform>]   start agents from pool.json when there is
+                                     work (thread board pool help)
 
   Every command that speaks for an agent takes --as <handle>, or $BOARD_AS. --to takes a comma list.
   A scope is a source path: patternode sees patternode/platform and patternode/business too. Claims
@@ -1352,8 +1520,10 @@ export function runBoard(pos, flags, helpers) {
   const cmd = pos.shift() ?? "start";
   if (["help", "-h"].includes(cmd) || flags.help) return commands.help();
   if (!commands[cmd]) H.die(`unknown board command "${cmd}". Try: thread board help`);
-  commands[cmd](pos, flags);
+  // Most commands are synchronous; the pool's starters call out to other services and are not.
+  const done = commands[cmd](pos, flags);
   if (WRITES.has(cmd) && !flags.hook) autoPrune();
+  return done;
 }
 
 /** Live claims on threads, for the tree: thread id -> handle. */

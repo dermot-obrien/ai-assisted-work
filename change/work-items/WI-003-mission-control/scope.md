@@ -4,7 +4,7 @@
 
 A mission control for the board: one view for a daily or weekly review of everything the agents did, which agents are alive, and how much of each platform's allowance was used; a capacity ledger that knows every plan's daily, weekly and rolling windows; a dispatcher that moves work to whichever platform still has capacity; and a warden, always on and needing no agent platform, that notices when an agent has died, takes its work back, notes why, and offers it to another.
 
-Status: scoped, not yet planned. Builds on thread 0.14.0 (DD-13 to DD-16) and on WI-002, which finds out how each platform can be started and what it reports. Guardrails for a swarm of agents are scoped separately (patternode-architecture, `change/planning/agent-guardrails-consolidation.md`); this work provides their enforcement points on the board.
+Status: scoped; A6 and A7 started 13 October 2026 as `thread board pool` (a pool of platforms in `pool.json`, started per free task), after WI-002's race 1 showed that only Claude Code can wait idle, so a pool has to start agents rather than keep them. Builds on thread 0.14.0 (DD-13 to DD-16) and on WI-002, which finds out how each platform can be started and what it reports. Guardrails for a swarm of agents are scoped separately (patternode-architecture, `change/planning/agent-guardrails-consolidation.md`); this work provides their enforcement points on the board.
 
 ## Intent
 

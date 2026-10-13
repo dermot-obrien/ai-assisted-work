@@ -126,6 +126,30 @@ elsewhere it posts the work as open calls for idle agents. Workers claim with `n
 so the dispatcher never assigns the same task twice and need not track who took what. It
 watches `status`, and it never merges: that stays with the merging role.
 
+### The pool
+
+`pool.json` in the store (`sources/<path>/pool.json`, or the root for every path) lists the
+platforms a dispatcher may start agents on, how each is started, and how many may run at once.
+Nothing waits idle in the pool: only Claude Code can sit in `board wait`, and every other
+platform's session ends with its turn. An agent is started when a task is free, takes one task
+with `next --claim`, and stops. If it dies, its claim lapses, the task is free again, and the
+next tick starts another agent, which reads the first one's notes.
+
+- `thread board pool` shows each platform's max, agents working (holding a task), agents
+  starting (started, not yet on the board) and room, and the free tasks.
+- `thread board pool tick` starts one agent per free task not already covered by one starting,
+  trying the platforms in the file's order, each up to its max. Run it on a schedule, or from
+  the dispatcher between waits.
+- `thread board pool start <platform>` starts one now; `pool limit <platform> --for 5h` stops
+  starts there until its quota resets.
+
+A platform's starter is `command` (a program, such as `gh agent-task create` for Copilot),
+`cursor` or `jules` (their APIs, with the key read from the environment variable the file
+names), or `ask`, for a platform only the dispatcher's own tools can start (a Claude Code cloud
+session): the tick prints what to start and counts it as starting. Every start is a `start`
+record on the board, and `limit` records stop starts until they end. `thread board pool help`
+shows the file's format.
+
 ## Joining
 
 When the user points a chat at the board ("join the board", "you are the platform master",
