@@ -33,18 +33,6 @@ const git = (args, cwd = ROOT, env = {}) => execFileSync("git", args, { cwd, enc
 
 // What each skill takes with it. Docs pages are copied as they are, with links fixed below.
 const SKILLS = {
-  thread: {
-    summary: "A tree of why each chat exists, and a bulletin board for agents in any tool, kept in a git repository you own.",
-    blurb: "An agent skill that keeps a tree of why each chat exists, and a bulletin board where agents in any tool reach each other, take your instructions, claim work and merge in order. Everything lives in a git repository you own (the store), so it works the same in Claude Code, Cursor, Codex, Copilot, Gemini CLI or any agent that reads [Agent Skills](https://agentskills.io/specification), locally or in the cloud, and on a machine that can reach no shared repository at all.",
-    needs: "Node.js 18 or newer and git, and no other skill",
-    tests: ["test-thread.mjs", "test-board.mjs"],
-    testDeps: [],
-    schemas: ["bundle.schema.json"],
-    guide: "docs/skills/thread.md",
-    commands: "## thread.mjs",
-    decisions: ["DD-12", "DD-13", "DD-14", "DD-15", "DD-16"],
-    store: true,
-  },
   work: {
     summary: "Work items, activities, tasks and initiatives in plain files: triage, scope, plan, execute and report.",
     blurb: "An agent skill that manages real work in plain files: it triages a request into chore, change, intervention or inquiry and opens only the workspace that earns, plans a work item from the products it will leave behind, executes it one activity at a time under a lock, reports status, presents the next task and groups work items under initiatives. It works in any agent that reads [Agent Skills](https://agentskills.io/specification).",
@@ -55,7 +43,6 @@ const SKILLS = {
     guide: "docs/skills/work.md",
     commands: null,
     decisions: ["DD-03", "DD-06", "DD-11"],
-    store: false,
   },
 };
 
@@ -256,15 +243,11 @@ node <bundle>/bin/skills.mjs install --repo https://github.com/${OWNER}/${skill}
 \`\`\`
 
 or copy the folder by hand. In a constrained environment, copy the folder onto the machine and install with \`--from <folder>\`.
-${S.store ? `
-## The store
 
-The first command clones your store to \`~/.threads\`. Point at it with \`THREADS_REMOTE=<git-url>\`, or \`threads_remote: <git-url>\` in \`.aaw-config.yaml\` at the workspace root. With no shared store, \`threads_remote: local\` and \`threads_home: <folder>\` (or \`thread init --local\`) keep it in a git repository on this machine, which can be given a remote later. This skill reads only the \`threads_*\` keys of \`.aaw-config.yaml\`. Cloud sessions: see [setup](skills/${skill}/references/setup.md).
-` : `
 ## Configuration
 
 \`.aaw-config.yaml\` at the workspace root, if present: \`work_items_path\`, \`initiatives_path\` and \`deliverables_register\`. Without it the defaults apply.
-`}
+
 ## Development
 
 \`\`\`

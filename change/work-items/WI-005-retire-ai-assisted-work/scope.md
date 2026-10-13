@@ -4,7 +4,7 @@
 
 Retire AI-Assisted Work as a framework once nothing installs through it. AI-Assisted Architecture and AI-Assisted Research first become standalone skills that install with `bin/skills.mjs` and refer only to other skills, never to a framework. Then the `aaw` command, its install engine and the framework manifest are removed, which leaves this repository holding two skills (`thread` and `work`) and a bundle manifest. Last, those two skills get their permanent home and the old name is archived.
 
-Status: planned, 11 October 2026. Follows [WI-004](../WI-004-skills-extracted-aaw-a-bundle/scope.md), which made `thread` and `work` standalone and turned this repository into a bundle.
+Status: planned, 11 October 2026. Changed 13 October 2026: Dermot moved `thread` to a private repository of its own, so this repository keeps `work` and the installer, and step 4 concerns those two only; the decision below that `thread` and `work` share one bundle no longer holds. Follows [WI-004](../WI-004-skills-extracted-aaw-a-bundle/scope.md), which made `thread` and `work` standalone and turned this repository into a bundle.
 
 ## Intent
 

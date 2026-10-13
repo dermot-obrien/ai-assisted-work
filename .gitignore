@@ -1,6 +1,5 @@
 # Agent configs that contributors might run against this repo locally:
 # don't pollute the repo with one author's tool setup.
-CLAUDE.md
 /.cursor/
 /.claude/
 

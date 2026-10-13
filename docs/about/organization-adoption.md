@@ -8,7 +8,7 @@ To try the skills on a single project:
 
 ```bash
 git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
-node .ai-assisted-work/bin/skills.mjs install work thread
+node .ai-assisted-work/bin/skills.mjs install work
 ```
 
 Requires Node.js 18 or newer and git. It works where npm registry access is restricted, because the installer is one file with no dependencies, and where GitHub is out of reach too: copy the skill folders onto the machine and install with `--from <folder>`, or point `SKILLS_BASE_URL` at a mirror. Cross-platform on Mac, Linux, and Windows.

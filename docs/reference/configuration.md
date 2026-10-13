@@ -1,8 +1,8 @@
 # Configuration reference
 
-Everything that configures the skills, where it is read, and what wins when two sources disagree.
+Everything that configures the `work` skill, where it is read, and what wins when two sources disagree.
 
-The skills declare no `inputs.toml` bindings. A workspace configures them in one optional file, `.aaw-config.yaml` at the workspace root, plus a few environment variables for `thread`. The installer, `bin/skills.mjs`, has its own flags and files, described in [Commands](commands.md#skillsmjs) and [Installing the skills](../../DEPLOYMENT.md).
+The skill declares no `inputs.toml` bindings. A workspace configures it in one optional file, `.aaw-config.yaml` at the workspace root. The installer, `bin/skills.mjs`, has its own flags and files, described in [Commands](commands.md#skillsmjs) and [Installing the skills](../../DEPLOYMENT.md).
 
 - [.aaw-config.yaml](#aaw-configyaml)
 - [Environment variables](#environment-variables)
@@ -18,13 +18,11 @@ Plain YAML, written by hand and meant to be committed. Nothing writes it: until 
 tenant: demo
 work_items_path: ~/aaw/{tenant}/{repo}/work-items
 initiatives_path: ~/aaw/{tenant}/{repo}/initiatives
-threads_remote: https://github.com/you/threads.git
 ```
 
 ### Where it is found
 
-- The `work` skill and its post-install check read it at the workspace root.
-- `thread` reads `threads_remote`, `threads_home`, `threads_source` and `threads_project` from the nearest `.aaw-config.yaml` above the current directory.
+The `work` skill and its post-install check read it at the workspace root.
 
 ### Path expansion
 
@@ -125,44 +123,6 @@ deliverables_register:
 
 The skill ships no register and no schema for one.
 
-#### threads_remote
-
-| | |
-|---|---|
-| Type | git URL |
-| Default | unset |
-| Read by | `thread`, and its post-install check |
-| Precedence | the URL given to `thread init <url>`, then `$THREADS_REMOTE`, then this key |
-| Example | `threads_remote: https://github.com/you/threads.git` |
-
-Where `thread` clones its store from the first time it runs on a machine. Committing it in
-the workspace is what lets a cloud session find the store without environment variables.
-
-#### threads_source
-
-| | |
-|---|---|
-| Type | a source name: one lowercase word or hyphenated words |
-| Default | unset: the store's default source (`events/` at its root) |
-| Read by | `thread` |
-| Precedence | `--source` on any command, then `$THREAD_SOURCE`, then this key |
-| Example | `threads_source: image-and-video` |
-
-Which tree in the store this workspace reads and writes (DD-12). A named source lives under
-`sources/<name>/` in the store and starts with its first write.
-
-#### threads_project
-
-| | |
-|---|---|
-| Type | a thread id or a project title |
-| Default | unset: root threads are not grouped |
-| Read by | `thread` |
-| Precedence | `--project` on `thread open`, then `$THREAD_PROJECT`, then this key |
-| Example | `threads_project: t-9c3` |
-
-The project a root thread opened in this workspace goes under.
-
 #### modules and endpoint
 
 `aaw install` wrote a `modules` section, a registry of the frameworks it installed, up to 4.0.0; `endpoint` was reserved for the cloud coordinator. Nothing reads either now, and both can be deleted. `bin/skills.mjs` records what it installed in `.agents/skills.lock.json` instead.
@@ -171,22 +131,7 @@ The project a root thread opened in this workspace goes under.
 
 | Variable | Used by | Default | Effect |
 |----------|---------|---------|--------|
-| `THREADS_HOME` | `thread` | `~/.threads` | Where the thread store is cloned and read |
-| `THREADS_REMOTE` | `thread` | unset | Remote to clone the store from on first use. Beats `threads_remote` |
-| `THREAD_PROJECT` | `thread` | unset | Default project for root threads. Beats `threads_project` |
-| `THREAD_SOURCE` | `thread` | unset | The store's source this workspace uses (DD-12). Beats `threads_source` |
-| `THREADS_AUTO_PRUNE` | `thread` | on | `0` turns off the daily archive of closed threads, and of settled board files |
-| `THREADS_HOME`, or `threads_home` in `.aaw-config.yaml` (relative to that file) | `thread` | `~/.threads` | Where the store is. The variable wins |
-| `threads_remote: local` (or `none`) | `thread` | unset | A store with no remote: created on first use, commits and never pushes |
-| `BOARD_AS` | `thread board` | unset | This chat's board handle, in place of `--as` |
-| `BOARD_AUTO_PRUNE` | `thread board` | on | `0` turns off the board's daily archive only |
-| `THREAD_CTX` | `thread` | the git repository's folder name | The project context recorded on a new thread. `--ctx` beats it |
-| `THREAD_TOOL` | `thread` | unset | The tool recorded on a new thread. `--tool` beats it |
 | `SKILL_DIR` | post-install checks | the check's own skill folder | The installed skill's folder, set by whoever runs the check |
-
-To set one for every new terminal: `setx THREADS_REMOTE <url>` on Windows (then open a new
-terminal), or `export THREADS_REMOTE=<url>` in your shell profile on macOS and Linux. For
-Claude Code in one repository, put it in `.claude/settings.json` under `"env"`.
 
 ## SKILL.md front matter
 
@@ -203,11 +148,11 @@ every key below.
 | `metadata` | map of strings | no | Values are strings, so versions are quoted | `version: "2.5.0"` |
 | `allowed-tools` | string | no | Tools the skill may use without asking, where the agent supports it | |
 
-This repository's skills set these `metadata` keys: `author`, and `version`, which must equal the skill's `version` in `bundle.json`. A `framework` key, left from before 5.0.0, is not read. A skill that needs another sets `x-skill-requires`. A value holding `: ` must be quoted, or strict YAML readers reject the file.
+This repository's skill sets these `metadata` keys: `author`, and `version`, which must equal the skill's `version` in `bundle.json`. A `framework` key, left from before 5.0.0, is not read. A skill that needs another sets `x-skill-requires`. A value holding `: ` must be quoted, or strict YAML readers reject the file.
 
 ## bundle.json
 
-The bundle manifest at the repository root lists the skills this repository ships, with a
+The bundle manifest at the repository root lists the skills this repository ships (now only `work`), with a
 version, a package URL and a post-install check for each, and the ontology module. Every key
 is described in [Skill bundles](../integration/skill-bundles.md#bundlejson), and the schema
 is `schemas/bundle.schema.json`.

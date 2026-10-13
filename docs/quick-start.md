@@ -1,6 +1,6 @@
 # Quick start
 
-From nothing to a work item your agent can report on, plan and work, in about ten minutes. You make a throwaway workspace, install the `work` and `thread` skills into it, add one small work item by hand, and hand it to your agent. The last step, optionally, tries the `thread` skill against a scratch store.
+From nothing to a work item your agent can report on, plan and work, in about ten minutes. You make a throwaway workspace, install the `work` skill into it, add one small work item by hand, and hand it to your agent.
 
 Every command below works in PowerShell and in bash. Where the two differ, both are shown.
 
@@ -35,22 +35,21 @@ If you use Claude Code, also run `mkdir .claude` now. Claude Code reads skills o
 git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
 ```
 
-The clone holds the skills and the installer, `bin/skills.mjs`, a single file that needs no `npm install`.
+The clone holds the `work` skill and the installer, `bin/skills.mjs`, a single file that needs no `npm install`.
 
 ## 3. Install
 
 ```
-node .ai-assisted-work/bin/skills.mjs install work thread
+node .ai-assisted-work/bin/skills.mjs install work
 ```
 
 You should see:
 
 ```
 installed work 3.1.0 from bundle ai-assisted-work (.claude/skills linked)
-installed thread 0.14.0 from bundle ai-assisted-work (.claude/skills linked)
 ```
 
-without the part in brackets when there is no `.claude/`. The workspace now has the skills in `.agents/skills/`, and `.agents/skills.lock.json`, which records where they came from.
+without the part in brackets when there is no `.claude/`. The workspace now has the skill in `.agents/skills/`, and `.agents/skills.lock.json`, which records where they came from.
 
 ## 4. Check the install
 
@@ -59,7 +58,7 @@ node .ai-assisted-work/bin/skills.mjs check
 node .agents/skills/work/bin/check.mjs
 ```
 
-`check` lists each skill with `✓`. The work skill's own check warns that there is no `.aaw-config.yaml`, so the defaults apply, and that `./change/work-items/` does not exist yet, then ends with `work: ok`. That is right for a new workspace: the file is optional, and `work` creates the folder on first use. To keep work items somewhere else, such as outside the repository, set `work_items_path` in `.aaw-config.yaml` ([Configuration](reference/configuration.md#work_items_path)).
+`check` lists the skill with `✓`. The work skill's own check warns that there is no `.aaw-config.yaml`, so the defaults apply, and that `./change/work-items/` does not exist yet, then ends with `work: ok`. That is right for a new workspace: the file is optional, and `work` creates the folder on first use. To keep work items somewhere else, such as outside the repository, set `work_items_path` in `.aaw-config.yaml` ([Configuration](reference/configuration.md#work_items_path)).
 
 ## 5. Add a tiny work item
 
@@ -157,7 +156,7 @@ The full template, with every field explained, is [skills/work/assets/templates/
 
 ## 6. Hand it to your agent
 
-Open the `skills-demo` folder in your agent and start a new chat, so it loads the skills. Type `/` and `work` and `thread` should be listed. Then try:
+Open the `skills-demo` folder in your agent and start a new chat, so it loads the skill. Type `/` and `work` should be listed. Then try:
 
 ```
 /work status WI-001
@@ -180,51 +179,11 @@ Then triage something new:
 /work start write a one-page guide to our release process
 ```
 
-Most requests are chores and get no work item at all; one that earns a work item gets scoped with you, planned from the products it will leave behind, and written to `change/work-items/WI-002-...`. If the skills are not listed, see [Troubleshooting](troubleshooting.md#a-skill-is-not-listed-in-the-agent).
+Most requests are chores and get no work item at all; one that earns a work item gets scoped with you, planned from the products it will leave behind, and written to `change/work-items/WI-002-...`. If the skill is not listed, see [Troubleshooting](troubleshooting.md#a-skill-is-not-listed-in-the-agent).
 
-## 8. Optional: try `thread`
+## 8. Clean up
 
-`thread` keeps a tree of why each chat exists, in a git repository you own. Try it against a
-scratch store beside the workspace, so your real one is untouched.
-
-PowerShell:
-
-```powershell
-git init --bare ../threads-store.git
-$env:THREADS_HOME = "$PWD/../threads"
-$env:THREADS_REMOTE = "$PWD/../threads-store.git"
-```
-
-bash:
-
-```bash
-git init --bare ../threads-store.git
-export THREADS_HOME="$PWD/../threads"
-export THREADS_REMOTE="$PWD/../threads-store.git"
-```
-
-Then, in either shell:
-
-```
-node .agents/skills/thread/bin/thread.mjs open "Write the onboarding checklist" --tool cli
-node .agents/skills/thread/bin/thread.mjs tree
-```
-
-You should see an anchor line such as `🧵 t-pcj · Write the onboarding checklist · skills-demo`,
-then the tree with that thread open (`●`). The id is random, so yours differs. Close the
-thread with your id and a one-line resolution:
-
-```
-node .agents/skills/thread/bin/thread.mjs done t-pcj "Checklist drafted in change/work-items/WI-001"
-```
-
-In an agent you type `/thread <what you are doing>` instead, and the agent runs these for
-you. For real use, point `THREADS_REMOTE` at a private repository of your own; see
-[the thread skill](skills/thread.md).
-
-## 9. Clean up
-
-Close the terminal (the `THREADS_*` variables go with it), then delete the `skills-demo` folder, and `threads` and `threads-store.git` beside it if you made them. Nothing was written anywhere else.
+Delete the `skills-demo` folder. Nothing was written anywhere else.
 
 ## Next
 

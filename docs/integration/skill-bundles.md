@@ -76,7 +76,7 @@ node scripts/validate-bundle.mjs --run-checks <workspace> .   # run each skill's
 
 The validator has no dependencies. A bundle in another repository keeps a copy of it and of the schema under `scripts/vendor/`, which says which commit of this repository it was taken from.
 
-This repository's `bundle.json` lists only the skills it holds, `thread` and `work`. A skill that lives in a repository of its own is listed in that repository's bundle, and a workspace declares it by repository in `.agents/skills.json` ([Installing the skills](../../DEPLOYMENT.md#declare-a-workspaces-skills)).
+This repository's `bundle.json` lists only the skill it holds, `work`. A skill that lives in a repository of its own is listed in that repository's bundle, and a workspace declares it by repository in `.agents/skills.json` ([Installing the skills](../../DEPLOYMENT.md#declare-a-workspaces-skills)).
 
 ## The work ontology
 

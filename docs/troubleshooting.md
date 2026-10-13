@@ -7,14 +7,13 @@ words of your message.
 - [In the agent](#in-the-agent)
 - [skills.mjs](#skillsmjs)
 - [Post-install checks](#post-install-checks)
-- [thread](#thread)
 - [Validators](#validators)
 
 ## In the agent
 
 ### A skill is not listed in the agent
 
-Type `/`: `work` and `thread` should be listed. If they are not:
+Type `/`: `work` should be listed. If it is not:
 
 1. Start a new chat, or restart the agent. Most agents read the skill list when a session
    starts.
@@ -88,60 +87,6 @@ The checks (`node .agents/skills/<skill>/bin/check.mjs`, or all of them through
 | `mode <mode> is not local-fs or cloud.` | Fix `mode` |
 | `usage: check.mjs   (run from the workspace root; takes no arguments)` | Exit 2. The check takes no arguments |
 | `Node.js <version> is too old: this check needs 18 or newer.` | Exit 2. Upgrade Node |
-| `<store>: no thread store yet, and no remote to clone one from.` | `thread`: set `THREADS_REMOTE` or `threads_remote` (below) |
-| `warning: <store>: no thread store yet; thread clones <url> on first use.` | `thread`: fine; the first command clones it |
-| `<store>: the thread store is not a git clone.` | Move the folder aside, or point `THREADS_HOME` at a clone |
-| `<store>: the thread store is a file, not a folder.` | Move the file aside, or point `THREADS_HOME` at another folder |
-| `git: not found on the PATH. Install git; thread keeps its store in a git clone.` | `thread`: install git, then open a new terminal |
-
-## thread
-
-### `thread: no threads store at <path>, and no remote configured to clone it from.`
-
-Create an empty private repository to hold your threads, then point at it in one of these
-ways (the message lists them too): `setx THREADS_REMOTE <url>` on Windows and open a new
-terminal, `export THREADS_REMOTE=<url>` in your shell profile elsewhere, `threads_remote:
-<url>` in `.aaw-config.yaml`, or once with `thread init <url>`.
-
-### `thread: could not clone <url>:`
-
-Followed by git's own message. Usually the URL is wrong or you have no access; in a cloud
-session, the session needs credentials for that repository (see
-[the thread skill](skills/thread.md#cloud-sessions)). Set `THREADS_HOME` to an absolute
-path: a relative one is taken from your home folder when cloning.
-
-### `thread: NOT PUSHED — recorded locally only.`
-
-The remote could not be reached, or you cannot push to it. The event is kept and goes up
-with the next command that succeeds, or `thread sync`. In a cloud session, unpushed events
-are lost when the container ends, so fix access first.
-
-### `thread: a resolution is required: thread done <id> "..."`
-
-`done`, `park` and `drop` need a one-line resolution: what was decided or delivered, or why
-it stopped.
-
-### `thread: no thread <id>`, `thread: which thread? pass its id, e.g. t-4k2`
-
-The id is wrong or missing. `thread tree --all` lists every id.
-
-### `thread: unknown command "<command>". Try: thread help`
-
-See [Commands](reference/commands.md#threadmjs).
-
-### Other `thread:` messages
-
-| Message | Fix |
-|---------|-----|
-| `a kind is one lowercase word, such as feature or bug` | Use one lowercase word |
-| `more than one project is called "<name>": <ids>; use its id` | Pass the id instead of the name |
-| `no project "<name>". Start it with: thread project "<name>"` | Create the project first |
-| `<id> is not a project (its kind is <kind>)` | `thread kind <id> project` makes it one |
-| `can't move a thread under its own branch` | Choose a parent outside the thread's subtree |
-| `move where? --parent <id> or --root` | Add one of them |
-| `--days takes a number` | For example `thread prune --days 7` |
-| `<id> is already called that` | Nothing to change |
-| `skipping unreadable event <file>` | A file in the store is damaged; never edit the store by hand. Restore it from git in the store |
 
 ## Validators
 

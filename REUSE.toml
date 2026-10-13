@@ -60,7 +60,6 @@ path = [
   "LICENSE",
   "package.json",
   "package-lock.json",
-  ".claude/settings.json",
 ]
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Dermot O'Brien"

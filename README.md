@@ -1,20 +1,19 @@
 # AI Assisted Work
 
-[![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-6.0.0-blue.svg)](CHANGELOG.md)
 [![Licence: CC BY 4.0](https://img.shields.io/badge/content-CC%20BY%204.0-blue.svg)](LICENSES/CC-BY-4.0.txt)
 [![Licence: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSES/Apache-2.0.txt)
 [![REUSE 3.3](https://img.shields.io/badge/REUSE-3.3-lightgrey.svg)](https://reuse.software/spec-3.3/)
 
-AI-Assisted Work is two standalone [Agent Skills](https://agentskills.io), `work` and `thread`, and a zero-dependency installer for standalone skills, [`bin/skills.mjs`](bin/skills.mjs). Each skill installs on its own, depends on no other, and works in any agent that reads the format, including in a constrained environment with no npm registry and no access to personal repositories. [`bundle.json`](bundle.json) lists the two skills.
+AI-Assisted Work is one standalone [Agent Skill](https://agentskills.io), `work`, and a zero-dependency installer for standalone skills, [`bin/skills.mjs`](bin/skills.mjs). The skill installs on its own, depends on no other, and works in any agent that reads the format, including in a constrained environment with no npm registry and no access to personal repositories. [`bundle.json`](bundle.json) lists it. The `thread` skill moved to its own repository on 13 October 2026.
 
 Until version 4.0.0 this repository was a framework: an `aaw` command, an install engine that other frameworks installed through, and packages. That is gone in 5.0.0. A workspace that still needs `aaw install` pins the [`v4.0.0`](https://github.com/dermot-obrien/ai-assisted-work/tree/v4.0.0) tag.
 
-## The skills
+## The skill
 
 | Skill | Version | Does |
 |-------|---------|------|
-| [`work`](docs/skills/work.md) | 3.0.0 | Work items, activities, tasks and initiatives in plain files: [`/work start`](docs/skills/work.md#start-work-start) triages and plans, [`/work progress`](docs/skills/work.md#progress-work-progress) executes under a lock, [`/work status`](docs/skills/work.md#status-work-status), [`/work next`](docs/skills/work.md#next-work-next), [`/work initiative`](docs/skills/work.md#initiative-work-initiative) |
-| [`thread`](docs/skills/thread.md) | 0.14.0 | A tree of why each chat exists, and a bulletin board for agents in any tool, in a git repository you own or a local one |
+| [`work`](docs/skills/work.md) | 3.1.1 | Work items, activities, tasks and initiatives in plain files: [`/work start`](docs/skills/work.md#start-work-start) triages and plans, [`/work progress`](docs/skills/work.md#progress-work-progress) executes under a lock, [`/work status`](docs/skills/work.md#status-work-status), [`/work next`](docs/skills/work.md#next-work-next), [`/work initiative`](docs/skills/work.md#initiative-work-initiative) |
 
 Skills that were first published here live in repositories of their own and are not listed in `bundle.json`: `markdown-deck` ([markdown-deck](https://github.com/dermot-obrien/markdown-deck)), `model` ([diagram-model](https://github.com/dermot-obrien/diagram-model)), `pattern`, `use-case` and `cross-reference` ([architecture-pattern](https://github.com/dermot-obrien/architecture-pattern)) and `quarter-planning` ([delivery-planning](https://github.com/dermot-obrien/delivery-planning)). A workspace declares them by repository, as below.
 
@@ -25,7 +24,7 @@ Node.js 18 or newer, and git for skills from other repositories. Nothing else, a
 ```
 git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
 node .ai-assisted-work/bin/skills.mjs list                  # the skills, ● for those installed here
-node .ai-assisted-work/bin/skills.mjs install work thread   # the ones you want, or none named for all
+node .ai-assisted-work/bin/skills.mjs install work          # the ones you want, or none named for all
 node .ai-assisted-work/bin/skills.mjs check                 # ✓ or ✗ per installed skill
 ```
 
@@ -36,7 +35,7 @@ A workspace that installs the same skills every session declares them in a commi
 ```json
 {
   "sources": [
-    { "bundle": "https://github.com/dermot-obrien/ai-assisted-work.git", "ref": "main", "skills": ["work", "thread"] },
+    { "bundle": "https://github.com/dermot-obrien/ai-assisted-work.git", "ref": "main", "skills": ["work"] },
     { "repo": "https://github.com/dermot-obrien/markdown-deck.git", "ref": "markdown-deck--v0.6.8", "name": "markdown-deck", "path": "skills/markdown-deck" }
   ]
 }
@@ -58,7 +57,7 @@ Then open `demo` in your agent, start a new chat and type:
 /work start write a one-page guide to our release process
 ```
 
-The [quick start](docs/quick-start.md) goes further: a small work item you write by hand and hand to your agent, and a first thread.
+The [quick start](docs/quick-start.md) goes further: a small work item you write by hand and hand to your agent.
 
 The work hierarchy is initiative, work item, activity, task. A work item is either a `workstream` (a durable subject that may never end) or an `epic` (a slice that lands within one planning period, three months at most). An agile team can read epic, story and task. Planning is product-based, after PRINCE2: every activity names the product it advances.
 
@@ -74,7 +73,7 @@ Inspired by the [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD), whi
 | [Installing in each agent](docs/integration/index.md) | Where each agent looks, user-level installs, hooks, customising |
 | [Skills](docs/skills/index.md) | A page per skill |
 | [Configuration](docs/reference/configuration.md) | Every `.aaw-config.yaml` key and environment variable |
-| [Commands](docs/reference/commands.md) | `skills.mjs`, `thread.mjs`, the post-install checks and the repository scripts |
+| [Commands](docs/reference/commands.md) | `skills.mjs`, the post-install checks and the repository scripts |
 | [Troubleshooting](docs/troubleshooting.md) | Keyed to the messages the tools print |
 | [Examples](docs/examples.md) | Worked examples and templates |
 | [All documentation](docs/index.md) | Including background, design decisions and the roadmap |
@@ -114,4 +113,4 @@ If you use AI-Assisted Work, attribution is appreciated:
 
 ---
 
-*AI-Assisted Work: the work and thread skills, and an installer for standalone skills*.
+*AI-Assisted Work: the work skill, and an installer for standalone skills*.

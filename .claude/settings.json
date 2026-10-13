@@ -1,7 +1,0 @@
-{
-  "hooks": {
-    "SessionStart": [
-      { "hooks": [{ "type": "command", "command": "node .claude/skills/thread/bin/thread.mjs board start --hook" }] }
-    ]
-  }
-}

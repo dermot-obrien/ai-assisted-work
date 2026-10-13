@@ -40,7 +40,7 @@ AI-Assisted Work holds the domain-agnostic work model. Domain-specific bundles o
 │   ┌──────────────────────────────────────────────────────────────────────────┐ │
 │   │                        AI-Assisted Work                                  │ │
 │   │                                                                          │ │
-│   │   work and thread skills  │  Common Templates  │  Work ontology          │ │
+│   │   work skill and installer  │  Common Templates  │  Work ontology        │ │
 │   │                                                                          │ │
 │   │   (Domain-agnostic work model; each skill installs on its own)           │ │
 │   └──────────────────────────────────────────────────────────────────────────┘ │

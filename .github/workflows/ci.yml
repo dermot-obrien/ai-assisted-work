@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, claude/bulletin-board-agent-collab-tmzxc5]
+    branches: [main]
 
 jobs:
   build:
@@ -45,15 +45,6 @@ jobs:
       - name: Validate bundle.json against the bundle schema and the skills
         run: node scripts/validate-bundle.mjs .
 
-      - name: The thread script's tests pass
-        run: node --test scripts/test-thread.mjs
-
-      - name: The board's tests pass
-        run: node --test scripts/test-board.mjs
-
-      - name: The board trial grader's tests pass
-        run: node --test scripts/test-board-trial.mjs
-
       - name: The skills installer's tests pass
         run: node --test scripts/test-skills.mjs
 
@@ -65,14 +56,11 @@ jobs:
       - name: Check the installed skills resolve
         run: |
           node "$GITHUB_WORKSPACE/scripts/validate-skills.mjs" /tmp/ws/.agents/skills
-          for s in /tmp/ws/.claude/skills/work /tmp/ws/.claude/skills/thread; do
+          for s in /tmp/ws/.claude/skills/work; do
             test -f "$s/SKILL.md" || { echo "::error::$s does not resolve"; exit 1; }
           done
 
       - name: Each skill's post-install check passes in the fresh workspace
-        env:
-          THREADS_HOME: /tmp/threads
-          THREADS_REMOTE: https://example.invalid/threads.git
         run: node scripts/validate-bundle.mjs --run-checks /tmp/ws .
 
       - name: A misconfigured workspace fails the checks
@@ -140,10 +128,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Extract thread and work, then validate each
+      - name: Extract work, then validate it
         run: |
           git config --global user.name ci && git config --global user.email ci@localhost
-          for s in thread work; do
+          for s in work; do
             node scripts/extract-skill.mjs "$s" "/tmp/extract/$s"
             (cd "/tmp/extract/$s" && node scripts/validate-skills.mjs skills && node scripts/validate-bundle.mjs .)
           done
