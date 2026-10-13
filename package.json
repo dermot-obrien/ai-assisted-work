@@ -1,6 +1,6 @@
 {
   "name": "ai-assisted-work",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "AI-Assisted Work: the work and thread Agent Skills, and bin/skills.mjs, the installer for standalone skills. This file only holds the test dependency.",
   "private": true,
   "type": "module",

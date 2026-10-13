@@ -3,7 +3,7 @@
 Keep your thinking untangled across chats, projects, agents and machines with a throwaway
 tree of intents. Each chat belongs to one thread; a tangent becomes a child; finished threads
 close with a one-line resolution. A bulletin board in the same store lets agents in any tool
-reach each other and take your instructions. Version 0.14.0. Source:
+reach each other and take your instructions. Version 0.15.0. Source:
 [skills/thread/](../../skills/thread/SKILL.md).
 
 `thread` does not need the `work` skill. It needs Node.js 18 or newer, git, and a git repository you own to hold the tree (the store).
