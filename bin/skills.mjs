@@ -25,6 +25,11 @@ import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rm
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Every git call here names its repository (cwd or -C). Variables that point git at another
+// repository would override that and act on the wrong one, such as the agent's own checkout
+// when a platform's shell sets GIT_DIR, so they are dropped before anything runs.
+for (const v of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_PREFIX"]) delete process.env[v];
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 const die = (msg, code = 1) => {

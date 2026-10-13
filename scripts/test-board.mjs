@@ -17,6 +17,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+// The repository these tests run in must never be touched: drop variables that would point
+// git at it whatever -C says (a platform's shell may set GIT_DIR).
+for (const v of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_PREFIX"]) delete process.env[v];
+
 const SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "skills", "thread", "bin", "thread.mjs");
 
 function fixture() {
@@ -616,6 +620,24 @@ test("work an agent left (its claim lapsed) is taken before fresh work, with its
     assert.match(f.b.run("board", "next", "--claim", "--as", "next1"), new RegExp(`next1 took ${second}[\\s\\S]*dead started this and left it`));
     assert.match(f.b.run("show", second), /STOPPED HERE/);
     assert.ok(first);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("GIT_DIR pointing at another repository leaves that repository alone", () => {
+  const f = fixture();
+  try {
+    const canary = path.join(f.root, "canary");
+    execFileSync("git", ["init", "--quiet", "--initial-branch=main", canary]);
+    execFileSync("git", ["-C", canary, "commit", "--quiet", "--allow-empty", "-m", "c1"], { env: { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" } });
+    const head = execFileSync("git", ["-C", canary, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    const env = { ...process.env, THREADS_HOME: f.a.store, THREADS_REMOTE: f.remote, GIT_DIR: path.join(canary, ".git"), GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" };
+    const r = spawnSync(process.execPath, [SCRIPT, "board", "start", "--as", "a1"], { cwd: f.root, env, encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(execFileSync("git", ["-C", canary, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), head, "the canary's history is unchanged");
+    assert.equal(execFileSync("git", ["-C", canary, "status", "--porcelain"], { encoding: "utf8" }).trim(), "", "the canary's work tree is clean");
+    assert.match(execFileSync("git", ["-C", f.a.store, "log", "--oneline", "-1"], { encoding: "utf8" }), /a1 joins/, "the write went to the store");
   } finally {
     f.cleanup();
   }

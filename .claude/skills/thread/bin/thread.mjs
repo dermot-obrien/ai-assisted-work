@@ -29,6 +29,11 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { holders, postsOn, releaseOnClose, runBoard } from "./board.mjs";
 
+// Every git call here names its repository (cwd or -C). Variables that point git at another
+// repository would override that and act on the wrong one, such as the agent's own checkout
+// when a platform's shell sets GIT_DIR, so they are dropped before anything runs.
+for (const v of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_PREFIX"]) delete process.env[v];
+
 // STORE is the git clone. HOME is the selected source's folder inside it: the store's root
 // for the default source, sources/<name>/ for a named one. It is set once, in main.
 const STORE = storeHome();
