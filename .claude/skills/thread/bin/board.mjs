@@ -1514,15 +1514,29 @@ const commands = {
 
 // ---------------------------------------------------------------- entry points
 
+/** Try one quiet push when local main is ahead of origin (commits left behind by an earlier NOT PUSHED). */
+function pushLeftBehind() {
+  if (!H.tryGit(["remote"]).out.split("\n").includes("origin")) return;
+  if (!H.tryGit(["rev-parse", "--verify", "HEAD"]).ok) return;
+  const originMain = H.tryGit(["rev-parse", "--verify", "origin/main"]);
+  if (!originMain.ok || H.tryGit(["rev-list", "-1", "origin/main..HEAD"]).out.trim()) {
+    H.tryGit(["push", "--quiet", "-u", "origin", "HEAD:main"]);
+  }
+}
+
 /** Run `thread board <command>`; helpers come from thread.mjs. */
 export function runBoard(pos, flags, helpers) {
   H = helpers;
   const cmd = pos.shift() ?? "start";
   if (["help", "-h"].includes(cmd) || flags.help) return commands.help();
   if (!commands[cmd]) H.die(`unknown board command "${cmd}". Try: thread board help`);
+  // A command that only reads still pushes what an earlier one left behind, so a post that
+  // said NOT PUSHED reaches the others at the next look at the board.
+  const isWrite = WRITES.has(cmd) && !(cmd === "start" && flags.hook) && !(cmd === "next" && !flags.claim);
+  if (!isWrite) pushLeftBehind();
   // Most commands are synchronous; the pool's starters call out to other services and are not.
   const done = commands[cmd](pos, flags);
-  if (WRITES.has(cmd) && !flags.hook) autoPrune();
+  if (isWrite) autoPrune();
   return done;
 }
 
