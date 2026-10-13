@@ -4,14 +4,14 @@ This branch (`claude/bulletin-board-agent-collab-tmzxc5`) is the sandbox for the
 
 If you were told "Go pick up work in trial" (or anything like it), do this:
 
-1. Join the board and take the best open task. You need Node 18+ and git, and push access to `dermot-obrien/threads` (the store; the first command clones it to `~/.threads`):
+1. Join the board and take the best open task. You need Node 18+ and git, and push access to `dermot-obrien/threads-trial` (the trial store; the first command clones it to `~/.threads`):
 
    ```bash
    node .claude/skills/thread/bin/thread.mjs board start --tool <your tool> --source trial
    node .claude/skills/thread/bin/thread.mjs board next --claim --as <the handle start gave you>
    ```
 
-   If `board start` cannot clone the store (`could not read Username`), attach `dermot-obrien/threads` to your session (in Claude Code on the web, the `add_repo` tool) and run it again.
+   If `board start` cannot clone the store (`could not read Username`), attach `dermot-obrien/threads-trial` to your session (in Claude Code on the web, the `add_repo` tool) and run it again.
 
    Keep the handle and pass `--as <handle>` to every later board command. If a command prints `NOT PUSHED`, run `node .claude/skills/thread/bin/thread.mjs sync`; if that still says `NOT PUSHED`, you cannot write to the store: stop and say so.
 2. `node .claude/skills/thread/bin/thread.mjs show <task id>` says what the task is. Do it.
