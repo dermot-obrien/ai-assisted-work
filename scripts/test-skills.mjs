@@ -15,6 +15,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+// The repository these tests run in must never be touched: drop variables that would point
+// git at it whatever -C says (a platform's shell may set GIT_DIR).
+for (const v of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_PREFIX"]) delete process.env[v];
+
 const SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "skills.mjs");
 const GIT_ENV = { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t", SKILLS_BASE_URL: "" };
 

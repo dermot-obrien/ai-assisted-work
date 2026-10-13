@@ -29,6 +29,11 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { holders, postsOn, releaseOnClose, runBoard } from "./board.mjs";
 
+// Every git call here names its repository (cwd or -C). Variables that point git at another
+// repository would override that and act on the wrong one, such as the agent's own checkout
+// when a platform's shell sets GIT_DIR, so they are dropped before anything runs.
+for (const v of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_PREFIX"]) delete process.env[v];
+
 // STORE is the git clone. HOME is the selected source's folder inside it: the store's root
 // for the default source, sources/<name>/ for a named one. It is set once, in main.
 const STORE = storeHome();
@@ -42,6 +47,8 @@ const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
+// Flags that take a comma list: given more than once, the values add up instead of the last winning.
+const LIST_FLAGS = new Set(["role", "to", "after"]);
 const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources", "take", "hook", "for-user", "release", "claim", "list", "more", "local"]);
 
 function parseArgs(argv) {
@@ -53,7 +60,7 @@ function parseArgs(argv) {
       const key = a.slice(2);
       const next = argv[i + 1];
       if (!BOOLEAN_FLAGS.has(key) && next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
+        flags[key] = LIST_FLAGS.has(key) && typeof flags[key] === "string" ? `${flags[key]},${next}` : next;
         i++;
       } else flags[key] = true;
     } else pos.push(a);
@@ -302,13 +309,16 @@ function commitAndPush(message) {
   if (tryGit(["diff", "--cached", "--quiet"]).ok) return true;
   git(["commit", "--quiet", "-m", message]);
   if (!hasRemote()) return true;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    // Many agents push to one store at once. After the first refusal, wait a little, longer each
+    // time and different for each agent, so the next attempt does not meet the same race.
+    if (attempt) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250 * 2 ** attempt + Math.floor(Math.random() * 500));
     const r = tryGit(["push", "--quiet", "-u", "origin", "HEAD:main"]);
     if (r.ok) return true;
     // Someone else pushed first. Events are new files, so a rebase cannot conflict.
     if (!pull()) break;
   }
-  warn("NOT PUSHED — recorded locally only. It will go up with the next successful thread command.");
+  warn("NOT PUSHED: recorded locally only. `thread sync` pushes it; any later command that writes does too.");
   return false;
 }
 

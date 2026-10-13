@@ -1,0 +1,245 @@
+# WI-002 progress. Activities are claimed on the board (source trial, the store's board)
+# instead of lock files in locks/: the trial runs on the mechanism it tests.
+schema_version: 3
+version: 2
+last_modified: "2026-10-13T00:30:00Z"
+last_modified_by: claude-6g3
+work_item_id: WI-002
+title: "Cross-platform agent trial: the board and threads on every major agent platform"
+type: development
+status: in_progress
+work_item_level: epic
+planning_period: "2026-Q4"
+created: "2026-10-11T00:00:00Z"
+updated: "2026-10-13T00:30:00Z"
+coordination:
+  claims: board               # activities are claimed with `thread board claim WI-002-A<n>`
+  store_source: trial
+  thread: t-8yb               # the trial's root thread in the store
+  merging_role: master:board-trial
+
+deliverables:
+  - id: WI-002-D1
+    name: "Platform fact sheets, one per platform"
+    depends_on: ["WI-002-D2"]
+    quality_criteria: |
+      Every claim cites the vendor's own page with the date read; unknowns say so.
+    approver: Dermot
+    state: in_review
+    path: "docs/integration/platforms/"
+  - id: WI-002-D2
+    name: "Sandbox and trial harness"
+    depends_on: []
+    quality_criteria: |
+      check grades checks 2, 3, 5, 6, 7, 8 and 11 per agent from the store alone; the rest
+      are printed as checked by hand.
+    approver: Dermot
+    state: drafted
+    path: "scripts/board-trial.mjs"
+  - id: WI-002-D3
+    name: "The pointer for workspaces (AGENTS.md, CLAUDE.md, setup reference)"
+    depends_on: ["WI-002-D1"]
+    quality_criteria: |
+      One line starts an agent; the rules (claim first, never merge) are in it.
+    approver: Dermot
+    state: drafted
+    path: "AGENTS.md"
+  - id: WI-002-D4
+    name: "Compatibility matrix"
+    depends_on: ["WI-002-D1", "WI-002-D3"]
+    quality_criteria: |
+      One row per platform tried, each cell from check output or marked not tried.
+    approver: Dermot
+    state: planned
+    path: "docs/integration/agent-platforms.md"
+  - id: WI-002-D5
+    name: "Board and skill fixes the trial turns up, with tests"
+    depends_on: []
+    quality_criteria: |
+      Each fix has a test in scripts/test-board.mjs or test-thread.mjs.
+    approver: Dermot
+    state: drafted
+  - id: WI-002-D6
+    name: "Private results note with prices and the recommended line-up"
+    depends_on: ["WI-002-D4"]
+    quality_criteria: |
+      Dated; prices from vendor pages.
+    approver: Dermot
+    state: planned
+
+activities:
+  - id: WI-002-A1
+    title: "Platform fact sheets from vendor pages"
+    produces: WI-002-D1
+    status: completed
+    completed_at: "2026-10-13T05:00:00Z"
+    actor: agent
+    depends_on: ["WI-002-A2"]
+    notes: "Done by the wave 0 trial agents as open calls t-uox, t-4n5, t-pm6, t-jfl, t-ttz, t-7oy, t-ecq."
+  - id: WI-002-A2
+    title: "Sandbox, harness, seed"
+    produces: WI-002-D2
+    status: completed
+    actor: agent
+    depends_on: []
+    completed_by: claude-6g3
+    completed_at: "2026-10-13T00:15:00Z"
+    notes: |
+      Repository creation is refused to this session's GitHub integration (403), so the store
+      is source trial in dermot-obrien/threads and the workspace is this branch. A stray push of
+      trial/base (one commit, the same sandbox files) could not be deleted from here.
+  - id: WI-002-A3
+    title: "Pointer text and setup reference"
+    produces: WI-002-D3
+    status: in_progress
+    actor: agent
+    depends_on: ["WI-002-A1"]
+  - id: WI-002-A4a
+    title: "Wave 0: Claude Code cloud sessions and local CLI"
+    produces: WI-002-D4
+    status: in_progress
+    actor: agent
+    depends_on: ["WI-002-A2"]
+  - id: WI-002-A4b
+    title: "Wave 1: Cursor, Codex, Copilot, Jules"
+    produces: WI-002-D4
+    status: pending
+    actor: human
+    depends_on: ["WI-002-A3"]
+  - id: WI-002-A5
+    title: "Concurrent and handoff runs"
+    produces: WI-002-D4
+    status: pending
+    actor: agent
+    depends_on: ["WI-002-A4a"]
+  - id: WI-002-A6
+    title: "Fix what broke"
+    produces: WI-002-D5
+    status: in_progress
+    actor: agent
+    depends_on: ["WI-002-A4a"]
+  - id: WI-002-A7
+    title: "A week of real work across platforms"
+    produces: WI-002-D6
+    status: pending
+    actor: human
+    depends_on: ["WI-002-A4b", "WI-002-A6"]
+  - id: WI-002-A8
+    title: "Wave 2 platforms"
+    produces: WI-002-D4
+    status: pending
+    actor: human
+    depends_on: ["WI-002-A6"]
+  - id: WI-002-A9
+    title: "Publish the matrix and setup notes; write the private results note"
+    produces: WI-002-D4
+    status: pending
+    actor: agent
+    depends_on: ["WI-002-A7", "WI-002-A8"]
+
+findings:
+  - id: F1
+    what: "A repeated --role (or --to, --after) kept only the last value; start took one role of three."
+    fixed: "thread.mjs parseArgs: list flags add up. Test: --role given more than once."
+  - id: F2
+    what: "board status at one scope listed merge queues from every source (trial showed master:me)."
+    fixed: "status filters queues by the ready note's source. Test: status shows only the merge queues ... in its scope."
+  - id: F3
+    what: "next --claim took the newest open call first, so a dispatcher's posting order ran backwards."
+    fixed: "Tasks are taken oldest first. Test: open calls are taken in the order they were posted."
+  - id: F4
+    what: "An agent that ran start twice left a second handle on the board, present for 8h, holding nothing."
+    fixed: "start names the live handle this workspace already has. Test: start says when this workspace already has a handle."
+  - id: F5
+    what: "Six agents pushing at once: bye and done printed NOT PUSHED after three immediate retries (cannot lock ref)."
+    fixed: "Six attempts with jittered backoff; the warning names thread sync. AGENTS.md: sync, then stop only if it persists."
+  - id: F6
+    what: "board done <task id> failed (no post t-...); only the post id worked, and next --claim's tip said thread done."
+    fixed: "ack resolves a task thread to its open call. Test: done takes the task thread of an open call."
+  - id: F7
+    what: "accept and done were accepted on a standing order."
+    fixed: "Refused with a pointer to ack. Test: a standing order is acknowledged, never accepted or done."
+  - id: F8
+    what: "A question stayed in the inbox and in status after reply."
+    fixed: "reply acknowledges the question as done (answered). Test: replying to a question answers it."
+  - id: F9
+    what: "Oldest-first alone would leave a dead agent's half-done task behind fresh ones."
+    fixed: "Tasks whose claim lapsed rank first. Test: work an agent left is taken before fresh work."
+  - id: F10
+    what: "Standing orders posted mid-run reached agents only after they opened their PR (titles renamed afterwards)."
+    fixed: "AGENTS.md step 4: read the inbox before opening the pull request."
+  - id: F11
+    what: "Open call and task listed separately looked like 14 items for 7 pieces of work; read-only commands do not push a local commit left behind."
+    fixed: null
+
+blockers: []
+artifacts:
+  scope: "./scope.md"
+  plan: "./plan.md"
+
+# Wave 0 results so far (2026-10-13). Cloud = Claude Code on the web sessions started by
+# create_session; local = Claude Code subagents with their own store clones.
+wave0:
+  fact_sheets_by_agents: {cursor: "#69 cloud", copilot: "#68 local, after handoff", devin: "#67 local", jules: "#66 cloud", gemini-cli: "#65 cloud", openhands: "#64 local, merged", codex: "#70 cloud"}
+  checks:
+    "3 store pushed": "pass, cloud and local; a cloud session attaches the store itself (add_repo) when start cannot clone it"
+    "4 pointer enough": "pass: 'Go pick up work in trial.' was the whole prompt for cloud agents A, B and C"
+    "6 messages": "pass: instructions, questions and a standing order mid-run were accepted, answered, followed"
+    "7 no double claim": "pass: a real race (claude-49g lost t-ttz to claude-ltm) and took the next task"
+    "8 ready, not merged": "pass: every agent posted ready and none merged"
+    "9 waiting": "pass in the cloud: background board wait woke both sessions (6 wakes), after F12"
+    "11 handoff": "pass: local L3 took the task local H1 left (claim lapsed) and built on its notes"
+  cloud_to_cloud_messaging:
+    lead: session_01DjJysqrGZMsP6xJhdDWgWn
+    worker: session_017rmJEs4mf3BWGxeaVKC5ma
+    round_trips: {question_answered: "14s", instruction_done: "36s", stop_done: "79s"}
+    send_message_in_child_sessions: "available (send_message and list_sessions), so the board is the record and send_message a doorbell"
+  cost_usd: {cloud_agent_c: 2.20, cloud_lead: 0.85, cloud_worker: 0.79}
+  findings_after_F11:
+    - id: F12
+      what: "board wait returned at once while anything was unread (an unacknowledged standing order), so a loop of waits spun; it never woke on an acknowledgement of the chat's own post."
+      fixed: "wait wakes only on what arrives after it starts, including acks of the chat's posts. Tests: wait returns when something new arrives ...; wait wakes the sender when its instruction is done."
+    - id: F13
+      what: "next --claim gave no reason for taking abandoned work first."
+      fixed: "It names the agent that left it and says to read its notes. Test extended."
+
+# Wave 1 (2026-10-13), store dermot-obrien/threads-trial
+wave1:
+  cursor:
+    handle: cursor-jg2
+    task: t-05p
+    pr: "#72, merged"
+    checks: {"1": pass, "2": pass, "3": pass, "4": pass, "5": pass, "6": "pass (instruction done, question answered)", "7": pass, "8": "pass (ready posted, base right, not merged)", "9": "no: background wait does not wake the chat (its own answer)"}
+    notes: "Hung on installing dependencies when the task said npm test; fine once told to run the node --test suites. Found the GIT_DIR bug (F14)."
+  copilot:
+    handle: copilot-gun
+    task: t-2lw
+    pr: "#73, draft"
+    checks: {"1": pass, "2": pass, "3": "pass (the skill's push went through; the agent never runs git push itself)", "4": pass, "5": pass, "6": "pass (question answered; title instruction declined with a reason)", "7": pass, "8": "partial: right base, never merged, but no board ready (draft, no CI) and it cannot rename its PR", "9": "not tested"}
+    notes: "Started from the gh CLI after the repository could not be picked in the web UI. Needed a process-local safe.bareRepository allowance to run the tests (F15). CI on its PR waits for a person to approve the workflow run."
+  copilot_merge: "#73 merged from git by master:board-trial (GitHub's stacked-PR rule blocked the button while the sandbox branch heads draft #71)"
+  codex:
+    handle: codex-67o
+    task: t-9e1
+    pr: "#75, merged"
+    checks: {"1": "pass, with the branch named in the prompt", "3": "pass once the ChatGPT Codex Connector covered the store; THREADS_REMOTE was never used", "4": "partial: the task could not be started on a chosen branch", "5": pass, "6": "pass (asked master:board-trial a design question; did the instruction; answered the question)", "7": pass, "8": "pass (opened its own PR into the right base, posted ready, did not merge)", "9": "inbox at turn boundaries"}
+    notes: "Better than forecast on check 8. Found a real flaw in the grader (losers of a race graded n/a) and fixed it after asking."
+findings_wave1:
+  - id: F14
+    what: "A shell that sets GIT_DIR made git -C act on the agent's own checkout; a test detached it (Cursor)."
+    fixed: "thread.mjs, skills.mjs and the tests drop the variables that point git at a repository; canary test."
+  - id: F15
+    what: "The tests' bare local remotes fail where git has safe.bareRepository=explicit (Copilot)."
+    fixed: null
+  - id: F16
+    what: "A platform that cannot rename its PR or that opens it as a draft without CI cannot finish the ready step; the merging role posted ready for it."
+    fixed: null
+  - id: F17
+    what: "On Codex cloud the platform's own GitHub credential is used for github.com, so a token in THREADS_REMOTE was refused until the connector app covered the store."
+    fixed: "Setup notes (#73) say to install the connector on the store."
+  - id: F18
+    what: "GitHub blocks merging trial PRs because the sandbox branch is the head of draft #71 (stacked PRs)."
+    fixed: "Merged from git for now; move the sandbox off the #71 branch after wave 1."
+  - id: F19
+    what: "Codex's task could not be started on a chosen branch, so the one-line pointer needed the branch added."
+    fixed: null
