@@ -159,10 +159,10 @@ function race(root) {
   if (argv.includes("--json")) console.log(JSON.stringify({ source: SOURCE, race: root, tasks: rows }, null, 2));
   else {
     console.log(`race ${root} · ${threads.get(root).text} · ${rows.length} task(s)\n`);
-    console.log("tool        agent        claim→ready  claim→done  review  task");
+    console.log(`${"tool".padEnd(17)}${"agent".padEnd(13)}claim→ready  claim→done  review  task`);
     for (const r of rows) {
       const m = (v) => (v == null ? "–" : `${v} min`).padEnd(12);
-      console.log(`${(r.tool || "–").padEnd(12)}${(r.agent || "free").padEnd(13)}${m(r.minutesToReady)} ${m(r.minutesToDone)}${(r.score == null ? "–" : `${r.score}/5`).padEnd(8)}${r.task} ${r.text.slice(0, 50)}`);
+      console.log(`${(r.tool || "–").padEnd(16)} ${(r.agent || "free").padEnd(13)}${m(r.minutesToReady)} ${m(r.minutesToDone)}${(r.score == null ? "–" : `${r.score}/5`).padEnd(8)}${r.task} ${r.text.slice(0, 50)}`);
     }
     const unreviewed = rows.filter((r) => r.ref && r.score == null).map((r) => r.ref);
     if (unreviewed.length) console.log(`\nnot reviewed yet: ${unreviewed.join(", ")}`);
