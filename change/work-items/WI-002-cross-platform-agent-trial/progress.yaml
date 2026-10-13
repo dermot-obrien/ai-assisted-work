@@ -268,4 +268,5 @@ race1:
   results:
     claude: {task: decline, pr: "#79", claim_to_ready: "2.0 min", review: "5/5", merged: d4b410b}
     copilot: {task: release, pr: "#78", claim_to_ready: "2.8 min", review: "4/5 (two behaviours in one test)", merged: bf8faed, note: "posted ready itself; draft got no CI without a person's approval"}
-    cursor: {task: renew, handle: cursor-xk6}
+    cursor: {task: renew, pr: "#80", claim_to_ready: "25.1 min", review: "5/5", merged: 4fa7d30, note: "checked its own tests by breaking board.mjs two ways; most of the time was test runs"}
+  paused: "2026-10-13 10:20 at Dermot's request; bye, sent and role still open for Codex and Jules or the pool"
