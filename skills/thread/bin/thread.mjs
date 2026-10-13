@@ -42,6 +42,8 @@ const MARK = { open: "●", parked: "‖", done: "✓", dropped: "✗" };
 
 // ---------------------------------------------------------------- arguments
 
+// Flags that take a comma list: given more than once, the values add up instead of the last winning.
+const LIST_FLAGS = new Set(["role", "to", "after"]);
 const BOOLEAN_FLAGS = new Set(["root", "all", "mermaid", "json", "help", "dry-run", "all-sources", "take", "hook", "for-user", "release", "claim", "list", "more", "local"]);
 
 function parseArgs(argv) {
@@ -53,7 +55,7 @@ function parseArgs(argv) {
       const key = a.slice(2);
       const next = argv[i + 1];
       if (!BOOLEAN_FLAGS.has(key) && next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
+        flags[key] = LIST_FLAGS.has(key) && typeof flags[key] === "string" ? `${flags[key]},${next}` : next;
         i++;
       } else flags[key] = true;
     } else pos.push(a);
