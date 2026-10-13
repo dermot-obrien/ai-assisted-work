@@ -25,7 +25,7 @@ deliverables:
     quality_criteria: |
       Every claim cites the vendor's own page with the date read; unknowns say so.
     approver: Dermot
-    state: planned
+    state: in_review
     path: "docs/integration/platforms/"
   - id: WI-002-D2
     name: "Sandbox and trial harness"
@@ -71,7 +71,8 @@ activities:
   - id: WI-002-A1
     title: "Platform fact sheets from vendor pages"
     produces: WI-002-D1
-    status: in_progress
+    status: completed
+    completed_at: "2026-10-13T05:00:00Z"
     actor: agent
     depends_on: ["WI-002-A2"]
     notes: "Done by the wave 0 trial agents as open calls t-uox, t-4n5, t-pm6, t-jfl, t-ttz, t-7oy, t-ecq."
@@ -179,7 +180,7 @@ artifacts:
 # Wave 0 results so far (2026-10-13). Cloud = Claude Code on the web sessions started by
 # create_session; local = Claude Code subagents with their own store clones.
 wave0:
-  fact_sheets_by_agents: {cursor: "#69 cloud", copilot: "#68 local, after handoff", devin: "#67 local", jules: "#66 cloud", gemini-cli: "#65 cloud", openhands: "#64 local, merged", codex: "open"}
+  fact_sheets_by_agents: {cursor: "#69 cloud", copilot: "#68 local, after handoff", devin: "#67 local", jules: "#66 cloud", gemini-cli: "#65 cloud", openhands: "#64 local, merged", codex: "#70 cloud"}
   checks:
     "3 store pushed": "pass, cloud and local; a cloud session attaches the store itself (add_repo) when start cannot clone it"
     "4 pointer enough": "pass: 'Go pick up work in trial.' was the whole prompt for cloud agents A, B and C"
