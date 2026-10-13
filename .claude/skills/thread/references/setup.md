@@ -63,6 +63,46 @@ check these in order and fix what's missing.
    an agent starts, so start a new agent after adding one.
 5. **Start the agent on a branch that has the skill,** type `/thread`, and do the check below.
 
+**GitHub Copilot coding agent:**
+
+1. **Store access:** Set an Agents secret named `THREADS_REMOTE` to a fine-grained token URL
+   limited to the store repository (Contents: read and write). The agent's built-in token is
+   limited to the code repository. Add `github.com` to the repository firewall allowlist if
+   needed. Setup steps can clone the store before the agent starts, but whether a script run
+   by the agent can push to it is unknown: Copilot documents that the agent cannot run `git push`
+   directly.
+2. **Instructions:** Copilot reads `.github/copilot-instructions.md`, path-specific
+   `.github/instructions/*.instructions.md`, and the nearest `AGENTS.md`; it can instead use
+   a root `CLAUDE.md` or `GEMINI.md`. Skills are supported in `.github/skills/`, `.claude/skills/`
+   and `.agents/skills/`, though the docs do not confirm each path. This repository's `AGENTS.md`
+   points to the thread command.
+3. **Known gaps:** A task works on one repository, and the documented push restriction leaves
+   writes to a separate store uncertain. There is no documented wake-up for background commands.
+
+**OpenAI Codex Cloud:**
+
+1. **Store access:** Include the store as a repository in the cloud environment, or configure
+   `THREADS_REMOTE` with a fine-grained token limited to the store. The variable is visible to
+   the task. A network secret may keep the raw token out of the task, but whether it works with
+   Git's authentication header is unknown. Allow network access to GitHub.
+2. **Instructions:** Codex reads `AGENTS.md`; it does not read `CLAUDE.md` by default. It finds
+   skills in `.agents/skills/`, not `.claude/skills/`; this repository's `AGENTS.md` points to
+   the thread command.
+3. **Known gaps:** Whether a cloud task can push to a second repository is unknown. Cloud tasks
+   have no documented background-command wake-up, and the PR flow and base branch may require
+   a human follow-up.
+
+**Google Jules:**
+
+1. **Store access:** Jules tasks use one connected repository. Configure the repository's
+   `THREADS_REMOTE` environment variable with a fine-grained token limited to the store; whether
+   Jules masks this variable from the task is unknown.
+2. **Instructions:** Jules reads root `AGENTS.md`. Its documentation does not confirm support
+   for `CLAUDE.md` or agent skills, so use the `AGENTS.md` pointer to the thread command.
+3. **Known gaps:** Access and push to a separate store repository are unknown, as is whether
+   the token is hidden from the task. There is no documented background-command wake-up, and
+   the pull request base branch is unknown.
+
 **Fallback for either tool:** set `THREADS_REMOTE` as an environment variable or secret. If
 the session can't get write access to the store, use a fine-grained token limited to that
 repo (Contents: read and write):
