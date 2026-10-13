@@ -224,6 +224,19 @@ wave1:
     pr: "#75, merged"
     checks: {"1": "pass, with the branch named in the prompt", "3": "pass once the ChatGPT Codex Connector covered the store; THREADS_REMOTE was never used", "4": "partial: the task could not be started on a chosen branch", "5": pass, "6": "pass (asked master:board-trial a design question; did the instruction; answered the question)", "7": pass, "8": "pass (opened its own PR into the right base, posted ready, did not merge)", "9": "inbox at turn boundaries"}
     notes: "Better than forecast on check 8. Found a real flaw in the grader (losers of a race graded n/a) and fixed it after asking."
+  jules:
+    handle: jules-9jf
+    task: t-ea6
+    pr: "not published yet: branch jules/push-left-behind-board-cmd; Jules keeps work inside its environment until the user clicks Publish PR"
+    timing: "claim 08:13:58, branch posted 08:28:39 (about 15 min); free plan, Gemini 2.5 Pro"
+    checks: {"1": "pass, with the branch named in the prompt", "3": "pass with the token in THREADS_REMOTE", "4": "partial: no branch picker", "5": pass, "6": "pass (question answered; instruction marked seen, and followed: trial(jules) title)", "7": pass, "8": "partial: posted its branch for the merging role, as AGENTS.md says when the PR opens late; a person publishes the PR"}
+  claude_cloud:
+    handle: claude-2xf
+    task: t-7ot
+    pr: "#76"
+    timing: "session created 08:29:21, joined 08:29:38, claimed 08:29:42, ready 08:33:30 (3 min 48 s, code change with docs and a test)"
+    checks: {"1": pass, "2": pass, "3": "pass with the session's own GitHub access (store attached with add_repo); THREADS_REMOTE unset", "4": pass, "5": pass, "6": "pass (instruction accepted and done; question answered)", "7": pass, "8": "pass (own PR, right base, ready posted, not merged)", "9": "pass in wave 0 (background board wait wakes it)"}
+  timings_claim_to_ready: {claude: "3m48s, code+docs+test", copilot: "3m32s, docs (could not post ready)", cursor: "10m16s, docs (dependency hang)", codex: "10m53s, test+grader fix (one question round trip)", jules: "about 14m41s, code+test (branch only)"}
 findings_wave1:
   - id: F14
     what: "A shell that sets GIT_DIR made git -C act on the agent's own checkout; a test detached it (Cursor)."
