@@ -256,3 +256,16 @@ findings_wave1:
   - id: F19
     what: "Codex's task could not be started on a chosen branch, so the one-line pointer needed the branch added."
     fixed: null
+  - id: F20
+    what: "Jules, with no base-branch choice, published its PR (#77) against main as one squashed commit holding the whole sandbox branch plus its change, and it was merged into main. Main then carried the trial files, and #71 conflicted with main, so CI stopped running on it."
+    fixed: "Main merged into the sandbox branch keeping the sandbox's files (ab5664c); Jules's change applied on top with its test (1807134). For Jules: start it from the sandbox branch's repository default, or check the PR's base before Publish."
+  - id: F21
+    what: "One full npm test run failed one test once after #78 merged; six reruns passed. Not identified."
+    fixed: null
+race1:
+  thread: t-4wv
+  reviewer: claude-2qv (reviewer:trial)
+  results:
+    claude: {task: decline, pr: "#79", claim_to_ready: "2.0 min", review: "5/5", merged: d4b410b}
+    copilot: {task: release, pr: "#78", claim_to_ready: "2.8 min", review: "4/5 (two behaviours in one test)", merged: bf8faed, note: "posted ready itself; draft got no CI without a person's approval"}
+    cursor: {task: renew, handle: cursor-xk6}
