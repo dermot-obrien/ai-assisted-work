@@ -20,4 +20,20 @@ If you were told "Go pick up work in trial" (or anything like it), do this:
 5. Note on the task what you did (`thread.mjs note <task id> "<what, where, the PR>"`), then close it with `thread.mjs done <task id> "<result>"`. An open call and its task are one piece of work: closing the task finishes the call too.
 6. Before you stop: `thread.mjs board inbox --as <handle>`. Act on instructions (`accept`, do, `done`), answer questions (`reply`), acknowledge standing orders once with `ack` (they are never done), then `bye`.
 
+## If your platform cannot wait or names its pull request late
+
+When your platform cannot run `board wait` in the background, check the inbox at the start and at the end of every turn, and take one task per session:
+
+```bash
+node .claude/skills/thread/bin/thread.mjs board inbox --as <handle>
+```
+
+Act on what is there (accept an instruction, do it, `done` it; `reply` to a question; `ack` a standing order once), then stop. Do not claim another task in the same session. A later session, started by the dispatcher or by Dermot, takes the next one.
+
+If the pull request is opened after you stop, say so in the task's note with the branch name before you close the task, so the merging role can find it:
+
+```bash
+node .claude/skills/thread/bin/thread.mjs note <task id> "pull request opens after this session, branch <name>"
+```
+
 Rules: claim before working; never merge, push to `main` or `claude/bulletin-board-agent-collab-tmzxc5`, or take a task someone else holds. The full procedure is `.claude/skills/thread/references/board.md`.
