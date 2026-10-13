@@ -144,7 +144,7 @@ for (const a of agents.values()) {
       "4 pointer enough": MANUAL,
       "5 threads": tasks.length ? (closed.length === tasks.length ? PASS : working ? WORKING : FAIL) : NA,
       "6 messages": toMe.length ? (answered.length === toMe.length ? PASS : working ? WORKING : FAIL) : NA,
-      "7 no double claim": doubled.length ? FAIL : tasks.length ? PASS : NA,
+      "7 no double claim": doubled.length ? FAIL : a.claims.length ? PASS : NA,
       "8 ready, not merged": ready.length ? PASS : working ? WORKING : tasks.length ? FAIL : NA,
       "9 waiting": MANUAL,
       "11 handoff": handedOver.length ? PASS : NA,

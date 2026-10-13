@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, claude/bulletin-board-agent-collab-tmzxc5]
 
 jobs:
   build:
@@ -50,6 +50,9 @@ jobs:
 
       - name: The board's tests pass
         run: node --test scripts/test-board.mjs
+
+      - name: The board trial grader's tests pass
+        run: node --test scripts/test-board-trial.mjs
 
       - name: The skills installer's tests pass
         run: node --test scripts/test-skills.mjs
