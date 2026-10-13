@@ -120,13 +120,13 @@ The tree and board hold who does what; the plan files hold scope, products and s
 |---|---|
 | Publish | `board plan publish <WI>` opens a thread per activity (and task, where tasks are split) under the plan's thread, linked to its id; idempotent, so it is run again whenever the plan changes |
 | Ready frontier | `board next` offers an activity only when every `depends_on` is complete in `progress.yaml`; `actor: human` activities are never offered to agents |
-| Claim is the lock | Claiming `WI-062-A3` on the board replaces `locks/WI-062-A3.lock`; the work skill checks the board when it can reach the store |
+| Claim is the lock | Claiming `WI-012-A3` on the board replaces `locks/WI-012-A3.lock`; the work skill checks the board when it can reach the store |
 | State in the pull request | The agent updates `progress.yaml` in the same pull request as the work, so plan and code merge together |
 | Reservations | Claims on path keys (`path:bounded-contexts/portfolio/**`) warn other agents off shared files for one change |
 | One view | `board status --plan <WI>`: each activity free, held or done, holder, what it waits on, its pull requests and their queue position |
 | Ready by branch | `board ready` accepts a branch for platforms that open the pull request after the agent stops; the merging role resolves it |
 
-Pilot candidate: EP-002 (WI-062), whose activities already run in separate sessions with a hand-kept merge order and pull requests labelled by activity.
+Pilot: a plan of this repository's own, such as WI-003, whose activities can be worked by trial agents.
 
 ## 7. Agents and platforms
 
@@ -176,7 +176,7 @@ None uses a model, so none can run out of quota, and each is cheap enough to lea
 | 1 | Board fixes from wave 0 (thread 0.15.0) | WI-002, PR #71 |
 | 2 | Skills standalone: `work` repository, installer in `dermot-obrien/skills` | WI-005 step 4 |
 | 3 | Wave 1 platforms on a trial store | WI-002 |
-| 4 | The plan on the board, piloted on EP-002 | New work item |
+| 4 | The plan on the board, piloted on a plan of this repository's own | New work item |
 | 5 | Heartbeats, warden, halt and caps | WI-003 A1 to A3 |
 | 6 | Review digest and page | WI-003 A4, A5 |
 | 7 | Capacity ledger, dispatcher, platform starters | WI-003 A6, A7 |
@@ -190,4 +190,4 @@ None uses a model, so none can run out of quota, and each is cheap enough to lea
 | One `main` branch as the bottleneck | Measure in wave 1; split busy paths into stores of their own if pushes start to queue |
 | Plan state in two places (plan files and the board) | The plan files stay the record; the board holds only claims and messages, and publishing is idempotent |
 | Agents acting as Dermot on GitHub | Per-platform identities before wider use |
-| Pilot plan for step 4 | EP-002 proposed; Dermot decides |
+| Pilot plan for step 4 | A work item in this repository (WI-003 proposed); Dermot decides |

@@ -138,6 +138,6 @@ WI-003:
 
 ## Questions for Dermot
 
-1. Publishing a plan onto the board (point 3): which plan to pilot it on.
+1. Publishing a plan onto the board (point 3): pilot it on a work item in this repository, such as WI-003.
 2. Agent identities without merge rights: before wave 1 or after it. Recommendation: before, since a platform on trial is where an unexpected merge would happen.
 3. Thread version: PR #71 takes thread 0.15.0, which the handover's step B had planned for the purl change on the rename; that change becomes 0.16.0. Confirm.
