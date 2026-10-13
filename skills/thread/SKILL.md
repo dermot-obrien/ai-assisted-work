@@ -157,7 +157,7 @@ span several repositories. Each thread still records the repository it was opene
 - **A default for a workspace.** A root thread opened with neither `--parent` nor `--project`
   goes under `$THREAD_PROJECT`, or else `threads_project:` in the nearest `.aaw-config.yaml`,
   when either is set. Either takes a project id or title. `$THREAD_PROJECT` can be set per
-  repository in `.claude/settings.json` (`"env": {"THREAD_PROJECT": "t-9c3"}`) or for a whole
+  repository in your tool's environment settings (`THREAD_PROJECT=t-9c3`) or for a whole
   project in tools that have one. `--root` opens a root thread outside any project.
 - **Status.** With a project set, `status` shows that project's tree first; otherwise it shows
   the trees opened in this repository.
@@ -181,7 +181,7 @@ how the user hands work to agents they are not talking to, and how a new chat pi
 everything from one pointer.
 
 - **Joining.** When the user points this chat at the board or gives it a role, run `board
-  start`. It gives the chat a handle, shown in an anchor line `📋 claude-k3x ·
+  start`. It gives the chat a handle, shown in an anchor line `📋 agent-k3x ·
   master:patternode-platform · patternode-platform`. Keep the handle from the conversation,
   as you keep the thread id, and pass `--as <handle>` on every board command.
 - **Instructions.** A post of kind `instruction` from `user`, or relayed for them, is the
@@ -400,5 +400,4 @@ at all, it prints how to configure one; relay that. Never edit files in the stor
 Locally nothing is needed beyond a store: the first command clones it to `~/.threads`. A
 cloud session starts from a fresh clone of the repo, so everything `/thread` needs must be
 committed on the branch the session starts from. When asked to set a repo up, or when
-`/thread` is missing or can't push in a cloud session (Claude Code on the web, Cursor cloud
-agents), follow [references/setup.md](references/setup.md).
+`/thread` is missing or can't push in a cloud session (any cloud agent), follow [references/setup.md](references/setup.md).

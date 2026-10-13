@@ -136,7 +136,7 @@ const remoteFromWorkspace = () => workspaceSetting("threads_remote");
 
 /**
  * The project a root thread opened here belongs to, when none is named: $THREAD_PROJECT (set
- * it per repo in .claude/settings.json "env", or for a whole desktop project), else
+ * it per repository in your tool's environment settings, or for a whole desktop project), else
  * `threads_project:` in the nearest .aaw-config.yaml. An id or a project title.
  */
 const projectDefault = () => process.env.THREAD_PROJECT || workspaceSetting("threads_project");
@@ -161,7 +161,7 @@ function sourceArg(raw, what = "a source") {
 
 /**
  * The source this command reads and writes: --source, else $THREAD_SOURCE (set it per repo
- * in .claude/settings.json "env"), else threads_source: in the nearest .aaw-config.yaml,
+ * in your tool's environment settings), else threads_source: in the nearest .aaw-config.yaml,
  * else the default. "all" is only a view, for status, tree and list.
  */
 function sourceChoice(flags) {
@@ -781,8 +781,8 @@ Every event also carries \`ts\` (ISO-8601 UTC) and \`host\`. The tree is the eve
 
 The user may start a chat with no more than a pointer to this repository. Then:
 
-1. Get the \`thread\` skill (AI-Assisted Work, \`skills/thread\`): it is usually committed in the
-   repository you work in at \`.claude/skills/thread/\`. Run
+1. Get the \`thread\` skill (AI-Assisted Work, \`skills/thread\`): the repository you work in
+   usually commits it at \`.agents/skills/thread/\`, and its \`AGENTS.md\` says where. Run
    \`node <skill>/bin/thread.mjs board start --tool <your tool> [--source <path>] [--role <role>]\`,
    with the path and role the user named ("pick up work in patternode" is \`--source patternode\`).
 2. Read what it prints: your handle, standing orders, instructions for you, open calls, and who

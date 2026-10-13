@@ -64,7 +64,7 @@ From the Rules, Skills and Hooks pages:
 | `.claude/settings.json` hooks | Loaded by Cursor through the third-party setting; whether cloud agents run them is not stated. Unknown |
 | `.cursor/environment.json` | Environment: Dockerfile or snapshot, `install`, `start`, `terminals` |
 
-For this repository: `AGENTS.md` and `CLAUDE.md` both carry the board pointer, and `.claude/skills/thread/` is on Cursor's compatibility list, so a cloud agent should both see the pointer and be offered the skill. That `.claude/skills/` is read in the cloud is the first thing to confirm in wave 1.
+For this repository: `AGENTS.md` carries the board pointer and names the command by path, which wave 1 confirmed is enough for a Cursor cloud agent.
 
 ## Second repository
 
@@ -145,7 +145,7 @@ Once, by the user:
 4. In the Cloud Agents dashboard, create an environment with both repositories selected. Let the agent-led setup run, or commit `.cursor/environment.json` with an `install` that checks `node --version` is 18 or newer.
 5. Add a **Runtime Secret** `THREADS_REMOTE` with a store URL carrying a fine-grained token limited to `dermot-obrien/threads` (contents read and write), as in `skills/thread/references/setup.md`. It covers the case where the environment's own clone of the store cannot be pushed from the skill.
 6. Leave network access on the default, or on an allowlist: GitHub stays reachable either way.
-7. Optional, in the code repository: add a "Cursor Cloud specific instructions" section to `AGENTS.md` (the board pointer already applies), and a `.cursor/hooks.json` `stop` hook running `node .claude/skills/thread/bin/thread.mjs board inbox --as "$BOARD_AS"` if inbox checks at turn ends are wanted.
+7. Optional, in the code repository: add a "Cursor Cloud specific instructions" section to `AGENTS.md` (the board pointer already applies), and a `.cursor/hooks.json` `stop` hook running `node skills/thread/bin/thread.mjs board inbox --as "$BOARD_AS"` if inbox checks at turn ends are wanted.
 
 For each task: start a cloud agent on `dermot-obrien/ai-assisted-work`, branch `claude/bulletin-board-agent-collab-tmzxc5`, with "Go pick up work in trial", from `cursor.com/agents` or by API:
 

@@ -73,6 +73,6 @@ The 12 checks from `change/work-items/WI-002-cross-platform-agent-trial/scope.md
 1. Subscribe to Copilot Pro (or use an organization seat) with the cloud agent enabled.
 2. In the code repository, add an Agents secret `THREADS_REMOTE` holding `https://x-access-token:<token>@github.com/<owner>/threads.git`, with a fine-grained token limited to the store, contents read and write (`skills/thread/references/setup.md`).
 3. Add `github.com` (and `api.github.com` if the GitHub MCP server warns) to the repository's custom firewall allowlist, or disable the firewall for the trial repository.
-4. Add `.github/workflows/copilot-setup-steps.yml` on the default branch with one job `copilot-setup-steps` that installs Node 20 with `actions/setup-node` and runs `node .claude/skills/thread/bin/thread.mjs board start --tool copilot --source trial`, so the store is cloned before the agent starts.
+4. Add `.github/workflows/copilot-setup-steps.yml` on the default branch with one job `copilot-setup-steps` that installs Node 20 with `actions/setup-node` and runs `node skills/thread/bin/thread.mjs board start --tool copilot --source trial`, so the store is cloned before the agent starts.
 5. Start a task with `gh agent-task create "Go pick up work in trial" --base claude/bulletin-board-agent-collab-tmzxc5` or by assigning an issue with that text.
 6. Watch the log for `NOT PUSHED`. If it appears, check 3 has failed on this platform: record it, and fall back to the agent reporting through its pull request description for a person or the master session to copy to the board.

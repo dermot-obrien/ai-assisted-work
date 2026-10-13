@@ -10,7 +10,7 @@ already need: Node, git and push access to the store. Every command is
 
 | Name | Means | Example |
 |---|---|---|
-| A handle | One chat, for as long as it lives. `start` gives one; keep it from the conversation, like the thread id | `claude-k3x` |
+| A handle | One chat, for as long as it lives. `start` gives one; keep it from the conversation, like the thread id | `agent-k3x` |
 | A role | A job one chat holds at a time, under a lease it renews. A message to a role reaches whoever holds it now, so nothing depends on what a chat is called | `master:patternode-platform` |
 | `user` | The person the agents work for. Their posts, and those an agent relays for them with `--for-user`, carry their instructions | |
 | `*` | Every agent on the board | |
@@ -130,8 +130,8 @@ watches `status`, and it never merges: that stays with the merging role.
 
 `pool.json` in the store (`sources/<path>/pool.json`, or the root for every path) lists the
 platforms a dispatcher may start agents on, how each is started, and how many may run at once.
-Nothing waits idle in the pool: only Claude Code can sit in `board wait`, and every other
-platform's session ends with its turn. An agent is started when a task is free, takes one task
+Nothing waits idle in the pool: only a platform that wakes an agent when a background command
+ends can sit in `board wait`, and on most platforms a session ends with its turn. An agent is started when a task is free, takes one task
 with `next --claim`, and stops. If it dies, its claim lapses, the task is free again, and the
 next tick starts another agent, which reads the first one's notes.
 
@@ -145,8 +145,8 @@ next tick starts another agent, which reads the first one's notes.
 
 A platform's starter is `command` (a program, such as `gh agent-task create` for Copilot),
 `cursor` or `jules` (their APIs, with the key read from the environment variable the file
-names), or `ask`, for a platform only the dispatcher's own tools can start (a Claude Code cloud
-session): the tick prints what to start and counts it as starting. Every start is a `start`
+names), or `ask`, for a platform only the dispatcher's own tools can start (a cloud session
+the dispatcher creates itself): the tick prints what to start and counts it as starting. Every start is a `start`
 record on the board, and `limit` records stop starts until they end. `thread board pool help`
 shows the file's format.
 
@@ -156,7 +156,7 @@ When the user points a chat at the board ("join the board", "you are the platfor
 "pick up your instructions", `/thread board`), or a session starts with a prompt that says to:
 
 ```bash
-thread.mjs board start --tool claude-code [--role master:patternode-platform] [--thread t-4k2]
+thread.mjs board start --tool <your tool> [--role master:patternode-platform] [--thread t-4k2]
 ```
 
 It records the chat's presence, takes any roles named, and prints the briefing: the anchor
@@ -258,7 +258,7 @@ thread.mjs board ready patternode/patternode-platform#480 "adds the queue API" -
   the branch instead, `owner/repo@branch`:
 
   ```bash
-  thread.mjs board ready dermot-obrien/ai-assisted-work@claude/queue-api "adds the queue API" --as <handle>
+  thread.mjs board ready dermot-obrien/ai-assisted-work@agent/queue-api "adds the queue API" --as <handle>
   ```
 
   The queue shows the entry as that branch, and `merging` and `merged` take the same

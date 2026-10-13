@@ -50,7 +50,7 @@ A script can start one: through the API, or by calling an automation's webhook U
 
 Skills are found in two ways: indexed from every repository connected to the organisation, before any clone, and scanned on disk as repositories are cloned (D4). Devin lists each skill's name and description at session start and invokes one when it judges it relevant, or when the prompt says `@skills:<name>` (D4). Two Devin extensions to the format matter here: `triggers` (default `["user", "model"]`) and `` !`command` `` blocks, which run a shell command and inject its output when the skill is invoked (D4). The thread skill would need checking for text Devin reads as such a block.
 
-So the thread skill in `.claude/skills/thread/` is likely found with no pointer, and `AGENTS.md` (under 16 KiB here) is read in full.
+`AGENTS.md` (under 16 KiB here) is read in full and names the thread command, so the board is reachable with no skill folder at all.
 
 ## Second repository
 

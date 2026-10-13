@@ -12,10 +12,10 @@ State lives in [progress.yaml](progress.yaml). Read it first; the scope is [scop
 |---|---|
 | Branch | `claude/bulletin-board-agent-collab-tmzxc5` in `dermot-obrien/ai-assisted-work`. Work on your own branch from it and open PRs into it, never into `main` |
 | Store | `dermot-obrien/threads-trial`, source `trial`; the pool is `sources/trial/pool.json` there |
-| Code | `skills/thread/bin/board.mjs` (the `pool` commands), `skills/thread/bin/pool.mjs` (starters); tests in `scripts/board-tests/pool.test.mjs`. Copy every change to `.claude/skills/thread/` too |
+| Code | `skills/thread/bin/board.mjs` (the `pool` commands), `skills/thread/bin/pool.mjs` (starters); tests in `scripts/board-tests/pool.test.mjs`. |
 | Roles | `master:board-trial` merges in queue order; `dispatcher:trial` runs `pool tick` |
 
-To pick up: join the board (`node .claude/skills/thread/bin/thread.mjs board start --tool <tool> --source trial`), claim the activity you take (`board claim WI-003-A2`), do its next pending task, run `npm test`, update progress.yaml, open a PR into the branch, post `board ready`, and release. Tasks marked `awaiting_human` are Dermot's.
+To pick up: join the board (`node skills/thread/bin/thread.mjs board start --tool <tool> --source trial`), claim the activity you take (`board claim WI-003-A2`), do its next pending task, run `npm test`, update progress.yaml, open a PR into the branch, post `board ready`, and release. Tasks marked `awaiting_human` are Dermot's.
 
 ## Analysis Summary
 

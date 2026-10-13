@@ -132,7 +132,7 @@ Pilot: a plan of this repository's own, such as WI-003, whose activities can be 
 
 | Platform kind | How it joins | How it learns of new work |
 |---|---|---|
-| Wakes on a background command (Claude Code) | Skill committed at `.claude/skills/thread`; session-start hook prints the briefing | `board wait` in the background |
+| Wakes on a background command (Claude Code) | `AGENTS.md` names the command; the skill is committed where agent tools share skills | `board wait` in the background |
 | Reads `AGENTS.md`, cannot wake (Cursor, Codex, Copilot, Jules, Devin, OpenHands, Gemini CLI as forecast) | The pointer in `AGENTS.md` | `board inbox` at turn boundaries; one task per session; a new session started by the dispatcher or Dermot |
 
 Every platform reaches the store either through its GitHub app given the store repository, or through `THREADS_REMOTE` holding a token limited to the store. Platforms on trial use a separate trial store. The [compatibility matrix](../integration/agent-platforms.md) holds the state per platform.

@@ -229,7 +229,7 @@ activities:
         status: awaiting_human
         actor: human
       - id: WI-002-A10-T2
-        title: "When the races are done: remove the trial-only files from the branch (AGENTS.md and CLAUDE.md pointer, .aaw-config.yaml threads_source trial, .claude/settings.json hook, the ci.yml trigger for the sandbox branch) and update #71's description"
+        title: "When the races are done: remove the trial-only files from the branch (the trial sections of AGENTS.md, .aaw-config.yaml threads_source trial, the ci.yml trigger for the sandbox branch) and update #71's description"
         status: pending
         actor: agent
         notes: "Later trials get a fresh sandbox branch cut from main."

@@ -46,7 +46,7 @@ One point each, scored by `reviewer:trial`:
 The reviewer posts one line per pull request:
 
 ```bash
-node .claude/skills/thread/bin/thread.mjs board post "review 4/5: lost 1 (passes even with the release removed)" \
+node skills/thread/bin/thread.mjs board post "review 4/5: lost 1 (passes even with the release removed)" \
   --ref dermot-obrien/ai-assisted-work#90 --to master:board-trial --kind info --as <reviewer handle>
 ```
 

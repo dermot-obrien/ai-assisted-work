@@ -12,8 +12,8 @@
  *   cursor    Cursor's cloud agents API, with the key named in "key" ($CURSOR_API_KEY)
  *   jules     the Jules API, with the key named in "key" ($JULES_API_KEY); asks Jules to open
  *             the pull request itself
- *   ask       nothing a script can start: the dispatcher session starts it with its own tools
- *             (a Claude Code session with create_session, Copilot through the GitHub tools)
+ *   ask       nothing a script can start: the dispatcher starts it with its own tools, such
+ *             as a cloud session it creates
  *
  * Keys are read from the environment, never from pool.json. Zero dependencies; Node 18+.
  */

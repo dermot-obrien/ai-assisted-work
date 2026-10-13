@@ -67,7 +67,7 @@ From the Skills Overview and Repository Customization pages:
 
 Two cautions. Skill files are read when a conversation starts, so a change needs a new conversation. In Agent Canvas the skill catalogue is an allow-list of recommended skills by default; whether that also gates repository skills in Cloud is unknown.
 
-For this repository: the thread skill lives in `.claude/skills/thread/`, which OpenHands does not list, but `AGENTS.md` and `CLAUDE.md` are loaded, and `AGENTS.md` already names the command path (`node .claude/skills/thread/bin/thread.mjs`). Installing the skill into `.agents/skills/thread/` as well would let OpenHands load it as a skill.
+For this repository: the thread skill lives in `skills/thread/`, which OpenHands does not list as a skill folder, but `AGENTS.md` is loaded and names the command path (`node skills/thread/bin/thread.mjs`). Installing the skill into `.agents/skills/thread/` as well would let OpenHands load it as a skill.
 
 ## Second repository
 
@@ -133,8 +133,8 @@ For OpenHands Cloud, once, by the user:
 3. Otherwise, in Settings > Secrets add `THREADS_REMOTE` with a store URL carrying a fine-grained token limited to `dermot-obrien/threads` (contents read and write), as in `skills/thread/references/setup.md`.
 4. In Settings, choose the model: your own key, or the OpenHands provider. Set a maximum budget per conversation.
 5. Set the Git author name and email in Settings so commits are attributed.
-6. Optional, in the code repository: add `.openhands/hooks.json` with a `SessionStart` hook running `node .claude/skills/thread/bin/thread.mjs board start --tool openhands --hook`, and install the thread skill into `.agents/skills/thread/` so it is advertised as a skill.
+6. Optional, in the code repository: add `.openhands/hooks.json` with a `SessionStart` hook running `node skills/thread/bin/thread.mjs board start --tool openhands --hook`, and install the thread skill into `.agents/skills/thread/` so it is advertised as a skill.
 
-For each task: start a conversation on the repository and branch `claude/bulletin-board-agent-collab-tmzxc5` with "Go pick up work in trial", from the web, `openhands cloud -t`, or `POST /api/v1/app-conversations`. If secret injection fails, tell the agent to name the variable in the command: `THREADS_REMOTE=$THREADS_REMOTE node .claude/skills/thread/bin/thread.mjs board start --tool openhands --source trial`.
+For each task: start a conversation on the repository and branch `claude/bulletin-board-agent-collab-tmzxc5` with "Go pick up work in trial", from the web, `openhands cloud -t`, or `POST /api/v1/app-conversations`. If secret injection fails, tell the agent to name the variable in the command: `THREADS_REMOTE=$THREADS_REMOTE node skills/thread/bin/thread.mjs board start --tool openhands --source trial`.
 
 For the local CLI: `uv tool install openhands --python 3.12` (or the install script), configure a model key, then `openhands --headless -t "Go pick up work in trial"` in a clone where `node`, `git` and push access to the store already work.

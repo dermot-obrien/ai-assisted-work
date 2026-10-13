@@ -1,32 +1,36 @@
 # Setting up a repo and cloud sessions
 
 Locally nothing is needed beyond a store: the first command clones it to `~/.threads`. A
-cloud session (Claude Code on the web, Cursor cloud agents) starts from a fresh clone of the
-repo, so everything `/thread` needs must be **committed on the branch the session starts
-from**. When asked to set a repo up, or when `/thread` is missing or can't push in the cloud,
-check these in order and fix what's missing.
+cloud agent starts from a fresh clone of the repo, so everything `/thread` needs must be
+**committed on the branch the session starts from**. When asked to set a repo up, or when
+`/thread` is missing or can't push in the cloud, check these in order and fix what's missing.
 
-**In the repo:**
+**In the repo, the same for every agent tool:**
 
-1. **This skill committed at `.claude/skills/thread/`** (`SKILL.md`, `bin/` and `references/`). Claude Code
-   and Cursor both load skills from there. A skills installer (such as `skills install thread`)
-   makes it a link to the installed copy; git stores the real files through it. Without one,
-   copy this directory there. If
-   `.claude/` is ignored, un-ignore down to the skill:
+1. **This skill committed at `.agents/skills/thread/`** (`SKILL.md`, `bin/` and `references/`),
+   the folder agent tools share. A skills installer (such as `skills.mjs sync --copy`) writes it
+   there; without one, copy this directory. If `.agents/` is ignored, un-ignore down to the skill:
 
    ```gitignore
-   /.claude/*
-   !/.claude/skills/
-   /.claude/skills/*
-   !/.claude/skills/thread/
+   /.agents/*
+   !/.agents/skills/
+   /.agents/skills/*
+   !/.agents/skills/thread/
    ```
 
-   (A directory pattern like `.claude/skills/` can't be partly un-ignored; replace it with
-   `.claude/skills/*` plus the `!` line.)
-2. **`threads_remote: <store url>` in `.aaw-config.yaml`** at the repo root (a file with
+2. **An `AGENTS.md` at the root** that says what the agent is to do and names the command,
+   `node .agents/skills/thread/bin/thread.mjs`, so an agent that loads no skills at all still
+   finds it. Keep every instruction there, in one file every tool reads; add no tool-specific
+   instruction files. A tool that reads only its own file name (Claude Code reads `CLAUDE.md`)
+   gets a one-line file that imports `AGENTS.md` (`@AGENTS.md`) and says nothing else.
+3. **`threads_remote: <store url>` in `.aaw-config.yaml`** at the repo root (a file with
    just that line is fine), so no environment variables are needed.
-3. **Refresh the committed copy** whenever this skill is updated: re-run the installer, or
+4. **Refresh the committed copy** whenever this skill is updated: re-run the installer, or
    copy it again, then commit.
+
+What differs by platform is only how a session gets access to the store repository, and its
+known gaps. Each platform below is set up by a person, once, in that platform's settings; none
+of it is committed.
 
 **Claude Code on the web:**
 
@@ -38,16 +42,11 @@ check these in order and fix what's missing.
   clone fails with `could not read Username`: attach the store repo with push access, or
   select it as a repository when starting the session. The Claude GitHub App must be allowed
   on that repo.
-- **Skills load at session start.** If `/thread` isn't offered, the skill isn't on the
-  session's branch or was committed after the session started: start a new one.
 
 **Cursor Cloud agents** (from Cursor's docs; not yet verified end to end):
 
-1. **Skill:** Cursor loads project skills from `.agents/skills/`, `.cursor/skills/` and, for
-   compatibility, `.claude/skills/`, so the committed `.claude/skills/thread/` is found in
-   the agent's clone. Don't depend on `.agents/skills/` there: installers fill it and it is
-   usually gitignored. Cursor's "Sync Skills for Cloud Agents" setting only syncs
-   `~/.cursor/skills/`, so it isn't needed for a committed skill.
+1. **Skill:** Cursor loads project skills from `.agents/skills/`, so the committed
+   `.agents/skills/thread/` is found in the agent's clone, and it reads `AGENTS.md`.
 2. **Environment:** the agent runs on an Ubuntu machine with GitHub reachable by default.
    `/thread` needs only `node` (18+) and `git`. If the environment's `install` command
    (`.cursor/environment.json` or the dashboard) sets up a toolchain, make sure Node 18+ is
@@ -72,9 +71,8 @@ check these in order and fix what's missing.
    secret, although the agent itself never runs `git push`.
 2. **Instructions:** Copilot reads `.github/copilot-instructions.md`, path-specific
    `.github/instructions/*.instructions.md`, and the nearest `AGENTS.md`; it can instead use
-   a root `CLAUDE.md` or `GEMINI.md`. Skills are supported in `.github/skills/`, `.claude/skills/`
-   and `.agents/skills/`, though the docs do not confirm each path. This repository's `AGENTS.md`
-   points to the thread command.
+   a root `CLAUDE.md` or `GEMINI.md`. Skills are supported in `.agents/skills/` among others.
+   `AGENTS.md` points to the thread command.
 3. **Known gaps:** The agent cannot rename its pull request, which opens as a draft whose
    CI waits for a person to approve the run, so the merging role may post `board ready` for it.
    There is no documented wake-up for background commands. If the agent cannot be assigned an
@@ -88,9 +86,7 @@ check these in order and fix what's missing.
    repository not granted" until the connector covered the store. Turn on agent internet access
    (the Package managers preset includes github.com). An environment variable, not a secret,
    reaches the agent.
-2. **Instructions:** Codex reads `AGENTS.md`; it does not read `CLAUDE.md` by default. It finds
-   skills in `.agents/skills/`, not `.claude/skills/`; this repository's `AGENTS.md` points to
-   the thread command.
+2. **Instructions:** Codex reads `AGENTS.md` and finds skills in `.agents/skills/`.
 3. **Known gaps:** If the task cannot be started on a chosen branch, put the branch in the
    prompt (fetch and check it out first). Cloud tasks have no documented background-command
    wake-up, and the pull request is created from the review screen after the task, so check its
@@ -118,24 +114,13 @@ write access; events not pushed are lost when the cloud container ends, so fix a
 
 ## The board at session start
 
-The board needs nothing more than the store. To have every new chat see the board before its
-first turn (standing orders, open calls, posts for its repository), add a session-start hook.
-It only reads, and prints nothing when no store is configured. In Claude Code, in
-`.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      { "hooks": [{ "type": "command", "command": "node .claude/skills/thread/bin/thread.mjs board start --hook" }] }
-    ]
-  }
-}
-```
-
-The chat still joins with `board start` when the user points it at the board; the hook only
-shows it what is there. In a tool without hooks, the pointer the user gives (for example
-"Join the board as master:patternode-platform") does the same job.
+The board needs nothing more than the store. The pointer the user gives ("Go pick up work in
+patternode", "Join the board as master:patternode-platform") and `AGENTS.md` lead the agent to
+run `board start`, which prints the briefing: standing orders, open calls, posts for its
+repository. `board start --hook` prints the same briefing without joining, and prints nothing
+when no store is configured, for a tool that can run a command when a session starts; set that
+up in the tool's own settings rather than committing it, so the repository stays the same for
+every tool.
 
 ## A local store, with no remote
 

@@ -20,7 +20,7 @@ Key: ✓ passed in the trial · likely / unlikely / unknown, forecast from the v
 | 7 | Claims hold across platforms | ✓ (real races, nothing taken twice) | likely if 3 | likely if 3 | likely if 3 | likely if 3 | likely if 3 | likely if 3 | likely if 3 |
 | 8 | Ready posted, never merged | ✓ | likely; watch the base branch | likely; may not know its PR number | likely; cannot merge | likely; Publish PR is a person's click | likely; token without merge rights | unknown; protect the branch | unknown; app token can merge |
 | 9 | Woken by `board wait` | ✓ in the cloud (6 wakes, 14 to 79 s round trips) | unlikely; a timer can stand in | unlikely; inbox at turn boundaries | unlikely; 59-minute cap | unlikely | unknown | unlikely; wakes on a message | unlikely |
-| 10 | Session-start hook | ✓ (`.claude/settings.json`) | unlikely in the cloud | unlikely in the cloud; CLI yes | unknown | unlikely | likely | unknown | likely |
+| 10 | Session-start hook | ✓ (a hook in the tool's own settings) | unlikely in the cloud | unlikely in the cloud; CLI yes | unknown | unlikely | likely | unknown | likely |
 | 11 | Handoff across agents | ✓ (a dead agent's task finished from its notes) | likely if 3 | likely if 3 | likely if 3 | likely if 3 | likely if 3 | likely if 3 | likely if 3 |
 | 12 | Cost and limits measurable | ✓ (USD 0.80 to 2.20 a session) | roughly | roughly (five-hour windows) | roughly (premium requests) | yes (tasks a day) | yes (API key billing) | roughly (quotas, credits) | yes (model key) |
 | | Fact sheet | – | [cursor](platforms/cursor.md) | [codex](platforms/codex.md) | [copilot](platforms/copilot.md) | [jules](platforms/jules.md) | [gemini-cli](platforms/gemini-cli.md) | [devin](platforms/devin.md) | [openhands](platforms/openhands.md) |

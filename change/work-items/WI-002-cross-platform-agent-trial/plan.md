@@ -15,7 +15,7 @@ State lives in [progress.yaml](progress.yaml): every activity and task with its 
 | Roles | `master:board-trial` merges trial PRs in queue order; `reviewer:trial` scores them against [race-1.md](race-1.md) |
 | Tools | `node scripts/board-trial.mjs check` and `race <thread>`; `thread board pool` (WI-003) |
 
-To pick up: join the board (`node .claude/skills/thread/bin/thread.mjs board start --tool <tool> --source trial`), claim the activity you take (`board claim WI-002-A6`), do its next pending task, update progress.yaml, and release. Tasks marked `awaiting_human` are Dermot's. Never merge into `main`; Dermot does.
+To pick up: join the board (`node skills/thread/bin/thread.mjs board start --tool <tool> --source trial`), claim the activity you take (`board claim WI-002-A6`), do its next pending task, update progress.yaml, and release. Tasks marked `awaiting_human` are Dermot's. Never merge into `main`; Dermot does.
 
 ## Analysis Summary
 
@@ -46,7 +46,7 @@ The scope recommended two new private repositories. The GitHub integration this 
 | Piece | Wave 0 | Before wave 1 (the user) |
 |---|---|---|
 | Store | Source `trial` in `dermot-obrien/threads`. Board scopes keep it apart: a chat joined at `trial` sees nothing of `patternode`, `me` or the default source, and they see nothing of it | Create `threads-trial` if a platform needs a token limited to the store |
-| Workspace | Branch `claude/bulletin-board-agent-collab-tmzxc5` of `dermot-obrien/ai-assisted-work`, with the skill committed at `.claude/skills/thread/`, `.aaw-config.yaml` (`threads_source: trial`), `AGENTS.md` and `CLAUDE.md` pointers. Trial pull requests target that branch, never `main` | Create `board-trial` for platforms that should not see AAW |
+| Workspace | Branch `claude/bulletin-board-agent-collab-tmzxc5` of `dermot-obrien/ai-assisted-work`, `.aaw-config.yaml` (`threads_source: trial`) and an `AGENTS.md` pointer that every tool reads (the skill is run from `skills/thread/` by path; `CLAUDE.md` only imports `AGENTS.md`). Trial pull requests target that branch, never `main` | Create `board-trial` for platforms that should not see AAW |
 | Merging role | `master:board-trial`, held by this session | Same |
 
 ### New mechanisms (bootstrapped here)

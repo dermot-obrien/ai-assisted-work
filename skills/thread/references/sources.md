@@ -4,7 +4,7 @@ One store can hold several sources: separate trees for separate segments of work
 employer's work, a business and a personal project. The default source is the store's root;
 a named one lives under `sources/<name>/` in the same store. A workspace picks its source with
 `threads_source: <name>` in `.aaw-config.yaml`, or `$THREAD_SOURCE` (per repository in
-`.claude/settings.json` `"env"`); `--source <name>` overrides both for one command. Without
+your tool's environment settings); `--source <name>` overrides both for one command. Without
 any of them nothing changes: the default source is used.
 
 **The default source is the rule; a named source is the exception.** Every workspace uses the

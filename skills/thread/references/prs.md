@@ -59,8 +59,8 @@ For each pull request, find what it belongs to:
 - **The thread.** Search the store for the pull request's `owner/repo#n`, its URL or its head
   branch: `node <this skill's directory>/bin/thread.mjs tree --json --all`, the same script the
   rest of this skill runs, then match descriptions, notes and outcomes.
-- **Who opened it.** This chat, another chat (agent branch prefixes such as `claude/`,
-  `cursor/`, `agent/`), the user, or a bot.
+- **Who opened it.** This chat, another chat (agent branch prefixes such as `agent/`,
+  `claude/`, `codex/`, `copilot/`, `cursor/`, `jules/`), the user, or a bot.
 - **Clashes.** Two pull requests in one repository against one base that change the same file.
   Also look across repositories for an order that matters: a findings or documentation change
   that records work another pull request adds, or a change that parks work an open pull request

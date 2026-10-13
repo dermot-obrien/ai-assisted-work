@@ -141,8 +141,9 @@ The environment variable wins over the config key. See
 A cloud session starts from a fresh clone of your repository, so everything `/thread` needs
 must be committed on the branch the session starts from:
 
-1. The skill itself at `.claude/skills/thread/` (Claude Code and Cursor both read that
-   folder). If `.claude/` is gitignored, un-ignore down to the skill.
+1. The skill itself at `.agents/skills/thread/`, the folder agent tools share, and an
+   `AGENTS.md` that names the command (`node .agents/skills/thread/bin/thread.mjs`). If
+   `.agents/` is gitignored, un-ignore down to the skill.
 2. `threads_remote: <url>` in `.aaw-config.yaml`, so no environment variable is needed.
 3. Access to the store repository for the session, to clone and to push. If the session
    cannot get it, set `THREADS_REMOTE` as a secret holding a URL with a fine-grained token
