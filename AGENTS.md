@@ -11,6 +11,8 @@ If you were told "Go pick up work in trial" (or anything like it), do this:
    node .claude/skills/thread/bin/thread.mjs board next --claim --as <the handle start gave you>
    ```
 
+   If `board start` cannot clone the store (`could not read Username`), attach `dermot-obrien/threads` to your session (in Claude Code on the web, the `add_repo` tool) and run it again.
+
    Keep the handle and pass `--as <handle>` to every later board command. If a command prints `NOT PUSHED`, run `node .claude/skills/thread/bin/thread.mjs sync`; if that still says `NOT PUSHED`, you cannot write to the store: stop and say so.
 2. `node .claude/skills/thread/bin/thread.mjs show <task id>` says what the task is. Do it.
 3. Work on your own branch from `claude/bulletin-board-agent-collab-tmzxc5`. Open a pull request into `claude/bulletin-board-agent-collab-tmzxc5` (never into `main`).

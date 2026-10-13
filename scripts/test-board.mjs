@@ -11,7 +11,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -45,7 +45,15 @@ function fixture() {
       if (r.status !== 0) throw new Error(`thread ${args.join(" ")} exited ${r.status}:\n${r.stderr}${r.stdout}`);
       return r.stdout;
     };
-    return { run, raw, store: env.THREADS_HOME };
+    // A command left running (wait), so another agent can act while it does.
+    const later = (...args) => new Promise((resolve) => {
+      const c = spawn(process.execPath, [SCRIPT, ...args], { cwd: ws, env });
+      let out = "";
+      c.stdout.on("data", (d) => (out += d));
+      c.stderr.on("data", (d) => (out += d));
+      c.on("close", (status) => resolve({ status, out }));
+    });
+    return { run, raw, later, store: env.THREADS_HOME };
   };
   const a = agent("storeA");
   a.run("init");
@@ -192,14 +200,38 @@ test("standing orders show in every briefing until retracted", () => {
   }
 });
 
-test("wait returns as soon as something arrives, and times out otherwise", () => {
+test("wait returns when something new arrives, not for what was already unread, and times out otherwise", async () => {
   const f = fixture();
   try {
     f.a.run("board", "start", "--as", "a1");
     const idle = f.a.raw("board", "wait", "--as", "a1", "--timeout", "0.02m", "--every", "0.01m");
     assert.equal(idle.status, 3);
+    // Unread before the wait began (a standing order not yet acknowledged): no wake, no spin.
+    f.human.run("board", "post", "Titles start with trial:", "--to", "*", "--kind", "standing", "--as", "dermot");
+    assert.equal(f.a.raw("board", "wait", "--as", "a1", "--timeout", "0.02m", "--every", "0.01m").status, 3);
+    const waiting = f.a.later("board", "wait", "--as", "a1", "--timeout", "1m", "--every", "0.02m");
+    await new Promise((r) => setTimeout(r, 1500));
     f.human.run("board", "post", "Pick up WI-012-A4", "--to", "a1", "--kind", "instruction", "--as", "dermot");
-    assert.match(f.a.run("board", "wait", "--as", "a1", "--timeout", "1m"), /Pick up WI-012-A4/);
+    const r = await waiting;
+    assert.equal(r.status, 0, r.out);
+    assert.match(r.out, /Pick up WI-012-A4/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("wait wakes the sender when its instruction is done", async () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "boss");
+    f.b.run("board", "start", "--as", "w1");
+    const p = postId(f.a.run("board", "post", "Add the note", "--to", "w1", "--kind", "instruction", "--as", "boss"));
+    const waiting = f.a.later("board", "wait", "--as", "boss", "--timeout", "1m", "--every", "0.02m");
+    await new Promise((r) => setTimeout(r, 1500));
+    f.b.run("board", "done", p, "note added", "--as", "w1");
+    const r = await waiting;
+    assert.equal(r.status, 0, r.out);
+    assert.match(r.out, new RegExp(`${p} done by w1`));
   } finally {
     f.cleanup();
   }

@@ -175,3 +175,29 @@ blockers: []
 artifacts:
   scope: "./scope.md"
   plan: "./plan.md"
+
+# Wave 0 results so far (2026-10-13). Cloud = Claude Code on the web sessions started by
+# create_session; local = Claude Code subagents with their own store clones.
+wave0:
+  fact_sheets_by_agents: {cursor: "#69 cloud", copilot: "#68 local, after handoff", devin: "#67 local", jules: "#66 cloud", gemini-cli: "#65 cloud", openhands: "#64 local, merged", codex: "open"}
+  checks:
+    "3 store pushed": "pass, cloud and local; a cloud session attaches the store itself (add_repo) when start cannot clone it"
+    "4 pointer enough": "pass: 'Go pick up work in trial.' was the whole prompt for cloud agents A, B and C"
+    "6 messages": "pass: instructions, questions and a standing order mid-run were accepted, answered, followed"
+    "7 no double claim": "pass: a real race (claude-49g lost t-ttz to claude-ltm) and took the next task"
+    "8 ready, not merged": "pass: every agent posted ready and none merged"
+    "9 waiting": "pass in the cloud: background board wait woke both sessions (6 wakes), after F12"
+    "11 handoff": "pass: local L3 took the task local H1 left (claim lapsed) and built on its notes"
+  cloud_to_cloud_messaging:
+    lead: session_01DjJysqrGZMsP6xJhdDWgWn
+    worker: session_017rmJEs4mf3BWGxeaVKC5ma
+    round_trips: {question_answered: "14s", instruction_done: "36s", stop_done: "79s"}
+    send_message_in_child_sessions: "available (send_message and list_sessions), so the board is the record and send_message a doorbell"
+  cost_usd: {cloud_agent_c: 2.20, cloud_lead: 0.85, cloud_worker: 0.79}
+  findings_after_F11:
+    - id: F12
+      what: "board wait returned at once while anything was unread (an unacknowledged standing order), so a loop of waits spun; it never woke on an acknowledgement of the chat's own post."
+      fixed: "wait wakes only on what arrives after it starts, including acks of the chat's posts. Tests: wait returns when something new arrives ...; wait wakes the sender when its instruction is done."
+    - id: F13
+      what: "next --claim gave no reason for taking abandoned work first."
+      fixed: "It names the agent that left it and says to read its notes. Test extended."

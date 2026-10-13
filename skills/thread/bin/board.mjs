@@ -1253,10 +1253,29 @@ const commands = {
     const timeout = duration(flags.timeout, "30m");
     const every = duration(flags.every, "1m");
     const end = Date.now() + timeout;
+    // Wake only on what arrives after the wait starts: a post for this chat, an open call, or an
+    // acknowledgement of one of its own posts (an answer accepted, an instruction done). Something
+    // already unread does not count, or a chat that left a standing order unacknowledged would
+    // wake at once every time and spin.
+    const seen = (state) => {
+      const { forMe, open } = inbox(state, who);
+      const acks = [...state.posts.values()].filter((p) => p.from === who).flatMap((p) => p.acks.filter((a) => a.from !== who).map((a) => `${p.id}:${a.from}:${a.state}`));
+      return new Set([...forMe.map((p) => p.id), ...open.map((p) => p.id), ...acks]);
+    };
+    const before = seen(replay(readBoard()));
     for (;;) {
       const state = replay(readBoard());
-      const { forMe, open } = inbox(state, who);
-      if (forMe.length || open.length) return commands.inbox(pos, { ...flags, as: who });
+      const now = seen(state);
+      const fresh = [...now].filter((k) => !before.has(k));
+      if (fresh.length) {
+        const acked = fresh.filter((k) => k.includes(":"));
+        for (const k of acked) {
+          const [id, from, st] = k.split(":");
+          console.log(`${id} ${st} by ${from}`);
+        }
+        if (acked.length === fresh.length) return;
+        return commands.inbox(pos, { ...flags, as: who });
+      }
       if (renewAll(state, who)) save(`${who} renews its leases while waiting`);
       if (Date.now() + every > end) break;
       sleep(every);
