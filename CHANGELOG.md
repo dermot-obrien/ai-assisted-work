@@ -5,31 +5,18 @@ All notable changes to AI-Assisted Work.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 5.1.0
+## 6.0.0
 
-thread 0.15.0: the board as agents found it in the first cross-platform trial (WI-002 wave 0, Claude Code in the cloud and locally), with a vision for agents working together and a platform matrix.
+The `thread` skill leaves this repository. It moved, with its history, to a repository of its own on 13 October 2026, with everything built around it: the board, the pool of agent platforms, their tests and trial harness, the cross-platform trial (WI-002), mission control (WI-003), the vision and architecture documents, the platform matrix and fact sheets, and design decisions DD-12 to DD-16. Its unreleased 0.15.0 notes, listed here as 5.1.0 until now, moved with it.
+
+### Removed (breaking)
+- `skills/thread/` and `thread` from `bundle.json`: a workspace that declares `thread` from this bundle must declare it from its new repository instead.
+- The thread, board and trial tests and their CI steps; `scripts/extract-skill.mjs` extracts `work` only.
+- The trial's sandbox files that reached `main` with #77: `AGENTS.md` and `CLAUDE.md` pointing at the trial, `.claude/` and `.aaw-config.yaml`.
 
 ### Changed
-- Agent instructions are the same for every tool. `AGENTS.md` holds them, and the thread skill's setup now commits the skill at `.agents/skills/` with an `AGENTS.md` that names the command, in place of a copy in `.claude/skills/` and a Claude Code session-start hook. A tool that reads only its own file gets a one-line shim importing `AGENTS.md`: `CLAUDE.md` for Claude Code, `GEMINI.md` for Gemini CLI. The skill's references no longer assume one tool.
-- `board wait` wakes only on what arrives after it starts: a post for the chat or its roles, an open call, or an acknowledgement of a post the chat sent (its instruction accepted or done). What was already unread no longer wakes it, so a chat with a standing order left unacknowledged no longer spins.
-- `board next` takes open calls oldest first, so a dispatcher's order is the order work is done in, and takes work an agent left (its claim lapsed) before fresh work, saying whose it was and to read its notes.
-- `board status` shows only the merge queues whose ready notes were posted in its scope.
-- `board reply` to a question answers it: it leaves the inbox and the asker's list of what waits.
-- A push refused because another agent pushed first is retried six times with a jittered wait; `NOT PUSHED` names `thread sync`.
-
-### Added
-- `board done` and `decline` take an open call's task thread as well as its post.
-- `board start` says when the workspace already has a handle on the board, so a chat that lost its handle does not leave a second one behind.
-- A list flag given more than once (`--role`, `--to`, `--after`) adds up instead of the last one winning.
-- A board command that only reads pushes what an earlier command could not, so a post that said `NOT PUSHED` reaches the others at the next look at the board (Jules, WI-002 wave 1, #77).
-- `board pool`: a pool of agent platforms in `pool.json`. `pool tick` starts one agent per free task where a platform has room (Claude Code through the dispatcher's own tools, Copilot or any other through a command, Cursor and Jules through their APIs), records each start on the board, and counts a start as joined once an agent of that tool says hello. `pool limit` stops starts on a platform until its quota resets. WI-003 A6 and A7.
-- `scripts/board-trial.mjs race <thread>` times a race between platforms: who took each task, minutes to ready and done, and the reviewer's score.
-- `scripts/board-tests/`: the board's test fixture, and one test file per command.
-- `scripts/board-trial.mjs check` grades the trial checklist per agent from the store alone.
-- `docs/architecture/agent-coordination-vision.md`, `docs/integration/agent-platforms.md` and a fact sheet per platform in `docs/integration/platforms/`.
-
-### Fixed
-- `board accept` and `done` on a standing order are refused with a pointer to `ack`.
+- work 3.1.1: where the workspace has a coordination board, it can hold activity claims; the work skill no longer names a particular one.
+- This repository holds the `work` skill and `bin/skills.mjs`, the installer for standalone skills from any bundle or repository. `AGENTS.md` says how agents work here, and `CLAUDE.md` and `GEMINI.md` only import it.
 
 ## 5.0.0
 

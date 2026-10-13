@@ -45,13 +45,13 @@ This project welcomes contributions from:
 
 ## Development setup
 
-There is nothing to build. The repository holds two Agent Skills in `skills/`, the installer `bin/skills.mjs`, the bundle manifest `bundle.json` and its schema in `schemas/`, and the checks in `scripts/`. Everything runs on Node.js 18 or newer (20 is what CI uses) with no dependencies, except `scripts/test-work-schema.mjs`, which needs the `yaml` package from `npm ci`. The reference validator also needs Python 3.12.
+There is nothing to build. The repository holds the `work` Agent Skill in `skills/`, the installer `bin/skills.mjs`, the bundle manifest `bundle.json` and its schema in `schemas/`, and the checks in `scripts/`. Everything runs on Node.js 18 or newer (20 is what CI uses) with no dependencies, except `scripts/test-work-schema.mjs`, which needs the `yaml` package from `npm ci`. The reference validator also needs Python 3.12.
 
 ```bash
 git clone https://github.com/dermot-obrien/ai-assisted-work.git
 cd ai-assisted-work
 npm ci        # only the yaml test dependency
-npm test      # the work schema test, and the thread, board and installer tests
+npm test      # the work schema test and the installer tests
 ```
 
 ## Checks to run before a pull request
@@ -62,7 +62,7 @@ These are what CI runs (see `.github/workflows/ci.yml`). Every command is in the
 node scripts/test-work-schema.mjs                 # progress.yaml templates match the work schema
 node scripts/validate-skills.mjs skills           # Agent Skills specification, links, body size
 node scripts/validate-bundle.mjs .                # bundle.json against its schema and the skills
-node --test scripts/test-thread.mjs scripts/test-board.mjs scripts/test-skills.mjs
+node --test scripts/test-skills.mjs
 ```
 
 The reference validator, as the "Agent Skills reference validator" job runs it:
@@ -84,7 +84,7 @@ On Windows, set `PYTHONUTF8=1` first; otherwise `skills-ref` reads `SKILL.md` in
 
 ## Working on AI-Assisted Work with its own skills
 
-Install this clone's skills into itself (`node bin/skills.mjs install --copy`) and use `/work` and `/thread` as in any other workspace. `change/work-items/` holds a few work items published as examples; without an `.aaw-config.yaml`, `work` reads them there by default.
+Install this clone's skills into itself (`node bin/skills.mjs install --copy`) and use `/work` as in any other workspace. `change/work-items/` holds a few work items published as examples; without an `.aaw-config.yaml`, `work` reads them there by default.
 
 ---
 

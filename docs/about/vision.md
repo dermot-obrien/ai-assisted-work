@@ -21,9 +21,9 @@ AI-Assisted Work is a thin, opinionated set of skills for work coordination, des
 
 **1. Decouple the work model from the transport.**
 
-There's a small set of operations every agent needs against a shared work store: list claimable work, claim an activity, update a task, release. The `work` skill does them over plain files, and their shape is one schema, the work ontology (`skills/work/assets/work.schema.json`), that any tool can read. Coordination across machines and tools is moving to the board in the `thread` store, a git repository every agent already reaches.
+There's a small set of operations every agent needs against a shared work store: list claimable work, claim an activity, update a task, release. The `work` skill does them over plain files, and their shape is one schema, the work ontology (`skills/work/assets/work.schema.json`), that any tool can read.
 
-Up to 4.0.0 the operations were also a TypeScript protocol package with a filesystem backend and plans for cloud ones. That package was removed in 5.0.0, because the skills never used it, and coordination across machines is being taken up by the board instead.
+Up to 4.0.0 the operations were also a TypeScript protocol package with a filesystem backend and plans for cloud ones. That package was removed in 5.0.0, because the skills never used it.
 
 **2. Decouple the schema from any specific work-management methodology.**
 
@@ -66,8 +66,7 @@ The hierarchy — Initiative → Work Item → Activity → Task — is structur
 
 | Horizon | Direction |
 |---------|-----------|
-| **Short-term** | `thread` in a repository of its own; deciding where the remaining skills and the installer live (WI-005) |
-| **Medium-term** | The plan in the shared threads store, with activity claims on the board in place of local lock files |
+| **Short-term** | Deciding where the remaining skills and the installer live (WI-005) |
 | **Long-term** | A budget-aware scheduler that maximises parallel work within a fixed subscription cap |
 
 See [roadmap.md](roadmap.md) for the version-by-version plan.

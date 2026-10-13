@@ -24,7 +24,7 @@ and re-triage rules, read [references/work-classification.md](work-classificatio
 | Chore (default) | Branch `chore/{kebab-desc}`, do the work, add a changelog line (patch). | Done. No `WI-NNN/`, no scope, plan or progress file. |
 | Change | Assign `WI-NNN`. Minimal workspace: short `progress.yaml` plus a one-paragraph plan. Branch `wi/WI-NNN-…`. | Skip to Phase 3 (light), then Phase 4. |
 | Intervention | Assign `WI-NNN`. Full workspace. | Continue to Phase 1. |
-| Inquiry | Hand to research: where a research skill is installed (AI-Assisted Research's `/aar-start-hypothesis`), invoke it; otherwise write the question down where open questions live (a thread, a note) and stop. | Re-triage the outcome when research concludes, or close it as a lesson. |
+| Inquiry | Hand to research: where a research skill is installed (AI-Assisted Research's `/aar-start-hypothesis`), invoke it; otherwise write the question down where open questions live (an issue, a note) and stop. | Re-triage the outcome when research concludes, or close it as a lesson. |
 
 Do not create a work-item folder unless the class is intervention or change.
 

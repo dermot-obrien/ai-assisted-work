@@ -5,7 +5,7 @@ license: CC-BY-4.0
 compatibility: Reads .aaw-config.yaml at the workspace root for work_items_path, initiatives_path and the optional deliverables_register; works with their defaults when the file is absent. No runtime dependencies; bin/check.mjs needs Node.js 18 or newer.
 metadata:
   author: dermot-obrien
-  version: "3.1.0"
+  version: "3.1.1"
 ---
 
 # Work
@@ -59,4 +59,4 @@ None is needed. Where the workspace has them:
 
 - A research skill (AI-Assisted Research) takes inquiries; without one, an inquiry is written down and stops ([references/start.md](references/start.md)).
 - `quarter-planning` reads epics' optional planning block ([references/planning.md](references/planning.md)).
-- The `thread` skill's board can hold activity claims across clones and tools: claim `WI-012-A3` on the board as well as with the lock file when agents work from separate checkouts.
+- Where the workspace has a coordination board, it can hold activity claims across clones and tools: claim `WI-012-A3` on the board as well as with the lock file when agents work from separate checkouts.

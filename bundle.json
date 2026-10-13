@@ -2,30 +2,15 @@
   "$schema": "pkg:generic/dermot-obrien/ai-assisted-work/bundle-schema@1.0.0",
   "name": "ai-assisted-work",
   "owner": "dermot-obrien",
-  "description": "AI-Assisted Work as a bundle of two standalone Agent Skills: work (work items, activities, tasks and initiatives in plain files) and thread (a tree of intents and a bulletin board for agents). Each installs on its own with bin/skills.mjs.",
+  "description": "AI-Assisted Work as a bundle of one standalone Agent Skill, work (work items, activities, tasks and initiatives in plain files), and bin/skills.mjs, the installer for standalone skills from any bundle.",
   "license": "CC-BY-4.0 AND Apache-2.0",
   "homepage": "https://github.com/dermot-obrien/ai-assisted-work",
   "skills": [
     {
-      "name": "thread",
-      "path": "skills/thread",
-      "version": "0.15.0",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/thread@0.15.0",
-      "requires": [],
-      "check": {
-        "command": [
-          "node",
-          "bin/check.mjs"
-        ],
-        "runtime": "node",
-        "description": "git is on the PATH, and the thread store is a git clone or has a remote to clone"
-      }
-    },
-    {
       "name": "work",
       "path": "skills/work",
-      "version": "3.1.0",
-      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/work@3.1.0",
+      "version": "3.1.1",
+      "purl": "pkg:generic/dermot-obrien/ai-assisted-work/work@3.1.1",
       "requires": [],
       "check": {
         "command": [

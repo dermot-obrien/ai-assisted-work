@@ -154,6 +154,5 @@ parallel.
 ## Chats, not activities
 
 Locks coordinate workers on a work item's activities. They do not cover several chats acting
-on the same environment (deploying, publishing data, merging a shared branch). For that, the
-`thread` skill names one owning thread per tree of intents; see its section "Many chats, one
-tree".
+on the same environment (deploying, publishing data, merging a shared branch). Agree an owner for
+that outside the work item, for example on a coordination board where the workspace has one.

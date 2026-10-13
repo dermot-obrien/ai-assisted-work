@@ -4,7 +4,7 @@ The ideas you need to use the skills, in the order you meet them. Each section i
 
 ## 1. Skills, and the workspace they run in
 
-AI-Assisted Work is two [Agent Skills](https://agentskills.io), `work` and `thread`: folders holding a `SKILL.md` that an agent loads when a request matches its description, or when you type `/<name>`. The agent sees only each skill's name and description at first; the body loads when the skill is used, and the files under `references/` only when a branch of the procedure reaches them.
+AI-Assisted Work is one [Agent Skill](https://agentskills.io), `work`, and an installer for standalone skills. A skill is a folder holding a `SKILL.md` that an agent loads when a request matches its description, or when you type `/<name>`. The agent sees only each skill's name and description at first; the body loads when the skill is used, and the files under `references/` only when a branch of the procedure reaches them.
 
 A workspace is the folder you open in your agent, usually a git repository. `bin/skills.mjs` puts the skills in the workspace's `.agents/skills/` (and links `.claude/skills/` at them for Claude Code). The skills read `.aaw-config.yaml` at the workspace root, when there is one, to find where work lives. See [Installing the skills](../../DEPLOYMENT.md), [Installing in each agent](../integration/index.md) and [Configuration](../reference/configuration.md).
 
@@ -112,16 +112,9 @@ A workspace can also run objectives and key results beside the hierarchy: a work
 advances key results (`advances_kr_ids`) rather than containing them. It is optional and
 additive.
 
-## 11. Threads: why each chat exists
+## 11. Keeping installs honest
 
-`thread` is separate from work management and useful on its own. It keeps a tree of intents
-in a git repository you own: each chat belongs to one thread, a tangent becomes a child, and
-finished threads close with a one-line resolution. Every machine and agent reads the same
-tree, so you can always find what a chat was for. See [the thread skill](../skills/thread.md).
-
-## 12. Keeping installs honest
-
-The installed skills are copies. An edit made to a copy is lost at the next install without review, so `skills.mjs check` reports any installed skill that no longer matches what was installed, from the hash in `.agents/skills.lock.json`. Each skill also ships a post-install check (`bin/check.mjs`) that tests the workspace configuration it depends on. See [Skill bundles](../integration/skill-bundles.md).
+The installed skills are copies. An edit made to a copy is lost at the next install without review, so `skills.mjs check` reports any installed skill that no longer matches what was installed, from the hash in `.agents/skills.lock.json`. The `work` skill also ships a post-install check (`bin/check.mjs`) that tests the workspace configuration it depends on. See [Skill bundles](../integration/skill-bundles.md).
 
 ## Going deeper
 

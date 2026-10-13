@@ -450,7 +450,7 @@ const commands = {
   Skills go to .agents/skills/<name>, linked from .claude/skills/<name> when .claude/ exists.
   The lock file is .agents/skills.lock.json; .agents/.skill-sources/ holds the clones (gitignore it).
   .agents/skills.json, committed, declares a workspace's skills:
-    { "sources": [ { "bundle": "<repository>", "ref": "main", "skills": ["thread", "work"] },
+    { "sources": [ { "bundle": "<repository>", "ref": "main", "skills": ["work"] },
                    { "repo": "<repository>", "ref": "<tag>", "name": "<skill>" },
                    { "folder": "skills/<skill>" } ] }`);
   },

@@ -1,6 +1,6 @@
 # Command Discovery Across AI Assistants
 
-How the `work` and `thread` skills surface in each AI assistant, and why they work the same way in all of them.
+How the `work` skill surfaces in each AI assistant, and why it works the same way in all of them.
 
 ## The short version
 
@@ -9,7 +9,6 @@ The workflows are standalone [Agent Skills](https://agentskills.io). `bin/skills
 | Skill | Invoke |
 |-------|--------|
 | `work` | `/work start`, `/work progress`, `/work status`, `/work next`, `/work initiative` |
-| `thread` | `/thread`, `/thread board` and the rest |
 
 ## Where each tool looks
 
@@ -49,7 +48,7 @@ If a tool namespaces skills itself, follow the tool. Claude Code, for example, n
 
 ## Verifying an install
 
-Type `/` in your assistant. `work` and `thread` should appear. If they do not:
+Type `/` in your assistant. `work` should appear. If it does not:
 
 1. Restart the assistant. Several tools cache the skill list at startup.
 2. Check `.agents/skills/` exists and holds a directory per skill, each with a `SKILL.md`.

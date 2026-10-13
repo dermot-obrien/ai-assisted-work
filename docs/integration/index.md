@@ -15,7 +15,7 @@ Requires Node.js 18 or newer and git. No npm registry access is needed.
 
 ```
 git clone https://github.com/dermot-obrien/ai-assisted-work.git .ai-assisted-work
-node .ai-assisted-work/bin/skills.mjs install work thread
+node .ai-assisted-work/bin/skills.mjs install work
 ```
 
 The installer:
@@ -26,7 +26,7 @@ The installer:
 
 It writes no configuration. The `work` skill reads `.aaw-config.yaml` when the workspace has one, and its defaults when it does not ([Configuration](../reference/configuration.md)).
 
-Run it again at any time. Do not commit the installed skills unless the workspace needs them committed, such as a repository used by cloud sessions whose setup runs outside it (see [the thread skill](../skills/thread.md#cloud-sessions)). Instead, commit a declaration of them, `.agents/skills.json`, and its lock, and let each session install them; [Installing the skills](../../DEPLOYMENT.md) has the format and the commands.
+Run it again at any time. Do not commit the installed skills unless the workspace needs them committed, such as a repository used by cloud sessions whose setup runs outside it. Instead, commit a declaration of them, `.agents/skills.json`, and its lock, and let each session install them; [Installing the skills](../../DEPLOYMENT.md) has the format and the commands.
 
 ## Where each agent looks
 
@@ -39,7 +39,7 @@ Run it again at any time. Do not commit the installed skills unless the workspac
 | Gemini CLI | `.agents/skills/`, which takes precedence over `.gemini/skills/` | `~/.gemini/skills/` | |
 
 Agents change these paths from time to time; check your agent's documentation if a skill
-does not appear. After installing, start a new chat and type `/`: `work` and `thread` should
+does not appear. After installing, start a new chat and type `/`: `work` should
 be listed. See [Command discovery](command-discovery.md) for how each agent
 invokes them.
 
@@ -49,7 +49,7 @@ junction, pass `--copy` to install copies instead.
 
 ## User-level install
 
-A skill in your user folder is available in every workspace. This suits `thread` best. `work` also works from there; each workspace that wants its work items somewhere other than `./change/work-items/` says so in its own `.aaw-config.yaml`.
+A skill in your user folder is available in every workspace. `work` works from there; each workspace that wants its work items somewhere other than `./change/work-items/` says so in its own `.aaw-config.yaml`.
 
 `skills.mjs install --workspace ~` installs into `~/.agents/skills/`, which Codex reads, and links `~/.claude/skills/` when `~/.claude/` exists, for Claude Code. For the other agents, copy the skill folders from a clone into the user folder from the table above. For Claude Code by hand:
 
@@ -58,7 +58,7 @@ PowerShell:
 ```powershell
 git clone https://github.com/dermot-obrien/ai-assisted-work.git "$HOME\.ai-assisted-work"
 New-Item -ItemType Directory -Force "$HOME\.claude\skills" | Out-Null
-Copy-Item -Recurse -Force "$HOME\.ai-assisted-work\skills\thread" "$HOME\.claude\skills\"
+Copy-Item -Recurse -Force "$HOME\.ai-assisted-work\skills\work" "$HOME\.claude\skills\"
 ```
 
 bash:
@@ -66,10 +66,10 @@ bash:
 ```bash
 git clone https://github.com/dermot-obrien/ai-assisted-work.git ~/.ai-assisted-work
 mkdir -p ~/.claude/skills
-cp -R ~/.ai-assisted-work/skills/thread ~/.claude/skills/
+cp -R ~/.ai-assisted-work/skills/work ~/.claude/skills/
 ```
 
-Replace `.claude` with `.copilot`, `.cursor`, `.agents` or `.gemini` for the other agents, and `thread` with `work`, or copy both (`skills\*` or `skills/*`). To update, `git pull` in the clone and copy again. `skills.mjs check` does not cover copies made by hand.
+Replace `.claude` with `.copilot`, `.cursor`, `.agents` or `.gemini` for the other agents. To update, `git pull` in the clone and copy again. `skills.mjs check` does not cover copies made by hand.
 
 ## Scripts, hooks and CI
 
