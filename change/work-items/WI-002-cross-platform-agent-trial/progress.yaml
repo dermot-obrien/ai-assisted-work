@@ -202,3 +202,28 @@ wave0:
     - id: F13
       what: "next --claim gave no reason for taking abandoned work first."
       fixed: "It names the agent that left it and says to read its notes. Test extended."
+
+# Wave 1 (2026-10-13), store dermot-obrien/threads-trial
+wave1:
+  cursor:
+    handle: cursor-jg2
+    task: t-05p
+    pr: "#72, merged"
+    checks: {"1": pass, "2": pass, "3": pass, "4": pass, "5": pass, "6": "pass (instruction done, question answered)", "7": pass, "8": "pass (ready posted, base right, not merged)", "9": "no: background wait does not wake the chat (its own answer)"}
+    notes: "Hung on installing dependencies when the task said npm test; fine once told to run the node --test suites. Found the GIT_DIR bug (F14)."
+  copilot:
+    handle: copilot-gun
+    task: t-2lw
+    pr: "#73, draft"
+    checks: {"1": pass, "2": pass, "3": "pass (the skill's push went through; the agent never runs git push itself)", "4": pass, "5": pass, "6": "pass (question answered; title instruction declined with a reason)", "7": pass, "8": "partial: right base, never merged, but no board ready (draft, no CI) and it cannot rename its PR", "9": "not tested"}
+    notes: "Started from the gh CLI after the repository could not be picked in the web UI. Needed a process-local safe.bareRepository allowance to run the tests (F15). CI on its PR waits for a person to approve the workflow run."
+findings_wave1:
+  - id: F14
+    what: "A shell that sets GIT_DIR made git -C act on the agent's own checkout; a test detached it (Cursor)."
+    fixed: "thread.mjs, skills.mjs and the tests drop the variables that point git at a repository; canary test."
+  - id: F15
+    what: "The tests' bare local remotes fail where git has safe.bareRepository=explicit (Copilot)."
+    fixed: null
+  - id: F16
+    what: "A platform that cannot rename its PR or that opens it as a draft without CI cannot finish the ready step; the merging role posted ready for it."
+    fixed: null
