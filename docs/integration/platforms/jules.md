@@ -1,5 +1,7 @@
 # Google Jules
 
+Last checked: 2026-10-13
+
 Fact sheet for WI-002 activity A1. Everything here comes from Google's own pages, each read on 13 October 2026. Where those pages are silent, this sheet says **unknown**. Jules describes itself as "currently in beta".
 
 Sources:
