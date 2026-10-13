@@ -304,13 +304,16 @@ function commitAndPush(message) {
   if (tryGit(["diff", "--cached", "--quiet"]).ok) return true;
   git(["commit", "--quiet", "-m", message]);
   if (!hasRemote()) return true;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    // Many agents push to one store at once. After the first refusal, wait a little, longer each
+    // time and different for each agent, so the next attempt does not meet the same race.
+    if (attempt) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250 * 2 ** attempt + Math.floor(Math.random() * 500));
     const r = tryGit(["push", "--quiet", "-u", "origin", "HEAD:main"]);
     if (r.ok) return true;
     // Someone else pushed first. Events are new files, so a rebase cannot conflict.
     if (!pull()) break;
   }
-  warn("NOT PUSHED — recorded locally only. It will go up with the next successful thread command.");
+  warn("NOT PUSHED: recorded locally only. `thread sync` pushes it; any later command that writes does too.");
   return false;
 }
 

@@ -1,0 +1,156 @@
+# WI-002 progress. Activities are claimed on the board (source trial, the store's board)
+# instead of lock files in locks/: the trial runs on the mechanism it tests.
+schema_version: 3
+version: 1
+last_modified: "2026-10-13T00:30:00Z"
+last_modified_by: claude-6g3
+work_item_id: WI-002
+title: "Cross-platform agent trial: the board and threads on every major agent platform"
+type: development
+status: in_progress
+work_item_level: epic
+planning_period: "2026-Q4"
+created: "2026-10-11T00:00:00Z"
+updated: "2026-10-13T00:30:00Z"
+coordination:
+  claims: board               # activities are claimed with `thread board claim WI-002-A<n>`
+  store_source: trial
+  thread: t-8yb               # the trial's root thread in the store
+  merging_role: master:board-trial
+
+deliverables:
+  - id: WI-002-D1
+    name: "Platform fact sheets, one per platform"
+    depends_on: ["WI-002-D2"]
+    quality_criteria: |
+      Every claim cites the vendor's own page with the date read; unknowns say so.
+    approver: Dermot
+    state: planned
+    path: "docs/integration/platforms/"
+  - id: WI-002-D2
+    name: "Sandbox and trial harness"
+    depends_on: []
+    quality_criteria: |
+      check grades checks 2, 3, 5, 6, 7, 8 and 11 per agent from the store alone; the rest
+      are printed as checked by hand.
+    approver: Dermot
+    state: drafted
+    path: "scripts/board-trial.mjs"
+  - id: WI-002-D3
+    name: "The pointer for workspaces (AGENTS.md, CLAUDE.md, setup reference)"
+    depends_on: ["WI-002-D1"]
+    quality_criteria: |
+      One line starts an agent; the rules (claim first, never merge) are in it.
+    approver: Dermot
+    state: drafted
+    path: "AGENTS.md"
+  - id: WI-002-D4
+    name: "Compatibility matrix"
+    depends_on: ["WI-002-D1", "WI-002-D3"]
+    quality_criteria: |
+      One row per platform tried, each cell from check output or marked not tried.
+    approver: Dermot
+    state: planned
+    path: "docs/integration/agent-platforms.md"
+  - id: WI-002-D5
+    name: "Board and skill fixes the trial turns up, with tests"
+    depends_on: []
+    quality_criteria: |
+      Each fix has a test in scripts/test-board.mjs or test-thread.mjs.
+    approver: Dermot
+    state: drafted
+  - id: WI-002-D6
+    name: "Private results note with prices and the recommended line-up"
+    depends_on: ["WI-002-D4"]
+    quality_criteria: |
+      Dated; prices from vendor pages.
+    approver: Dermot
+    state: planned
+
+activities:
+  - id: WI-002-A1
+    title: "Platform fact sheets from vendor pages"
+    produces: WI-002-D1
+    status: in_progress
+    actor: agent
+    depends_on: ["WI-002-A2"]
+    notes: "Done by the wave 0 trial agents as open calls t-uox, t-4n5, t-pm6, t-jfl, t-ttz, t-7oy, t-ecq."
+  - id: WI-002-A2
+    title: "Sandbox, harness, seed"
+    produces: WI-002-D2
+    status: completed
+    actor: agent
+    depends_on: []
+    completed_by: claude-6g3
+    completed_at: "2026-10-13T00:15:00Z"
+    notes: |
+      Repository creation is refused to this session's GitHub integration (403), so the store
+      is source trial in dermot-obrien/threads and the workspace is this branch. A stray push of
+      trial/base (one commit, the same sandbox files) could not be deleted from here.
+  - id: WI-002-A3
+    title: "Pointer text and setup reference"
+    produces: WI-002-D3
+    status: in_progress
+    actor: agent
+    depends_on: ["WI-002-A1"]
+  - id: WI-002-A4a
+    title: "Wave 0: Claude Code cloud sessions and local CLI"
+    produces: WI-002-D4
+    status: in_progress
+    actor: agent
+    depends_on: ["WI-002-A2"]
+  - id: WI-002-A4b
+    title: "Wave 1: Cursor, Codex, Copilot, Jules"
+    produces: WI-002-D4
+    status: pending
+    actor: human
+    depends_on: ["WI-002-A3"]
+  - id: WI-002-A5
+    title: "Concurrent and handoff runs"
+    produces: WI-002-D4
+    status: pending
+    actor: agent
+    depends_on: ["WI-002-A4a"]
+  - id: WI-002-A6
+    title: "Fix what broke"
+    produces: WI-002-D5
+    status: in_progress
+    actor: agent
+    depends_on: ["WI-002-A4a"]
+  - id: WI-002-A7
+    title: "A week of real work across platforms"
+    produces: WI-002-D6
+    status: pending
+    actor: human
+    depends_on: ["WI-002-A4b", "WI-002-A6"]
+  - id: WI-002-A8
+    title: "Wave 2 platforms"
+    produces: WI-002-D4
+    status: pending
+    actor: human
+    depends_on: ["WI-002-A6"]
+  - id: WI-002-A9
+    title: "Publish the matrix and setup notes; write the private results note"
+    produces: WI-002-D4
+    status: pending
+    actor: agent
+    depends_on: ["WI-002-A7", "WI-002-A8"]
+
+findings:
+  - id: F1
+    what: "A repeated --role (or --to, --after) kept only the last value; start took one role of three."
+    fixed: "thread.mjs parseArgs: list flags add up. Test: --role given more than once."
+  - id: F2
+    what: "board status at one scope listed merge queues from every source (trial showed master:me)."
+    fixed: "status filters queues by the ready note's source. Test: status shows only the merge queues ... in its scope."
+  - id: F3
+    what: "next --claim took the newest open call first, so a dispatcher's posting order ran backwards."
+    fixed: "Tasks are taken oldest first. Test: open calls are taken in the order they were posted."
+  - id: F4
+    what: "An agent that ran start twice left a second handle on the board, present for 8h, holding nothing."
+    fixed: null
+
+blockers: []
+artifacts:
+  scope: "./scope.md"
+  plan: "./plan.md"

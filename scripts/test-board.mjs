@@ -473,3 +473,118 @@ test("tidy lists unlinked chores and work held by agents that have gone", () => 
     f.cleanup();
   }
 });
+
+test("--role given more than once takes every role named, as a comma list does", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "m1", "--role", "master:board-trial", "--role", "curator:trial", "--role", "dispatcher:trial");
+    const roles = f.a.run("board", "roles");
+    for (const r of ["master:board-trial", "curator:trial", "dispatcher:trial"]) assert.match(roles, new RegExp(`${r} · m1`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("status shows only the merge queues whose ready notes were posted in its scope", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "m1", "--source", "trial", "--role", "master:board-trial");
+    f.b.run("board", "start", "--as", "w1", "--source", "personal");
+    f.b.run("board", "ready", "dermot-obrien/me#7", "a draft email", "--to", "master:me", "--as", "w1");
+    f.a.run("board", "ready", "dermot-obrien/ai-assisted-work#70", "a fact sheet", "--to", "master:board-trial", "--as", "m1");
+    const trial = f.a.run("board", "status", "--source", "trial");
+    assert.match(trial, /Merge queue for master:board-trial/);
+    assert.doesNotMatch(trial, /master:me/, "a queue from personal stays out of trial");
+    const json = JSON.parse(f.a.run("board", "status", "--source", "trial", "--json"));
+    assert.deepEqual(json.queue.map((e) => e.ref), ["dermot-obrien/ai-assisted-work#70"]);
+    assert.match(f.a.run("board", "status", "--source", "all"), /master:me/, "every source shows every queue");
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("open calls are taken in the order they were posted", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const first = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "First job", "--to", "any", "--as", "user"))[1];
+    const second = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "Second job", "--to", "any", "--as", "user"))[1];
+    const list = f.human.run("board", "next", "--list");
+    assert.ok(list.indexOf(first) < list.indexOf(second), list);
+    assert.match(f.a.run("board", "next", "--claim", "--as", "a1"), new RegExp(`a1 took ${first}`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("done takes the task thread of an open call as well as the post", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const out = f.human.run("board", "post", "Write the sheet", "--to", "any", "--as", "user");
+    const task = /task (t-[0-9a-z]+)/.exec(out)[1];
+    f.a.run("board", "next", "--claim", "--as", "a1");
+    assert.match(f.a.run("board", "done", task, "sheet written", "--as", "a1"), new RegExp(`${postId(out)} done: sheet written`));
+    assert.match(f.a.run("show", task), /done/);
+    assert.match(f.a.raw("board", "done", "t-zzz", "x", "--as", "a1").stderr, /no open call made that thread/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("a standing order is acknowledged, never accepted or done", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const order = postId(f.human.run("board", "post", "Titles start with trial:", "--to", "*", "--kind", "standing", "--as", "user"));
+    const r = f.a.raw("board", "done", order, "ok", "--as", "a1");
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /standing order/);
+    f.a.run("board", "ack", order, "--as", "a1");
+    assert.doesNotMatch(f.a.run("board", "inbox", "--as", "a1"), new RegExp(order));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("replying to a question answers it: it leaves the inbox and stops waiting", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const q = postId(f.human.run("board", "post", "Does it read AGENTS.md?", "--to", "a1", "--kind", "question", "--as", "user"));
+    f.a.run("board", "reply", q, "Yes, at the root", "--as", "a1");
+    assert.doesNotMatch(f.a.run("board", "inbox", "--as", "a1"), new RegExp(q));
+    assert.doesNotMatch(f.human.run("board", "status"), new RegExp(`${q} · question`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("start says when this workspace already has a handle on the board", () => {
+  const f = fixture();
+  try {
+    const first = /📋 ([a-z]+-[0-9a-z]{3})/.exec(f.a.run("board", "start", "--tool", "claude-code"))[1];
+    const again = f.a.run("board", "start", "--tool", "claude-code");
+    assert.match(again, new RegExp(`Already on the board from this workspace: ${first}`));
+    assert.doesNotMatch(f.a.run("board", "start", "--as", first, "--tool", "claude-code"), /Already on the board/, "coming back with --as is not a twin");
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("work an agent left (its claim lapsed) is taken before fresh work, with its notes", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "dead");
+    f.b.run("board", "start", "--as", "next1");
+    const first = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "Fresh job", "--to", "any", "--as", "user"))[1];
+    const second = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "Job that will be left", "--to", "any", "--as", "user"))[1];
+    f.a.run("board", "claim", second, "--for", "0.001m", "--as", "dead");
+    f.a.run("note", second, "STOPPED HERE: two sections written");
+    assert.match(f.b.run("board", "next", "--claim", "--as", "next1"), new RegExp(`next1 took ${second}`));
+    assert.match(f.b.run("show", second), /STOPPED HERE/);
+    assert.ok(first);
+  } finally {
+    f.cleanup();
+  }
+});
