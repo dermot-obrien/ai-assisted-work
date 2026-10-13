@@ -712,8 +712,15 @@ function autoPrune() {
 
 const WRITES = new Set(["dump", "file", "ask", "next", "start", "post", "reply", "ready", "ack", "accept", "done", "decline", "merging", "merged", "claim", "release", "role", "retract", "renew", "bye"]);
 
-/** The latest queue entry for a pull request, for merging and merged. */
+/**
+ * A merge queue reference: `owner/repo#n` for a pull request, or `owner/repo@branch` for one
+ * whose platform opens it after the agent stops. Returns the match, or null.
+ */
+const mergeRef = (ref) => /^([\w.-]+)\/([\w.-]+)(?:#(\d+)|@([\w./-]+))$/.exec(ref || "");
+
+/** The latest queue entry for a pull request, for merging and merged, by either form of reference. */
 function entryFor(state, ref) {
+  if (!mergeRef(ref)) H.die(`which pull request? name it as owner/repo#n or owner/repo@branch, as thread board queue shows it`);
   const e = queue(state).find((x) => x.ref === ref);
   if (!e) H.die(`${ref} is not in a merge queue. thread board queue shows what is`);
   return e;
@@ -1036,8 +1043,8 @@ const commands = {
     // A ready-to-merge note: joins the merge queue of the role that merges that repository.
     const who = me(flags);
     const ref = pos[0];
-    const m = /^([\w.-]+)\/([\w.-]+)#(\d+)$/.exec(ref || "");
-    if (!m) H.die('which pull request? thread board ready <owner/repo#n> "<what it changes>" [--after <owner/repo#n,...>] [--deploy "<what>"]');
+    const m = mergeRef(ref);
+    if (!m) H.die('which pull request? thread board ready <owner/repo#n|owner/repo@branch> "<what it changes>" [--after <refs>] [--deploy "<what>"]');
     const text = pos.slice(1).join(" ").trim();
     if (!text) H.die(`say in one line what ${ref} changes`);
     const to = typeof flags.to === "string" ? flags.to : `master:${m[2].toLowerCase()}`;
@@ -1313,10 +1320,11 @@ const commands = {
   thread board tidy                  the curator's sweep: unfiled, unanswered, unlinked, orphaned, doubled
   thread board next [--claim] [--list] [--limit 5]   what to do next, best first; --claim takes the best
                                      open task (racing safely); --list is the dispatcher's view of the scope
-  thread board ready <owner/repo#n> "<what it changes>" [--to <role>] [--after <refs>] [--deploy "<what>"]
+  thread board ready <owner/repo#n|owner/repo@branch> "<what it changes>" [--to <role>] [--after <refs>] [--deploy "<what>"]
                                      join the merge queue (default role master:<repo>)
   thread board queue [--to <role>]   the merge queue, in order, with what waits for what
-  thread board merging|merged <owner/repo#n> ["<note>"]          for the role that merges
+  thread board merging|merged <owner/repo#n|owner/repo@branch> ["<note>"]
+                                     for the role that merges
   thread board read [--on <id>] [--ref <ref>] [--from <h>] [--to <x>] [--kind <k>] [--days 3] [--all]
   thread board sent                  what this handle posted, and who acknowledged it
   thread board who                   agents working now in this scope, their roles and claims

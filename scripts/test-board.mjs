@@ -366,6 +366,28 @@ test("the merge queue keeps order, holds a pull request until the ones it follow
   }
 });
 
+test("ready takes a branch when the pull request has no number yet, and merging and merged work that entry", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "m1", "--role", "master:patternode-platform");
+    f.b.run("board", "start", "--as", "w1");
+    f.b.run("board", "ready", "patternode/patternode-platform@claude/queue-api", "adds the API", "--as", "w1");
+    f.b.run("board", "ready", "patternode/patternode-platform#12", "uses the API", "--after", "patternode/patternode-platform@claude/queue-api", "--as", "w1");
+    let q = f.a.run("board", "queue", "--as", "m1");
+    assert.match(q, /1\. patternode\/patternode-platform@claude\/queue-api · ready, next/);
+    assert.match(q, /2\. patternode\/patternode-platform#12 · waits for patternode\/patternode-platform@claude\/queue-api/);
+    assert.notEqual(f.b.raw("board", "ready", "patternode/patternode-platform@", "no branch", "--as", "w1").status, 0, "a branch must be named");
+    assert.notEqual(f.a.raw("board", "merging", "patternode/patternode-platform#12", "--as", "m1").status, 0, "cannot merge ahead of the branch it follows");
+    f.a.run("board", "merging", "patternode/patternode-platform@claude/queue-api", "--as", "m1");
+    f.a.run("board", "merged", "patternode/patternode-platform@claude/queue-api", "squash abc123 (#11), nothing deployed", "--as", "m1");
+    q = f.a.run("board", "queue", "--as", "m1");
+    assert.match(q, /1\. patternode\/patternode-platform#12 · ready, next/);
+    assert.doesNotMatch(q, /@claude\/queue-api ·/);
+  } finally {
+    f.cleanup();
+  }
+});
+
 test("an open call is a task in the tree: claimed as the thread, shown with its holder, closed when done", () => {
   const f = fixture();
   try {

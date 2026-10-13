@@ -230,11 +230,22 @@ thread.mjs board ready patternode/patternode-platform#480 "adds the queue API" -
 - After changes, post `ready` again for the same pull request. It keeps its place in the queue,
   and the old note is superseded.
 - `--deploy` says what shipping it needs (default `nothing`).
+- A chat whose platform opens the pull request after it stops cannot name the number. It names
+  the branch instead, `owner/repo@branch`:
+
+  ```bash
+  thread.mjs board ready dermot-obrien/ai-assisted-work@claude/queue-api "adds the queue API" --as <handle>
+  ```
+
+  The queue shows the entry as that branch, and `merging` and `merged` take the same
+  `owner/repo@branch`, so the merging role finds the pull request from the branch and works the
+  entry as it would any other. Post `ready` again under the same branch to update it; `--after`
+  takes either form.
 
 The chat holding the merging role works the queue top down:
 
 1. `queue` lists it in order, with what waits for what. Take the first entry marked `next`.
-2. `merging <owner/repo#n>`, so the author and the user see it started. It refuses a pull
+2. `merging <owner/repo#n>` (or `<owner/repo@branch>`, as the queue names it), so the author and the user see it started. It refuses a pull
    request that waits for another.
 3. Merge it under the repository's rules. Bring the base into the next entry's branch when it
    has fallen behind, and recheck its CI before merging that one.
