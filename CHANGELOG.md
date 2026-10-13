@@ -10,7 +10,7 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 thread 0.15.0: the board as agents found it in the first cross-platform trial (WI-002 wave 0, Claude Code in the cloud and locally), with a vision for agents working together and a platform matrix.
 
 ### Changed
-- Agent instructions are the same for every tool. `AGENTS.md` holds them, and the thread skill's setup now commits the skill at `.agents/skills/` with an `AGENTS.md` that names the command, in place of a copy in `.claude/skills/` and a Claude Code session-start hook. A tool that reads only its own file gets a one-line file importing `AGENTS.md`. The skill's references no longer assume one tool.
+- Agent instructions are the same for every tool. `AGENTS.md` holds them, and the thread skill's setup now commits the skill at `.agents/skills/` with an `AGENTS.md` that names the command, in place of a copy in `.claude/skills/` and a Claude Code session-start hook. A tool that reads only its own file gets a one-line shim importing `AGENTS.md`: `CLAUDE.md` for Claude Code, `GEMINI.md` for Gemini CLI. The skill's references no longer assume one tool.
 - `board wait` wakes only on what arrives after it starts: a post for the chat or its roles, an open call, or an acknowledgement of a post the chat sent (its instruction accepted or done). What was already unread no longer wakes it, so a chat with a standing order left unacknowledged no longer spins.
 - `board next` takes open calls oldest first, so a dispatcher's order is the order work is done in, and takes work an agent left (its claim lapsed) before fresh work, saying whose it was and to read its notes.
 - `board status` shows only the merge queues whose ready notes were posted in its scope.

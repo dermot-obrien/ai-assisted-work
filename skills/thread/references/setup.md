@@ -21,8 +21,10 @@ cloud agent starts from a fresh clone of the repo, so everything `/thread` needs
 2. **An `AGENTS.md` at the root** that says what the agent is to do and names the command,
    `node .agents/skills/thread/bin/thread.mjs`, so an agent that loads no skills at all still
    finds it. Keep every instruction there, in one file every tool reads; add no tool-specific
-   instruction files. A tool that reads only its own file name (Claude Code reads `CLAUDE.md`)
-   gets a one-line file that imports `AGENTS.md` (`@AGENTS.md`) and says nothing else.
+   instruction files. A tool that reads only its own file name gets a one-line shim that
+   imports `AGENTS.md` and says nothing else: `CLAUDE.md` holding `@AGENTS.md` for Claude Code,
+   and `GEMINI.md` holding `@./AGENTS.md` for Gemini CLI. Cursor, Copilot, Codex, Jules, Devin
+   and OpenHands read `AGENTS.md` themselves.
 3. **`threads_remote: <store url>` in `.aaw-config.yaml`** at the repo root (a file with
    just that line is fine), so no environment variables are needed.
 4. **Refresh the committed copy** whenever this skill is updated: re-run the installer, or

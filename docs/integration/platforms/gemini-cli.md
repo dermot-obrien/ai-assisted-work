@@ -75,7 +75,7 @@ Against the 12 checks in `change/work-items/WI-002-cross-platform-agent-trial/sc
 
 | # | Check | Verdict | Why |
 |---|---|---|---|
-| 1 | Skill found or pointer leads to it | Likely, with setup | `.claude/skills/` is not read. Either mirror the skill into `.agents/skills/` (read natively), or set `context.fileName` to include `AGENTS.md` or `CLAUDE.md` so the existing pointer loads |
+| 1 | Skill found or pointer leads to it | Likely, with setup | `.claude/skills/` is not read. The repository's `GEMINI.md` is a shim importing `AGENTS.md` (`@./AGENTS.md`), so the pointer loads with no settings |
 | 2 | Node 18+ and git | Likely | The CLI itself requires Node 20+; git comes from the host or runner |
 | 3 | Store clone and push | Likely locally; unknown in Actions | Locally it uses the host's git credentials. In Actions it needs a GitHub App or token covering the store, which the docs do not cover |
 | 4 | One-line pointer is enough | Likely | Headless `-p "Go pick up work in trial"` with the pointer in a loaded context file |
