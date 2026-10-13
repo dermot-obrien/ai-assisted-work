@@ -1011,10 +1011,14 @@ const commands = {
       console.log(`First, the merge queue: ${first.text}. thread board queue --as ${who} has the order.`);
       return;
     }
+    const state0 = replay(readBoard());
     for (const i of items.filter((x) => x.thread)) {
+      // Work another agent started and left: say so, so its notes are read before starting over.
+      const prev = state0.claims.get(i.id);
       const r = claim(i.id, who, { for: flags.for, note: typeof flags.note === "string" ? flags.note : undefined }, LEASE.claim);
       if (r.held && r.pushed !== false) {
         console.log(`🔒 ${who} took ${i.id} · ${i.text}${i.thread.source !== "default" ? ` · in ${i.thread.source}` : ""}`);
+        if (prev && prev.who !== who) console.log(`${prev.who} started this and left it (its claim lapsed ${ago(prev.until)}). Read its notes first: thread show ${i.id}.`);
         console.log(`Pick it up with: thread resume ${i.id}. Close it with thread done ${i.id} "<result>" when finished; that frees the claim.`);
         return;
       }

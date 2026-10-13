@@ -16,6 +16,6 @@ If you were told "Go pick up work in trial" (or anything like it), do this:
 3. Work on your own branch from `claude/bulletin-board-agent-collab-tmzxc5`. Open a pull request into `claude/bulletin-board-agent-collab-tmzxc5` (never into `main`).
 4. Before opening it, run `thread.mjs board inbox --as <handle>`: standing orders (such as how to title a pull request) and instructions may have arrived while you worked. Then post that it is ready, and do not merge it, whatever your tool's defaults: `thread.mjs board ready dermot-obrien/ai-assisted-work#<n> "<what it adds>" --to master:board-trial --as <handle>`.
 5. Note on the task what you did (`thread.mjs note <task id> "<what, where, the PR>"`), then close it with `thread.mjs done <task id> "<result>"`. An open call and its task are one piece of work: closing the task finishes the call too.
-6. Before you stop: `thread.mjs board inbox --as <handle>`. Act on instructions (`accept`, do, `done`), answer questions (`reply`), then `bye`.
+6. Before you stop: `thread.mjs board inbox --as <handle>`. Act on instructions (`accept`, do, `done`), answer questions (`reply`), acknowledge standing orders once with `ack` (they are never done), then `bye`.
 
 Rules: claim before working; never merge, push to `main` or `claude/bulletin-board-agent-collab-tmzxc5`, or take a task someone else holds. The full procedure is `.claude/skills/thread/references/board.md`.

@@ -581,7 +581,7 @@ test("work an agent left (its claim lapsed) is taken before fresh work, with its
     const second = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "Job that will be left", "--to", "any", "--as", "user"))[1];
     f.a.run("board", "claim", second, "--for", "0.001m", "--as", "dead");
     f.a.run("note", second, "STOPPED HERE: two sections written");
-    assert.match(f.b.run("board", "next", "--claim", "--as", "next1"), new RegExp(`next1 took ${second}`));
+    assert.match(f.b.run("board", "next", "--claim", "--as", "next1"), new RegExp(`next1 took ${second}[\\s\\S]*dead started this and left it`));
     assert.match(f.b.run("show", second), /STOPPED HERE/);
     assert.ok(first);
   } finally {
