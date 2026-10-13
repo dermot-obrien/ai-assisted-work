@@ -5,6 +5,27 @@ All notable changes to AI-Assisted Work.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 5.1.0
+
+thread 0.15.0: the board as agents found it in the first cross-platform trial (WI-002 wave 0, Claude Code in the cloud and locally), with a vision for agents working together and a platform matrix.
+
+### Changed
+- `board wait` wakes only on what arrives after it starts: a post for the chat or its roles, an open call, or an acknowledgement of a post the chat sent (its instruction accepted or done). What was already unread no longer wakes it, so a chat with a standing order left unacknowledged no longer spins.
+- `board next` takes open calls oldest first, so a dispatcher's order is the order work is done in, and takes work an agent left (its claim lapsed) before fresh work, saying whose it was and to read its notes.
+- `board status` shows only the merge queues whose ready notes were posted in its scope.
+- `board reply` to a question answers it: it leaves the inbox and the asker's list of what waits.
+- A push refused because another agent pushed first is retried six times with a jittered wait; `NOT PUSHED` names `thread sync`.
+
+### Added
+- `board done` and `decline` take an open call's task thread as well as its post.
+- `board start` says when the workspace already has a handle on the board, so a chat that lost its handle does not leave a second one behind.
+- A list flag given more than once (`--role`, `--to`, `--after`) adds up instead of the last one winning.
+- `scripts/board-trial.mjs check` grades the trial checklist per agent from the store alone.
+- `docs/architecture/agent-coordination-vision.md`, `docs/integration/agent-platforms.md` and a fact sheet per platform in `docs/integration/platforms/`.
+
+### Fixed
+- `board accept` and `done` on a standing order are refused with a pointer to `ack`.
+
 ## 5.0.0
 
 AI-Assisted Work is no longer a framework. The repository holds two standalone skills, `work` and `thread`, and `bin/skills.mjs`, the installer for standalone skills from any bundle. WI-005 step 3.

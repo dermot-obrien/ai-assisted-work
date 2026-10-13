@@ -523,8 +523,12 @@ function unclaimedThreads(state, scope) {
     const c = state.claims.get(t.id);
     return !c || !state.live(c);
   });
-  // Stable: within a rank the newest stays first.
-  return free.map((t, i) => [t, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([t]) => t);
+  // Within a rank the newest comes first, except tasks: open calls are a queue, taken in the
+  // order they were posted, so a dispatcher's order is the order the work is done in.
+  // A task whose claim lapsed was started and left (an agent died or ran out of quota): it comes
+  // before fresh work, so what was done on it is picked up rather than left to go stale.
+  const left = (t) => (t.kind === "task" && state.claims.has(t.id) ? 0 : 1);
+  return free.map((t, i) => [t, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || left(a[0]) - left(b[0]) || (a[0].kind === "task" ? b[1] - a[1] : a[1] - b[1])).map(([t]) => t);
 }
 
 /**
@@ -733,6 +737,10 @@ const commands = {
       const taken = new Set(state.agents.keys());
       do who = `${tool.split(/[-:]/)[0]}-${randomBytes(2).readUInt16BE(0).toString(36).padStart(3, "0").slice(-3)}`;
       while (taken.has(who));
+      // The same workspace on the same machine already on the board: probably this chat, joined
+      // before and the handle lost. Say so, so it is not left behind as a ghost for eight hours.
+      const twins = state.present.filter((a) => a.hello.ctx === ctx && a.hello.host === host() && (a.hello.tool || null) === (typeof flags.tool === "string" ? flags.tool : null));
+      if (twins.length) console.log(`Already on the board from this workspace: ${twins.map((a) => `${a.handle} (joined ${ago(a.hello.ts)})`).join(", ")}. If that was this chat, run thread board bye --as ${who} and keep using ${twins[0].handle}.`);
     }
     // A chat that comes back keeps the scope it joined with, unless told another.
     const prior = state.agents.get(who)?.hello?.scope;
@@ -769,7 +777,7 @@ const commands = {
       return console.log(JSON.stringify({
         scope,
         agents: state.present.filter((a) => inScope(scope, a.hello.scope)).map((a) => ({ handle: a.handle, ...strip(a.hello), roles: state.rolesOf(a.handle), holds: state.holding(a.handle).map((c) => c.key) })),
-        queue: queue(state).map((e) => ({ ref: e.ref, to: e.to, post: e.latest.id, from: e.latest.from, text: e.latest.text, after: e.after, blockedBy: e.blockedBy, merging: e.merging })),
+        queue: queue(state).filter((e) => inScope(scope, e.latest._source)).map((e) => ({ ref: e.ref, to: e.to, post: e.latest.id, from: e.latest.from, text: e.latest.text, after: e.after, blockedBy: e.blockedBy, merging: e.merging })),
         waiting: [...state.posts.values()].filter((p) => PENDING.has(p.kind) && p.kind !== "ready" && !finished(p) && !p.retracted && inScope(scope, p._source)).map(toJson),
         threads: unclaimedThreads(state, scope),
       }, null, 2));
@@ -779,7 +787,8 @@ const commands = {
     console.log("", agents.length ? `Working now (${agents.length}):` : "No agent is on the board now.");
     for (const a of agents) console.log("  " + agentLine(state, a));
     const roles = new Map();
-    for (const e of queue(state)) for (const r of e.to) roles.set(r, [...(roles.get(r) || []), e]);
+    // Only the queues whose ready notes were posted in this scope: a view of trial shows no queue from me.
+    for (const e of queue(state).filter((x) => inScope(scope, x.latest._source))) for (const r of e.to) roles.set(r, [...(roles.get(r) || []), e]);
     for (const [role, entries] of roles) {
       const holder = state.claims.get(`role:${role}`);
       console.log("", `Merge queue for ${role} (${entries.length}; ${holder && state.live(holder) ? `held by ${holder.who}` : "nobody holds the role"}):`);
@@ -852,6 +861,11 @@ const commands = {
     const orig = replay(readBoard()).posts.get(pos[0]);
     if (!orig) H.die(`no post ${pos[0]} on the board`);
     commands.post(pos.slice(1), { ...flags, as: who, to: orig.relayed ? "user" : orig.from, on: orig.on ?? undefined, ref: orig.ref ?? undefined, reply: orig.id, kind: flags.kind ?? "answer" });
+    // Answering a question settles it: it leaves this chat's inbox and the asker's list of what waits.
+    if (orig.kind === "question" && !orig.acks.some((a) => a.from === who && a.state === "done")) {
+      write({ type: "ack", from: who, post: orig.id, state: "done", note: "answered" }, orig._source);
+      save(`${who} answered ${orig.id}`);
+    }
   },
 
   dump(pos, flags) {
@@ -997,10 +1011,14 @@ const commands = {
       console.log(`First, the merge queue: ${first.text}. thread board queue --as ${who} has the order.`);
       return;
     }
+    const state0 = replay(readBoard());
     for (const i of items.filter((x) => x.thread)) {
+      // Work another agent started and left: say so, so its notes are read before starting over.
+      const prev = state0.claims.get(i.id);
       const r = claim(i.id, who, { for: flags.for, note: typeof flags.note === "string" ? flags.note : undefined }, LEASE.claim);
       if (r.held && r.pushed !== false) {
         console.log(`🔒 ${who} took ${i.id} · ${i.text}${i.thread.source !== "default" ? ` · in ${i.thread.source}` : ""}`);
+        if (prev && prev.who !== who) console.log(`${prev.who} started this and left it (its claim lapsed ${ago(prev.until)}). Read its notes first: thread show ${i.id}.`);
         console.log(`Pick it up with: thread resume ${i.id}. Close it with thread done ${i.id} "<result>" when finished; that frees the claim.`);
         return;
       }
@@ -1066,12 +1084,15 @@ const commands = {
 
   ack(pos, flags) {
     const who = me(flags);
-    const [id, maybeState, ...rest] = pos;
+    let [id, maybeState, ...rest] = pos;
     const state = STATES.includes(maybeState) ? maybeState : "seen";
     const note = (STATES.includes(maybeState) ? rest : [maybeState, ...rest]).filter(Boolean).join(" ").trim() || undefined;
     const s = replay(readBoard());
-    const p = s.posts.get(id);
-    if (!p) H.die(`no post ${id} on the board`);
+    // A task thread stands for the open call that made it, so `done t-4k2` finishes the call.
+    const p = s.posts.get(id) || [...s.posts.values()].filter((x) => x.task === id).pop();
+    if (!p) H.die(`no post ${id} on the board${/^t-/.test(id) ? `, and no open call made that thread: close it with thread done ${id} "<result>"` : ""}`);
+    id = p.id;
+    if (p.kind === "standing" && state !== "seen") H.die(`${id} is a standing order: it holds until retracted, so it is never accepted or done. thread board ack ${id} takes it out of your inbox`);
     if ((state === "done" || state === "declined") && !note) H.die(`say what happened: thread board ${state === "done" ? "done" : "decline"} ${id} "<result or why>"`);
     // An acknowledgement goes beside its post, so everyone who reads the post reads it.
     write({ type: "ack", from: who, post: id, state, note }, p._source);
@@ -1232,10 +1253,29 @@ const commands = {
     const timeout = duration(flags.timeout, "30m");
     const every = duration(flags.every, "1m");
     const end = Date.now() + timeout;
+    // Wake only on what arrives after the wait starts: a post for this chat, an open call, or an
+    // acknowledgement of one of its own posts (an answer accepted, an instruction done). Something
+    // already unread does not count, or a chat that left a standing order unacknowledged would
+    // wake at once every time and spin.
+    const seen = (state) => {
+      const { forMe, open } = inbox(state, who);
+      const acks = [...state.posts.values()].filter((p) => p.from === who).flatMap((p) => p.acks.filter((a) => a.from !== who).map((a) => `${p.id}:${a.from}:${a.state}`));
+      return new Set([...forMe.map((p) => p.id), ...open.map((p) => p.id), ...acks]);
+    };
+    const before = seen(replay(readBoard()));
     for (;;) {
       const state = replay(readBoard());
-      const { forMe, open } = inbox(state, who);
-      if (forMe.length || open.length) return commands.inbox(pos, { ...flags, as: who });
+      const now = seen(state);
+      const fresh = [...now].filter((k) => !before.has(k));
+      if (fresh.length) {
+        const acked = fresh.filter((k) => k.includes(":"));
+        for (const k of acked) {
+          const [id, from, st] = k.split(":");
+          console.log(`${id} ${st} by ${from}`);
+        }
+        if (acked.length === fresh.length) return;
+        return commands.inbox(pos, { ...flags, as: who });
+      }
       if (renewAll(state, who)) save(`${who} renews its leases while waiting`);
       if (Date.now() + every > end) break;
       sleep(every);
@@ -1298,14 +1338,26 @@ const commands = {
 
 // ---------------------------------------------------------------- entry points
 
+/** Try one quiet push when local main is ahead of origin (commits left behind by an earlier NOT PUSHED). */
+function pushLeftBehind() {
+  if (!H.tryGit(["remote"]).out.split("\n").includes("origin")) return;
+  if (!H.tryGit(["rev-parse", "--verify", "HEAD"]).ok) return;
+  const originMain = H.tryGit(["rev-parse", "--verify", "origin/main"]);
+  if (!originMain.ok || H.tryGit(["rev-list", "-1", "origin/main..HEAD"]).out.trim()) {
+    H.tryGit(["push", "--quiet", "-u", "origin", "HEAD:main"]);
+  }
+}
+
 /** Run `thread board <command>`; helpers come from thread.mjs. */
 export function runBoard(pos, flags, helpers) {
   H = helpers;
   const cmd = pos.shift() ?? "start";
   if (["help", "-h"].includes(cmd) || flags.help) return commands.help();
   if (!commands[cmd]) H.die(`unknown board command "${cmd}". Try: thread board help`);
+  const isWrite = WRITES.has(cmd) && !(cmd === "start" && flags.hook) && !(cmd === "next" && !flags.claim);
+  if (!isWrite) pushLeftBehind();
   commands[cmd](pos, flags);
-  if (WRITES.has(cmd) && !flags.hook) autoPrune();
+  if (isWrite) autoPrune();
 }
 
 /** Live claims on threads, for the tree: thread id -> handle. */

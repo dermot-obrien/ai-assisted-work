@@ -1,6 +1,6 @@
 {
   "name": "ai-assisted-work",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "AI-Assisted Work: the work and thread Agent Skills, and bin/skills.mjs, the installer for standalone skills. This file only holds the test dependency.",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "url": "https://github.com/dermot-obrien/ai-assisted-work.git"
   },
   "scripts": {
-    "test": "node scripts/test-work-schema.mjs && node --test scripts/test-thread.mjs scripts/test-board.mjs scripts/test-skills.mjs"
+    "test": "node scripts/test-work-schema.mjs && node --test scripts/test-thread.mjs scripts/test-board.mjs scripts/test-board-trial.mjs scripts/test-skills.mjs"
   },
   "devDependencies": {
     "yaml": "^2.8.1"

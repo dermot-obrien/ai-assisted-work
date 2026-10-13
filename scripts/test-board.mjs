@@ -11,11 +11,15 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+// The repository these tests run in must never be touched: drop variables that would point
+// git at it whatever -C says (a platform's shell may set GIT_DIR).
+for (const v of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_PREFIX"]) delete process.env[v];
 
 const SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "skills", "thread", "bin", "thread.mjs");
 
@@ -45,7 +49,15 @@ function fixture() {
       if (r.status !== 0) throw new Error(`thread ${args.join(" ")} exited ${r.status}:\n${r.stderr}${r.stdout}`);
       return r.stdout;
     };
-    return { run, raw, store: env.THREADS_HOME };
+    // A command left running (wait), so another agent can act while it does.
+    const later = (...args) => new Promise((resolve) => {
+      const c = spawn(process.execPath, [SCRIPT, ...args], { cwd: ws, env });
+      let out = "";
+      c.stdout.on("data", (d) => (out += d));
+      c.stderr.on("data", (d) => (out += d));
+      c.on("close", (status) => resolve({ status, out }));
+    });
+    return { run, raw, later, store: env.THREADS_HOME };
   };
   const a = agent("storeA");
   a.run("init");
@@ -70,6 +82,31 @@ test("start gives a handle, and a role routes instructions to whoever holds it",
     f.b.run("board", "start", "--as", "codex-1", "--tool", "codex");
     assert.match(f.b.run("board", "inbox", "--as", "codex-1"), /nothing unread/);
     assert.equal(f.b.raw("board", "role", "master:patternode-platform", "--as", "codex-1").status, 2);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("read-only board commands quietly push unpushed local commits left behind", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    f.b.run("board", "start", "--as", "b1");
+
+    // Break b's remote so a post cannot be pushed and stays local.
+    const good = execFileSync("git", ["-C", f.b.store, "remote", "get-url", "origin"], { encoding: "utf8" }).trim();
+    execFileSync("git", ["-C", f.b.store, "remote", "set-url", "origin", path.join(f.root, "nowhere.git")]);
+    const id = postId(f.b.run("board", "post", "Message stranded locally", "--to", "a1", "--as", "b1"));
+    assert.doesNotMatch(f.a.run("board", "inbox", "--as", "a1"), new RegExp(id), "a1 cannot see unpushed post yet");
+
+    // Restore b's remote.
+    execFileSync("git", ["-C", f.b.store, "remote", "set-url", "origin", good]);
+
+    // b runs a read-only command (inbox), which should push what was left behind.
+    f.b.run("board", "inbox", "--as", "b1");
+
+    // Now a1 can see b1's post.
+    assert.match(f.a.run("board", "inbox", "--as", "a1"), new RegExp(id));
   } finally {
     f.cleanup();
   }
@@ -192,14 +229,38 @@ test("standing orders show in every briefing until retracted", () => {
   }
 });
 
-test("wait returns as soon as something arrives, and times out otherwise", () => {
+test("wait returns when something new arrives, not for what was already unread, and times out otherwise", async () => {
   const f = fixture();
   try {
     f.a.run("board", "start", "--as", "a1");
     const idle = f.a.raw("board", "wait", "--as", "a1", "--timeout", "0.02m", "--every", "0.01m");
     assert.equal(idle.status, 3);
+    // Unread before the wait began (a standing order not yet acknowledged): no wake, no spin.
+    f.human.run("board", "post", "Titles start with trial:", "--to", "*", "--kind", "standing", "--as", "dermot");
+    assert.equal(f.a.raw("board", "wait", "--as", "a1", "--timeout", "0.02m", "--every", "0.01m").status, 3);
+    const waiting = f.a.later("board", "wait", "--as", "a1", "--timeout", "1m", "--every", "0.02m");
+    await new Promise((r) => setTimeout(r, 1500));
     f.human.run("board", "post", "Pick up WI-012-A4", "--to", "a1", "--kind", "instruction", "--as", "dermot");
-    assert.match(f.a.run("board", "wait", "--as", "a1", "--timeout", "1m"), /Pick up WI-012-A4/);
+    const r = await waiting;
+    assert.equal(r.status, 0, r.out);
+    assert.match(r.out, /Pick up WI-012-A4/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("wait wakes the sender when its instruction is done", async () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "boss");
+    f.b.run("board", "start", "--as", "w1");
+    const p = postId(f.a.run("board", "post", "Add the note", "--to", "w1", "--kind", "instruction", "--as", "boss"));
+    const waiting = f.a.later("board", "wait", "--as", "boss", "--timeout", "1m", "--every", "0.02m");
+    await new Promise((r) => setTimeout(r, 1500));
+    f.b.run("board", "done", p, "note added", "--as", "w1");
+    const r = await waiting;
+    assert.equal(r.status, 0, r.out);
+    assert.match(r.out, new RegExp(`${p} done by w1`));
   } finally {
     f.cleanup();
   }
@@ -469,6 +530,139 @@ test("tidy lists unlinked chores and work held by agents that have gone", () => 
     const tidy = f.a.run("board", "tidy");
     assert.match(tidy, new RegExp(`not linked to the plan \\(1\\):\\n  ${chore}`));
     assert.match(tidy, new RegExp(`no longer on the board \\(1\\):\\n  ${linked} · ghost`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("--role given more than once takes every role named, as a comma list does", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "m1", "--role", "master:board-trial", "--role", "curator:trial", "--role", "dispatcher:trial");
+    const roles = f.a.run("board", "roles");
+    for (const r of ["master:board-trial", "curator:trial", "dispatcher:trial"]) assert.match(roles, new RegExp(`${r} · m1`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("status shows only the merge queues whose ready notes were posted in its scope", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "m1", "--source", "trial", "--role", "master:board-trial");
+    f.b.run("board", "start", "--as", "w1", "--source", "personal");
+    f.b.run("board", "ready", "dermot-obrien/me#7", "a draft email", "--to", "master:me", "--as", "w1");
+    f.a.run("board", "ready", "dermot-obrien/ai-assisted-work#70", "a fact sheet", "--to", "master:board-trial", "--as", "m1");
+    const trial = f.a.run("board", "status", "--source", "trial");
+    assert.match(trial, /Merge queue for master:board-trial/);
+    assert.doesNotMatch(trial, /master:me/, "a queue from personal stays out of trial");
+    const json = JSON.parse(f.a.run("board", "status", "--source", "trial", "--json"));
+    assert.deepEqual(json.queue.map((e) => e.ref), ["dermot-obrien/ai-assisted-work#70"]);
+    assert.match(f.a.run("board", "status", "--source", "all"), /master:me/, "every source shows every queue");
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("open calls are taken in the order they were posted", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const first = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "First job", "--to", "any", "--as", "user"))[1];
+    const second = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "Second job", "--to", "any", "--as", "user"))[1];
+    const list = f.human.run("board", "next", "--list");
+    assert.ok(list.indexOf(first) < list.indexOf(second), list);
+    assert.match(f.a.run("board", "next", "--claim", "--as", "a1"), new RegExp(`a1 took ${first}`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("done takes the task thread of an open call as well as the post", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const out = f.human.run("board", "post", "Write the sheet", "--to", "any", "--as", "user");
+    const task = /task (t-[0-9a-z]+)/.exec(out)[1];
+    f.a.run("board", "next", "--claim", "--as", "a1");
+    assert.match(f.a.run("board", "done", task, "sheet written", "--as", "a1"), new RegExp(`${postId(out)} done: sheet written`));
+    assert.match(f.a.run("show", task), /done/);
+    assert.match(f.a.raw("board", "done", "t-zzz", "x", "--as", "a1").stderr, /no open call made that thread/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("a standing order is acknowledged, never accepted or done", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const order = postId(f.human.run("board", "post", "Titles start with trial:", "--to", "*", "--kind", "standing", "--as", "user"));
+    const r = f.a.raw("board", "done", order, "ok", "--as", "a1");
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /standing order/);
+    f.a.run("board", "ack", order, "--as", "a1");
+    assert.doesNotMatch(f.a.run("board", "inbox", "--as", "a1"), new RegExp(order));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("replying to a question answers it: it leaves the inbox and stops waiting", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "a1");
+    const q = postId(f.human.run("board", "post", "Does it read AGENTS.md?", "--to", "a1", "--kind", "question", "--as", "user"));
+    f.a.run("board", "reply", q, "Yes, at the root", "--as", "a1");
+    assert.doesNotMatch(f.a.run("board", "inbox", "--as", "a1"), new RegExp(q));
+    assert.doesNotMatch(f.human.run("board", "status"), new RegExp(`${q} · question`));
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("start says when this workspace already has a handle on the board", () => {
+  const f = fixture();
+  try {
+    const first = /📋 ([a-z]+-[0-9a-z]{3})/.exec(f.a.run("board", "start", "--tool", "claude-code"))[1];
+    const again = f.a.run("board", "start", "--tool", "claude-code");
+    assert.match(again, new RegExp(`Already on the board from this workspace: ${first}`));
+    assert.doesNotMatch(f.a.run("board", "start", "--as", first, "--tool", "claude-code"), /Already on the board/, "coming back with --as is not a twin");
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("work an agent left (its claim lapsed) is taken before fresh work, with its notes", () => {
+  const f = fixture();
+  try {
+    f.a.run("board", "start", "--as", "dead");
+    f.b.run("board", "start", "--as", "next1");
+    const first = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "Fresh job", "--to", "any", "--as", "user"))[1];
+    const second = /task (t-[0-9a-z]+)/.exec(f.human.run("board", "post", "Job that will be left", "--to", "any", "--as", "user"))[1];
+    f.a.run("board", "claim", second, "--for", "0.001m", "--as", "dead");
+    f.a.run("note", second, "STOPPED HERE: two sections written");
+    assert.match(f.b.run("board", "next", "--claim", "--as", "next1"), new RegExp(`next1 took ${second}[\\s\\S]*dead started this and left it`));
+    assert.match(f.b.run("show", second), /STOPPED HERE/);
+    assert.ok(first);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("GIT_DIR pointing at another repository leaves that repository alone", () => {
+  const f = fixture();
+  try {
+    const canary = path.join(f.root, "canary");
+    execFileSync("git", ["init", "--quiet", "--initial-branch=main", canary]);
+    execFileSync("git", ["-C", canary, "commit", "--quiet", "--allow-empty", "-m", "c1"], { env: { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" } });
+    const head = execFileSync("git", ["-C", canary, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    const env = { ...process.env, THREADS_HOME: f.a.store, THREADS_REMOTE: f.remote, GIT_DIR: path.join(canary, ".git"), GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" };
+    const r = spawnSync(process.execPath, [SCRIPT, "board", "start", "--as", "a1"], { cwd: f.root, env, encoding: "utf8" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(execFileSync("git", ["-C", canary, "rev-parse", "HEAD"], { encoding: "utf8" }).trim(), head, "the canary's history is unchanged");
+    assert.equal(execFileSync("git", ["-C", canary, "status", "--porcelain"], { encoding: "utf8" }).trim(), "", "the canary's work tree is clean");
+    assert.match(execFileSync("git", ["-C", f.a.store, "log", "--oneline", "-1"], { encoding: "utf8" }), /a1 joins/, "the write went to the store");
   } finally {
     f.cleanup();
   }

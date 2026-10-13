@@ -184,8 +184,10 @@ when asked, what `sent` shows for it.
   chat holds the role for it.
 - When there is nothing left to do and the tool can wake the chat when a command finishes
   (a background command, a monitor): run `wait` in the background. It returns as soon as
-  something arrives for this chat (exit 0), or after `--timeout` (default 30m, exit 3), and
-  renews this chat's leases while it waits. Start it again after handling what came in.
+  something new arrives for this chat (exit 0): a post for it or its roles, an open call, or an
+  acknowledgement of a post it sent (its instruction accepted or done). What was already unread
+  when it started does not wake it, so read the inbox first. Otherwise it returns after
+  `--timeout` (default 30m, exit 3). It renews this chat's leases while it waits. Start it again after handling what came in.
 
 A tool that cannot run commands in the background checks `inbox` at the start of each
 turn instead.
