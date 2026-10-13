@@ -4,6 +4,19 @@
 
 **Level:** epic. It lands in 2026-Q4.
 
+## Continuing this work (any agent)
+
+State lives in [progress.yaml](progress.yaml): every activity and task with its status, the findings (F1 to F21), and the results of wave 0, wave 1 and race 1. Read it first. The pool and mission control it leads into are [WI-003](../WI-003-mission-control/plan.md).
+
+| Where | What |
+|---|---|
+| Branch | `claude/bulletin-board-agent-collab-tmzxc5` in `dermot-obrien/ai-assisted-work`: the sandbox, and draft PR #71 into `main`. Work on your own branch from it and open PRs into it, never into `main` |
+| Store | `dermot-obrien/threads-trial`, source `trial`. Trial root thread `t-fb4`; race 1 is `t-4wv` |
+| Roles | `master:board-trial` merges trial PRs in queue order; `reviewer:trial` scores them against [race-1.md](race-1.md) |
+| Tools | `node scripts/board-trial.mjs check` and `race <thread>`; `thread board pool` (WI-003) |
+
+To pick up: join the board (`node .claude/skills/thread/bin/thread.mjs board start --tool <tool> --source trial`), claim the activity you take (`board claim WI-002-A6`), do its next pending task, update progress.yaml, and release. Tasks marked `awaiting_human` are Dermot's. Never merge into `main`; Dermot does.
+
 ## Analysis Summary
 
 ### Problem Statement
@@ -69,22 +82,23 @@ This work item is done when every product in the Product Breakdown has reached `
 ## Activity Dependency Graph
 
 ```
-A2 sandbox + harness ──> A4a wave 0 (Claude cloud + local) ──┬──> A5 concurrent + handoff ──> A6 fixes
+A2 sandbox + harness ──> A4 wave 0 (Claude cloud + local) ──┬──> A5 concurrent + handoff ──> A6 fixes
                                     │                         │
-                                    └──> A1 fact sheets ──> A3 pointer ──> A4b wave 1 ──> A7 week of real work ──> A8 wave 2 ──> A9 publish
+                                    └──> A1 fact sheets ──> A3 pointer ──> A11 wave 1 ──> A7 week of real work ──> A8 wave 2 ──> A9 publish
 ```
 
-A1 is done by the wave 0 agents themselves, so A4a and A1 run together.
+A1 is done by the wave 0 agents themselves, so A4 and A1 run together.
 
 | Activity | Product | Actor | Depends on |
 |---|---|---|---|
 | A1 Platform fact sheets from vendor pages | D1 | agent (wave 0 trial agents) | A2 |
 | A2 Sandbox, harness, seed | D2 | agent | |
 | A3 Pointer text and setup reference | D3 | agent | A1 |
-| A4a Wave 0: Claude Code cloud and CLI | D4 | agent | A2 |
-| A4b Wave 1: Cursor, Codex, Copilot, Jules | D4 | human starts each platform; agent grades | A3 |
-| A5 Concurrent and handoff runs | D4 | agent | A4a |
-| A6 Fix what broke | D5 | agent | A4a, A5 |
-| A7 A week of real work across platforms | D6 | human | A4b, A6 |
+| A4 Wave 0: Claude Code cloud and CLI | D4 | agent | A2 |
+| A11 Wave 1: Cursor, Codex, Copilot, Jules | D4 | human starts each platform; agent grades | A3 |
+| A5 Concurrent and handoff runs | D4 | agent | A4 |
+| A6 Fix what broke | D5 | agent | A4, A5 |
+| A7 A week of real work across platforms | D6 | human | A11, A6 |
 | A8 Wave 2 platforms | D4 | human | A6 |
 | A9 Publish matrix and setup notes; private results note | D4, D6 | agent | A7, A8 |
+| A10 Land thread 0.15.0 on main: take the sandbox off #71 | D5 | agent, then Dermot merges | A5 |

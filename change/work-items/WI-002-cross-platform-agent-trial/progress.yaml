@@ -1,9 +1,9 @@
 # WI-002 progress. Activities are claimed on the board (source trial, the store's board)
 # instead of lock files in locks/: the trial runs on the mechanism it tests.
 schema_version: 3
-version: 2
-last_modified: "2026-10-13T00:30:00Z"
-last_modified_by: claude-6g3
+version: 3
+last_modified: "2026-10-13T10:40:00Z"
+last_modified_by: claude-6de
 work_item_id: WI-002
 title: "Cross-platform agent trial: the board and threads on every major agent platform"
 type: development
@@ -84,48 +84,119 @@ activities:
     depends_on: []
     completed_by: claude-6g3
     completed_at: "2026-10-13T00:15:00Z"
-    notes: |
-      Repository creation is refused to this session's GitHub integration (403), so the store
-      is source trial in dermot-obrien/threads and the workspace is this branch. A stray push of
-      trial/base (one commit, the same sandbox files) could not be deleted from here.
+    notes: "Store dermot-obrien/threads-trial (source trial) since wave 1; workspace the sandbox branch claude/bulletin-board-agent-collab-tmzxc5; harness scripts/board-trial.mjs (check, race)."
   - id: WI-002-A3
     title: "Pointer text and setup reference"
     produces: WI-002-D3
     status: in_progress
     actor: agent
     depends_on: ["WI-002-A1"]
-  - id: WI-002-A4a
+    tasks:
+      - id: WI-002-A3-T1
+        title: "AGENTS.md and CLAUDE.md pointer, with the section for platforms that cannot wait or name their PR late"
+        status: completed
+        actor: agent
+        notes: "#72 (Cursor), sandbox branch."
+      - id: WI-002-A3-T2
+        title: "Setup notes for Copilot, Codex and Jules in skills/thread/references/setup.md"
+        status: completed
+        actor: agent
+        notes: "#73 (Copilot)."
+      - id: WI-002-A3-T3
+        title: "Jules setup: its PR's base defaults to main; check the base before Publish PR, or start Jules where the sandbox is the default branch (F20)"
+        status: pending
+        actor: agent
+      - id: WI-002-A3-T4
+        title: "Pointer names the branch for platforms with no branch picker (Codex, Jules) (F19)"
+        status: pending
+        actor: agent
+  - id: WI-002-A4
     title: "Wave 0: Claude Code cloud sessions and local CLI"
     produces: WI-002-D4
-    status: in_progress
+    status: completed
+    completed_at: "2026-10-13T05:00:00Z"
     actor: agent
     depends_on: ["WI-002-A2"]
-  - id: WI-002-A4b
-    title: "Wave 1: Cursor, Codex, Copilot, Jules"
+    notes: "All checks passed; see wave0 below."
+  - id: WI-002-A11
+    title: "Wave 1: Cursor, Codex, Copilot, Jules, and Claude in the same lineup"
     produces: WI-002-D4
-    status: pending
+    status: completed
+    completed_at: "2026-10-13T08:35:00Z"
     actor: human
     depends_on: ["WI-002-A3"]
+    notes: "All five ran one task each; see wave1 below. Started by Dermot (Cursor, Codex, Jules) and this session (Copilot, Claude)."
   - id: WI-002-A5
-    title: "Concurrent and handoff runs"
+    title: "Concurrent and handoff runs: the handoff (wave 0) and the races between platforms"
     produces: WI-002-D4
-    status: pending
-    actor: agent
-    depends_on: ["WI-002-A4a"]
+    status: in_progress
+    actor: any
+    depends_on: ["WI-002-A4"]
+    notes: "Brief: race-1.md. Race thread t-4wv in the trial store. Report: node scripts/board-trial.mjs race t-4wv --store <trial store>."
+    tasks:
+      - id: WI-002-A5-T1
+        title: "Handoff run: a dead agent's task finished by the next from its notes"
+        status: completed
+        actor: agent
+        notes: "Wave 0 (H1 to L3)."
+      - id: WI-002-A5-T2
+        title: "Race 1 setup: per-command test files, race report, six open calls under t-4wv, reviewer:trial session"
+        status: completed
+        actor: agent
+        notes: "07b1f1c, 5098f7d."
+      - id: WI-002-A5-T3
+        title: "Race 1: Claude (decline), Copilot (release), Cursor (renew) reviewed and merged"
+        status: completed
+        actor: agent
+        notes: "#79 5/5, #78 4/5, #80 5/5; see race1 below."
+      - id: WI-002-A5-T4
+        title: "Race 1: the three open tasks (bye, sent, role) taken by Codex and Jules, started by Dermot, or by the pool"
+        status: awaiting_human
+        actor: human
+        notes: "Dermot chooses: start Codex and Jules with the pointer line in race-1.md, or tell the dispatcher to run thread board pool tick (Claude and Copilot fill them)."
+      - id: WI-002-A5-T5
+        title: "Race 1: review and merge what comes in (reviewer:trial scores, master:board-trial merges in queue order), then record the table in progress.yaml and the matrix"
+        status: pending
+        actor: agent
+      - id: WI-002-A5-T6
+        title: "Race 2: harder tasks (a real fix or a design choice), started through the pool"
+        status: pending
+        actor: agent
+        notes: "Waits on WI-003-A6 and WI-003-A7 (pool tick on a schedule, Cursor and Jules starters live)."
   - id: WI-002-A6
     title: "Fix what broke"
     produces: WI-002-D5
     status: in_progress
     actor: agent
-    depends_on: ["WI-002-A4a"]
+    depends_on: ["WI-002-A4"]
+    notes: "F1 to F10, F12 to F14, F17, F18 and F20 are fixed; the tasks are the rest."
+    tasks:
+      - id: WI-002-A6-T1
+        title: "F11: one item per piece of work in status (an open call and its task shown once)"
+        status: pending
+        actor: agent
+        notes: "The second half of F11 (read-only commands push what was left behind) is fixed by Jules's change, 1807134."
+      - id: WI-002-A6-T2
+        title: "F15: the tests' bare local remotes work where git has safe.bareRepository=explicit"
+        status: pending
+        actor: agent
+      - id: WI-002-A6-T3
+        title: "F16: a platform whose PR is a draft without CI, or that cannot rename it, can still finish the ready step"
+        status: pending
+        actor: agent
+      - id: WI-002-A6-T4
+        title: "F21: find the board test that fails now and then under load (likely a board wait test) and make it robust"
+        status: pending
+        actor: agent
+        notes: "Failed twice in about twenty full runs, both times with other work running on the machine; eight quiet reruns passed. Capture the not ok output first."
   - id: WI-002-A7
     title: "A week of real work across platforms"
     produces: WI-002-D6
     status: pending
     actor: human
-    depends_on: ["WI-002-A4b", "WI-002-A6"]
+    depends_on: ["WI-002-A11", "WI-002-A6"]
   - id: WI-002-A8
-    title: "Wave 2 platforms"
+    title: "Wave 2 platforms: OpenHands, Devin, Gemini CLI"
     produces: WI-002-D4
     status: pending
     actor: human
@@ -136,6 +207,36 @@ activities:
     status: pending
     actor: agent
     depends_on: ["WI-002-A7", "WI-002-A8"]
+    tasks:
+      - id: WI-002-A9-T1
+        title: "Matrix: tried columns for Cursor, Copilot, Codex and Jules from wave 1 and race 1"
+        status: pending
+        actor: agent
+        notes: "Can start now; docs/integration/agent-platforms.md still shows them as forecasts."
+      - id: WI-002-A9-T2
+        title: "Private results note: prices, plans chosen (Claude Max 20x, Codex Plus, Cursor Pro), what each platform is for"
+        status: pending
+        actor: agent
+  - id: WI-002-A10
+    title: "Land thread 0.15.0 on main: take the sandbox off #71 so Dermot can merge it"
+    produces: WI-002-D5
+    status: pending
+    actor: any
+    depends_on: ["WI-002-A5"]
+    tasks:
+      - id: WI-002-A10-T1
+        title: "Decide on #77 on main (Jules's squash carried the sandbox files there): leave it until #71 merges, or revert it"
+        status: awaiting_human
+        actor: human
+      - id: WI-002-A10-T2
+        title: "When the races are done: remove the trial-only files from the branch (AGENTS.md and CLAUDE.md pointer, .aaw-config.yaml threads_source trial, .claude/settings.json hook, the ci.yml trigger for the sandbox branch) and update #71's description"
+        status: pending
+        actor: agent
+        notes: "Later trials get a fresh sandbox branch cut from main."
+      - id: WI-002-A10-T3
+        title: "Mark #71 ready for review; Dermot merges it"
+        status: pending
+        actor: human
 
 findings:
   - id: F1
