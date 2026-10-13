@@ -217,6 +217,13 @@ wave1:
     pr: "#73, draft"
     checks: {"1": pass, "2": pass, "3": "pass (the skill's push went through; the agent never runs git push itself)", "4": pass, "5": pass, "6": "pass (question answered; title instruction declined with a reason)", "7": pass, "8": "partial: right base, never merged, but no board ready (draft, no CI) and it cannot rename its PR", "9": "not tested"}
     notes: "Started from the gh CLI after the repository could not be picked in the web UI. Needed a process-local safe.bareRepository allowance to run the tests (F15). CI on its PR waits for a person to approve the workflow run."
+  copilot_merge: "#73 merged from git by master:board-trial (GitHub's stacked-PR rule blocked the button while the sandbox branch heads draft #71)"
+  codex:
+    handle: codex-67o
+    task: t-9e1
+    pr: "#75, merged"
+    checks: {"1": "pass, with the branch named in the prompt", "3": "pass once the ChatGPT Codex Connector covered the store; THREADS_REMOTE was never used", "4": "partial: the task could not be started on a chosen branch", "5": pass, "6": "pass (asked master:board-trial a design question; did the instruction; answered the question)", "7": pass, "8": "pass (opened its own PR into the right base, posted ready, did not merge)", "9": "inbox at turn boundaries"}
+    notes: "Better than forecast on check 8. Found a real flaw in the grader (losers of a race graded n/a) and fixed it after asking."
 findings_wave1:
   - id: F14
     what: "A shell that sets GIT_DIR made git -C act on the agent's own checkout; a test detached it (Cursor)."
@@ -226,4 +233,13 @@ findings_wave1:
     fixed: null
   - id: F16
     what: "A platform that cannot rename its PR or that opens it as a draft without CI cannot finish the ready step; the merging role posted ready for it."
+    fixed: null
+  - id: F17
+    what: "On Codex cloud the platform's own GitHub credential is used for github.com, so a token in THREADS_REMOTE was refused until the connector app covered the store."
+    fixed: "Setup notes (#73) say to install the connector on the store."
+  - id: F18
+    what: "GitHub blocks merging trial PRs because the sandbox branch is the head of draft #71 (stacked PRs)."
+    fixed: "Merged from git for now; move the sandbox off the #71 branch after wave 1."
+  - id: F19
+    what: "Codex's task could not be started on a chosen branch, so the one-line pointer needed the branch added."
     fixed: null
