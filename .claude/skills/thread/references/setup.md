@@ -68,29 +68,33 @@ check these in order and fix what's missing.
 1. **Store access:** Set an Agents secret named `THREADS_REMOTE` to a fine-grained token URL
    limited to the store repository (Contents: read and write). The agent's built-in token is
    limited to the code repository. Add `github.com` to the repository firewall allowlist if
-   needed. Setup steps can clone the store before the agent starts, but whether a script run
-   by the agent can push to it is unknown: Copilot documents that the agent cannot run `git push`
-   directly.
+   needed. Tried on 13 October 2026: the skill's own pushes to the store went through with this
+   secret, although the agent itself never runs `git push`.
 2. **Instructions:** Copilot reads `.github/copilot-instructions.md`, path-specific
    `.github/instructions/*.instructions.md`, and the nearest `AGENTS.md`; it can instead use
    a root `CLAUDE.md` or `GEMINI.md`. Skills are supported in `.github/skills/`, `.claude/skills/`
    and `.agents/skills/`, though the docs do not confirm each path. This repository's `AGENTS.md`
    points to the thread command.
-3. **Known gaps:** A task works on one repository, and the documented push restriction leaves
-   writes to a separate store uncertain. There is no documented wake-up for background commands.
+3. **Known gaps:** The agent cannot rename its pull request, which opens as a draft whose
+   CI waits for a person to approve the run, so the merging role may post `board ready` for it.
+   There is no documented wake-up for background commands. If the agent cannot be assigned an
+   issue or picked in the agents panel, start it with `gh agent-task create`.
 
 **OpenAI Codex Cloud:**
 
-1. **Store access:** Include the store as a repository in the cloud environment, or configure
-   `THREADS_REMOTE` with a fine-grained token limited to the store. The variable is visible to
-   the task. A network secret may keep the raw token out of the task, but whether it works with
-   Git's authentication header is unknown. Allow network access to GitHub.
+1. **Store access:** Install the ChatGPT Codex Connector GitHub app on the store repository as
+   well as the code repository. Tried on 13 October 2026: Codex's own GitHub credential is used
+   for github.com, so a push with only `THREADS_REMOTE` set was refused with "Write access to
+   repository not granted" until the connector covered the store. Turn on agent internet access
+   (the Package managers preset includes github.com). An environment variable, not a secret,
+   reaches the agent.
 2. **Instructions:** Codex reads `AGENTS.md`; it does not read `CLAUDE.md` by default. It finds
    skills in `.agents/skills/`, not `.claude/skills/`; this repository's `AGENTS.md` points to
    the thread command.
-3. **Known gaps:** Whether a cloud task can push to a second repository is unknown. Cloud tasks
-   have no documented background-command wake-up, and the PR flow and base branch may require
-   a human follow-up.
+3. **Known gaps:** If the task cannot be started on a chosen branch, put the branch in the
+   prompt (fetch and check it out first). Cloud tasks have no documented background-command
+   wake-up, and the pull request is created from the review screen after the task, so check its
+   base branch and post `board ready` for it if the agent could not.
 
 **Google Jules:**
 
