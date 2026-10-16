@@ -73,33 +73,43 @@
 
   <!-- L4 Solutions -->
   <g>
-    <rect x="210" y="90" width="280" height="84" class="bundle"/>
-    <text x="222" y="110" class="name">patternode-architecture</text>
-    <text x="222" y="126" class="repo">patternode/patternode-architecture</text>
-    <text x="222" y="144" class="q">The exemplar: a platform architecture repository</text>
-    <text x="222" y="160" class="q">that installs every bundle below. The house profile.</text>
+    <rect x="210" y="90" width="220" height="88" class="bundle"/>
+    <text x="220" y="110" class="name">patternode-architecture</text>
+    <text x="220" y="126" class="repo">patternode/</text>
+    <text x="220" y="144" class="q">The exemplar: a platform architecture</text>
+    <text x="220" y="160" class="q">repository. The house profile.</text>
   </g>
   <g>
-    <rect x="505" y="90" width="280" height="84" class="bundle"/>
-    <text x="517" y="110" class="name">patternode-platform</text>
-    <text x="517" y="126" class="repo">patternode/patternode-platform</text>
-    <text x="517" y="144" class="q">Implementation: hexagonal bounded contexts.</text>
-    <rect x="517" y="150" width="104" height="16" class="skill-local"/><text x="521" y="162" class="sk">gifs-trading-ops</text>
-    <rect x="627" y="150" width="148" height="16" class="skill-local"/><text x="631" y="162" class="sk">reconciliation-archive</text>
+    <rect x="442" y="90" width="220" height="88" class="bundle"/>
+    <text x="452" y="110" class="name">patternode-platform</text>
+    <text x="452" y="126" class="repo">patternode/</text>
+    <text x="452" y="140" class="q">Implementation: hexagonal contexts.</text>
+    <rect x="452" y="148" width="100" height="16" class="skill-local"/><text x="456" y="160" class="sk">gifs-trading-ops</text>
+    <text x="452" y="172" class="q" font-size="9">and reconciliation-archive, repository-local</text>
   </g>
   <g>
-    <rect x="800" y="90" width="270" height="84" class="bundle"/>
-    <text x="812" y="110" class="name">life-guide-internal</text>
-    <text x="812" y="126" class="repo">patternode/life-guide-internal</text>
-    <text x="812" y="144" class="q">Implementation and architecture docs in one</text>
-    <text x="812" y="160" class="q">repository. Installs work and thread only.</text>
+    <rect x="674" y="90" width="220" height="88" class="bundle"/>
+    <text x="684" y="110" class="name">knowledge-store</text>
+    <text x="684" y="126" class="repo">patternode/knowledge-store</text>
+    <text x="684" y="144" class="q">A public product: ontology-typed graph</text>
+    <text x="684" y="158" class="q">and chat on AWS. patternode-platform</text>
+    <text x="684" y="172" class="q">consumes it as a pinned module.</text>
   </g>
   <g>
-    <rect x="1085" y="90" width="290" height="84" class="bundle-needed"/>
-    <text x="1097" y="110" class="name-needed">The next solution</text>
-    <text x="1097" y="126" class="repo">architecture repo + implementation repo</text>
-    <text x="1097" y="144" class="q">Scaffolded from the house profile, aligned by</text>
-    <text x="1097" y="160" class="q">construction, kept aligned by reconcile.</text>
+    <rect x="906" y="90" width="220" height="88" class="bundle"/>
+    <text x="916" y="110" class="name">life-guide-internal</text>
+    <text x="916" y="126" class="repo">patternode/</text>
+    <text x="916" y="144" class="q">Implementation and architecture docs</text>
+    <text x="916" y="158" class="q">in one repository. Installs work</text>
+    <text x="916" y="172" class="q">and thread only.</text>
+  </g>
+  <g>
+    <rect x="1138" y="90" width="237" height="88" class="bundle-needed"/>
+    <text x="1148" y="110" class="name-needed">The next solution</text>
+    <text x="1148" y="126" class="repo">architecture + implementation</text>
+    <text x="1148" y="144" class="q">Scaffolded from the house profile,</text>
+    <text x="1148" y="158" class="q">aligned by construction, kept</text>
+    <text x="1148" y="172" class="q">aligned by reconcile.</text>
   </g>
 
   <!-- L3 Scaffolding -->
@@ -242,12 +252,12 @@
   <rect x="783" y="316" width="166" height="14" class="rel-bg"/><text x="786" y="327" class="rel">reads contexts and services</text>
   <rect x="1185" y="316" width="150" height="14" class="rel-bg"/><text x="1188" y="327" class="rel">reads the service register</text>
 
-  <path d="M 350 174 L 350 218" class="line-dashed"/>
-  <rect x="358" y="186" width="110" height="14" class="rel-bg"/><text x="361" y="197" class="rel">is the house profile</text>
-  <path d="M 1230 174 L 1230 218" class="line-dashed"/>
-  <rect x="1238" y="186" width="92" height="14" class="rel-bg"/><text x="1241" y="197" class="rel">scaffolded from</text>
-  <path d="M 645 174 L 1060 218" class="line-dashed"/>
-  <rect x="800" y="182" width="112" height="14" class="rel-bg"/><text x="803" y="193" class="rel">reconciled against</text>
+  <path d="M 320 178 L 320 218" class="line-dashed"/>
+  <rect x="328" y="186" width="110" height="14" class="rel-bg"/><text x="331" y="197" class="rel">is the house profile</text>
+  <path d="M 1256 178 L 1256 218" class="line-dashed"/>
+  <rect x="1264" y="186" width="92" height="14" class="rel-bg"/><text x="1267" y="197" class="rel">scaffolded from</text>
+  <path d="M 600 178 L 1040 218" class="line-dashed"/>
+  <rect x="760" y="182" width="112" height="14" class="rel-bg"/><text x="763" y="193" class="rel">reconciled against</text>
 
   <!-- Legend -->
   <g>
