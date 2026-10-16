@@ -85,7 +85,7 @@
     <text x="452" y="126" class="repo">patternode/</text>
     <text x="452" y="140" class="q">Implementation: hexagonal contexts.</text>
     <rect x="452" y="148" width="100" height="16" class="skill-local"/><text x="456" y="160" class="sk">gifs-trading-ops</text>
-    <text x="452" y="172" class="q" font-size="9">and reconciliation-archive, repository-local</text>
+    <text x="452" y="172" class="q" font-size="9">and reconciliation-archive (repo-local)</text>
   </g>
   <g>
     <rect x="674" y="90" width="220" height="88" class="bundle"/>
