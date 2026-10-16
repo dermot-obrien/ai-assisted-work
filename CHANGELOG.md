@@ -7,6 +7,16 @@ Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- thread 0.15.0: workspace settings for ownership. `threads_master_prefix:` in
+  `.aaw-config.yaml` sets the title prefix that marks the master (default `master`), and
+  `threads_merges:` says who merges: `master` (the default) or `own`, where every chat merges
+  the pull requests it opened. `/thread wrap` never merges by default: it merges only in the
+  owner recorded on the tree's root, or where `threads_merges: own` is set, and otherwise tells
+  the owner what is ready and lists it as a 🌐 row. Ownership is per repository group, and the
+  root's owner note stays the record. See `references/ownership.md` and the configuration
+  reference.
+
 ### Changed
 - thread 0.14.0: the chat that owns shared actions is the **master**: its title starts with
   `master` (was `main · `), or the user names it, and it is recorded as an `owner:` note on the

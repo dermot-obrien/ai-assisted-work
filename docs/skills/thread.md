@@ -94,11 +94,12 @@ The full procedure, for Claude Code on the web and Cursor cloud agents, is in th
 
 ## Several chats on one tree
 
-Reading and editing in parallel is fine, but in each group exactly one chat, the master
-(its title starts with `master`), owns the actions that change shared state: merges,
-releases, publishes and deploys. It is recorded as an owner note on the tree's root. Every
-other chat is a worker: it makes its pull request ready and hands it to the master rather
-than merging it. See [references/ownership.md](../../skills/thread/references/ownership.md).
+Reading and editing in parallel is fine, but in each repository group exactly one chat, the
+master (its title starts with `master`, or the workspace's `threads_master_prefix`), owns the
+actions that change shared state: merges, releases, publishes and deploys. It is recorded as
+an owner note on the tree's root. Every other chat is a worker: it makes its pull request
+ready and hands it to the master rather than merging it, unless the workspace sets
+`threads_merges: own`. See [references/ownership.md](../../skills/thread/references/ownership.md).
 
 ## Related
 
