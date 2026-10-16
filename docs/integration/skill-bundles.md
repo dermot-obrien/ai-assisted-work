@@ -98,3 +98,17 @@ shared primitives as `progress.yaml` holds them. It is the bottom layer. The del
 - Objects are open, so a higher layer's fields validate against the work layer.
 
 Until 5.0.0 the schema was `schemas/work.schema.json`, with a camelCase projection in the protocol package that CI kept in step. The package is gone, and the identifier is unchanged, so a layer that references it by `$id` needs no change; one that references the file by path updates the path.
+
+## The bundles, and what is still needed
+
+The bundles the author keeps, arranged by what depends on what. Dependencies point down only: a bundle depends on bundles in the layers below it and never on a repository above it, and a skill carries its method and its standards while the repository declares where its artefacts live.
+
+![The skill bundles in five layers: foundations (the installer, diagram-model, markdown-deck), method bundles (architecture-pattern, delivery-planning, ai-assisted-research, ai-assisted-work, threads), the architecture catalogue (ai-assisted-architecture), a scaffolding layer that is still needed, and the repositories that install them](skill-bundles-landscape.svg)
+
+| Layer | Bundles | State |
+|---|---|---|
+| L0 Foundations | This repository's installer and bundle format; `model` from diagram-model; `markdown-deck` | Exist |
+| L1 Method | `pattern`, `use-case` and `cross-reference` from architecture-pattern; `quarter-planning` from delivery-planning; `research` and `literature-discovery` from ai-assisted-research; `work` from this repository; `thread` from threads | Exist |
+| L2 Catalogue | The nine `aaa-*` skills of AI-Assisted Architecture, which also carries the definitions every skill conforms to ([the continuum](https://github.com/dermot-obrien/ai-assisted-architecture/blob/main/docs/continuum.md)) | Exist; `aaa-create-product`, `aaa-create-node` and `aaa-landscape` are needed |
+| L3 Scaffolding | `scaffold-architecture`, which builds an architecture repository from a house profile; `scaffold-implementation`, which builds a hexagonal implementation skeleton from the catalogue's contexts and services; `reconcile`, which reports drift between the two | Needed |
+| L4 Solutions | The repositories that install the bundles: an architecture repository and an implementation repository per solution | The exemplar architecture repository exists; the next solution is scaffolded from it |
