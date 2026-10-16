@@ -98,3 +98,7 @@ shared primitives as `progress.yaml` holds them. It is the bottom layer. The del
 - Objects are open, so a higher layer's fields validate against the work layer.
 
 Until 5.0.0 the schema was `schemas/work.schema.json`, with a camelCase projection in the protocol package that CI kept in step. The package is gone, and the identifier is unchanged, so a layer that references it by `$id` needs no change; one that references the file by path updates the path.
+
+## The bundles, and what is still needed
+
+The author's bundles, arranged by what depends on what, with what exists and what is still needed, are on [the skill bundles landscape](https://github.com/dermot-obrien/architecture-continuum/blob/main/docs/landscape.md) in architecture-continuum, the bundle that holds the definitions every skill conforms to. This page stays with the installer: the bundle format, the check and the work ontology.
