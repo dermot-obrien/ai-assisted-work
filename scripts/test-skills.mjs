@@ -99,6 +99,23 @@ test("installs one skill at a time, and only the ones named", () => {
   }
 });
 
+test("check ignores the packages and caches running a skill creates in its copy", () => {
+  const f = fixture();
+  try {
+    f.ok("install", "--bundle", f.bundle);
+    const work = path.join(f.ws, ".agents", "skills", "work");
+    for (const d of ["node_modules/ajv", "__pycache__", "src/pkg/__pycache__", ".venv/bin"]) {
+      mkdirSync(path.join(work, d), { recursive: true });
+      writeFileSync(path.join(work, d, "x"), "made by running the skill\n");
+    }
+    assert.equal(f.run("check").status, 0, "a used skill is not a changed one");
+    writeFileSync(path.join(work, "notes.md"), "a file the skill did not ship\n");
+    assert.match(f.run("check").out, /✗ work: changed/);
+  } finally {
+    f.cleanup();
+  }
+});
+
 test("check notices a changed or missing skill, and install puts it back", () => {
   const f = fixture();
   try {
