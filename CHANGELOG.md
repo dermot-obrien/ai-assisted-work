@@ -5,6 +5,11 @@ All notable changes to AI-Assisted Work.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 6.0.1
+
+### Fixed
+- `bin/skills.mjs check` reported a skill as changed once it had been used. Its hash read everything in the installed copy, including the npm packages a skill's `npm install` puts in `node_modules/` and the bytecode Python writes to `__pycache__/`, so a skill such as markdown-deck or a Python one showed as changed after its first run. The hash now leaves out `node_modules`, `__pycache__`, `.venv`, `venv`, `.pytest_cache` and `.mypy_cache` folders, and a file the skill did not ship is still reported.
+
 ## 6.0.0
 
 The `thread` skill leaves this repository. It moved, with its history, to a repository of its own on 13 October 2026, with everything built around it: the board, the pool of agent platforms, their tests and trial harness, the cross-platform trial (WI-002), mission control (WI-003), the vision and architecture documents, the platform matrix and fact sheets, and design decisions DD-12 to DD-16. Its unreleased 0.15.0 notes, listed here as 5.1.0 until now, moved with it.
