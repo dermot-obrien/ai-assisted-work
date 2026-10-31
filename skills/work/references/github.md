@@ -42,11 +42,19 @@ written from the file and never read back into it.
 | Shape | Base for activity branches | Activity pull requests merge into | Use it when |
 |---|---|---|---|
 | Trunk (default) | `base_branch`, usually `main` | `base_branch`, each merged by a person | Each activity is safe to land alone, behind a flag where needed |
-| Integration | `wi/WI-012-<slug>`, recorded in `artifacts.base` | The integration branch; then one pull request into `base_branch` | The feature must land whole, or the workspace lets agents merge into it |
+| Integration (exception) | `wi/WI-012-<slug>`, recorded in `artifacts.base` | The integration branch; then one pull request into `base_branch` | The feature must land whole and cannot be switched off, and the workspace allows it |
 
 In the trunk shape the plan reaches `main` in its own pull request, which a person merges:
 merging the plan is approving it. In the integration shape the plan is the first commit on the
 integration branch, so work starts as soon as the user approves the plan in conversation.
+
+Prefer the trunk shape. Large distributed projects (Kubernetes, Rust, Chromium) land every
+change on the trunk behind a flag or gate and release with one small change that turns it on;
+a long-lived branch per feature is where merge conflicts gather. GitHub also ignores closing
+keywords (`Closes #n`) on a pull request into any branch but the default one, so activity pull
+requests into an integration branch close no issue. Use the integration shape only when the
+work cannot be switched off, and only where the workspace's own rules allow it: a workspace
+playbook that forbids it wins.
 
 Who merges follows the workspace's rules. With `integration_merge: agent`, a worker may merge
 an activity's pull request into the work item's integration branch once its checks pass and a

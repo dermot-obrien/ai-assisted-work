@@ -131,7 +131,7 @@ review checklist on every pull request.
 | Shape | Choose it when | What you merge |
 |---|---|---|
 | Trunk | Each activity can land on `main` alone, behind a feature flag if needed | The planning pull request, then every activity pull request |
-| Integration | The feature must land whole, or you want no wait before work starts | One pull request at the end, plus activity pull requests if `integration_merge: human` |
+| Integration (exception) | The work cannot land in parts behind a flag, and your workspace allows it | One pull request at the end, plus activity pull requests if `integration_merge: human` |
 
 It then creates the issues (when configured) and starts workers, as many as there are
 activities ready, five at most. How it starts them depends on the tool it runs in:
@@ -145,6 +145,8 @@ activities ready, five at most. How it starts them depends on the tool it runs i
 
 Every worker gets the same prompt: run `/work progress WI-012` with `coordination: github`,
 its worker id and the base branch.
+
+Prefer the trunk shape. The large projects this follows land every change on the trunk switched off and release with one small change; GitHub also ignores closing keywords on pull requests into anything but the default branch, so an integration branch's pull requests close no issues. A workspace's own playbook, where it has one, decides.
 
 ### 4. Workers
 

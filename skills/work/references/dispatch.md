@@ -22,12 +22,12 @@ Stop and say which fails:
 
 ## Step 1: Choose the shape and put the plan on the remote
 
-Ask once, recommending from the plan, then record it:
+Ask once, recommending the trunk shape unless the work cannot be switched off, then record it:
 
 | If | Shape | Do |
 |---|---|---|
 | Each activity lands safely alone | Trunk | Push the planning branch `wi/WI-NNN-<slug>` and open its pull request into `base_branch`. The workers start when a person merges it |
-| The feature must land whole, or the user wants no wait | Integration | Push `wi/WI-NNN-<slug>` with the plan as its first commit, set `artifacts.base` to it. Workers start now |
+| The work cannot land in parts behind a flag, and the workspace allows it | Integration (exception) | Push `wi/WI-NNN-<slug>` with the plan as its first commit, set `artifacts.base` to it. Workers start now |
 
 Set `status: in_progress` in the same commit.
 
