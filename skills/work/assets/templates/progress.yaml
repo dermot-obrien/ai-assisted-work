@@ -19,6 +19,11 @@
 # - changelog.log      : Append-only log - safe for concurrent appends
 # - locks/             : Lock files per activity - atomic create/delete
 #
+# With coordination: github in .aaw-config.yaml, workers are in separate checkouts and the
+# above is replaced: the claim is the branch wi/{activity id} on the remote, created with
+# the work skill's bin/claim.mjs; each activity branch changes only its own activity block
+# and never the version header; no locks/ or changelog.log. See references/github.md.
+#
 # SUPPORTED WORK TYPES:
 # - development: Software development (code, tests, deployments)
 # - architecture: System/Platform strategy and solution design (diagrams, documents, decisions, specifications)
@@ -209,6 +214,10 @@ activities:
                                # D2 depend on those producing D1.
     completed_by: null         # Worker that completed all tasks
     completed_at: null         # When activity was marked complete
+    # With coordination: github (see the work skill's references/github.md). The claim
+    # branch is always wi/{activity id}, so it is not recorded here.
+    issue: null                # The activity's sub-issue URL, when issues are mirrored
+    pr: null                   # The activity's pull request URL, set when it is opened
     
     # Tasks within this activity (sequential, no external dependencies)
     # Tasks within this activity (sequential, no external dependencies)
@@ -309,6 +318,10 @@ artifacts:
   jira: null                   # JIRA ticket URL (created manually before work starts)
   branch: null                 # Git branch: wi/WI-{NNN}-{kebab-name}
   pr: null                     # Pull request URL (created when work complete)
+  issue: null                  # Tracking issue URL, with coordination: github and issues: github
+  base: null                   # The branch activity pull requests merge into. null = the
+                               # workspace's base_branch (the trunk shape); the work item's
+                               # integration branch in the integration shape
   # Work type specific
   diagrams: []                 # Diagram files (architecture)
   # NOTE: deliverables are NOT listed here. They are planned up front in the

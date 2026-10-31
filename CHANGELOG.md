@@ -5,6 +5,13 @@ All notable changes to AI-Assisted Work.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+- work 3.2.0: coordination through GitHub, for agents working one work item in parallel from separate worktrees, clones or cloud sessions. With `coordination: github` in `.aaw-config.yaml`, the plan is committed to the repository, an activity is claimed by creating the branch `wi/<activity-id>` on the remote (the push succeeds for exactly one of several racing workers), each task is a commit that updates only its activity's block of `progress.yaml`, and each activity lands as a pull request. New flow `/work dispatch WI-NNN` puts the plan on the remote, mirrors it to a tracking issue and sub-issues when `issues: github`, and starts one worker per available activity. New `bin/claim.mjs` (claim, list, takeover, release). `progress.yaml` gains optional `issue` and `pr` per activity and `artifacts.issue` and `artifacts.base`. The post-install check validates `coordination`, `issues` and `integration_merge`, and refuses work items outside the repository with `coordination: github`. Design in DD-18.
+- [Playbook: parallel delivery through GitHub](docs/playbooks/github-parallel-delivery.md), from "implement this feature" to merged pull requests with several agents.
+- `scripts/test-claim.mjs`: claims against a bare remote and separate clones, including six clones racing for one activity. Run by `npm test` and CI.
+
 ## 6.0.1
 
 ### Fixed

@@ -198,6 +198,14 @@
         "depends_on": { "type": "array", "items": { "$ref": "#/$defs/ActivityId" } },
         "completed_by": { "$ref": "#/$defs/NullableString" },
         "completed_at": { "$ref": "#/$defs/Timestamp" },
+        "issue": {
+          "description": "With coordination through GitHub: the activity's sub-issue URL.",
+          "$ref": "#/$defs/NullableString"
+        },
+        "pr": {
+          "description": "With coordination through GitHub: the activity's pull request URL. Its claim branch is always wi/<activity id>.",
+          "$ref": "#/$defs/NullableString"
+        },
         "tasks": { "type": "array", "items": { "$ref": "#/$defs/Task" } }
       }
     },
@@ -229,6 +237,14 @@
         "jira": { "$ref": "#/$defs/NullableString" },
         "branch": { "$ref": "#/$defs/NullableString" },
         "pr": { "$ref": "#/$defs/NullableString" },
+        "issue": {
+          "description": "With coordination through GitHub: the work item's tracking issue URL.",
+          "$ref": "#/$defs/NullableString"
+        },
+        "base": {
+          "description": "With coordination through GitHub: the branch activity pull requests merge into. Null means the workspace's base_branch.",
+          "$ref": "#/$defs/NullableString"
+        },
         "diagrams": { "type": "array", "items": { "type": "string" } },
         "deliverables": {
           "description": "Schema versions 1 and 2 only.",

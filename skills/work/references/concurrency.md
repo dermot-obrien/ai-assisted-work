@@ -151,6 +151,15 @@ Whoever finishes first can claim A3. Activity dependencies are derived from the 
 so if two activities feed products with no dependency between them, they are genuinely
 parallel.
 
+## Separate checkouts
+
+Everything above assumes every worker sees one filesystem: one checkout, or a folder shared
+between them. Workers in separate worktrees, clones or cloud sessions each have their own
+`locks/` and their own `progress.yaml`, so exclusive create excludes nobody and both claim the
+same activity. For them, set `coordination: github`: the claim becomes a branch created
+atomically on the shared remote, and state reaches everyone by merge. See
+[references/github.md](github.md).
+
 ## Chats, not activities
 
 Locks coordinate workers on a work item's activities. They do not cover several chats acting

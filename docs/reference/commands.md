@@ -4,6 +4,7 @@ Every command this repository ships, checked against its `--help`. Skills are in
 
 - [skills.mjs](#skillsmjs), the installer
 - [Post-install checks](#post-install-checks)
+- [claim.mjs](#claimmjs), activity claims as branches
 - [Repository scripts](#repository-scripts)
 
 Exit codes follow one rule throughout: 0 success, 1 a problem was found or the operation failed, 2 a usage or environment error.
@@ -50,13 +51,33 @@ The `work` skill ships `bin/check.mjs`, which tests the workspace configuration 
 node .agents/skills/work/bin/check.mjs
 ```
 
-`work`'s check reads `.aaw-config.yaml` when it is there, and the defaults when it is not. It checks that `work_items_path` and `initiatives_path` resolve to folders and not to files (a missing folder is only a warning, since `work` creates it on first use), that a plain `deliverables_register` path exists, and that `mode`, when set, is valid. It prints `warning:` lines, one line per problem, then `work: ok` when there are no problems. Exit 0 with no problems, 1 with any. `--help` (or `-h`) prints one line and exits 0. Any other argument exits 2.
+`work`'s check reads `.aaw-config.yaml` when it is there, and the defaults when it is not. It checks that `work_items_path` and `initiatives_path` resolve to folders and not to files (a missing folder is only a warning, since `work` creates it on first use), that a plain `deliverables_register` path exists, that `mode`, `coordination`, `issues` and `integration_merge`, when set, hold known values, and that with `coordination: github` the work items are inside the repository. It prints `warning:` lines, one line per problem, then `work: ok` when there are no problems. Exit 0 with no problems, 1 with any. `--help` (or `-h`) prints one line and exits 0. Any other argument exits 2.
 
 `skills.mjs` does not run them. To run every skill's check the way an installer would, from a workspace with this repository cloned at `.ai-assisted-work/`:
 
 ```
 node .ai-assisted-work/scripts/validate-bundle.mjs --run-checks . .ai-assisted-work
 ```
+
+## claim.mjs
+
+The `work` skill ships `bin/claim.mjs`, which holds activity claims as branches on the shared git remote, for workers in separate checkouts (`coordination: github`). The agent runs it as part of `/work progress`; you can run it by hand from any checkout of the workspace.
+
+```
+node .agents/skills/work/bin/claim.mjs claim    WI-012-A3 [--base <branch>] [--worker <id>] [--human] [--lease <minutes>] [--checkout]
+node .agents/skills/work/bin/claim.mjs list     [WI-012]
+node .agents/skills/work/bin/claim.mjs takeover WI-012-A3 [--worker <id>] [--checkout]
+node .agents/skills/work/bin/claim.mjs release  WI-012-A3 [--worker <id>]
+```
+
+| Command | Does |
+|---|---|
+| `claim` | Creates `wi/WI-012-A3` on the remote from the base branch, with an empty claim commit naming the holder and lease, pushed so that it succeeds only if the branch does not exist. `--checkout` switches to it |
+| `list` | Every claim branch, or a work item's, with holder, last commit, lease and whether it has expired, by the system clock |
+| `takeover` | Claims an expired branch, building on its commits, only if it has not moved since it was read |
+| `release` | Deletes a claim branch you hold, or an expired one, only if it has not moved |
+
+Options for all: `--remote <name>` (default `coordination_remote`, then `origin`) and `--json`. The base defaults to `base_branch`, then the remote's default branch. The lease is 60 minutes for an agent and 480 with `--human`, counted from the branch's newest commit. Exit 0 done; 3 held by another worker, still live, or lost a race; 1 a problem such as no remote or a missing base; 2 usage.
 
 ## Repository scripts
 
@@ -70,8 +91,9 @@ These live in this repository's `scripts/` and are what CI runs. They need no in
 | `node scripts/validate-bundle.mjs --instance <file.json> --schema <$id\|file>[#pointer]` | Validates any JSON file against a schema | 1 on errors, 2 on usage |
 | `node scripts/test-work-schema.mjs` | The `progress.yaml` templates against `skills/work/assets/work.schema.json`, and cases the schema must refuse | 1 on failure |
 | `node --test scripts/test-skills.mjs` | The installer | 1 on failure |
+| `node --test scripts/test-claim.mjs` | `claim.mjs` against a bare remote and separate clones, including six clones racing for one activity | 1 on failure |
 | `node scripts/extract-skill.mjs <skill> <out-dir> [--owner <owner>]` | Builds one skill as a repository of its own, with its history, licences, validators, `bundle.json` and CI, and tags it. Pushes nothing. CI's extraction job runs it for each skill | 1 on failure |
 
 `validate-bundle.mjs` also takes `--schemas <dir>` in any form, to load more schemas, and `--help`. `validate-skills.mjs` takes `--help`.
 
-`npm test` at the repository root runs the work schema test and the installer test.
+`npm test` at the repository root runs the work schema test, the installer test and the claim test.

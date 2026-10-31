@@ -7,7 +7,9 @@
  *
  * Run from the workspace root, with SKILL_DIR set to the installed skill's directory.
  * Checks that the locations .aaw-config.yaml names resolve, or their defaults when it is absent:
- * work_items_path, initiatives_path where set, and deliverables_register where set.
+ * work_items_path, initiatives_path where set, and deliverables_register where set; and that
+ * coordination, issues and integration_merge hold known values, with work items inside the
+ * repository when coordination is github.
  *
  * Exit 0: correct (warnings may be printed). Exit 1: problems, one line each.
  * Exit 2: usage or environment error. Offline and read-only.
@@ -100,6 +102,25 @@ if (!existsSync(configFile)) {
       problems.push(
         `.aaw-config.yaml: deliverables_register ${cfg.deliverables_register} resolves to ${p}, which does not exist. Correct it, or remove the key to name products without a register.`,
       );
+    }
+  }
+  const oneOf = (key, allowed) => {
+    if (cfg[key] && !allowed.includes(cfg[key])) {
+      problems.push(`.aaw-config.yaml: ${key} ${cfg[key]} is not ${allowed.join(" or ")}.`);
+    }
+  };
+  oneOf("coordination", ["files", "github"]);
+  oneOf("issues", ["none", "github"]);
+  oneOf("integration_merge", ["human", "agent"]);
+  if (cfg.coordination === "github") {
+    // Workers in separate checkouts share the plan only through the repository.
+    const items = expand(cfg.work_items_path || "./change/work-items/");
+    const rel = path.relative(root, items);
+    if (rel.startsWith("..") || path.isAbsolute(rel)) {
+      problems.push(`.aaw-config.yaml: coordination github needs work_items_path inside the repository, so the plan travels with the branches; ${items} is outside ${root}.`);
+    }
+    if (!existsSync(path.join(root, ".git"))) {
+      warnings.push(`.aaw-config.yaml: coordination github, but ${root} is not the root of a git checkout. Claims are branches on its remote.`);
     }
   }
   if (cfg.mode && !["local-fs", "cloud"].includes(cfg.mode)) {

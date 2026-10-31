@@ -13,7 +13,7 @@ Until version 4.0.0 this repository was a framework: an `aaw` command, an instal
 
 | Skill | Version | Does |
 |-------|---------|------|
-| [`work`](docs/skills/work.md) | 3.1.1 | Work items, activities, tasks and initiatives in plain files: [`/work start`](docs/skills/work.md#start-work-start) triages and plans, [`/work progress`](docs/skills/work.md#progress-work-progress) executes under a lock, [`/work status`](docs/skills/work.md#status-work-status), [`/work next`](docs/skills/work.md#next-work-next), [`/work initiative`](docs/skills/work.md#initiative-work-initiative) |
+| [`work`](docs/skills/work.md) | 3.2.0 | Work items, activities, tasks and initiatives in plain files: [`/work start`](docs/skills/work.md#start-work-start) triages and plans, [`/work progress`](docs/skills/work.md#progress-work-progress) executes under a lock, [`/work status`](docs/skills/work.md#status-work-status), [`/work next`](docs/skills/work.md#next-work-next), [`/work initiative`](docs/skills/work.md#initiative-work-initiative), [`/work dispatch`](docs/skills/work.md#dispatch-work-dispatch) runs a plan with parallel agents through branches and pull requests ([playbook](docs/playbooks/github-parallel-delivery.md)) |
 
 Skills that were first published here live in repositories of their own and are not listed in `bundle.json`: `markdown-deck` ([markdown-deck](https://github.com/dermot-obrien/markdown-deck)), `model` ([diagram-model](https://github.com/dermot-obrien/diagram-model)), `pattern`, `use-case` and `cross-reference` ([architecture-pattern](https://github.com/dermot-obrien/architecture-pattern)) and `quarter-planning` ([delivery-planning](https://github.com/dermot-obrien/delivery-planning)). A workspace declares them by repository, as below.
 

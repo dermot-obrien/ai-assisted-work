@@ -680,6 +680,53 @@ AAW installed as a framework: six skills, an install engine shared with AI-Assis
 
 ---
 
+## DD-18: Coordination Through GitHub: Plan in the Repository, Claims as Branches
+
+### Context
+
+The work skill's concurrency protocol (lock files in `locks/`, an optimistic `version` in `progress.yaml`) is sound when every worker shares one filesystem. Contemporary delivery does not look like that. A feature is implemented on branches, reviewed in pull requests and tracked in issues, and parallel agents each run in their own worktree, clone or cloud session. The question was how work items, activities and tasks fit that flow, and in particular whether the plan could live on a GitHub issue and still give workers the isolation the files give them.
+
+What gives the files their isolation is a single operation that refuses: an exclusive create that fails if the file exists. Each candidate home for the plan and the claims was judged by whether it offers one.
+
+| Option | Shared between checkouts | An operation that refuses | Verdict |
+|---|---|---|---|
+| Lock files and `progress.yaml` in each checkout | No: each clone has its own copy until merge | Only within one filesystem | Two workers in two clones both claim the same activity. Fine for one checkout, wrong for parallel agents |
+| `progress.yaml` as YAML in an issue body | Yes | No: an edit replaces the whole body without checking what it replaced | Concurrent updates are silently lost. Also unreviewed, outside the code's history, and capped in size |
+| Issue assignees or labels as the claim | Yes | No: both adds succeed | Two workers both assign themselves; nothing tells either |
+| One issue per activity, each worker writing only its own | Yes | No, but writes are partitioned | Removes contention on state, not on the claim: two workers can still start the same activity |
+| A branch per activity on the remote, created with `--force-with-lease=<ref>:` | Yes | Yes: the server applies a ref update only if the ref still has the expected value, here "absent" | Exactly one of several racing workers creates it. This is the compare-and-swap the files had |
+
+Two details matter. A push of a commit the remote already has reports success ("up to date") whatever the lease, so the claim must be a commit no other worker could have made: an empty commit carrying the holder, the lease and a nonce. And a lease needs a clock the holder renews without extra work: every push renews it, because expiry counts from the newest commit on the branch.
+
+### Decision
+
+**A workspace chooses its coordination.** `coordination: files`, the default, keeps the protocol as it was, for one checkout. `coordination: github` is for workers in separate checkouts:
+
+- **The plan lives in the repository.** `scope.md`, `plan.md` and `progress.yaml` are committed, reviewed and versioned with the code. `progress.yaml` stays the source of truth.
+- **The claim is a branch.** Activity `WI-012-A3` is claimed by creating `wi/WI-012-A3` on the remote, with `bin/claim.mjs`. A worker refused (exit 3) picks other work. An expired claim is taken over with the same compare-and-swap against the observed head, building on the dead worker's commits.
+- **The state is what has merged.** Each activity branch changes only its own block of `progress.yaml`, never the version header, so parallel pull requests merge without conflict. The base branch says what is done; claim branches and pull requests say what is in flight. A merge is the acceptance of the product it completes.
+- **Issues are a view.** With `issues: github`, the work item becomes a tracking issue and each activity a sub-issue, written from `progress.yaml` and never read back. They are where people talk and where human tasks are assigned.
+- **Two shapes.** Trunk: activity pull requests go into `main`, each merged by a person, the plan having merged first. Integration: they go into the work item's own branch, which a person merges into `main` once; with `integration_merge: agent`, agents may merge reviewed activity pull requests into it, which is what lets "implement this feature" run to a single pull request without a person in the loop until the end.
+- **A flow to start the workers.** `/work dispatch WI-NNN` puts the plan on the remote, mirrors it to issues, and starts one worker per available activity, each in its own checkout running `/work progress`.
+
+### Rationale
+
+- The guarantee comes from git's own ref update, which every host implements, so it holds on GitHub, on any other host, and on a bare repository in a test.
+- Plans in the repository are reviewed like code and survive a change of tracker. Issues mirror them for people without becoming a second source of truth.
+- Partitioning `progress.yaml` by activity block and leaving the header alone turns the one shared file into many small, non-overlapping edits that git merges by itself.
+- Nothing in the method changes: products first, activities derived from them, one worker per activity, state updated before the claim is released (in this mode: before the pull request is marked ready).
+
+### Consequences
+
+- `bin/claim.mjs` (claim, list, takeover, release) joins the work skill, with tests that race several clones for one activity.
+- `progress.yaml` gains optional `issue` and `pr` per activity and `artifacts.issue` and `artifacts.base`; older files are unaffected.
+- `.aaw-config.yaml` gains `coordination`, `base_branch`, `coordination_remote`, `issues` and `integration_merge`. With `coordination: github`, work items must be inside the repository.
+- Branch protection must allow workers to create branches matching `wi/*`.
+- Two activities editing the same lines still conflict at merge. Planning for parallel workers means activities that touch different files where possible.
+- The playbook [Parallel delivery through GitHub](../playbooks/github-parallel-delivery.md) is the operating guide.
+
+---
+
 ## Decision Log
 
 | ID | Decision | Date | Status |
@@ -696,3 +743,4 @@ AAW installed as a framework: six skills, an install engine shared with AI-Assis
 | DD-10 | Agent Skills as the Distribution Format | 2026-09 | Implemented |
 | DD-11 | Skill Bundles, Versioned Skill Identifiers and a Layered Ontology | 2026-09 | Accepted; manifest, checks and work module implemented |
 | DD-17 | Standalone Skills, AI-Assisted Work as a Bundle | 2026-10 | Implemented (4.0.0); framework scaffolding removed (5.0.0); `thread` repository pending |
+| DD-18 | Coordination Through GitHub: Plan in the Repository, Claims as Branches | 2026-10 | Implemented (work 3.2.0) |

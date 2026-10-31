@@ -4,7 +4,7 @@ This repository holds one standalone skill, `work`, and the installer for standa
 
 | Skill | Version | Use it to | Writes |
 |-------|---------|-----------|--------|
-| [work](work.md) | 3.1.1 | Work items: [`/work start`](work.md#start-work-start) triages and plans, [`/work progress`](work.md#progress-work-progress) executes one claimed activity at a time, [`/work status`](work.md#status-work-status) reports, [`/work next`](work.md#next-work-next) presents the next task, [`/work initiative`](work.md#initiative-work-initiative) groups work items under a goal | work item and initiative folders, `progress.yaml`, locks, deliverables |
+| [work](work.md) | 3.2.0 | Work items: [`/work start`](work.md#start-work-start) triages and plans, [`/work progress`](work.md#progress-work-progress) executes one claimed activity at a time, [`/work status`](work.md#status-work-status) reports, [`/work next`](work.md#next-work-next) presents the next task, [`/work initiative`](work.md#initiative-work-initiative) groups work items under a goal, [`/work dispatch`](work.md#dispatch-work-dispatch) runs a plan with parallel agents through branches and pull requests | work item and initiative folders, `progress.yaml`, locks, deliverables |
 
 The version is the skill's `metadata.version`, also listed in `bundle.json`.
 
@@ -34,6 +34,7 @@ The `SKILL.md` stays short on purpose; this documentation is for people.
 /work initiative   (optional) a goal and a container
 /work start         triage; for an intervention: scope, discovery, plan
 /work progress      claim an activity, work its tasks, advance its product; repeat
+/work dispatch      instead of one progress loop: several agents, each in its own checkout
 /work status        at any point: what is in flight, blocked, stale or parallelisable
 /work next          at any point: what to pick up next, with context
 ```

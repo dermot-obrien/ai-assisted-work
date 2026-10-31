@@ -123,6 +123,61 @@ deliverables_register:
 
 The skill ships no register and no schema for one.
 
+#### coordination
+
+| | |
+|---|---|
+| Type | `files` or `github` |
+| Default | `files` |
+| Read by | `/work progress`, `/work status`, `/work next`, `/work start`, `/work dispatch`, the post-install check |
+| Example | `coordination: github` |
+
+How workers on one work item exclude each other. `files`: they share one checkout, and claim an activity with a lock file in `locks/`. `github`: they work in separate worktrees, clones or cloud sessions, and claim an activity by creating the branch `wi/<activity-id>` on the shared remote with `bin/claim.mjs`; each activity lands as a pull request. With `github`, `work_items_path` must be inside the repository, and the check refuses a path outside it. See the [playbook](../playbooks/github-parallel-delivery.md).
+
+#### base_branch
+
+| | |
+|---|---|
+| Type | branch name |
+| Default | the remote's default branch, else `main` |
+| Read by | `/work dispatch`, `/work progress`, `bin/claim.mjs` |
+| Example | `base_branch: main` |
+
+With `coordination: github`, the branch plans merge into and activity branches start from in the trunk shape. A work item in the integration shape names its own branch in `artifacts.base` instead.
+
+#### coordination_remote
+
+| | |
+|---|---|
+| Type | git remote name |
+| Default | `origin` |
+| Read by | `bin/claim.mjs` |
+| Example | `coordination_remote: upstream` |
+
+The remote that holds claim branches. Every worker must push to the same one.
+
+#### issues
+
+| | |
+|---|---|
+| Type | `none` or `github` |
+| Default | `none` |
+| Read by | `/work dispatch`, the post-install check |
+| Example | `issues: github` |
+
+`github`: `/work dispatch` mirrors the work item as a tracking issue and each activity as a sub-issue, and records their URLs in `progress.yaml`. Needs the agent to have GitHub access. The issues are a view; `progress.yaml` stays the source of truth.
+
+#### integration_merge
+
+| | |
+|---|---|
+| Type | `human` or `agent` |
+| Default | `human` |
+| Read by | `/work dispatch`, `/work progress`, the post-install check |
+| Example | `integration_merge: agent` |
+
+`agent`: in the integration shape, a worker may merge an activity's pull request into the work item's own branch once its checks pass and a second agent has reviewed it against the product's quality criteria. Nothing merges into `base_branch` without a person, whatever this says.
+
 #### modules and endpoint
 
 `aaw install` wrote a `modules` section, a registry of the frameworks it installed, up to 4.0.0; `endpoint` was reserved for the cloud coordinator. Nothing reads either now, and both can be deleted. `bin/skills.mjs` records what it installed in `.agents/skills.lock.json` instead.
@@ -132,6 +187,7 @@ The skill ships no register and no schema for one.
 | Variable | Used by | Default | Effect |
 |----------|---------|---------|--------|
 | `SKILL_DIR` | post-install checks | the check's own skill folder | The installed skill's folder, set by whoever runs the check |
+| `WORK_WORKER_ID` | `bin/claim.mjs` | a random `agent-<hex>` | The worker id recorded on a claim, when `--worker` is not given |
 
 ## SKILL.md front matter
 
