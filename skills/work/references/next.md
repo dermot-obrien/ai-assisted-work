@@ -22,7 +22,9 @@ Walk the activities in order, respecting `depends_on`:
 
 1. Take activities whose `status` is `pending` or `in_progress`.
 2. Drop any whose `depends_on` lists an activity that is not `completed` or `skipped`.
-3. Drop any already locked by another worker, unless the lock has expired. Check `locks/`.
+3. Drop any already locked by another worker, unless the lock has expired. Check `locks/`, or
+   with `coordination: github` run `bin/claim.mjs list WI-NNN` and read `progress.yaml` from
+   the latest base ([references/github.md](github.md)).
 4. Among what remains, take the first task with `status: pending`.
 
 If nothing is eligible, say so and explain what is blocking: unmet dependencies, live locks,

@@ -46,6 +46,22 @@ Once you hold an activity lock you can trust the recorded state: if `progress.ya
 task is pending, it is pending. That guarantee holds only because every worker updates state
 before releasing.
 
+## Coordination mode
+
+Read `coordination` from `.aaw-config.yaml`. With `files`, the default, follow this page as
+written. With `github`, workers are in separate checkouts and this page holds with these
+changes, detailed in [references/github.md](github.md):
+
+| Step | `files` | `github` |
+|---|---|---|
+| 0 | Create the work item branch | The plan is already on the base; `git fetch` and read it from there |
+| 2 | Check `locks/` | Run `bin/claim.mjs list WI-NNN` and read `progress.yaml` from the latest base |
+| 3 | Create `locks/{id}.lock`; bump `version` | `bin/claim.mjs claim {id} --base <base> --worker <id> --checkout`; exit 3 means pick another |
+| 4 | Update `progress.yaml`, append to `changelog.log` | Commit the task with your activity's block updated, push; open a draft pull request after the first |
+| 5 | Update `progress.yaml`, then delete the lock | Final commit sets the activity `completed` and the product's state, push, mark the pull request ready |
+
+Never write `locks/`, `changelog.log` or the `progress.yaml` header in `github` mode.
+
 ## Locating the work item
 
 1. Read `work_items_path` from `.aaw-config.yaml` at the workspace root.

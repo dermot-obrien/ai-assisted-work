@@ -48,6 +48,9 @@ jobs:
       - name: The skills installer's tests pass
         run: node --test scripts/test-skills.mjs
 
+      - name: Activity claims on a shared remote exclude each other
+        run: node --test scripts/test-claim.mjs
+
       - name: Install skills into a scratch workspace
         run: |
           mkdir -p /tmp/ws/.claude && cd /tmp/ws && git init -q .

@@ -12,7 +12,7 @@
     "url": "https://github.com/dermot-obrien/ai-assisted-work.git"
   },
   "scripts": {
-    "test": "node scripts/test-work-schema.mjs && node --test scripts/test-skills.mjs"
+    "test": "node scripts/test-work-schema.mjs && node --test scripts/test-skills.mjs scripts/test-claim.mjs"
   },
   "devDependencies": {
     "yaml": "^2.8.1"

@@ -1,6 +1,6 @@
 # work
 
-Work items, activities, tasks and initiatives held in plain files: triage, scope, plan, execute, report. One skill with five flows, which until version 3.0.0 were five skills (`aaw-start-work`, `aaw-progress-work`, `aaw-work-status`, `aaw-next-task`, `aaw-start-initiative`). Source: [skills/work/](../../skills/work/SKILL.md).
+Work items, activities, tasks and initiatives held in plain files: triage, scope, plan, execute, report. One skill with six flows; until version 3.0.0 the first five were five skills (`aaw-start-work`, `aaw-progress-work`, `aaw-work-status`, `aaw-next-task`, `aaw-start-initiative`). Source: [skills/work/](../../skills/work/SKILL.md).
 
 | Flow | Was |
 |---|---|
@@ -9,6 +9,7 @@ Work items, activities, tasks and initiatives held in plain files: triage, scope
 | [`/work status`](#status-work-status) | `aaw-work-status` |
 | [`/work next`](#next-work-next) | `aaw-next-task` |
 | [`/work initiative`](#initiative-work-initiative) | `aaw-start-initiative` |
+| [`/work dispatch`](#dispatch-work-dispatch) | new in 3.2.0 |
 
 ## Start: `/work start`
 
@@ -141,6 +142,9 @@ Details worth knowing:
 - Products. A product's `state` moves only when its work does. When every activity is
   complete but a product is not yet `accepted`, the work item goes to `review`, not `done`.
 - Audit. Each claim, task and completion is appended to `changelog.log` as one JSON line.
+- Separate checkouts. With `coordination: github` the claim is the branch `wi/<activity>` on
+  the remote instead of a lock file, each task is a commit, and the activity lands as a pull
+  request. See [Dispatch](#dispatch-work-dispatch).
 
 ### What it writes
 
@@ -265,6 +269,75 @@ defect.
 
 - [/work progress](#progress-work-progress) does the task this skill finds
 - [/work status](#status-work-status) reports across work items
+
+## Dispatch: `/work dispatch`
+
+New in 3.2.0.
+
+Put a planned work item to work across several agents at once, each in its own checkout,
+coordinated through branches, pull requests and, optionally, issues on GitHub. Source:
+[skills/work/references/dispatch.md](../../skills/work/references/dispatch.md), with the
+coordination rules in [references/github.md](../../skills/work/references/github.md). The
+operating guide is the [playbook](../playbooks/github-parallel-delivery.md).
+
+### Use it when
+
+A work item is planned and approved, and you want it done in parallel:
+
+```
+/work dispatch WI-012
+/work dispatch WI-012 3
+/work start add rate limiting to the public API, and run it in parallel
+```
+
+The last form plans first, then hands to dispatch. The optional number is how many workers;
+by default one per activity available now, five at most.
+
+### What it does
+
+1. Checks `coordination: github` is set, the work items are inside the repository, the plan
+   is approved and the remote accepts pushes.
+2. Asks for the shape. Trunk: the plan goes to `main` in its own pull request and each activity
+   lands on `main` in its own. Integration: the plan is the first commit on the work item's
+   branch `wi/WI-NNN-<slug>`, activities land there, and one pull request takes the whole into
+   `main`.
+3. With `issues: github`, creates a tracking issue and a sub-issue per activity, and records
+   their URLs in `progress.yaml`.
+4. Starts the workers: sub-agents in their own worktrees, other sessions, a coding agent
+   assigned from an issue, or worktrees you open by hand, whichever the tool allows. Each runs
+   `/work progress` with its own worker id.
+5. Watches with `/work status`, and starts workers again as merges unblock activities.
+6. Closes: the tracking issue in the trunk shape; the final pull request into `main` in the
+   integration shape, which a person merges.
+
+### How workers exclude each other
+
+Lock files work only for workers on one filesystem. In separate checkouts, a worker claims
+activity `WI-012-A3` by creating the branch `wi/WI-012-A3` on the remote with
+`bin/claim.mjs`, which pushes so that the server refuses it if the branch already exists. One
+worker wins; the others get exit code 3 and choose another activity. Every push renews the
+claim; an expired one is taken over on top of its commits. Each task is a commit that updates
+only that activity's block in `progress.yaml`, and the activity is done when its pull request
+merges. See [claim.mjs](../reference/commands.md#claimmjs) and
+[DD-18](../about/design-decisions.md#dd-18-coordination-through-github-plan-in-the-repository-claims-as-branches).
+
+### Configuration
+
+`coordination`, `base_branch`, `coordination_remote`, `issues` and `integration_merge`. See
+[Configuration](../reference/configuration.md#coordination).
+
+### Inside the skill
+
+| File | Holds |
+|------|-------|
+| `references/dispatch.md` | The flow: preconditions, shapes, issues, starting and refilling workers, closing |
+| `references/github.md` | The mapping, the claim protocol, pull request and issue formats, reading state, recovery |
+| `bin/claim.mjs` | Claim, list, take over and release activity branches |
+
+### Related
+
+- [Playbook: parallel delivery through GitHub](../playbooks/github-parallel-delivery.md)
+- [/work progress](#progress-work-progress), which each worker runs
 
 ## Initiative: `/work initiative`
 

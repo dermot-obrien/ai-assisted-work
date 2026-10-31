@@ -121,11 +121,19 @@ are in [references/planning.md](planning.md).
 
 ### Phase 4: Execution
 
+With `coordination: files` (the default):
+
 1. Set `status: in_progress` in `progress.yaml`.
 2. Claim an activity with no unmet dependencies by creating a lock file in `locks/`.
 3. Hand off: invoke `/work progress WI-NNN` for the implementation loop.
 
-This skill stops at the first claimed activity. It does not implement the plan.
+With `coordination: github`, or when the user asked for the work to run in parallel ("implement
+this with several agents"), hand off to `/work dispatch WI-NNN` instead: it puts the plan on
+the remote, mirrors it to issues where configured, and starts the workers
+([references/dispatch.md](dispatch.md)). Asked for parallel work without `coordination:
+github`, offer to set it: lock files do not exclude workers in separate checkouts.
+
+This skill stops at the hand-off. It does not implement the plan.
 
 ## Creating the work item
 
@@ -155,6 +163,12 @@ This skill stops at the first claimed activity. It does not implement the plan.
    | `research.md` | Discovery | — | — | when research was done |
    | `decisions.md` | Discovery | — | — | when a decision was made |
    | `notes.md` | any | — | optional | optional |
+
+With `coordination: github`, the work item folder must be inside the repository, and the
+planning branch is `wi/WI-{NNN}-{kebab-case-title}`, recorded in `artifacts.branch`. Planning
+for parallel workers also means activities that touch different files where it can: two
+activities editing one file will meet as a merge conflict. See
+[references/github.md](github.md).
 
 Worked examples for development, architecture and consultancy work are in
 [references/examples.md](start-examples.md).

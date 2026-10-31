@@ -101,6 +101,10 @@ This isolation ensures:
 - Changes can be reviewed as a cohesive unit
 - Rollback is straightforward if needed
 
+With several agents in separate checkouts (`coordination: github`), each activity also gets
+its own branch, `wi/WI-NNN-AN`, created on the remote as the claim, and its own pull request.
+See [Parallel delivery through GitHub](../playbooks/github-parallel-delivery.md).
+
 ### Work Item Location
 
 Work items live at a single configured path, set in `.aaw-config.yaml` at the workspace root. Pointing it outside the artefact repo keeps work-state out of the artefact repo's history:
@@ -210,6 +214,11 @@ The system uses file-based coordination:
 | `progress.yaml` | Read-modify-write | Version field (optimistic locking) |
 | `changelog.log` | Append-only | Atomic line appends |
 | `locks/*.lock` | Create/delete | Atomic file operations |
+
+These mechanisms hold for workers sharing one checkout. Workers in separate worktrees, clones
+or cloud sessions each have their own copy of the files, so they use `coordination: github`
+instead: the claim is a branch created atomically on the remote, and state arrives by merge
+([DD-18](../about/design-decisions.md#dd-18-coordination-through-github-plan-in-the-repository-claims-as-branches)).
 
 **Version Check Protocol:**
 1. Read progress.yaml, note `version`

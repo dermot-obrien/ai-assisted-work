@@ -35,14 +35,14 @@ const git = (args, cwd = ROOT, env = {}) => execFileSync("git", args, { cwd, enc
 const SKILLS = {
   work: {
     summary: "Work items, activities, tasks and initiatives in plain files: triage, scope, plan, execute and report.",
-    blurb: "An agent skill that manages real work in plain files: it triages a request into chore, change, intervention or inquiry and opens only the workspace that earns, plans a work item from the products it will leave behind, executes it one activity at a time under a lock, reports status, presents the next task and groups work items under initiatives. It works in any agent that reads [Agent Skills](https://agentskills.io/specification).",
+    blurb: "An agent skill that manages real work in plain files: it triages a request into chore, change, intervention or inquiry and opens only the workspace that earns, plans a work item from the products it will leave behind, executes it one activity at a time under a lock, or dispatches it to parallel agents through branches and pull requests, reports status, presents the next task and groups work items under initiatives. It works in any agent that reads [Agent Skills](https://agentskills.io/specification).",
     needs: "nothing to run; its post-install check needs Node.js 18 or newer. It needs no other skill",
-    tests: ["test-work-schema.mjs"],
+    tests: ["test-work-schema.mjs", "test-claim.mjs"],
     testDeps: ["yaml"],
     schemas: ["bundle.schema.json"],
     guide: "docs/skills/work.md",
     commands: null,
-    decisions: ["DD-03", "DD-06", "DD-11"],
+    decisions: ["DD-03", "DD-06", "DD-11", "DD-18"],
   },
 };
 
@@ -97,7 +97,8 @@ const fixLinks = (t) =>
     .replace(new RegExp(`\\]\\(\\.\\./\\.\\./skills/${skill}/`, "g"), `](../skills/${skill}/`)
     .replace(/\]\(\.\.\/reference\/commands\.md(#[^)]*)?\)/g, (m, anchor = "") => (S.commands ? `](commands.md${anchor})` : m))
     .replace(/\]\(\.\.\/\.\.\/skills\/([a-z-]+)\/[^)]*\)/g, (m, s) => (s === skill ? m : "](https://github.com/dermot-obrien/ai-assisted-work)"))
-    .replace(/\]\((\.\.\/)+README\.md[^)]*\)/g, "](../README.md)");
+    .replace(/\]\((\.\.\/)+README\.md[^)]*\)/g, "](../README.md)")
+    .replace(/\]\(\.\.\/(playbooks|concepts)\//g, "](https://github.com/dermot-obrien/ai-assisted-work/blob/main/docs/$1/");
 put("docs/guide.md", fixLinks(readFileSync(path.join(ROOT, S.guide), "utf8")));
 if (S.commands) {
   const c = readFileSync(path.join(ROOT, "docs/reference/commands.md"), "utf8");
@@ -113,7 +114,7 @@ if (S.commands) {
     const e = d.indexOf("\n## ", k + 1);
     return d.slice(k, e < 0 ? undefined : e).replace(/\n---\s*$/, "").trim();
   });
-  put("docs/design-decisions.md", `# Design decisions\n\nThe decisions behind this skill, numbered as they are in AI-Assisted Work, where it began. The rest of that list concerns the framework.\n\n${parts.filter(Boolean).join("\n\n")}\n`);
+  put("docs/design-decisions.md", fixLinks(`# Design decisions\n\nThe decisions behind this skill, numbered as they are in AI-Assisted Work, where it began. The rest of that list concerns the framework.\n\n${parts.filter(Boolean).join("\n\n")}\n`));
 }
 
 // Changelog: this skill's entries from the bundle's changelog.

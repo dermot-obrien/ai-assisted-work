@@ -23,6 +23,13 @@ This repository holds one skill, `work`, and the installer for standalone skills
 | `/work status` | [Work status](skills/work.md#status-work-status) |
 | `/work next` | [Next task](skills/work.md#next-work-next) |
 | `/work initiative` | [Start initiative](skills/work.md#initiative-work-initiative) |
+| `/work dispatch` | [Dispatch to parallel agents](skills/work.md#dispatch-work-dispatch) |
+
+## Playbooks
+
+| Playbook | Use it when |
+|----------|-------------|
+| [Parallel delivery through GitHub](playbooks/github-parallel-delivery.md) | You want "implement this feature" to become a plan, then branches, pull requests and issues worked by several agents at once |
 
 [All skills](skills/index.md) has the arguments, configuration and the post-install
 check.

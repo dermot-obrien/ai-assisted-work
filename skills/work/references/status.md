@@ -120,5 +120,14 @@ Progress: 1/5 work items done (20%)
   `blocked`. Recommend resuming or closing with a reason; do not close anything yourself.
 - **Blocked items.** Name the blocker from the `blockers:` array, not just the status.
 
+## With `coordination: github`
+
+The base branch's `progress.yaml` says what has merged; what is in flight is on the remote.
+Run `git fetch`, read `progress.yaml` from the base, run `bin/claim.mjs list WI-NNN --json` for
+claim branches with their holders and leases, and read the activities' pull requests where
+GitHub access allows. Combine them as the table in [references/github.md](github.md#reading-the-state)
+does: in progress with holder, in review with the pull request, stale claims to take over, and
+which pull requests a person needs to merge to unblock the next activities.
+
 Status values, activity states, the symbol legend and lock durations are in
 [references/status-reference.md](status-reference.md).
